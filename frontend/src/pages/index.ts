@@ -6,6 +6,7 @@ export { HomePage } from './HomePage';
 export { FlowsPage } from './FlowsPage';
 export { FlowBuilderPage } from './FlowBuilderPage';
 export { FlowRunsPage } from './FlowRunsPage';
+export { FlowRunDetailPage } from './FlowRunDetailPage';
 export { ReportsPage } from './ReportsPage';
 export { ContactsPage } from './ContactsPage';
 export { SchedulesPage } from './SchedulesPage';

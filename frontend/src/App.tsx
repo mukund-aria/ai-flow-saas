@@ -24,6 +24,7 @@ import {
   FlowsPage,
   FlowBuilderPage,
   FlowRunsPage,
+  FlowRunDetailPage,
   ReportsPage,
   ContactsPage,
   SchedulesPage,
@@ -86,7 +87,7 @@ function AppRoutes() {
         <Route path="flows/new" element={<FlowBuilderPage />} />
         <Route path="flows/:id" element={<FlowBuilderPage />} />
         <Route path="runs" element={<FlowRunsPage />} />
-        <Route path="runs/:id" element={<FlowRunsPage />} />
+        <Route path="runs/:id" element={<FlowRunDetailPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="contacts" element={<ContactsPage />} />
         <Route path="schedules" element={<SchedulesPage />} />

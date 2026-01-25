@@ -10,6 +10,7 @@ import sessionsRouter from './sessions.js';
 import uploadRouter from './upload.js';
 import flowsRouter from './flows.js';
 import runsRouter from './runs.js';
+import contactsRouter from './contacts.js';
 
 const router = Router();
 
@@ -29,5 +30,8 @@ router.use('/flows', flowsRouter);
 // Note: POST /api/flows/:flowId/runs is handled by runsRouter
 router.use('/runs', runsRouter);
 router.use('/', runsRouter); // For /flows/:flowId/runs endpoint
+
+// Contacts API (external assignees management)
+router.use('/contacts', contactsRouter);
 
 export default router;
