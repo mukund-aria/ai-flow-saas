@@ -263,6 +263,61 @@ export async function publishFlow(id: string): Promise<Flow> {
 }
 
 // ============================================================================
+// Flow Runs API
+// ============================================================================
+
+export interface FlowRun {
+  id: string;
+  flowId: string;
+  name: string;
+  status: 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'PAUSED';
+  currentStepIndex: number;
+  totalSteps: number;
+  startedAt: string;
+  completedAt?: string;
+  flow?: { id: string; name: string };
+}
+
+export interface StartFlowRunRequest {
+  flowId: string;
+  name: string;
+}
+
+/**
+ * List all flow runs
+ */
+export async function listFlowRuns(): Promise<FlowRun[]> {
+  const res = await fetch(`${API_BASE}/flow-runs`);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list flow runs');
+  return data.data;
+}
+
+/**
+ * Get a single flow run by ID
+ */
+export async function getFlowRun(id: string): Promise<FlowRun> {
+  const res = await fetch(`${API_BASE}/flow-runs/${id}`);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Flow run not found');
+  return data.data;
+}
+
+/**
+ * Start a new flow run
+ */
+export async function startFlowRun(flowId: string, name: string): Promise<FlowRun> {
+  const res = await fetch(`${API_BASE}/flow-runs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ flowId, name }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to start flow run');
+  return data.data;
+}
+
+// ============================================================================
 // Stream Event Types
 // ============================================================================
 

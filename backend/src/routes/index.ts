@@ -9,6 +9,7 @@ import chatRouter from './chat.js';
 import sessionsRouter from './sessions.js';
 import uploadRouter from './upload.js';
 import flowsRouter from './flows.js';
+import runsRouter from './runs.js';
 
 const router = Router();
 
@@ -23,5 +24,10 @@ router.use('/sessions', sessionsRouter);
 
 // Flows API (workflow templates CRUD)
 router.use('/flows', flowsRouter);
+
+// Flow Runs API (workflow execution)
+// Note: POST /api/flows/:flowId/runs is handled by runsRouter
+router.use('/runs', runsRouter);
+router.use('/', runsRouter); // For /flows/:flowId/runs endpoint
 
 export default router;

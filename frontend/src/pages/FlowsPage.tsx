@@ -1,15 +1,218 @@
 /**
  * Flows Page
  *
- * Lists all workflow templates with card grid layout.
+ * Lists all workflow templates with card grid layout matching Moxo Action Hub design.
  * Users can create, edit, and start flow runs from here.
  */
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, FileText, MoreVertical, Play, Loader2 } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  FileText,
+  MoreVertical,
+  Play,
+  Loader2,
+  ChevronDown,
+  Layers,
+  Sparkles,
+  ArrowUpDown,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { listFlows, type Flow } from '@/lib/api';
+import { Badge } from '@/components/ui/badge';
+import { listFlows, startFlowRun, type Flow } from '@/lib/api';
+
+type SortOption = 'lastModified' | 'name' | 'created' | 'steps';
+
+const sortOptions: { value: SortOption; label: string }[] = [
+  { value: 'lastModified', label: 'Last modified' },
+  { value: 'name', label: 'Name' },
+  { value: 'created', label: 'Date created' },
+  { value: 'steps', label: 'Step count' },
+];
+
+function formatRelativeDate(dateString?: string): string {
+  if (!dateString) return 'Never';
+
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    if (diffHours === 0) {
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      return diffMins <= 1 ? 'Just now' : `${diffMins} mins ago`;
+    }
+    return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+  }
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7);
+    return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+  }
+  if (diffDays < 365) {
+    const months = Math.floor(diffDays / 30);
+    return months === 1 ? '1 month ago' : `${months} months ago`;
+  }
+  return date.toLocaleDateString();
+}
+
+function FlowIcon() {
+  return (
+    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-200/50">
+      <Layers className="w-6 h-6 text-white" strokeWidth={2.5} />
+    </div>
+  );
+}
+
+interface FlowCardProps {
+  flow: Flow;
+  onEdit: () => void;
+  onStartRun: () => void;
+  isStarting: boolean;
+}
+
+function FlowCard({ flow, onEdit, onStartRun, isStarting }: FlowCardProps) {
+  return (
+    <div
+      className="group bg-white rounded-xl border border-gray-200 p-5 hover:border-violet-300 hover:shadow-md transition-all cursor-pointer"
+      onClick={onEdit}
+    >
+      {/* Top row: Badges and menu */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${
+              flow.status === 'ACTIVE'
+                ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20'
+                : flow.status === 'DRAFT'
+                ? 'bg-gray-100 text-gray-600 ring-1 ring-gray-500/20'
+                : 'bg-orange-50 text-orange-700 ring-1 ring-orange-600/20'
+            }`}
+          >
+            {flow.status === 'ACTIVE' ? 'Active' : flow.status === 'DRAFT' ? 'Draft' : 'Archived'}
+          </span>
+          <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600">
+            V{flow.version || '1'}
+          </span>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            // TODO: Show dropdown menu
+          }}
+          className="p-1.5 rounded-lg text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-100 hover:text-gray-600 transition-all"
+        >
+          <MoreVertical className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Icon and name row */}
+      <div className="flex items-start gap-4 mb-4">
+        <FlowIcon />
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-gray-900 text-base truncate mb-1">
+            {flow.name}
+          </h3>
+          {flow.createdBy && (
+            <p className="text-sm text-gray-500">By {flow.createdBy.name}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Description (optional) */}
+      {flow.description && (
+        <p className="text-sm text-gray-500 line-clamp-2 mb-4">
+          {flow.description}
+        </p>
+      )}
+
+      {/* Stats row */}
+      <div className="flex items-center justify-between text-sm text-gray-500 mb-4 pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-1">
+          <FileText className="w-4 h-4 text-gray-400" />
+          <span>{flow.stepCount || 0} steps</span>
+        </div>
+        <span>Last modified {formatRelativeDate(flow.updatedAt)}</span>
+      </div>
+
+      {/* Start Flow Run button */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full group-hover:border-violet-300 group-hover:text-violet-700 transition-colors"
+        disabled={isStarting || flow.status !== 'ACTIVE'}
+        onClick={(e) => {
+          e.stopPropagation();
+          onStartRun();
+        }}
+      >
+        {isStarting ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Starting...
+          </>
+        ) : (
+          <>
+            <Play className="w-4 h-4 mr-2" />
+            Start Flow Run
+          </>
+        )}
+      </Button>
+    </div>
+  );
+}
+
+function EmptyState({ onCreateFlow }: { onCreateFlow: () => void }) {
+  return (
+    <div className="text-center py-20 px-6">
+      {/* Illustration */}
+      <div className="relative w-32 h-32 mx-auto mb-8">
+        {/* Background circles */}
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-100 to-indigo-100 animate-pulse" />
+        <div className="absolute inset-4 rounded-full bg-gradient-to-br from-violet-50 to-white" />
+        {/* Icon */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 flex items-center justify-center shadow-xl shadow-violet-200/50 transform -rotate-6">
+            <Layers className="w-8 h-8 text-white" strokeWidth={2} />
+          </div>
+        </div>
+        {/* Decorative elements */}
+        <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
+          <Sparkles className="w-3 h-3 text-amber-500" />
+        </div>
+        <div className="absolute -bottom-1 -left-1 w-4 h-4 rounded-full bg-emerald-100" />
+      </div>
+
+      <h3 className="text-xl font-semibold text-gray-900 mb-3">
+        Create your first workflow
+      </h3>
+      <p className="text-gray-500 mb-8 max-w-md mx-auto leading-relaxed">
+        Workflows help you automate business processes. Start by creating a template
+        that defines the steps your team will follow.
+      </p>
+
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <Button
+          onClick={onCreateFlow}
+          size="lg"
+          className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-violet-200/50"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Create your first flow
+        </Button>
+        <Button variant="outline" size="lg" className="text-gray-600">
+          <FileText className="w-5 h-5 mr-2" />
+          Browse templates
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function FlowsPage() {
   const navigate = useNavigate();
@@ -18,6 +221,26 @@ export function FlowsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('lastModified');
+  const [startingFlowId, setStartingFlowId] = useState<string | null>(null);
+
+  // Handler to start a flow run
+  const handleStartFlowRun = async (flow: Flow) => {
+    try {
+      setStartingFlowId(flow.id);
+      const runName = `${flow.name} - ${new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })}`;
+      const run = await startFlowRun(flow.id, runName);
+      navigate(`/runs/${run.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start flow run');
+      setStartingFlowId(null);
+    }
+  };
 
   // Fetch flows on mount
   useEffect(() => {
@@ -36,14 +259,32 @@ export function FlowsPage() {
     fetchFlows();
   }, []);
 
-  const filteredFlows = flows.filter((flow) => {
-    const matchesSearch = flow.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' || flow.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Filter and sort flows
+  const filteredFlows = flows
+    .filter((flow) => {
+      const matchesSearch = flow.name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesStatus =
+        statusFilter === 'all' || flow.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'created':
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        case 'steps':
+          return (b.stepCount || 0) - (a.stepCount || 0);
+        case 'lastModified':
+        default:
+          return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+      }
+    });
+
+  const handleCreateFlow = () => navigate('/flows/new');
+  const handleEditFlow = (flowId: string) => navigate(`/flows/${flowId}`);
 
   // Loading state
   if (isLoading) {
@@ -70,23 +311,27 @@ export function FlowsPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-gray-900">Flows</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {flows.length} workflow template{flows.length !== 1 ? 's' : ''}
-          </p>
+          <Badge variant="secondary" className="text-sm font-medium">
+            {flows.length}
+          </Badge>
         </div>
-        <Button onClick={() => navigate('/flows/new')}>
+        <Button
+          onClick={handleCreateFlow}
+          className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-violet-200/50"
+        >
           <Plus className="w-4 h-4 mr-2" />
-          Create flow
+          Create
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-4 mb-6">
+      {/* Filters bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+        {/* Search */}
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -94,110 +339,82 @@ export function FlowsPage() {
             placeholder="Search flows..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow"
           />
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-        >
-          <option value="all">All Status</option>
-          <option value="ACTIVE">Active</option>
-          <option value="DRAFT">Draft</option>
-          <option value="ARCHIVED">Archived</option>
-        </select>
+
+        <div className="flex items-center gap-3">
+          {/* Status filter */}
+          <div className="relative">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="appearance-none pl-4 pr-10 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+            >
+              <option value="all">All Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="DRAFT">Draft</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
+
+          {/* Sort dropdown */}
+          <div className="relative">
+            <div className="flex items-center">
+              <ArrowUpDown className="w-4 h-4 text-gray-400 mr-2" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="appearance-none pl-0 pr-8 py-2 bg-transparent border-0 text-sm text-gray-600 focus:outline-none focus:ring-0 cursor-pointer"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Flow Grid */}
-      {filteredFlows.length > 0 ? (
+      {/* Flow Grid or Empty State */}
+      {flows.length === 0 ? (
+        <EmptyState onCreateFlow={handleCreateFlow} />
+      ) : filteredFlows.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredFlows.map((flow) => (
-            <div
+            <FlowCard
               key={flow.id}
-              className="bg-white rounded-xl border border-gray-200 p-5 hover:border-violet-300 hover:shadow-sm transition-all cursor-pointer"
-              onClick={() => navigate(`/flows/${flow.id}`)}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-violet-600" />
-                  </div>
-                  <div>
-                    <span
-                      className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${
-                        flow.status === 'ACTIVE'
-                          ? 'bg-green-100 text-green-700'
-                          : flow.status === 'DRAFT'
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {flow.status}
-                    </span>
-                    <span className="ml-2 text-xs text-gray-400">
-                      v{flow.version}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // TODO: Show menu
-                  }}
-                  className="p-1 rounded hover:bg-gray-100"
-                >
-                  <MoreVertical className="w-4 h-4 text-gray-400" />
-                </button>
-              </div>
-
-              <h3 className="font-semibold text-gray-900 mb-1">{flow.name}</h3>
-              <p className="text-sm text-gray-500 line-clamp-2 mb-4">
-                {flow.description || 'No description'}
-              </p>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">
-                  {flow.stepCount || 0} step{flow.stepCount !== 1 ? 's' : ''}
-                </span>
-                {flow.createdBy && (
-                  <span className="text-gray-400">
-                    By {flow.createdBy.name}
-                  </span>
-                )}
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mt-4"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // TODO: Start flow run
-                }}
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Start Flow Run
-              </Button>
-            </div>
+              flow={flow}
+              onEdit={() => handleEditFlow(flow.id)}
+              onStartRun={() => handleStartFlowRun(flow)}
+              isStarting={startingFlowId === flow.id}
+            />
           ))}
         </div>
       ) : (
-        /* Empty State */
+        /* No results for filter */
         <div className="text-center py-16">
           <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-4">
-            <FileText className="w-8 h-8 text-gray-400" />
+            <Search className="w-8 h-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No flows yet
+            No flows found
           </h3>
-          <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-            Create your first workflow template to start automating your
-            business processes.
+          <p className="text-gray-500 mb-4">
+            Try adjusting your search or filter criteria
           </p>
-          <Button onClick={() => navigate('/flows/new')}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create your first flow
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearchQuery('');
+              setStatusFilter('all');
+            }}
+          >
+            Clear filters
           </Button>
         </div>
       )}

@@ -6,7 +6,7 @@
  */
 
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, MessageSquare } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ChatContainer } from '@/components/chat/ChatContainer';
 import { WorkflowPanel } from '@/components/workflow/WorkflowPanel';
@@ -21,6 +21,7 @@ export function FlowBuilderPage() {
   const { sendMessage, startNewChat } = useChat();
   const { workflow, savedFlowId, savedFlowStatus, isSaving, setSavedFlow } = useWorkflowStore();
   const [isPublishing, setIsPublishing] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(true);
 
   // Check if we have a prompt from navigation state (from Home page)
   const initialPrompt = (location.state as { prompt?: string })?.prompt;
@@ -113,6 +114,15 @@ export function FlowBuilderPage() {
             <span className="text-sm text-green-600 font-medium">Published</span>
           )}
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAIChat(!showAIChat)}
+            className={`relative ${showAIChat ? 'bg-violet-50 border-violet-200 text-violet-700' : ''}`}
+            title={showAIChat ? 'Hide AI Chat' : 'Show AI Chat'}
+          >
+            <MessageSquare className={`w-4 h-4 ${showAIChat ? 'fill-violet-200' : ''}`} />
+          </Button>
+          <Button
             onClick={handlePublish}
             disabled={!canPublish}
             className="bg-gray-900 hover:bg-gray-800"
@@ -132,12 +142,20 @@ export function FlowBuilderPage() {
       {/* Main Content - Split View */}
       <div className="flex flex-1 overflow-hidden">
         {/* Chat Panel */}
-        <div className="w-1/2 border-r border-gray-200 flex flex-col overflow-hidden">
-          <ChatContainer />
+        <div
+          className={`border-r border-gray-200 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
+            showAIChat ? 'w-1/2 opacity-100' : 'w-0 opacity-0'
+          }`}
+        >
+          {showAIChat && <ChatContainer />}
         </div>
 
         {/* Workflow Preview Panel */}
-        <div className="w-1/2 bg-gray-50 overflow-auto">
+        <div
+          className={`bg-gray-50 overflow-auto transition-all duration-300 ease-in-out ${
+            showAIChat ? 'w-1/2' : 'w-full'
+          }`}
+        >
           <WorkflowPanel />
         </div>
       </div>
