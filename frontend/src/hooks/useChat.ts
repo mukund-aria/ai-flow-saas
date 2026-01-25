@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useChatStore } from '@/stores/chatStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useWorkflowStore } from '@/stores/workflowStore';
-import { streamMessage, publishPlan, uploadFile, getSession } from '@/lib/api';
+import { streamMessage, publishPlan, uploadFile, getSession, createFlow } from '@/lib/api';
 import { getUserFriendlyError } from '@/lib/friendly-errors';
 import type { PendingPlan, Flow, MessageAttachment, Message, Clarification, SuggestedAction } from '@/types';
 
@@ -32,7 +32,7 @@ export function useChat() {
   } = useChatStore();
 
   const { currentSessionId, setCurrentSession } = useSessionStore();
-  const { setWorkflow, workflow } = useWorkflowStore();
+  const { setWorkflow, workflow, setSavedFlow, setSaving } = useWorkflowStore();
 
   // Track if we've already tried to load history for this session
   const historyLoadedRef = useRef<string | null>(null);
@@ -414,11 +414,30 @@ export function useChat() {
 
           const workflowName = result.workflow.name || 'Your workflow';
 
-          // Message 1: Workflow published confirmation
-          addAssistantMessage(
-            `Great! **${workflowName}** has been created and is now published. You can see it in the panel on the right.`,
-            'create'
-          );
+          // Auto-save to database as DRAFT
+          setSaving(true);
+          try {
+            const savedFlow = await createFlow({
+              name: workflowName,
+              description: result.workflow.description || '',
+              definition: result.workflow as Record<string, unknown>,
+              status: 'DRAFT',
+            });
+            setSavedFlow(savedFlow.id, 'DRAFT');
+
+            // Message 1: Workflow saved confirmation
+            addAssistantMessage(
+              `**${workflowName}** has been saved as a draft. You can see it in the panel on the right.\n\nWhen you're ready, click **Publish** in the header to make it active.`,
+              'create'
+            );
+          } catch (saveErr) {
+            console.error('Failed to save flow to database:', saveErr);
+            // Still show workflow even if save failed
+            addAssistantMessage(
+              `**${workflowName}** has been created. You can see it in the panel on the right.\n\n⚠️ Note: Failed to save to database. You may need to save manually.`,
+              'create'
+            );
+          }
 
           // Message 2: Enhancement options (only if user hasn't dismissed them this session)
           const { enhancementsDismissed } = useChatStore.getState();
@@ -440,7 +459,7 @@ export function useChat() {
         addAssistantMessage(friendlyMessage, 'respond');
       }
     },
-    [currentSessionId, setWorkflow, setPendingPlan, updateMessage, addAssistantMessage, setMessagePhase2]
+    [currentSessionId, setWorkflow, setPendingPlan, updateMessage, addAssistantMessage, setMessagePhase2, setSaving, setSavedFlow]
   );
 
   const handleRequestChanges = useCallback(
