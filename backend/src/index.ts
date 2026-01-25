@@ -21,7 +21,7 @@ import { passport, configurePassport, authRoutes, requireAuth } from './auth/ind
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Health check endpoint (before middleware for faster response)
@@ -40,7 +40,7 @@ const __dirname = path.dirname(__filename);
 // CORS for frontend (development mode)
 if (!isProduction) {
   app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5174',
     credentials: true,
   }));
 }
@@ -125,7 +125,7 @@ if (isProduction) {
     res.json({
       name: 'AI Flow Copilot API (Development)',
       version: '1.0.0',
-      frontend: 'http://localhost:5173',
+      frontend: 'http://localhost:5174',
       endpoints: {
         health: 'GET /health',
         chat: 'POST /api/chat',
