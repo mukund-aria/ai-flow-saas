@@ -1,10 +1,36 @@
+/**
+ * AI Flow SaaS - Main Application
+ *
+ * Routes:
+ * - / : Home page with AI prompt
+ * - /flows : Flow templates list
+ * - /flows/new : AI flow builder
+ * - /flows/:id : Flow detail (edit)
+ * - /runs : Flow runs list
+ * - /runs/:id : Flow run detail
+ * - /reports : Analytics dashboard
+ * - /contacts : Contact management
+ * - /schedules : Coming soon
+ * - /integrations : Coming soon
+ * - /settings : Settings
+ * - /login : Login page
+ */
+
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { ChatContainer } from '@/components/chat/ChatContainer';
-import { WorkflowPanel } from '@/components/workflow/WorkflowPanel';
-import { useChat } from '@/hooks/useChat';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { LoginPage } from '@/pages/LoginPage';
+import { CoordinatorLayout } from '@/layouts/CoordinatorLayout';
+import {
+  HomePage,
+  FlowsPage,
+  FlowBuilderPage,
+  FlowRunsPage,
+  ReportsPage,
+  ContactsPage,
+  SchedulesPage,
+  IntegrationsPage,
+  SettingsPage,
+  LoginPage,
+} from '@/pages';
 
 // ============================================================================
 // Protected Route Component
@@ -18,7 +44,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600 mx-auto" />
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-600 mx-auto" />
           <p className="mt-4 text-sm text-gray-500">Loading...</p>
         </div>
       </div>
@@ -26,32 +52,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   // In development without auth configured, allow access
-  // Check if we're in development mode by trying to detect the Vite dev server
   const isDev = import.meta.env.DEV;
   if (isDev && !isAuthenticated) {
     // In development, allow access without auth for easier testing
-    // The backend will also allow unauthenticated API access in dev mode
     return <>{children}</>;
   }
 
   // In production, redirect to login if not authenticated
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
-}
-
-// ============================================================================
-// Main App Content
-// ============================================================================
-
-function MainApp() {
-  const { startNewChat } = useChat();
-
-  return (
-    <AppLayout
-      chatPanel={<ChatContainer />}
-      workflowPanel={<WorkflowPanel />}
-      onNewChat={startNewChat}
-    />
-  );
 }
 
 // ============================================================================
@@ -61,15 +69,33 @@ function MainApp() {
 function AppRoutes() {
   return (
     <Routes>
+      {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Protected Routes - Coordinator Portal */}
       <Route
-        path="/*"
+        path="/"
         element={
           <ProtectedRoute>
-            <MainApp />
+            <CoordinatorLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<HomePage />} />
+        <Route path="flows" element={<FlowsPage />} />
+        <Route path="flows/new" element={<FlowBuilderPage />} />
+        <Route path="flows/:id" element={<FlowBuilderPage />} />
+        <Route path="runs" element={<FlowRunsPage />} />
+        <Route path="runs/:id" element={<FlowRunsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="contacts" element={<ContactsPage />} />
+        <Route path="schedules" element={<SchedulesPage />} />
+        <Route path="integrations" element={<IntegrationsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+      </Route>
+
+      {/* Catch-all redirect */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
