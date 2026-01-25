@@ -5,28 +5,38 @@
  * Users can create, edit, and start flow runs from here.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, FileText, MoreVertical, Play } from 'lucide-react';
+import { Plus, Search, FileText, MoreVertical, Play, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-// Placeholder - will be replaced with API data
-const MOCK_FLOWS: Array<{
-  id: string;
-  name: string;
-  description: string;
-  version: string;
-  status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
-  stepCount: number;
-  lastUsed?: string;
-}> = [];
+import { listFlows, type Flow } from '@/lib/api';
 
 export function FlowsPage() {
   const navigate = useNavigate();
+  const [flows, setFlows] = useState<Flow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const filteredFlows = MOCK_FLOWS.filter((flow) => {
+  // Fetch flows on mount
+  useEffect(() => {
+    async function fetchFlows() {
+      try {
+        setIsLoading(true);
+        const data = await listFlows();
+        setFlows(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load flows');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchFlows();
+  }, []);
+
+  const filteredFlows = flows.filter((flow) => {
     const matchesSearch = flow.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -35,6 +45,30 @@ export function FlowsPage() {
     return matchesSearch && matchesStatus;
   });
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-violet-600 mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Loading flows...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          <p className="font-medium">Error loading flows</p>
+          <p className="text-sm mt-1">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -42,7 +76,7 @@ export function FlowsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Flows</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {MOCK_FLOWS.length} workflow templates
+            {flows.length} workflow template{flows.length !== 1 ? 's' : ''}
           </p>
         </div>
         <Button onClick={() => navigate('/flows/new')}>
@@ -123,10 +157,12 @@ export function FlowsPage() {
               </p>
 
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">{flow.stepCount} steps</span>
-                {flow.lastUsed && (
+                <span className="text-gray-500">
+                  {flow.stepCount || 0} step{flow.stepCount !== 1 ? 's' : ''}
+                </span>
+                {flow.createdBy && (
                   <span className="text-gray-400">
-                    Last used {flow.lastUsed}
+                    By {flow.createdBy.name}
                   </span>
                 )}
               </div>

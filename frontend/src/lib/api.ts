@@ -167,6 +167,105 @@ export async function getWorkflow(sessionId: string) {
   return res.json();
 }
 
+// ============================================================================
+// Flows API
+// ============================================================================
+
+export interface Flow {
+  id: string;
+  name: string;
+  description?: string;
+  version: string;
+  status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+  definition?: Record<string, unknown>;
+  stepCount?: number;
+  createdBy?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateFlowRequest {
+  name: string;
+  description?: string;
+  definition?: Record<string, unknown>;
+  status?: 'DRAFT' | 'ACTIVE';
+}
+
+/**
+ * List all flows
+ */
+export async function listFlows(): Promise<Flow[]> {
+  const res = await fetch(`${API_BASE}/flows`);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list flows');
+  return data.data;
+}
+
+/**
+ * Get a single flow by ID
+ */
+export async function getFlow(id: string): Promise<Flow> {
+  const res = await fetch(`${API_BASE}/flows/${id}`);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Flow not found');
+  return data.data;
+}
+
+/**
+ * Create a new flow
+ */
+export async function createFlow(request: CreateFlowRequest): Promise<Flow> {
+  const res = await fetch(`${API_BASE}/flows`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to create flow');
+  return data.data;
+}
+
+/**
+ * Update a flow
+ */
+export async function updateFlow(id: string, updates: Partial<CreateFlowRequest>): Promise<Flow> {
+  const res = await fetch(`${API_BASE}/flows/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to update flow');
+  return data.data;
+}
+
+/**
+ * Delete (archive) a flow
+ */
+export async function deleteFlow(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/flows/${id}`, { method: 'DELETE' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to delete flow');
+}
+
+/**
+ * Publish a draft flow (set status to ACTIVE)
+ */
+export async function publishFlow(id: string): Promise<Flow> {
+  const res = await fetch(`${API_BASE}/flows/${id}/publish`, { method: 'POST' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to publish flow');
+  return data.data;
+}
+
+// ============================================================================
+// Stream Event Types
+// ============================================================================
+
 // Stream event types
 export type StreamEventType =
   | 'session'
