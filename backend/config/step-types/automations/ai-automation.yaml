@@ -1,0 +1,133 @@
+# AI_AUTOMATION Step Type Definition
+stepType: AI_AUTOMATION
+category: AUTOMATION
+displayName: "AI Automation"
+description: "Automated AI task that processes inputs and produces outputs"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What the AI automation does"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: inputs
+      type: inputRef[]
+      required: false
+      description: "References to prior outputs, variables, or files"
+
+    - name: prompt
+      type: string
+      required: true
+      description: "Instructions for the AI"
+
+    - name: knowledge
+      type: knowledgeConfig
+      required: false
+      description: "Optional knowledge sources to reference"
+
+    - name: outputs
+      type: outputDef[]
+      required: true
+      constraints:
+        min: 1
+      description: "What the AI produces"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+      description: "AI automations are coordinator-only by default"
+
+# Input reference structure
+inputRefSchema:
+  fields:
+    - name: ref
+      type: string
+      required: true
+      description: "Reference path (e.g., 's1_form.outputs.form.client_name')"
+
+# Output definition structure
+outputDefSchema:
+  fields:
+    - name: key
+      type: string
+      required: true
+      description: "Output key (e.g., 'ai.summary')"
+    - name: type
+      type: enum
+      required: true
+      values: [TEXT, FILE, JSON]
+      description: "Output data type"
+
+# Knowledge config structure
+knowledgeConfigSchema:
+  fields:
+    - name: sources
+      type: string[]
+      required: false
+      description: "Knowledge source names"
+    - name: mode
+      type: enum
+      required: false
+      default: OPTIONAL
+      values: [REQUIRED, OPTIONAL]
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "AI automation runs automatically and completes on its own"
+
+outputs:
+  - name: "ai.*"
+    type: dynamic
+    description: "Outputs defined by the step (e.g., ai.summary, ai.extracted_data)"
+
+validationRules:
+  - rule: "prompt is not empty"
+    message: "AI automation requires a prompt"
+  - rule: "outputs.length >= 1"
+    message: "AI automation must define at least one output"
+
+aiGuidance:
+  whenToUse: |
+    Use AI_AUTOMATION when AI should perform a task automatically.
+    Examples: data extraction, summarization, classification, preparation.
+    The AI acts independently and produces outputs for later steps.
+
+  whenNotToUse: |
+    - If human review is needed → use appropriate action with AI assistance
+    - If just sending data → use SYSTEM_WEBHOOK
+
+  seQuestions:
+    - "What should the AI do with this data?"
+    - "What inputs does the AI need?"
+    - "What should the AI output?"
+    - "Should we escalate to a human if AI cannot complete the task?"
+
+  defaults:
+    - "Coordinator-only visibility"
+    - "Use default Moxo AI model"
+
+  proactiveOpportunities:
+    - "Data extraction from uploaded documents"
+    - "Summarizing form responses"
+    - "Pre-filling forms based on prior data"
+    - "Reviewing submissions for completeness"
+    - "Drafting communications"
+
+  examples:
+    - trigger: "extract information from"
+      mapsTo: AI_AUTOMATION
+    - trigger: "summarize the"
+      mapsTo: AI_AUTOMATION
+    - trigger: "AI should"
+      mapsTo: AI_AUTOMATION
+    - trigger: "automatically analyze"
+      mapsTo: AI_AUTOMATION

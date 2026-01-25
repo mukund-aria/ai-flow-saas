@@ -1,0 +1,119 @@
+# DECISION Step Type Definition
+stepType: DECISION
+category: HUMAN_ACTION
+displayName: "Decision"
+description: "A decision point where one assignee chooses between outcomes, each with its own path"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "The decision question"
+
+    - name: description
+      type: string
+      required: false
+      description: "Context for making the decision"
+
+    - name: assignee
+      type: assignee
+      required: true
+      description: "Single person who makes this decision (not assignees[])"
+
+    - name: outcomes
+      type: outcome[]
+      required: true
+      constraints:
+        min: 2
+        max: 3
+      description: "Possible outcomes, each with a label and steps"
+
+    - name: due
+      type: relativeDue
+      required: false
+
+    - name: options.visibleToAllAssignees
+      type: boolean
+      required: false
+      default: false
+
+# Outcome structure
+outcomeSchema:
+  fields:
+    - name: outcomeId
+      type: string
+      required: true
+
+    - name: label
+      type: string
+      required: true
+      description: "Outcome label (e.g., 'Yes', 'No', 'Needs More Info')"
+
+    - name: steps
+      type: step[]
+      required: false
+      default: []
+      description: "Steps to execute if this outcome is chosen"
+
+completion:
+  multipleAssignees: false
+  singleAssigneeOnly: true
+  description: "Decision requires exactly ONE assignee who selects an outcome"
+
+# Special rules for DECISION
+specialRules:
+  - "DECISION has exactly one assignee (not multiple)"
+  - "DECISION can have 2-3 outcomes"
+  - "Each outcome can contain its own steps"
+  - "GOTO and TERMINATE are allowed inside outcome paths"
+  - "After all outcome paths complete, flow continues to next main-path step"
+
+outputs:
+  - name: "decision.selectedOutcome"
+    type: string
+    description: "The outcomeId that was selected"
+  - name: "decision.selectedLabel"
+    type: string
+    description: "The label of the selected outcome"
+
+validationRules:
+  - rule: "assignee is single, not array"
+    message: "Decision must have exactly one assignee"
+  - rule: "outcomes.length >= 2 && outcomes.length <= 3"
+    message: "Decision must have 2-3 outcomes"
+  - rule: "all outcome labels are unique"
+    message: "Outcome labels must be unique"
+
+aiGuidance:
+  whenToUse: |
+    Use DECISION when one person needs to choose between 2-3 distinct paths.
+    Each outcome can trigger different subsequent steps.
+    Examples: approve/reject, yes/no/maybe, proceed/hold/escalate.
+
+  whenNotToUse: |
+    - If no different paths needed → use QUESTIONNAIRE
+    - If just need sign-off without choices → use APPROVAL
+    - If automated condition check → use SINGLE_CHOICE_BRANCH
+
+  seQuestions:
+    - "What happens if the decision is 'No' or rejected?"
+    - "Are there more than 2 possible outcomes?"
+    - "Who should make this decision?"
+
+  defaults:
+    - "Two outcomes (Yes/No) unless more specified"
+    - "Empty steps array for outcomes unless user specifies actions"
+    - "Default 'No' path continues after branch (no terminate) unless specified"
+
+  examples:
+    - trigger: "approve or reject"
+      mapsTo: DECISION
+      defaultOutcomes: ["Approve", "Reject"]
+    - trigger: "yes or no"
+      mapsTo: DECISION
+      defaultOutcomes: ["Yes", "No"]
+    - trigger: "decision point"
+      mapsTo: DECISION
+    - trigger: "if approved"
+      mapsTo: DECISION

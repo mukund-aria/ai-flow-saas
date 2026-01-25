@@ -1,0 +1,86 @@
+# WEB_APP Step Type Definition
+stepType: WEB_APP
+category: HUMAN_ACTION
+displayName: "Web App"
+description: "Embed an external web application within the workflow"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Title for the embedded app"
+
+    - name: description
+      type: string
+      required: false
+      description: "Instructions for using the app"
+
+    - name: assignees
+      type: assignee[]
+      required: true
+      constraints:
+        min: 1
+      description: "Who should interact with the web app"
+
+    - name: due
+      type: relativeDue
+      required: false
+      description: "When interaction should be completed"
+
+    - name: url
+      type: string
+      required: true
+      description: "URL of the web application"
+
+    - name: parameters
+      type: parameter[]
+      required: false
+      description: "Parameters to pass to the web app"
+
+    - name: completionWebhook
+      type: string
+      required: false
+      description: "Webhook URL to trigger completion"
+
+completion:
+  multipleAssignees: true
+  completionMode: ANY_ONE
+  description: "Completes when web app signals completion or manual mark"
+
+outputs:
+  - name: "webAppData"
+    type: json
+    description: "Data returned from the web application"
+
+validationRules:
+  - rule: "assignees.length >= 1"
+    message: "Web app step requires at least one assignee"
+  - rule: "url is valid"
+    message: "Web app requires a valid URL"
+
+aiGuidance:
+  whenToUse: |
+    Use WEB_APP to embed third-party tools within the workflow.
+    Examples: specialized calculators, external forms, custom tools.
+
+  whenNotToUse: |
+    - Standard data collection → use FORM
+    - Just a link → provide in step description
+
+  seQuestions:
+    - "What external app needs to be embedded?"
+    - "How does the app signal completion?"
+    - "What data should be passed to/from the app?"
+
+  defaults:
+    - "Manual completion"
+    - "No parameters passed"
+
+  examples:
+    - trigger: "embed app"
+      mapsTo: WEB_APP
+    - trigger: "external tool"
+      mapsTo: WEB_APP
+    - trigger: "third-party application"
+      mapsTo: WEB_APP

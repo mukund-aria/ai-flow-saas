@@ -1,0 +1,79 @@
+# TODO Step Type Definition
+stepType: TODO
+category: HUMAN_ACTION
+displayName: "To-Do"
+description: "A simple task for someone to complete and mark done"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What needs to be done"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional details or instructions"
+
+    - name: assignees
+      type: assignee[]
+      required: true
+      constraints:
+        min: 1
+      description: "Who should complete this task"
+
+    - name: due
+      type: relativeDue
+      required: false
+      description: "When the task should be completed"
+
+    - name: checklist
+      type: string[]
+      required: false
+      description: "Optional checklist items"
+
+completion:
+  multipleAssignees: true
+  completionMode: ALL
+  description: "All assignees must mark complete"
+
+outputs:
+  - name: "completedBy"
+    type: user
+    description: "Who completed the task"
+  - name: "completedAt"
+    type: timestamp
+    description: "When the task was completed"
+
+validationRules:
+  - rule: "assignees.length >= 1"
+    message: "To-do requires at least one assignee"
+
+aiGuidance:
+  whenToUse: |
+    Use TODO for simple tasks that just need to be marked complete.
+    Examples: "Review document", "Call client", "Schedule meeting".
+
+  whenNotToUse: |
+    - Need data collection → use FORM
+    - Need approval/rejection → use APPROVAL
+    - Need specific deliverable → use FILE_REQUEST
+
+  seQuestions:
+    - "What task needs to be completed?"
+    - "Should all assignees complete it, or just one?"
+
+  defaults:
+    - "All assignees must complete"
+    - "No checklist unless specified"
+
+  examples:
+    - trigger: "complete task"
+      mapsTo: TODO
+    - trigger: "to-do"
+      mapsTo: TODO
+    - trigger: "action item"
+      mapsTo: TODO
+    - trigger: "checklist"
+      mapsTo: TODO

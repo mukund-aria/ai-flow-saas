@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   CSS Variables for Design System (shadcn/ui compatible)
+   ============================================================================ */
+
+@theme {
+  /* Colors */
+  --color-background: #ffffff;
+  --color-foreground: #0a0a0a;
+
+  --color-muted: #f4f4f5;
+  --color-muted-foreground: #71717a;
+
+  --color-card: #ffffff;
+  --color-card-foreground: #0a0a0a;
+
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0a0a0a;
+
+  --color-border: #e4e4e7;
+  --color-input: #e4e4e7;
+
+  --color-primary: #18181b;
+  --color-primary-foreground: #fafafa;
+
+  --color-secondary: #f4f4f5;
+  --color-secondary-foreground: #18181b;
+
+  --color-accent: #f4f4f5;
+  --color-accent-foreground: #18181b;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #fafafa;
+
+  --color-ring: #a1a1aa;
+
+  /* Step type colors (Moxo style) */
+  --color-step-form: #22c55e;
+  --color-step-approval: #3b82f6;
+  --color-step-acknowledgement: #ec4899;
+  --color-step-decision: #8b5cf6;
+  --color-step-automation: #6b7280;
+  --color-step-branch: #f59e0b;
+
+  /* Role colors */
+  --color-role-1: #14b8a6;
+  --color-role-2: #8b5cf6;
+  --color-role-3: #22c55e;
+  --color-role-4: #ec4899;
+  --color-role-5: #f59e0b;
+
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+}
+
+/* ============================================================================
+   Base Styles
+   ============================================================================ */
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================================
+   Custom Utilities
+   ============================================================================ */
+
+/* Dotted grid background (Moxo style) */
+.bg-dotted-grid {
+  background-image: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Scrollbar styling */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-muted-foreground);
+}

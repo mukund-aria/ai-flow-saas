@@ -1,0 +1,112 @@
+# SINGLE_CHOICE_BRANCH Step Type Definition
+stepType: SINGLE_CHOICE_BRANCH
+category: CONTROL
+displayName: "Single Choice Branch (If/Else)"
+description: "Conditional branching where exactly one path executes based on conditions"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: false
+      description: "Optional title describing the branch condition"
+
+    - name: milestoneId
+      type: string
+      required: true
+      description: "Must match the milestone containing this branch"
+
+    - name: paths
+      type: path[]
+      required: true
+      constraints:
+        exactCount: 2
+      description: "Exactly two paths: if and else"
+
+# Path structure
+pathSchema:
+  fields:
+    - name: pathId
+      type: string
+      required: true
+
+    - name: label
+      type: string
+      required: true
+      description: "'If' for condition path, 'Else' for fallback"
+
+    - name: condition
+      type: condition
+      required: true
+      description: "Condition object (type: EQUALS, CONTAINS, etc. or ELSE)"
+
+    - name: steps
+      type: step[]
+      required: false
+      default: []
+      description: "Steps to execute in this path"
+
+# Condition types
+conditionTypes:
+  - type: EQUALS
+    fields: [left, right]
+    description: "Exact match comparison"
+
+  - type: CONTAINS
+    fields: [left, right]
+    description: "Substring/element containment"
+
+  - type: NOT_EMPTY
+    fields: [value]
+    description: "Value is not empty/null"
+
+  - type: ELSE
+    fields: []
+    description: "Default fallback (no condition)"
+
+completion:
+  description: "After the matching path completes, flow continues to next main-path step"
+
+specialRules:
+  - "Exactly 2 paths (if and else)"
+  - "First path has condition, second path must have condition.type = ELSE"
+  - "Exactly one path will execute"
+  - "GOTO and TERMINATE are allowed inside paths"
+  - "All steps in paths must have same milestoneId as the branch"
+  - "Branches can be nested up to maxNestingDepth (default: 2)"
+
+validationRules:
+  - rule: "paths.length === 2"
+    message: "Single choice branch must have exactly 2 paths"
+  - rule: "paths[1].condition.type === 'ELSE'"
+    message: "Second path must be the ELSE fallback"
+  - rule: "all nested steps have matching milestoneId"
+    message: "All steps inside branch must have same milestoneId"
+
+aiGuidance:
+  whenToUse: |
+    Use SINGLE_CHOICE_BRANCH for automated if/else logic based on data.
+    Conditions are evaluated automatically - no human decision needed.
+    Examples: route based on form values, VIP vs standard paths.
+
+  whenNotToUse: |
+    - If a person makes the choice → use DECISION
+    - If multiple paths can run simultaneously → use PARALLEL_BRANCH
+    - If multiple conditions can be true → use MULTI_CHOICE_BRANCH
+
+  seQuestions:
+    - "What condition determines which path to take?"
+    - "What happens in the 'if' case vs the 'else' case?"
+    - "Is this based on data or does someone decide?"
+
+  defaults:
+    - "Empty steps in paths unless user specifies"
+    - "Condition references prior step outputs or variables"
+
+  examples:
+    - trigger: "if VIP then"
+      mapsTo: SINGLE_CHOICE_BRANCH
+    - trigger: "based on the answer"
+      mapsTo: SINGLE_CHOICE_BRANCH
+    - trigger: "route based on"
+      mapsTo: SINGLE_CHOICE_BRANCH

@@ -1,0 +1,63 @@
+# GOTO_DESTINATION Step Configuration
+# A marker on the main path that GOTO steps can target
+
+stepType: GOTO_DESTINATION
+category: CONTROL
+displayName: Go To Destination
+description: A marker point on the main path where GOTO steps can redirect execution
+
+schema:
+  fields:
+    - name: stepId
+      type: string
+      required: true
+      description: Unique identifier for this step
+
+    - name: type
+      type: string
+      required: true
+      description: Step type identifier
+      constraints:
+        allowedValues: [GOTO_DESTINATION]
+
+    - name: milestoneId
+      type: string
+      required: true
+      description: Reference to the milestone this step belongs to
+
+    - name: label
+      type: string
+      required: false
+      description: Human-readable label describing this destination point
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+
+specialRules:
+  - Must be on the main path (not inside any branch or decision outcome)
+  - Referenced by GOTO steps from within DECISION or SINGLE_CHOICE_BRANCH paths
+  - Acts as a passthrough marker with no execution time
+
+validationRules:
+  - rule: onMainPath
+    message: GOTO_DESTINATION must be on the main path
+
+aiGuidance:
+  whenToUse: |
+    Use GOTO_DESTINATION to mark a point in the workflow where execution can be redirected.
+    Common use cases:
+    - Mark the beginning of a review cycle that may need to repeat
+    - Create entry points for retry logic
+    - Mark the start of a section that users may need to redo
+
+  whenNotToUse: |
+    - Don't place inside branches or decision outcomes
+    - Don't create unnecessary destinations that are never referenced
+
+  defaults:
+    - Label should describe the logical section being re-entered
+
+  examples:
+    - trigger: Return point for re-review
+      mapsTo: GOTO_DESTINATION labeled "Back to document review"

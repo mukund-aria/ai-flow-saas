@@ -1,0 +1,374 @@
+{
+  "flow": {
+    "flowId": "flow_demo_001",
+    "name": "Client Onboarding (Demo)",
+    "workspaceNameTemplate": "Onboarding - {kickoff.client_name} - {var.case_id}",
+    "settings": {
+      "chatAssistanceEnabled": true,
+      "chatAssistanceDefault": "ON",
+      "autoArchiveEnabled": true,
+      "coverImage": "DEFAULT",
+      "advancedCoordinatorRoleSetting": "DEFAULT"
+    },
+
+    "permissions": {
+      "execute": { "type": "EXPLICIT_USERS", "principals": ["user_sales_mgr_1", "group_cs_mgrs"] },
+      "edit": { "type": "EXPLICIT_USERS", "principals": ["user_builder_1"] },
+      "coordinate": { "type": "EXPLICIT_USERS", "principals": ["user_ops_coordinator_1", "group_cs_leads"] }
+    },
+
+    "dueDates": {
+      "flowDue": { "type": "RELATIVE", "value": 14, "unit": "DAYS" }
+    },
+
+    "kickoff": {
+      "defaultStartMode": "EXECUTE",
+      "supportedStartModes": ["EXECUTE", "KICKOFF_FORM", "START_LINK", "WEBHOOK", "SCHEDULE", "INTEGRATION"],
+      "kickoffFormEnabled": true,
+      "startLinkEnabled": true,
+
+      "flowVariables": [
+        { "key": "case_id", "type": "TEXT", "required": true },
+        { "key": "intake_pdf", "type": "FILE", "required": false }
+      ],
+
+      "notes": [
+        "Kickoff form fields are globally referenceable later; no need to map to variables.",
+        "Webhook custom data should be passed via flowVariables."
+      ]
+    },
+
+    "assigneePlaceholders": [
+      {
+        "placeholderId": "role_client",
+        "name": "Client",
+        "resolution": { "type": "CONTACT_TBD" },
+        "roleOptions": { "allowViewAllActions": false, "coordinatorToggle": false }
+      },
+      {
+        "placeholderId": "role_account_owner",
+        "name": "Account Owner",
+        "resolution": { "type": "WORKSPACE_INITIALIZER" },
+        "roleOptions": { "allowViewAllActions": true, "coordinatorToggle": true }
+      },
+      {
+        "placeholderId": "role_ops_reviewer",
+        "name": "Ops Reviewer",
+        "resolution": {
+          "type": "RULES",
+          "config": {
+            "source": "FLOW_VARIABLE",
+            "variableKey": "case_id",
+            "rules": [
+              { "if": { "contains": "VIP" }, "then": { "type": "FIXED_CONTACT", "email": "vip-ops@moxo.example" } },
+              { "if": { "contains": "STD" }, "then": { "type": "ROUND_ROBIN", "emails": ["ops1@moxo.example", "ops2@moxo.example"] } }
+            ],
+            "default": { "type": "CONTACT_TBD" }
+          }
+        },
+        "roleOptions": { "allowViewAllActions": true, "coordinatorToggle": false }
+      }
+    ],
+
+    "milestones": [
+      { "milestoneId": "ms1", "name": "Intake", "sequence": 1 },
+      { "milestoneId": "ms2", "name": "Docs & Review", "sequence": 2 },
+      { "milestoneId": "ms3", "name": "Finalize", "sequence": 3 }
+    ],
+
+    "constraints": {
+      "maxParallelBranches": 3,
+      "maxDecisionOutcomes": 3,
+      "maxBranchNestingDepth": 2,
+      "milestonesInsideBranchesAllowed": false,
+      "branchMustFitSingleMilestone": true,
+      "gotoTargetsMainPathOnly": true,
+      "subflowSupported": false,
+      "variablesSetOnlyAtInitiation": true,
+      "variableTypesAllowed": ["TEXT", "FILE"]
+    },
+
+    "steps": [
+      {
+        "stepId": "s1_form_intake",
+        "type": "FORM",
+        "milestoneId": "ms1",
+        "title": "Client intake form",
+        "description": "Collect basic onboarding information.",
+        "assignees": { "mode": "PLACEHOLDER", "placeholderId": "role_client" },
+        "due": { "type": "RELATIVE", "value": 2, "unit": "DAYS" },
+        "options": { "visibleToAllAssignees": false, "skipSequentialOrder": false },
+        "form": {
+          "fields": [
+            { "key": "client_name", "type": "TEXT_SINGLE_LINE", "label": "Client Name", "required": true },
+            { "key": "primary_email", "type": "EMAIL", "label": "Primary Email", "required": true },
+            { "key": "onboarding_type", "type": "SINGLE_SELECT", "label": "Onboarding Type", "choices": ["Standard", "VIP"], "required": true }
+          ]
+        },
+        "outputs": [
+          { "key": "kickoff.client_name", "type": "TEXT" },
+          { "key": "form.primary_email", "type": "TEXT" },
+          { "key": "form.onboarding_type", "type": "TEXT" }
+        ]
+      },
+
+      {
+        "stepId": "s2_questionnaire",
+        "type": "QUESTIONNAIRE",
+        "milestoneId": "ms1",
+        "title": "Preferred contact method?",
+        "description": "Quick question before we proceed.",
+        "assignees": { "mode": "PLACEHOLDER", "placeholderId": "role_client" },
+        "options": { "visibleToAllAssignees": true },
+        "questionnaire": {
+          "question": "How should we contact you?",
+          "answerType": "SINGLE_SELECT",
+          "choices": ["Email", "Phone", "Chat"]
+        },
+        "outputs": [{ "key": "q.preferred_contact", "type": "TEXT" }]
+      },
+
+      {
+        "stepId": "s3_ai_extract",
+        "type": "AI_AUTOMATION",
+        "milestoneId": "ms1",
+        "title": "Summarize intake + detect missing info",
+        "description": "Coordinator-only automation.",
+        "visibility": { "coordinatorOnly": true },
+        "inputs": [
+          { "ref": "s1_form_intake.outputs.form.primary_email" },
+          { "ref": "s1_form_intake.outputs.form.onboarding_type" },
+          { "ref": "s2_questionnaire.outputs.q.preferred_contact" }
+        ],
+        "prompt": "Summarize the intake and list missing details needed to proceed.",
+        "knowledge": { "sources": ["Onboarding SOP (tenant KB)"], "mode": "OPTIONAL" },
+        "outputs": [
+          { "key": "ai.intake_summary", "type": "TEXT" },
+          { "key": "ai.missing_items", "type": "TEXT" }
+        ]
+      },
+
+      {
+        "stepId": "s4_business_rules",
+        "type": "BUSINESS_RULE",
+        "milestoneId": "ms1",
+        "title": "Route onboarding based on type",
+        "description": "Coordinator-only mapping inputs → outputs.",
+        "visibility": { "coordinatorOnly": true },
+        "inputs": [
+          { "key": "onboarding_type", "ref": "s1_form_intake.outputs.form.onboarding_type" }
+        ],
+        "rules": [
+          {
+            "when": { "onboarding_type": "VIP" },
+            "set": { "track": "VIP_TRACK", "sla_days": "7" }
+          },
+          {
+            "when": { "onboarding_type": "Standard" },
+            "set": { "track": "STANDARD_TRACK", "sla_days": "14" }
+          }
+        ],
+        "outputs": [
+          { "key": "rule.track", "type": "TEXT" },
+          { "key": "rule.sla_days", "type": "TEXT" }
+        ]
+      },
+
+      {
+        "stepId": "s5_file_request",
+        "type": "FILE_REQUEST",
+        "milestoneId": "ms2",
+        "title": "Upload required documents",
+        "description": "Please upload proof of identification and proof of address (multiple files allowed).",
+        "assignees": { "mode": "PLACEHOLDER", "placeholderId": "role_client" },
+        "reviewer": { "mode": "PLACEHOLDER", "placeholderId": "role_ops_reviewer" },
+        "due": { "type": "RELATIVE", "value": 3, "unit": "DAYS" },
+        "options": { "visibleToAllAssignees": false },
+        "outputs": [{ "key": "docs.uploaded_files", "type": "FILE_LIST" }]
+      },
+
+      {
+        "stepId": "s6_parallel_branch",
+        "type": "PARALLEL_BRANCH",
+        "milestoneId": "ms2",
+        "title": "Parallel verification",
+        "paths": [
+          {
+            "pathId": "p1",
+            "label": "Internal verification",
+            "steps": [
+              {
+                "stepId": "s6_1_todo_verify",
+                "type": "TO_DO",
+                "milestoneId": "ms2",
+                "title": "Verify documents",
+                "description": "Verify ID & address docs.",
+                "assignees": { "mode": "PLACEHOLDER", "placeholderId": "role_ops_reviewer" },
+                "completion": { "mode": "ONE" },
+                "options": { "visibleToAllAssignees": true }
+              },
+              {
+                "stepId": "s6_2_system_webhook",
+                "type": "SYSTEM_WEBHOOK",
+                "milestoneId": "ms2",
+                "title": "Push verification result to CRM",
+                "visibility": { "coordinatorOnly": true },
+                "webhook": {
+                  "url": "https://example-crm/webhooks/onboarding",
+                  "method": "POST"
+                },
+                "payload": {
+                  "case_id": "{var.case_id}",
+                  "client_name": "{kickoff.client_name}",
+                  "track": "{rule.track}"
+                }
+              }
+            ]
+          },
+          {
+            "pathId": "p2",
+            "label": "Client acknowledgement",
+            "steps": [
+              {
+                "stepId": "s6_3_ack",
+                "type": "ACKNOWLEDGEMENT",
+                "milestoneId": "ms2",
+                "title": "Acknowledge onboarding terms",
+                "description": "Please review and acknowledge terms.",
+                "assignees": { "mode": "PLACEHOLDER", "placeholderId": "role_client" },
+                "attachments": [{ "ref": "var.intake_pdf" }],
+                "options": { "requireAttachmentReview": true, "visibleToAllAssignees": false }
+              }
+            ]
+          }
+        ]
+      },
+
+      {
+        "stepId": "s7_decision",
+        "type": "DECISION",
+        "milestoneId": "ms2",
+        "title": "Are documents complete?",
+        "description": "Coordinator checks completeness.",
+        "assignee": { "mode": "PLACEHOLDER", "placeholderId": "role_account_owner" },
+        "outcomes": [
+          {
+            "outcomeId": "o_yes",
+            "label": "Yes",
+            "steps": []
+          },
+          {
+            "outcomeId": "o_no",
+            "label": "No",
+            "steps": [
+              {
+                "stepId": "s7_1_chat_message",
+                "type": "SYSTEM_CHAT_MESSAGE",
+                "milestoneId": "ms2",
+                "title": "Ask client for missing docs",
+                "visibility": { "coordinatorOnly": true },
+                "message": "We’re missing a few items: {ai.missing_items}. Please upload them."
+              },
+              {
+                "stepId": "s7_2_goto",
+                "type": "GOTO",
+                "targetGotoDestinationId": "s5_goto_dest_back_to_upload"
+              }
+            ]
+          }
+        ]
+      },
+
+      {
+        "stepId": "s5_goto_dest_back_to_upload",
+        "type": "GOTO_DESTINATION",
+        "milestoneId": "ms2",
+        "label": "Back to Upload required documents"
+      },
+
+      {
+        "stepId": "s8_wait_external",
+        "type": "WAIT",
+        "milestoneId": "ms3",
+        "title": "Wait for external system confirmation",
+        "description": "Wait for CRM confirmation event (no subflow support in v1).",
+        "waitFor": { "type": "EXTERNAL_APP_EVENT", "app": "CRM", "event": "ONBOARDING_CONFIRMED" }
+      },
+
+      {
+        "stepId": "s9_esign",
+        "type": "E_SIGN",
+        "milestoneId": "ms3",
+        "title": "Sign onboarding agreement",
+        "description": "All signers required. Document cannot change once signing starts.",
+        "signers": [
+          { "mode": "PLACEHOLDER", "placeholderId": "role_client" },
+          { "mode": "PLACEHOLDER", "placeholderId": "role_account_owner" }
+        ],
+        "signingOrder": "SEQUENTIAL",
+        "outputs": [{ "key": "esign.signed_doc", "type": "FILE" }]
+      },
+
+      {
+        "stepId": "s10_approval",
+        "type": "APPROVAL",
+        "milestoneId": "ms3",
+        "title": "Final internal approval",
+        "description": "Approve go-live.",
+        "assignees": [
+          { "mode": "PLACEHOLDER", "placeholderId": "role_account_owner" },
+          { "mode": "PLACEHOLDER", "placeholderId": "role_ops_reviewer" }
+        ],
+        "approval": {
+          "completion": { "mode": "MAJORITY" },
+          "assigneeOrder": "PARALLEL"
+        }
+      },
+
+      {
+        "stepId": "s11_single_choice_branch",
+        "type": "SINGLE_CHOICE_BRANCH",
+        "milestoneId": "ms3",
+        "title": "If VIP, notify exec team",
+        "paths": [
+          {
+            "pathId": "if",
+            "label": "If VIP",
+            "condition": { "type": "EQUALS", "left": "{rule.track}", "right": "VIP_TRACK" },
+            "steps": [
+              {
+                "stepId": "s11_1_email",
+                "type": "SYSTEM_EMAIL",
+                "milestoneId": "ms3",
+                "title": "Email exec update",
+                "visibility": { "coordinatorOnly": true },
+                "email": {
+                  "to": ["exec@moxo.example"],
+                  "subject": "VIP onboarding completed: {kickoff.client_name}",
+                  "body": "VIP onboarding completed for {kickoff.client_name} (Case {var.case_id})."
+                }
+              },
+              {
+                "stepId": "s11_2_terminate_completed",
+                "type": "TERMINATE",
+                "status": "COMPLETED"
+              }
+            ]
+          },
+          {
+            "pathId": "else",
+            "label": "Else",
+            "condition": { "type": "ELSE" },
+            "steps": [
+              {
+                "stepId": "s11_3_terminate_cancelled",
+                "type": "TERMINATE",
+                "status": "CANCELLED"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

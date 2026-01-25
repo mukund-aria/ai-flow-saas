@@ -1,0 +1,113 @@
+# FORM Step Type Definition
+stepType: FORM
+category: HUMAN_ACTION
+displayName: "Form"
+description: "Collect structured data through a customizable form"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Form title displayed to assignees"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional instructions for form completion"
+
+    - name: assignees
+      type: assignee[]
+      required: true
+      constraints:
+        min: 1
+      description: "Who should fill out this form"
+
+    - name: due
+      type: relativeDue
+      required: false
+      description: "When the form should be completed"
+
+    - name: form.fields
+      type: formField[]
+      required: true
+      description: "Form fields to collect data"
+
+    - name: options.visibleToAllAssignees
+      type: boolean
+      required: false
+      default: false
+
+    - name: options.skipSequentialOrder
+      type: boolean
+      required: false
+      default: false
+
+completion:
+  multipleAssignees: true
+  completionMode: ANY_ONE  # Any single submission completes
+  sequentialSupported: false
+  description: "Multiple assignees can fill concurrently, but any one submission completes the form for all"
+
+outputs:
+  - name: "form.*"
+    type: dynamic
+    description: "Form field values keyed by field name (e.g., form.client_name)"
+
+formFieldTypes:
+  basic:
+    - TEXT_SINGLE_LINE
+    - TEXT_MULTI_LINE
+    - SINGLE_SELECT
+    - MULTI_SELECT
+    - DROPDOWN
+    - DYNAMIC_DROPDOWN
+    - HEADING
+    - IMAGE
+    - FILE_UPLOAD
+    - PARAGRAPH
+  predefined:
+    - NAME
+    - ADDRESS
+    - EMAIL
+    - PHONE
+    - DATE
+    - NUMBER
+    - CURRENCY
+    - SIGNATURE
+
+validationRules:
+  - rule: "assignees.length >= 1"
+    message: "Form requires at least one assignee"
+  - rule: "form.fields.length >= 1"
+    message: "Form requires at least one field"
+
+aiGuidance:
+  whenToUse: |
+    Use FORM when collecting structured data with multiple fields.
+    Examples: intake forms, applications, registration, data collection.
+
+  whenNotToUse: |
+    - Single question → use QUESTIONNAIRE
+    - Just file uploads → use FILE_REQUEST
+    - Just acknowledgment → use ACKNOWLEDGEMENT
+
+  seQuestions:
+    - "Do you have an existing form or should we build one from scratch?"
+    - "What information needs to be collected?"
+    - "Does anyone need to review submissions before proceeding?"
+
+  defaults:
+    - "Use placeholder fields unless user specifies exact fields"
+    - "No review gate unless explicitly requested"
+    - "Visible only to assignee unless specified otherwise"
+
+  examples:
+    - trigger: "collect client information"
+      mapsTo: FORM
+    - trigger: "intake form"
+      mapsTo: FORM
+    - trigger: "application form"
+      mapsTo: FORM
+    - trigger: "gather details"
+      mapsTo: FORM

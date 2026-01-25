@@ -1,0 +1,68 @@
+# GOTO Step Configuration
+# Jumps execution to a GOTO_DESTINATION on the main path
+
+stepType: GOTO
+category: CONTROL
+displayName: Go To
+description: Redirects workflow execution to a previously defined GOTO_DESTINATION marker
+
+schema:
+  fields:
+    - name: stepId
+      type: string
+      required: true
+      description: Unique identifier for this step
+
+    - name: type
+      type: string
+      required: true
+      description: Step type identifier
+      constraints:
+        allowedValues: [GOTO]
+
+    - name: milestoneId
+      type: string
+      required: true
+      description: Reference to the milestone this step belongs to
+
+    - name: targetGotoDestinationId
+      type: string
+      required: true
+      description: The stepId of the GOTO_DESTINATION to jump to
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+
+specialRules:
+  - Can only appear inside DECISION or SINGLE_CHOICE_BRANCH paths
+  - Target must be a GOTO_DESTINATION step on the main path
+  - Creates a loop in workflow execution
+
+validationRules:
+  - rule: targetExists
+    message: GOTO target must reference an existing GOTO_DESTINATION step
+  - rule: targetOnMainPath
+    message: GOTO target must be on the main path
+  - rule: insideAllowedContainer
+    message: GOTO can only be placed inside DECISION or SINGLE_CHOICE_BRANCH paths
+
+aiGuidance:
+  whenToUse: |
+    Use GOTO to create loops or redirect workflow execution back to an earlier point.
+    Common use cases:
+    - Send workflow back for re-review after rejection
+    - Create retry loops for failed steps
+    - Allow users to re-enter data after validation failure
+
+  whenNotToUse: |
+    - Don't create infinite loops without exit conditions
+    - Don't use for simple linear workflows
+    - Don't jump forward (use normal sequential flow instead)
+
+  examples:
+    - trigger: Send back for changes
+      mapsTo: GOTO pointing to document upload step
+
+  defaults:
+    - Target should be placed before the GOTO in workflow order

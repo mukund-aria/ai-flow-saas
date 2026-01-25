@@ -1,0 +1,121 @@
+# BUSINESS_RULE Step Type Definition
+stepType: BUSINESS_RULE
+category: AUTOMATION
+displayName: "Business Rule"
+description: "Execute conditional logic to set values or make decisions"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Description of the business rule"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: conditions
+      type: condition[]
+      required: true
+      description: "Conditions to evaluate"
+
+    - name: actions
+      type: action[]
+      required: true
+      description: "Actions to take based on conditions"
+
+    - name: inputs
+      type: inputRef[]
+      required: false
+      description: "Data to evaluate"
+
+    - name: defaultAction
+      type: action
+      required: false
+      description: "Action if no conditions match"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+# Condition structure
+conditionSchema:
+  fields:
+    - name: expression
+      type: expression
+      required: true
+      description: "Condition expression to evaluate"
+    - name: action
+      type: action
+      required: true
+      description: "Action to take if condition is true"
+
+# Action structure
+actionSchema:
+  fields:
+    - name: type
+      type: enum
+      required: true
+      values: [SET_VARIABLE, SKIP_STEP, GOTO_STEP, LOG]
+    - name: target
+      type: string
+      required: false
+      description: "Target of the action (variable name, step ID, etc.)"
+    - name: value
+      type: any
+      required: false
+      description: "Value to set"
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "Completes when rules are evaluated"
+
+outputs:
+  - name: "matchedCondition"
+    type: string
+    description: "Which condition matched"
+  - name: "actionTaken"
+    type: string
+    description: "What action was taken"
+  - name: "variables"
+    type: json
+    description: "Variables set by the rule"
+
+validationRules:
+  - rule: "conditions.length >= 1"
+    message: "Business rule requires at least one condition"
+  - rule: "actions.length >= 1"
+    message: "Business rule requires at least one action"
+
+aiGuidance:
+  whenToUse: |
+    Use BUSINESS_RULE for automated decision-making and calculations.
+    Examples: pricing calculations, eligibility checks, routing decisions.
+
+  whenNotToUse: |
+    - Human decision needed → use DECISION
+    - Simple branch → use SINGLE_CHOICE_BRANCH with field-based routing
+
+  seQuestions:
+    - "What conditions need to be evaluated?"
+    - "What should happen for each condition?"
+    - "What if no conditions match?"
+
+  defaults:
+    - "No default action (fail if no match)"
+    - "Coordinator-only visibility"
+
+  examples:
+    - trigger: "if-then logic"
+      mapsTo: BUSINESS_RULE
+    - trigger: "calculate based on"
+      mapsTo: BUSINESS_RULE
+    - trigger: "automatic decision"
+      mapsTo: BUSINESS_RULE
+    - trigger: "routing rule"
+      mapsTo: BUSINESS_RULE

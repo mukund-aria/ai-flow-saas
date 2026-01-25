@@ -1,0 +1,91 @@
+# SYSTEM_CHAT_MESSAGE Step Type Definition
+stepType: SYSTEM_CHAT_MESSAGE
+category: AUTOMATION
+displayName: "Chat Message"
+description: "Automatically send a message in the Moxo workspace"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Description of the message"
+
+    - name: recipients
+      type: assignee[]
+      required: true
+      description: "Who should see the message"
+
+    - name: message
+      type: richText
+      required: true
+      description: "Message content"
+
+    - name: channel
+      type: enum
+      required: false
+      default: FLOW_CHAT
+      values: [FLOW_CHAT, DIRECT_MESSAGE, GROUP]
+      description: "Where to send the message"
+
+    - name: inputs
+      type: inputRef[]
+      required: false
+      description: "Data to include in message"
+
+    - name: attachments
+      type: fileRef[]
+      required: false
+      description: "Files to attach"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "Completes when message is sent"
+
+outputs:
+  - name: "sent"
+    type: boolean
+    description: "Whether message was sent"
+  - name: "sentAt"
+    type: timestamp
+    description: "When message was sent"
+
+validationRules:
+  - rule: "recipients.length >= 1"
+    message: "Chat message requires at least one recipient"
+  - rule: "message is not empty"
+    message: "Chat message requires content"
+
+aiGuidance:
+  whenToUse: |
+    Use SYSTEM_CHAT_MESSAGE for in-app notifications within Moxo.
+    Examples: status updates, reminders, announcements within the flow.
+
+  whenNotToUse: |
+    - External notification → use SYSTEM_EMAIL
+    - Need human to compose message → create a TODO step
+
+  seQuestions:
+    - "Who should receive this message?"
+    - "What should the message say?"
+    - "Should it go to the flow chat or as a direct message?"
+
+  defaults:
+    - "Send to flow chat"
+    - "No attachments"
+    - "Coordinator-only visibility"
+
+  examples:
+    - trigger: "send chat message"
+      mapsTo: SYSTEM_CHAT_MESSAGE
+    - trigger: "notify in chat"
+      mapsTo: SYSTEM_CHAT_MESSAGE
+    - trigger: "post update"
+      mapsTo: SYSTEM_CHAT_MESSAGE

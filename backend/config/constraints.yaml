@@ -1,0 +1,70 @@
+# Platform Constraints Configuration
+# Edit this file to update limits - no code changes required
+#
+# Version history tracked in git
+
+version: "1.0"
+lastUpdated: "2025-01-23"
+
+branching:
+  # Maximum number of parallel paths in a PARALLEL_BRANCH
+  maxParallelPaths: 3
+
+  # Maximum number of outcomes in a DECISION step
+  maxDecisionOutcomes: 3
+
+  # Maximum nesting depth for branches (branch inside branch)
+  maxNestingDepth: 2
+
+  # Whether milestones can be placed inside branch paths
+  milestonesInsideBranches: false
+
+  # Whether a branch can span multiple milestones
+  branchMustFitSingleMilestone: true
+
+goto:
+  # Step types where GOTO can be placed
+  allowedInside:
+    - DECISION
+    - SINGLE_CHOICE_BRANCH
+
+  # GOTO targets must be on the main path
+  targetMustBeOnMainPath: true
+
+terminate:
+  # Step types where TERMINATE can be placed
+  allowedInside:
+    - DECISION
+    - SINGLE_CHOICE_BRANCH
+
+  # Valid termination statuses
+  validStatuses:
+    - COMPLETED
+    - CANCELLED
+
+variables:
+  # Allowed variable types
+  allowedTypes:
+    - TEXT
+    - FILE
+
+  # Variables can only be set at flow initiation
+  setOnlyAtInitiation: true
+
+  # Variables are immutable after being set
+  immutable: true
+
+features:
+  # Subflow support (nested flows calling other flows)
+  subflowSupported: false
+
+# Multi-assignee completion modes
+completionModes:
+  - ONE
+  - MAJORITY
+  - ALL
+
+# Assignee ordering options
+assigneeOrderOptions:
+  - SEQUENTIAL
+  - PARALLEL

@@ -1,0 +1,88 @@
+# Default Values Configuration
+# These are applied unless explicitly overridden by the user
+#
+# Categories:
+# - foundational: Applied automatically, don't mention unless user asks
+# - inferred: AI infers from context, can be corrected
+
+version: "1.0"
+
+assignees:
+  # Default resolution type when assignee not specified
+  defaultResolution: CONTACT_TBD
+
+  # Default role options
+  roleOptions:
+    allowViewAllActions: false
+    coordinatorToggle: false
+
+steps:
+  # Default execution order
+  executionOrder: SEQUENTIAL
+
+  # Default visibility
+  visibleToAllAssignees: false
+
+  # Skip sequential order (run parallel with previous)
+  skipSequentialOrder: false
+
+  # Default completion mode for multi-assignee steps
+  completionMode: ONE
+
+  # Default assignee order for multi-assignee steps
+  assigneeOrder: PARALLEL
+
+kickoff:
+  # Default start mode
+  defaultStartMode: MANUAL_EXECUTE
+
+  # Available start modes
+  supportedStartModes:
+    - MANUAL_EXECUTE
+    - KICKOFF_FORM
+    - START_LINK
+    - WEBHOOK
+    - SCHEDULE
+    - INTEGRATION
+
+milestones:
+  # Use single milestone unless user specifies phases
+  defaultToSingleMilestone: true
+  defaultMilestoneName: "Main Process"
+
+flow:
+  # Chat assistance default
+  chatAssistanceEnabled: true
+
+  # Auto-archive after completion
+  autoArchiveEnabled: true
+
+  # Default cover image
+  coverImage: DEFAULT
+
+decision:
+  # Default for "No" path when not specified
+  defaultNoPathBehavior: CONTINUE_AFTER_BRANCH
+
+approval:
+  # Approvals cannot be declined
+  canBeDeclined: false
+
+form:
+  # Default to placeholder fields unless specified
+  usePlaceholderFields: true
+
+  # No review gate unless requested
+  reviewRequired: false
+
+fileRequest:
+  # No reviewer unless requested
+  reviewerRequired: false
+
+acknowledgement:
+  # Don't require attachment review unless requested
+  requireAttachmentReview: false
+
+esign:
+  # Default signing order
+  signingOrder: SEQUENTIAL

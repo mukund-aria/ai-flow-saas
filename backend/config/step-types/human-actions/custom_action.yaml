@@ -1,0 +1,83 @@
+# CUSTOM_ACTION Step Type Definition
+stepType: CUSTOM_ACTION
+category: HUMAN_ACTION
+displayName: "Custom Action"
+description: "A flexible action step with customizable completion criteria"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What action needs to be taken"
+
+    - name: description
+      type: string
+      required: false
+      description: "Detailed instructions"
+
+    - name: assignees
+      type: assignee[]
+      required: true
+      constraints:
+        min: 1
+      description: "Who should complete this action"
+
+    - name: due
+      type: relativeDue
+      required: false
+      description: "When the action should be completed"
+
+    - name: buttons
+      type: button[]
+      required: true
+      description: "Custom completion buttons"
+
+    - name: requireComment
+      type: boolean
+      required: false
+      default: false
+      description: "Require a comment when completing"
+
+completion:
+  multipleAssignees: true
+  completionMode: ANY_ONE
+  description: "Any assignee can complete by clicking a button"
+
+outputs:
+  - name: "selectedAction"
+    type: string
+    description: "Which button was clicked"
+  - name: "comment"
+    type: string
+    description: "Optional comment provided"
+
+validationRules:
+  - rule: "assignees.length >= 1"
+    message: "Custom action requires at least one assignee"
+  - rule: "buttons.length >= 1"
+    message: "Custom action requires at least one button"
+
+aiGuidance:
+  whenToUse: |
+    Use CUSTOM_ACTION when standard step types don't fit.
+    Examples: custom workflows, specialized processes, unique actions.
+
+  whenNotToUse: |
+    - Standard approval → use APPROVAL
+    - Standard form → use FORM
+    - Standard decision → use DECISION
+
+  seQuestions:
+    - "What are the possible outcomes of this action?"
+    - "Should we require a comment?"
+
+  defaults:
+    - "Two buttons: Complete/Unable to Complete"
+    - "No comment required"
+
+  examples:
+    - trigger: "custom step"
+      mapsTo: CUSTOM_ACTION
+    - trigger: "special action"
+      mapsTo: CUSTOM_ACTION

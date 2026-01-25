@@ -1,0 +1,101 @@
+# SYSTEM_WEBHOOK Step Type Definition
+stepType: SYSTEM_WEBHOOK
+category: AUTOMATION
+displayName: "Webhook"
+description: "Send data to external systems via HTTP webhook"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Description of the webhook action"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: url
+      type: string
+      required: true
+      description: "Webhook endpoint URL"
+
+    - name: method
+      type: enum
+      required: false
+      default: POST
+      values: [GET, POST, PUT, PATCH, DELETE]
+      description: "HTTP method"
+
+    - name: headers
+      type: keyValue[]
+      required: false
+      description: "Custom HTTP headers"
+
+    - name: payload
+      type: json
+      required: false
+      description: "Request body (for POST/PUT/PATCH)"
+
+    - name: inputs
+      type: inputRef[]
+      required: false
+      description: "References to data to include in payload"
+
+    - name: retryPolicy
+      type: retryConfig
+      required: false
+      description: "How to handle failures"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "Completes when webhook returns success (2xx)"
+
+outputs:
+  - name: "response"
+    type: json
+    description: "Response from the webhook"
+  - name: "statusCode"
+    type: number
+    description: "HTTP status code"
+
+validationRules:
+  - rule: "url is valid"
+    message: "Webhook requires a valid URL"
+
+aiGuidance:
+  whenToUse: |
+    Use SYSTEM_WEBHOOK to integrate with external systems.
+    Examples: CRM updates, ticketing systems, custom APIs.
+
+  whenNotToUse: |
+    - Sending notifications to people → use SYSTEM_EMAIL or SYSTEM_CHAT_MESSAGE
+    - AI processing → use AI_AUTOMATION
+
+  seQuestions:
+    - "What system should we send data to?"
+    - "What data needs to be included?"
+    - "What should happen if the webhook fails?"
+
+  defaults:
+    - "POST method"
+    - "Retry 3 times on failure"
+    - "Coordinator-only visibility"
+
+  examples:
+    - trigger: "send to CRM"
+      mapsTo: SYSTEM_WEBHOOK
+    - trigger: "update external system"
+      mapsTo: SYSTEM_WEBHOOK
+    - trigger: "call API"
+      mapsTo: SYSTEM_WEBHOOK
+    - trigger: "integrate with"
+      mapsTo: SYSTEM_WEBHOOK

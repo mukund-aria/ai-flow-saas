@@ -1,0 +1,77 @@
+# WAIT Step Type Definition
+stepType: WAIT
+category: CONTROL
+displayName: "Wait"
+description: "Pause workflow execution for a specified duration or until a condition"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Description of what we're waiting for"
+
+    - name: waitType
+      type: enum
+      required: true
+      values: [DURATION, DATE, CONDITION]
+      description: "Type of wait"
+
+    - name: duration
+      type: duration
+      required: false
+      description: "How long to wait (for DURATION type)"
+
+    - name: untilDate
+      type: dateRef
+      required: false
+      description: "Specific date to wait until (for DATE type)"
+
+    - name: condition
+      type: expression
+      required: false
+      description: "Condition to wait for (for CONDITION type)"
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  description: "Completes automatically when wait condition is met"
+
+outputs:
+  - name: "waitedDuration"
+    type: duration
+    description: "Actual time waited"
+
+validationRules:
+  - rule: "waitType is set"
+    message: "Wait step requires a wait type"
+  - rule: "duration or untilDate or condition matches waitType"
+    message: "Wait configuration must match wait type"
+
+aiGuidance:
+  whenToUse: |
+    Use WAIT when the workflow needs to pause.
+    Examples: cool-off periods, waiting for external events, scheduling delays.
+
+  whenNotToUse: |
+    - Waiting for human action → use appropriate human step
+    - Waiting for approval → use APPROVAL
+
+  seQuestions:
+    - "How long should we wait?"
+    - "Is there a specific date, or a duration?"
+    - "Should anything trigger early completion?"
+
+  defaults:
+    - "Duration-based wait"
+    - "No early trigger"
+
+  examples:
+    - trigger: "wait for"
+      mapsTo: WAIT
+    - trigger: "pause for"
+      mapsTo: WAIT
+    - trigger: "delay"
+      mapsTo: WAIT
+    - trigger: "cool-off period"
+      mapsTo: WAIT

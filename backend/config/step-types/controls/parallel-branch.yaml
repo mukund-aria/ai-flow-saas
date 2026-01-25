@@ -1,0 +1,91 @@
+# Parallel Branch Step Configuration
+# Executes multiple paths concurrently
+
+stepType: PARALLEL_BRANCH
+category: CONTROL
+displayName: Parallel Branch
+description: Executes multiple paths simultaneously, waiting for all to complete before continuing
+
+schema:
+  fields:
+    - name: stepId
+      type: string
+      required: true
+      description: Unique identifier for this step
+
+    - name: type
+      type: string
+      required: true
+      description: Step type identifier
+      constraints:
+        allowedValues: [PARALLEL_BRANCH]
+
+    - name: milestoneId
+      type: string
+      required: true
+      description: Reference to the milestone this step belongs to
+
+    - name: paths
+      type: array
+      required: true
+      description: Array of parallel paths to execute
+      constraints:
+        minItems: 2
+        maxItems: 3
+      items:
+        type: object
+        fields:
+          - name: pathId
+            type: string
+            required: true
+            description: Unique identifier for this path
+
+          - name: label
+            type: string
+            required: true
+            description: Human-readable label for this path
+
+          - name: steps
+            type: array
+            required: true
+            description: Steps to execute in this path
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+
+specialRules:
+  - Maximum 3 parallel paths
+  - All paths must share the same milestoneId as the branch step
+  - All paths execute simultaneously
+  - Workflow continues only after ALL paths complete
+  - Can be nested up to 2 levels deep
+
+validationRules:
+  - rule: minPaths
+    message: Parallel branch must have at least 2 paths
+  - rule: maxPaths
+    message: Parallel branch cannot have more than 3 paths
+  - rule: pathMilestoneMatch
+    message: All steps in paths must have the same milestoneId as the branch
+
+aiGuidance:
+  whenToUse: |
+    Use PARALLEL_BRANCH when multiple independent activities need to happen simultaneously.
+    Common use cases:
+    - Different teams work on separate parts concurrently
+    - Multiple documents need to be collected from different sources
+    - Parallel approval chains that don't depend on each other
+
+  whenNotToUse: |
+    - When paths depend on each other (use sequential steps instead)
+    - When only one path should execute (use SINGLE_CHOICE_BRANCH)
+    - When a decision determines which path to take (use DECISION)
+
+  examples:
+    - trigger: Collect documents from multiple departments simultaneously
+      mapsTo: PARALLEL_BRANCH with paths for each department
+
+  defaults:
+    - Default to 2 paths
+    - Each path should have a descriptive label

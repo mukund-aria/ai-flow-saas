@@ -1,0 +1,96 @@
+# Multi Choice Branch Step Configuration
+# Evaluates conditions and executes all matching paths
+
+stepType: MULTI_CHOICE_BRANCH
+category: CONTROL
+displayName: Multi Choice Branch
+description: Evaluates multiple conditions and executes all paths where conditions are true
+
+schema:
+  fields:
+    - name: stepId
+      type: string
+      required: true
+      description: Unique identifier for this step
+
+    - name: type
+      type: string
+      required: true
+      description: Step type identifier
+      constraints:
+        allowedValues: [MULTI_CHOICE_BRANCH]
+
+    - name: milestoneId
+      type: string
+      required: true
+      description: Reference to the milestone this step belongs to
+
+    - name: paths
+      type: array
+      required: true
+      description: Array of conditional paths
+      constraints:
+        minItems: 2
+        maxItems: 3
+      items:
+        type: object
+        fields:
+          - name: pathId
+            type: string
+            required: true
+            description: Unique identifier for this path
+
+          - name: label
+            type: string
+            required: true
+            description: Human-readable label for this path
+
+          - name: condition
+            type: object
+            required: true
+            description: Condition that determines if this path executes
+
+          - name: steps
+            type: array
+            required: true
+            description: Steps to execute if condition is true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+
+specialRules:
+  - Maximum 3 paths
+  - All paths must share the same milestoneId as the branch step
+  - All paths with true conditions execute (not mutually exclusive)
+  - At least one path should match in most cases
+  - Can be nested up to 2 levels deep
+
+validationRules:
+  - rule: minPaths
+    message: Multi choice branch must have at least 2 paths
+  - rule: maxPaths
+    message: Multi choice branch cannot have more than 3 paths
+  - rule: pathMilestoneMatch
+    message: All steps in paths must have the same milestoneId as the branch
+
+aiGuidance:
+  whenToUse: |
+    Use MULTI_CHOICE_BRANCH when multiple conditions can be true and all matching paths should execute.
+    Common use cases:
+    - Apply multiple categories of processing based on case attributes
+    - Execute different notification paths based on multiple criteria
+    - Run parallel compliance checks that each apply to different aspects
+
+  whenNotToUse: |
+    - When only one path should execute (use SINGLE_CHOICE_BRANCH or DECISION)
+    - When paths are not condition-based (use PARALLEL_BRANCH)
+    - When conditions are mutually exclusive (use SINGLE_CHOICE_BRANCH)
+
+  examples:
+    - trigger: Apply all relevant compliance procedures based on region and industry
+      mapsTo: MULTI_CHOICE_BRANCH with conditions for each compliance category
+
+  defaults:
+    - Each path should have a meaningful condition
+    - Label should describe when the path applies

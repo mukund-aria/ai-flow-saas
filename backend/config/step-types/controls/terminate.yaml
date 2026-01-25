@@ -1,0 +1,64 @@
+# Terminate Step Configuration
+# Ends a workflow branch with a terminal status
+
+stepType: TERMINATE
+category: CONTROL
+displayName: Terminate
+description: Ends the workflow execution with a specific status (COMPLETED or CANCELLED)
+
+schema:
+  fields:
+    - name: stepId
+      type: string
+      required: true
+      description: Unique identifier for this step
+
+    - name: type
+      type: string
+      required: true
+      description: Step type identifier
+      constraints:
+        allowedValues: [TERMINATE]
+
+    - name: milestoneId
+      type: string
+      required: true
+      description: Reference to the milestone this step belongs to
+
+    - name: status
+      type: string
+      required: true
+      description: Terminal status of the workflow
+      constraints:
+        allowedValues: [COMPLETED, CANCELLED]
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+
+specialRules:
+  - Can only appear inside DECISION or SINGLE_CHOICE_BRANCH paths
+  - Once reached, no further steps in the workflow are executed
+  - The workflow status is set to the specified status
+
+validationRules:
+  - rule: status in ['COMPLETED', 'CANCELLED']
+    message: Terminate status must be either COMPLETED or CANCELLED
+  - rule: insideAllowedContainer
+    message: TERMINATE can only be placed inside DECISION or SINGLE_CHOICE_BRANCH paths
+
+aiGuidance:
+  whenToUse: |
+    Use TERMINATE to explicitly end a workflow branch without continuing to subsequent steps.
+    Common use cases:
+    - Cancel workflow when approval is rejected
+    - End workflow early when certain conditions are met
+    - Mark workflow as complete when an alternative path completes the business process
+
+  whenNotToUse: |
+    - Don't use on the main path (workflow ends naturally after last step)
+    - Don't use if there are subsequent required steps that must execute
+
+  defaults:
+    - Default status is CANCELLED when used in rejection/negative paths
+    - Default status is COMPLETED when used in positive outcome paths

@@ -1,0 +1,82 @@
+# FILE_REQUEST Step Type Definition
+stepType: FILE_REQUEST
+category: HUMAN_ACTION
+displayName: "File Request"
+description: "Request files or documents from assignees"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What files are being requested"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional instructions about file requirements"
+
+    - name: assignees
+      type: assignee[]
+      required: true
+      constraints:
+        min: 1
+      description: "Who should upload the files"
+
+    - name: due
+      type: relativeDue
+      required: false
+      description: "When the files should be uploaded"
+
+    - name: fileRequirements
+      type: fileRequirement[]
+      required: false
+      description: "Specific file type or format requirements"
+
+    - name: options.allowMultiple
+      type: boolean
+      required: false
+      default: true
+      description: "Allow multiple file uploads"
+
+completion:
+  multipleAssignees: true
+  completionMode: ANY_ONE
+  description: "Any one upload completes the request"
+
+outputs:
+  - name: "files"
+    type: file[]
+    description: "Uploaded files"
+
+validationRules:
+  - rule: "assignees.length >= 1"
+    message: "File request requires at least one assignee"
+
+aiGuidance:
+  whenToUse: |
+    Use FILE_REQUEST when you need documents, images, or files uploaded.
+    Examples: ID verification, document submission, photo upload.
+
+  whenNotToUse: |
+    - Need structured data along with files → use FORM with file field
+    - Just a single question → use QUESTIONNAIRE
+
+  seQuestions:
+    - "What type of files do you need?"
+    - "Are there any format requirements (PDF, image, etc.)?"
+    - "Who needs to upload these files?"
+
+  defaults:
+    - "Allow multiple file uploads"
+    - "No specific format restrictions"
+
+  examples:
+    - trigger: "upload document"
+      mapsTo: FILE_REQUEST
+    - trigger: "submit ID"
+      mapsTo: FILE_REQUEST
+    - trigger: "provide photo"
+      mapsTo: FILE_REQUEST
+    - trigger: "attach files"
+      mapsTo: FILE_REQUEST

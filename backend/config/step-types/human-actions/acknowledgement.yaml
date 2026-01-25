@@ -1,0 +1,85 @@
+# ACKNOWLEDGEMENT Step Type Definition
+stepType: ACKNOWLEDGEMENT
+category: HUMAN_ACTION
+displayName: "Acknowledgement"
+description: "Require someone to acknowledge they've read or understood something"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What needs to be acknowledged"
+
+    - name: description
+      type: string
+      required: false
+      description: "Content to be acknowledged"
+
+    - name: assignees
+      type: assignee[]
+      required: true
+      constraints:
+        min: 1
+      description: "Who must acknowledge"
+
+    - name: due
+      type: relativeDue
+      required: false
+      description: "When acknowledgement is due"
+
+    - name: acknowledgementText
+      type: string
+      required: false
+      default: "I acknowledge and understand"
+      description: "Text shown on the acknowledge button"
+
+    - name: content
+      type: richText
+      required: false
+      description: "Rich text content to display (terms, policies, etc.)"
+
+completion:
+  multipleAssignees: true
+  completionMode: ALL
+  description: "All assignees must acknowledge"
+
+outputs:
+  - name: "acknowledgedBy"
+    type: user[]
+    description: "List of users who acknowledged"
+  - name: "acknowledgedAt"
+    type: timestamp[]
+    description: "When each user acknowledged"
+
+validationRules:
+  - rule: "assignees.length >= 1"
+    message: "Acknowledgement requires at least one assignee"
+
+aiGuidance:
+  whenToUse: |
+    Use ACKNOWLEDGEMENT when someone needs to confirm they've read/understood something.
+    Examples: policy acceptance, terms of service, important notices.
+
+  whenNotToUse: |
+    - Need a signature → use ESIGN
+    - Need approval/rejection → use APPROVAL
+    - Need data input → use FORM
+
+  seQuestions:
+    - "What exactly needs to be acknowledged?"
+    - "Should all parties acknowledge, or just one?"
+
+  defaults:
+    - "All assignees must acknowledge"
+    - "Standard acknowledgement text"
+
+  examples:
+    - trigger: "acknowledge"
+      mapsTo: ACKNOWLEDGEMENT
+    - trigger: "confirm receipt"
+      mapsTo: ACKNOWLEDGEMENT
+    - trigger: "accept terms"
+      mapsTo: ACKNOWLEDGEMENT
+    - trigger: "read and understood"
+      mapsTo: ACKNOWLEDGEMENT

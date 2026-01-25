@@ -1,0 +1,75 @@
+# QUESTIONNAIRE Step Type Definition
+stepType: QUESTIONNAIRE
+category: HUMAN_ACTION
+displayName: "Questionnaire"
+description: "Collect single or simple responses through a quick questionnaire"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Questionnaire title displayed to assignees"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional instructions"
+
+    - name: assignees
+      type: assignee[]
+      required: true
+      constraints:
+        min: 1
+      description: "Who should answer the questionnaire"
+
+    - name: due
+      type: relativeDue
+      required: false
+      description: "When the questionnaire should be completed"
+
+    - name: questions
+      type: question[]
+      required: true
+      description: "List of questions to ask"
+
+completion:
+  multipleAssignees: true
+  completionMode: ANY_ONE
+  description: "Any one response completes the questionnaire"
+
+outputs:
+  - name: "questionnaire.*"
+    type: dynamic
+    description: "Questionnaire answers keyed by question identifier"
+
+validationRules:
+  - rule: "assignees.length >= 1"
+    message: "Questionnaire requires at least one assignee"
+  - rule: "questions.length >= 1"
+    message: "Questionnaire requires at least one question"
+
+aiGuidance:
+  whenToUse: |
+    Use QUESTIONNAIRE for quick single-question or simple multi-question surveys.
+    Examples: feedback, quick polls, simple yes/no questions.
+
+  whenNotToUse: |
+    - Complex multi-field data → use FORM
+    - File uploads needed → use FILE_REQUEST
+
+  seQuestions:
+    - "What question do you want to ask?"
+    - "Should multiple people answer, or just one?"
+
+  defaults:
+    - "Single question unless specified"
+    - "Any one response completes"
+
+  examples:
+    - trigger: "quick question"
+      mapsTo: QUESTIONNAIRE
+    - trigger: "simple survey"
+      mapsTo: QUESTIONNAIRE
+    - trigger: "yes or no"
+      mapsTo: QUESTIONNAIRE

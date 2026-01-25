@@ -1,0 +1,93 @@
+# ESIGN Step Type Definition
+stepType: ESIGN
+category: HUMAN_ACTION
+displayName: "E-Signature"
+description: "Collect electronic signatures on documents"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What document is being signed"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context about the document"
+
+    - name: assignees
+      type: assignee[]
+      required: true
+      constraints:
+        min: 1
+      description: "Who needs to sign"
+
+    - name: due
+      type: relativeDue
+      required: false
+      description: "Signing deadline"
+
+    - name: document
+      type: documentRef
+      required: true
+      description: "The document to be signed"
+
+    - name: signatureFields
+      type: signatureField[]
+      required: false
+      description: "Where signatures should be placed"
+
+    - name: options.signingOrder
+      type: enum
+      required: false
+      default: PARALLEL
+      values: [PARALLEL, SEQUENTIAL]
+      description: "Whether signers sign in order or simultaneously"
+
+completion:
+  multipleAssignees: true
+  completionMode: ALL
+  description: "All parties must sign for completion"
+
+outputs:
+  - name: "signedDocument"
+    type: file
+    description: "The signed document"
+  - name: "signatures"
+    type: signature[]
+    description: "Individual signature records"
+
+validationRules:
+  - rule: "assignees.length >= 1"
+    message: "E-signature requires at least one signer"
+  - rule: "document is not empty"
+    message: "E-signature requires a document"
+
+aiGuidance:
+  whenToUse: |
+    Use ESIGN when legally binding electronic signatures are needed.
+    Examples: contracts, agreements, NDAs, consent forms.
+
+  whenNotToUse: |
+    - Just need acknowledgement → use ACKNOWLEDGEMENT
+    - Informal agreement → use APPROVAL
+
+  seQuestions:
+    - "What document needs to be signed?"
+    - "Who are all the parties that need to sign?"
+    - "Should they sign in a specific order?"
+
+  defaults:
+    - "All parties sign in parallel"
+    - "Standard signature placement"
+
+  examples:
+    - trigger: "sign contract"
+      mapsTo: ESIGN
+    - trigger: "e-signature"
+      mapsTo: ESIGN
+    - trigger: "sign agreement"
+      mapsTo: ESIGN
+    - trigger: "execute document"
+      mapsTo: ESIGN

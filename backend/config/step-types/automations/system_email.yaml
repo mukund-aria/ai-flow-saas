@@ -1,0 +1,103 @@
+# SYSTEM_EMAIL Step Type Definition
+stepType: SYSTEM_EMAIL
+category: AUTOMATION
+displayName: "Send Email"
+description: "Automatically send an email notification"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Description of the email"
+
+    - name: to
+      type: recipient[]
+      required: true
+      description: "Email recipients"
+
+    - name: cc
+      type: recipient[]
+      required: false
+      description: "CC recipients"
+
+    - name: subject
+      type: string
+      required: true
+      description: "Email subject line"
+
+    - name: body
+      type: richText
+      required: true
+      description: "Email body content"
+
+    - name: attachments
+      type: fileRef[]
+      required: false
+      description: "Files to attach"
+
+    - name: replyTo
+      type: string
+      required: false
+      description: "Reply-to address"
+
+    - name: inputs
+      type: inputRef[]
+      required: false
+      description: "Data to merge into email"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "Completes when email is sent"
+
+outputs:
+  - name: "sent"
+    type: boolean
+    description: "Whether email was sent"
+  - name: "sentAt"
+    type: timestamp
+    description: "When email was sent"
+
+validationRules:
+  - rule: "to.length >= 1"
+    message: "Email requires at least one recipient"
+  - rule: "subject is not empty"
+    message: "Email requires a subject"
+  - rule: "body is not empty"
+    message: "Email requires a body"
+
+aiGuidance:
+  whenToUse: |
+    Use SYSTEM_EMAIL for automated email notifications.
+    Examples: welcome emails, status updates, reminders, confirmations.
+
+  whenNotToUse: |
+    - Need Moxo chat message → use SYSTEM_CHAT_MESSAGE
+    - Need human to compose email → create a TODO step
+
+  seQuestions:
+    - "Who should receive this email?"
+    - "What should the email say?"
+    - "Should it include any data from previous steps?"
+
+  defaults:
+    - "Plain text email"
+    - "No attachments"
+    - "Coordinator-only visibility"
+
+  examples:
+    - trigger: "send email"
+      mapsTo: SYSTEM_EMAIL
+    - trigger: "email notification"
+      mapsTo: SYSTEM_EMAIL
+    - trigger: "notify by email"
+      mapsTo: SYSTEM_EMAIL
+    - trigger: "welcome email"
+      mapsTo: SYSTEM_EMAIL

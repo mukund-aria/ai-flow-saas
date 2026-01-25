@@ -1,0 +1,101 @@
+# APPROVAL Step Type Definition
+stepType: APPROVAL
+category: HUMAN_ACTION
+displayName: "Approval"
+description: "Request approval from one or more assignees"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What is being approved"
+
+    - name: description
+      type: string
+      required: false
+      description: "Context and instructions for approvers"
+
+    - name: assignees
+      type: assignee[]
+      required: true
+      constraints:
+        min: 1
+      description: "Who needs to approve"
+
+    - name: attachments
+      type: file[]
+      required: false
+      description: "Documents to review for approval"
+
+    - name: due
+      type: relativeDue
+      required: false
+
+    - name: approval.completion.mode
+      type: enum
+      required: false
+      default: ONE
+      values: [ONE, MAJORITY, ALL]
+      description: "How many approvals needed"
+
+    - name: approval.assigneeOrder
+      type: enum
+      required: false
+      default: PARALLEL
+      values: [SEQUENTIAL, PARALLEL]
+      description: "Whether approvers act in order or simultaneously"
+
+    - name: options.visibleToAllAssignees
+      type: boolean
+      required: false
+      default: false
+
+completion:
+  multipleAssignees: true
+  completionModes: [ONE, MAJORITY, ALL]
+  sequentialSupported: true
+  canBeDeclined: false
+  description: "Approval cannot be declined - only approved. Use Decision for yes/no choices."
+
+outputs:
+  - name: "approval.approvedBy"
+    type: "string[]"
+    description: "List of approvers who approved"
+  - name: "approval.approvedAt"
+    type: "datetime[]"
+    description: "Timestamps of approvals"
+
+validationRules:
+  - rule: "assignees.length >= 1"
+    message: "Approval requires at least one approver"
+
+aiGuidance:
+  whenToUse: |
+    Use APPROVAL when you need sign-off but there's no option to decline.
+    The approver can only approve (not reject).
+    Examples: manager approval, compliance sign-off, final review.
+
+  whenNotToUse: |
+    - If there's a yes/no choice → use DECISION
+    - If just acknowledging receipt → use ACKNOWLEDGEMENT
+    - If reviewing and potentially rejecting → use DECISION with outcomes
+
+  seQuestions:
+    - "How many people need to approve? (one / majority / all)"
+    - "Should approvers go in a specific order, or can they approve in parallel?"
+    - "Are there any documents that need to be reviewed for this approval?"
+
+  defaults:
+    - "Single approver (ONE) unless specified"
+    - "Parallel approval unless sequential order requested"
+
+  examples:
+    - trigger: "manager approval"
+      mapsTo: APPROVAL
+    - trigger: "sign off on"
+      mapsTo: APPROVAL
+    - trigger: "needs approval from"
+      mapsTo: APPROVAL
+    - trigger: "get approval"
+      mapsTo: APPROVAL
