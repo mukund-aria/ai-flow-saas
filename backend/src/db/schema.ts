@@ -101,6 +101,7 @@ export const flowRuns = pgTable('flow_runs', {
   flowId: text('flow_id').notNull().references(() => flows.id),
   name: text('name').notNull(),
   status: text('status').$type<FlowRunStatus>().default('IN_PROGRESS').notNull(),
+  isSample: boolean('is_sample').default(false).notNull(),
   currentStepIndex: integer('current_step_index').default(0).notNull(),
   startedById: text('started_by_id').notNull().references(() => users.id),
   organizationId: text('organization_id').notNull().references(() => organizations.id),

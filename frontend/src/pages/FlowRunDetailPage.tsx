@@ -332,7 +332,16 @@ export function FlowRunDetailPage() {
   const completedSteps = run.steps?.filter(s => s.status === 'COMPLETED').length || 0;
 
   return (
-    <div className="p-6">
+    <div className="p-6 relative">
+      {/* Sample/Test Flow watermark */}
+      {run.isSample && (
+        <div className="pointer-events-none fixed inset-0 flex items-center justify-center z-0 overflow-hidden">
+          <span className="text-[120px] font-black text-gray-200/40 -rotate-12 select-none whitespace-nowrap">
+            TEST FLOW
+          </span>
+        </div>
+      )}
+
       {/* Back Button */}
       <div className="mb-6">
         <Button

@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import { db, organizations, users, userOrganizations, flows } from '../db/index.js';
+import { db, organizations, users, userOrganizations, flows, flowRuns, stepExecutions } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -56,7 +56,7 @@ router.post(
     });
 
     // Seed default "Client Onboarding" flow template
-    await db.insert(flows).values({
+    const [defaultFlow] = await db.insert(flows).values({
       name: 'Client Onboarding',
       description: 'A standard client onboarding workflow with intake, document collection, review, agreement, and completion steps.',
       version: '1.0',
@@ -126,7 +126,38 @@ router.post(
       },
       createdById: user.id,
       organizationId: org.id,
-    });
+    }).returning();
+
+    // Seed a sample flow run with first step assigned to the creating user
+    const [sampleRun] = await db.insert(flowRuns).values({
+      flowId: defaultFlow.id,
+      name: 'Client Onboarding - Sample',
+      status: 'IN_PROGRESS',
+      isSample: true,
+      currentStepIndex: 0,
+      startedById: user.id,
+      organizationId: org.id,
+    }).returning();
+
+    // Create step executions — first step assigned to the user and in progress
+    const sampleSteps = [
+      { stepId: 'kickoff', stepIndex: 0, status: 'IN_PROGRESS' as const, assignedToUserId: user.id, startedAt: new Date() },
+      { stepId: 'collect_docs', stepIndex: 1, status: 'PENDING' as const, assignedToUserId: null, startedAt: null },
+      { stepId: 'review', stepIndex: 2, status: 'PENDING' as const, assignedToUserId: null, startedAt: null },
+      { stepId: 'sign_agreement', stepIndex: 3, status: 'PENDING' as const, assignedToUserId: null, startedAt: null },
+      { stepId: 'welcome_complete', stepIndex: 4, status: 'PENDING' as const, assignedToUserId: null, startedAt: null },
+    ];
+
+    await db.insert(stepExecutions).values(
+      sampleSteps.map((step) => ({
+        flowRunId: sampleRun.id,
+        stepId: step.stepId,
+        stepIndex: step.stepIndex,
+        status: step.status,
+        assignedToUserId: step.assignedToUserId,
+        startedAt: step.startedAt,
+      }))
+    );
 
     // Set as active org
     await db.update(users)

@@ -310,6 +310,7 @@ export interface FlowRun {
   flowId: string;
   name: string;
   status: 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'PAUSED';
+  isSample?: boolean;
   currentStepIndex: number;
   totalSteps: number;
   startedAt: string;
