@@ -2,18 +2,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface OnboardingStore {
-  buildFlow: boolean;
-  publishFlow: boolean;
-  runFlow: boolean;
-  viewRun: boolean;
-  inviteContact: boolean;
+  buildTemplate: boolean;
+  publishTemplate: boolean;
+  startFlow: boolean;
+  coordinateFlows: boolean;
   isChecklistDismissed: boolean;
 
-  completeBuildFlow: () => void;
-  completePublishFlow: () => void;
-  completeRunFlow: () => void;
-  completeViewRun: () => void;
-  completeInviteContact: () => void;
+  completeBuildTemplate: () => void;
+  completePublishTemplate: () => void;
+  completeStartFlow: () => void;
+  completeCoordinateFlows: () => void;
   dismissChecklist: () => void;
   resetOnboarding: () => void;
 }
@@ -21,26 +19,23 @@ interface OnboardingStore {
 export const useOnboardingStore = create<OnboardingStore>()(
   persist(
     (set) => ({
-      buildFlow: false,
-      publishFlow: false,
-      runFlow: false,
-      viewRun: false,
-      inviteContact: false,
+      buildTemplate: false,
+      publishTemplate: false,
+      startFlow: false,
+      coordinateFlows: false,
       isChecklistDismissed: false,
 
-      completeBuildFlow: () => set({ buildFlow: true }),
-      completePublishFlow: () => set({ publishFlow: true }),
-      completeRunFlow: () => set({ runFlow: true }),
-      completeViewRun: () => set({ viewRun: true }),
-      completeInviteContact: () => set({ inviteContact: true }),
+      completeBuildTemplate: () => set({ buildTemplate: true }),
+      completePublishTemplate: () => set({ publishTemplate: true }),
+      completeStartFlow: () => set({ startFlow: true }),
+      completeCoordinateFlows: () => set({ coordinateFlows: true }),
       dismissChecklist: () => set({ isChecklistDismissed: true }),
       resetOnboarding: () =>
         set({
-          buildFlow: false,
-          publishFlow: false,
-          runFlow: false,
-          viewRun: false,
-          inviteContact: false,
+          buildTemplate: false,
+          publishTemplate: false,
+          startFlow: false,
+          coordinateFlows: false,
           isChecklistDismissed: false,
         }),
     }),
