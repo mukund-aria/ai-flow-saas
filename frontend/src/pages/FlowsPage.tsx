@@ -239,7 +239,7 @@ export function FlowsPage() {
       })}`;
       const run = await startFlowRun(flow.id, runName);
       // Track onboarding: flow run started
-      useOnboardingStore.getState().completeRunFlow();
+      useOnboardingStore.getState().completeStartFlow();
       navigate(`/runs/${run.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start flow run');

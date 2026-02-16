@@ -312,13 +312,23 @@ const SCENE_ANIMATIONS = [BuildAnimation, ExecuteAnimation, CoordinateAnimation,
 // Main Page
 // ============================================================================
 
+const INITIAL_DELAY = 1500;
+
 export function OrgSetupPage() {
   const navigate = useNavigate();
   const [sceneIndex, setSceneIndex] = useState(0);
   const [isFinal, setIsFinal] = useState(false);
+  const [showScenes, setShowScenes] = useState(false);
 
-  // Advance scenes
+  // Brief pause showing only the title before scene content appears
   useEffect(() => {
+    const delay = setTimeout(() => setShowScenes(true), INITIAL_DELAY);
+    return () => clearTimeout(delay);
+  }, []);
+
+  // Advance scenes (only after initial delay)
+  useEffect(() => {
+    if (!showScenes) return;
     const timer = setInterval(() => {
       setSceneIndex((prev) => {
         if (prev < SCENES.length - 1) return prev + 1;
@@ -327,7 +337,7 @@ export function OrgSetupPage() {
       });
     }, SCENE_DURATION);
     return () => clearInterval(timer);
-  }, []);
+  }, [showScenes]);
 
   // Show final frame after last scene
   useEffect(() => {
@@ -347,7 +357,7 @@ export function OrgSetupPage() {
 
   const totalSteps = SCENES.length + 1;
   const currentStep = isFinal ? totalSteps : sceneIndex + 1;
-  const progress = (currentStep / totalSteps) * 100;
+  const progress = showScenes ? (currentStep / totalSteps) * 100 : 5;
 
   // Final frame
   if (isFinal) {
@@ -372,6 +382,9 @@ export function OrgSetupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
       <div className="w-full max-w-sm text-center">
+        {/* Persistent top title — always visible */}
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Setting up your organization...</h1>
+
         {/* Progress bar */}
         <div className="w-full max-w-xs mx-auto h-1 bg-gray-200 rounded-full mb-10 overflow-hidden">
           <div
@@ -380,35 +393,37 @@ export function OrgSetupPage() {
           />
         </div>
 
-        {/* Persistent top title */}
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Setting up your organization...</h1>
+        {/* Scene content — appears after initial delay */}
+        {showScenes && (
+          <>
+            {/* Scene title + subtitle */}
+            <div key={`text-${sceneIndex}`} className="animate-fade-in mb-8">
+              <h2 className="text-lg font-semibold text-violet-600">{scene.title}</h2>
+              <p className="mt-1 text-sm text-gray-500">{scene.subtitle}</p>
+            </div>
 
-        {/* Scene title + subtitle */}
-        <div key={`text-${sceneIndex}`} className="animate-fade-in mb-8">
-          <h2 className="text-lg font-semibold text-violet-600">{scene.title}</h2>
-          <p className="mt-1 text-sm text-gray-500">{scene.subtitle}</p>
-        </div>
+            {/* Live animation */}
+            <div key={`anim-${sceneIndex}`} className="animate-fade-in">
+              <AnimationComponent />
+            </div>
 
-        {/* Live animation */}
-        <div key={`anim-${sceneIndex}`} className="animate-fade-in">
-          <AnimationComponent />
-        </div>
-
-        {/* Step dots */}
-        <div className="flex justify-center gap-2 mt-8">
-          {SCENES.map((_, i) => (
-            <div
-              key={i}
-              className={`h-1.5 rounded-full transition-all duration-500 ${
-                i === sceneIndex
-                  ? 'bg-violet-600 w-6'
-                  : i < sceneIndex
-                    ? 'bg-violet-300 w-1.5'
-                    : 'bg-gray-200 w-1.5'
-              }`}
-            />
-          ))}
-        </div>
+            {/* Step dots */}
+            <div className="flex justify-center gap-2 mt-8">
+              {SCENES.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all duration-500 ${
+                    i === sceneIndex
+                      ? 'bg-violet-600 w-6'
+                      : i < sceneIndex
+                        ? 'bg-violet-300 w-1.5'
+                        : 'bg-gray-200 w-1.5'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

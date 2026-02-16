@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import { db, organizations, users, userOrganizations } from '../db/index.js';
+import { db, organizations, users, userOrganizations, flows } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -53,6 +53,79 @@ router.post(
       userId: user.id,
       organizationId: org.id,
       role: 'ADMIN',
+    });
+
+    // Seed default "Client Onboarding" flow template
+    await db.insert(flows).values({
+      name: 'Client Onboarding',
+      description: 'A standard client onboarding workflow with intake, document collection, review, agreement, and completion steps.',
+      version: '1.0',
+      status: 'ACTIVE',
+      isDefault: true,
+      definition: {
+        name: 'Client Onboarding',
+        description: 'A standard client onboarding workflow with intake, document collection, review, agreement, and completion steps.',
+        steps: [
+          {
+            id: 'kickoff',
+            name: 'Client Intake',
+            type: 'FORM',
+            description: 'Collect client name, email, company, and project details.',
+            config: {
+              fields: [
+                { id: 'client_name', label: 'Client Name', type: 'text', required: true },
+                { id: 'client_email', label: 'Client Email', type: 'email', required: true },
+                { id: 'company', label: 'Company Name', type: 'text', required: true },
+                { id: 'project_type', label: 'Project Type', type: 'text', required: false },
+              ],
+            },
+          },
+          {
+            id: 'collect_docs',
+            name: 'Collect Documents',
+            type: 'FILE_REQUEST',
+            description: 'Request required documents from the client (ID, contracts, etc.).',
+            config: {
+              instructions: 'Please upload the following documents: government-issued ID, signed NDA, and any relevant project briefs.',
+              allowedTypes: ['pdf', 'doc', 'docx', 'png', 'jpg'],
+            },
+          },
+          {
+            id: 'review',
+            name: 'Review Application',
+            type: 'APPROVAL',
+            description: 'Internal review of the client application and submitted documents.',
+            config: {
+              approvalType: 'single',
+              instructions: 'Review the client information and uploaded documents. Approve to proceed or reject with feedback.',
+            },
+          },
+          {
+            id: 'sign_agreement',
+            name: 'Sign Agreement',
+            type: 'ACKNOWLEDGEMENT',
+            description: 'Client acknowledges and agrees to the terms of service.',
+            config: {
+              acknowledgementText: 'I have read and agree to the Terms of Service and Privacy Policy.',
+            },
+          },
+          {
+            id: 'welcome_complete',
+            name: 'Welcome Complete',
+            type: 'TODO',
+            description: 'Final checklist to complete the onboarding process.',
+            config: {
+              items: [
+                { id: 'send_welcome', label: 'Send welcome email', completed: false },
+                { id: 'setup_account', label: 'Set up client account', completed: false },
+                { id: 'schedule_kickoff', label: 'Schedule kickoff meeting', completed: false },
+              ],
+            },
+          },
+        ],
+      },
+      createdById: user.id,
+      organizationId: org.id,
     });
 
     // Set as active org

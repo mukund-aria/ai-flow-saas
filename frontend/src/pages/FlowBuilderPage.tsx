@@ -27,7 +27,7 @@ export function FlowBuilderPage() {
   const { sendMessage, startNewChat } = useChat();
   const { workflow, savedFlowId, savedFlowStatus, isSaving, setSavedFlow, setWorkflow, setSaving, initEmptyWorkflow } = useWorkflowStore();
   const { previewWorkflow, previewPrompt, clearPreview } = usePreviewStore();
-  const { completeBuildFlow } = useOnboardingStore();
+  const { completeBuildTemplate } = useOnboardingStore();
   const [isPublishing, setIsPublishing] = useState(false);
   const [showPreviewToast, setShowPreviewToast] = useState(false);
   const previewLoadedRef = useRef(false);
@@ -88,7 +88,7 @@ export function FlowBuilderPage() {
       })
         .then((savedFlow) => {
           setSavedFlow(savedFlow.id, 'DRAFT');
-          completeBuildFlow();
+          completeBuildTemplate();
           setShowPreviewToast(true);
           // Auto-dismiss toast after 5 seconds
           setTimeout(() => setShowPreviewToast(false), 5000);
@@ -100,7 +100,7 @@ export function FlowBuilderPage() {
       // Clear the preview store
       clearPreview();
     }
-  }, [fromPreview, previewWorkflow, setWorkflow, setSaving, setSavedFlow, clearPreview, completeBuildFlow]);
+  }, [fromPreview, previewWorkflow, setWorkflow, setSaving, setSavedFlow, clearPreview, completeBuildTemplate]);
 
   // Send initial prompt if provided (from Home page, not preview)
   useEffect(() => {
@@ -137,13 +137,13 @@ export function FlowBuilderPage() {
           status: 'DRAFT',
         });
         setSavedFlow(saved.id, 'DRAFT');
-        completeBuildFlow();
+        completeBuildTemplate();
       }
     } catch (err) {
       console.error('Auto-save failed:', err);
       setSaving(false);
     }
-  }, [setSaving, setSavedFlow, completeBuildFlow]);
+  }, [setSaving, setSavedFlow, completeBuildTemplate]);
 
   // Watch for workflow changes in manual mode and trigger auto-save
   useEffect(() => {
@@ -173,7 +173,7 @@ export function FlowBuilderPage() {
       const published = await publishFlowApi(savedFlowId);
       setSavedFlow(published.id, 'ACTIVE');
       // Track onboarding: flow published
-      useOnboardingStore.getState().completePublishFlow();
+      useOnboardingStore.getState().completePublishTemplate();
       // Navigate to flows page after publish
       navigate('/flows');
     } catch (err) {

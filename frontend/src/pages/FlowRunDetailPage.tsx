@@ -243,7 +243,7 @@ export function FlowRunDetailPage() {
 
   // Track onboarding: viewed a run
   useEffect(() => {
-    useOnboardingStore.getState().completeViewRun();
+    useOnboardingStore.getState().completeCoordinateFlows();
   }, []);
 
   // Fetch flow run details on mount

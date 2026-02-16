@@ -41,6 +41,7 @@ router.get(
       description: flow.description,
       version: flow.version,
       status: flow.status,
+      isDefault: flow.isDefault,
       stepCount: (flow.definition as any)?.steps?.length || 0,
       createdBy: flow.createdBy,
       createdAt: flow.createdAt,

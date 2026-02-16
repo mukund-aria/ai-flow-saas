@@ -5,7 +5,7 @@
  * This schema defines all tables for the SaaS platform.
  */
 
-import { pgTable, text, integer, timestamp, jsonb, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, timestamp, jsonb, uniqueIndex, boolean } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // ============================================================================
@@ -84,6 +84,7 @@ export const flows = pgTable('flows', {
   description: text('description'),
   version: text('version').default('1.0').notNull(),
   status: text('status').$type<FlowStatus>().default('DRAFT').notNull(),
+  isDefault: boolean('is_default').default(false).notNull(),
   definition: jsonb('definition').$type<Record<string, unknown>>(),
   createdById: text('created_by_id').notNull().references(() => users.id),
   organizationId: text('organization_id').notNull().references(() => organizations.id),

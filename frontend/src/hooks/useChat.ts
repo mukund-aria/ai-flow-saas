@@ -427,7 +427,7 @@ export function useChat() {
             setSavedFlow(savedFlow.id, 'DRAFT');
 
             // Track onboarding: flow built
-            useOnboardingStore.getState().completeBuildFlow();
+            useOnboardingStore.getState().completeBuildTemplate();
 
             // Message 1: Workflow saved confirmation
             addAssistantMessage(

@@ -213,6 +213,7 @@ export interface Flow {
   description?: string;
   version: string;
   status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+  isDefault?: boolean;
   definition?: Record<string, unknown>;
   stepCount?: number;
   createdBy?: {
