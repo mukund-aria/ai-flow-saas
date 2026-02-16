@@ -414,7 +414,7 @@ export function OrgSetupPage() {
         </div>
 
         {/* Fixed: Step dots — always visible, always same position */}
-        <div className="flex justify-center gap-2 mb-8">
+        <div className="flex justify-center gap-2 mb-14">
           {SCENES.map((_, i) => (
             <div
               key={i}
