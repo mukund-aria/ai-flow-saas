@@ -16,5 +16,7 @@ export { LoginPage } from './LoginPage';
 export { LandingPage } from './LandingPage';
 export { FlowPreviewPage } from './FlowPreviewPage';
 export { OnboardingPage } from './OnboardingPage';
+export { OrgSelectPage } from './OrgSelectPage';
+export { OrgSetupPage } from './OrgSetupPage';
 export { TeamPage } from './TeamPage';
 export { AssigneeTaskPage } from './AssigneeTaskPage';

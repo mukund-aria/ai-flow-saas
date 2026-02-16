@@ -1,19 +1,20 @@
 /**
  * Onboarding Page
  *
- * Shown to first-time users who need to create or join an organization.
+ * Full-page form to create a new organization.
+ * After creation, navigates to /org-setup for the animated loading experience.
  */
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
 export function OnboardingPage() {
   const navigate = useNavigate();
-  const { user, checkAuth } = useAuth();
+  const { checkAuth } = useAuth();
   const [orgName, setOrgName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
@@ -35,7 +36,7 @@ export function OnboardingPage() {
 
       if (res.ok) {
         await checkAuth();
-        navigate('/home');
+        navigate('/org-setup');
       } else {
         const data = await res.json();
         setError(data.error?.message || 'Failed to create organization');
@@ -48,28 +49,42 @@ export function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="w-full max-w-md mx-auto px-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+      <div className="w-full max-w-md">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg">
+            <svg
+              className="w-8 h-8 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome to AI Flow</h1>
-          <p className="text-gray-500 mt-2">
-            Hi {user?.name || 'there'}! Let's set up your workspace.
+          <h1 className="text-2xl font-bold text-gray-900">Create new organization</h1>
+          <p className="mt-2 text-gray-500 text-sm leading-relaxed max-w-sm mx-auto">
+            Enter a name for your organization where you can collaborate with your team to manage the same flows and workspaces.
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-1">
-            Name your organization
-          </h2>
-          <p className="text-sm text-gray-500 mb-6">
-            This is where you'll build and manage your workflows.
-          </p>
-
+        {/* Form Card */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
           <form onSubmit={handleCreate}>
+            <label
+              htmlFor="org-name"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Organization name
+            </label>
             <input
+              id="org-name"
               type="text"
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
@@ -93,11 +108,16 @@ export function OnboardingPage() {
                   Creating...
                 </>
               ) : (
-                'Continue'
+                'Create organization'
               )}
             </button>
           </form>
         </div>
+
+        {/* Footer */}
+        <p className="mt-6 text-center text-xs text-gray-400">
+          AI-powered workflow builder
+        </p>
       </div>
     </div>
   );

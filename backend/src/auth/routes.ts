@@ -93,6 +93,9 @@ router.get('/google/callback',
     let redirectUrl = '/home';
     if (req.user?.needsOnboarding && !inviteToken) {
       redirectUrl = '/onboarding';
+    } else if (!req.user?.needsOnboarding && !inviteToken) {
+      // User has orgs — go to org selection screen
+      redirectUrl = returnTo && isRelativePath(returnTo) ? returnTo : '/org-select';
     } else if (returnTo && isRelativePath(returnTo)) {
       redirectUrl = returnTo;
     }

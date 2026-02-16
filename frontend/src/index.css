@@ -74,6 +74,110 @@ body {
 }
 
 /* ============================================================================
+   Animations
+   ============================================================================ */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* Org setup scene animations */
+@keyframes typing-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes grow-width {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes fill-bar {
+  from { width: 0; }
+  to { width: var(--fill-to, 70%); }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes check-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  60% {
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-typing-cursor {
+  animation: typing-cursor 0.8s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out both;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s ease-out both;
+}
+
+.animate-grow-width {
+  animation: grow-width 1s ease-out both;
+}
+
+.animate-fill-bar {
+  animation: fill-bar 1.2s ease-out both;
+}
+
+.animate-check-pop {
+  animation: check-pop 0.4s ease-out both;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* ============================================================================
    Custom Utilities
    ============================================================================ */
 

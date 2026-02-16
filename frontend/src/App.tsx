@@ -40,6 +40,8 @@ import {
   LandingPage,
   FlowPreviewPage,
   OnboardingPage,
+  OrgSelectPage,
+  OrgSetupPage,
   TeamPage,
   AssigneeTaskPage,
 } from '@/pages';
@@ -103,6 +105,22 @@ function AppRoutes() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route
+        path="/org-select"
+        element={
+          <ProtectedRoute>
+            <OrgSelectPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/org-setup"
+        element={
+          <ProtectedRoute>
+            <OrgSetupPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/task/:token" element={<AssigneeTaskPage />} />
 
       {/* Protected Routes - Coordinator Portal */}
