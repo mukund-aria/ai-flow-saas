@@ -20,7 +20,7 @@ import { Zap } from 'lucide-react';
 const SCENES = [
   {
     title: 'Build',
-    subtitle: 'Describe your process and AI creates a flow template — or build with drag & drop.',
+    subtitle: 'Create flow templates with AI or drag & drop.',
   },
   {
     title: 'Execute',
