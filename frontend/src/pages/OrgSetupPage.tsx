@@ -429,9 +429,9 @@ export function OrgSetupPage() {
           ))}
         </div>
 
-        {/* Sliding content area — fixed height to prevent layout shift */}
-        {showScenes && (
-          <div className="min-h-[340px] overflow-hidden">
+        {/* Sliding content area — always reserves space to prevent layout shift */}
+        <div className="min-h-[340px] overflow-hidden">
+          {showScenes && (
             <div key={sceneIndex} className={transitionClass}>
               {/* Scene title + subtitle */}
               <div className="mb-6">
@@ -442,8 +442,8 @@ export function OrgSetupPage() {
               {/* Live animation */}
               <AnimationComponent />
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
