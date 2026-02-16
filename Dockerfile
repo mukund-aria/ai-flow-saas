@@ -31,7 +31,7 @@ RUN npm ci
 
 # Copy source and build
 COPY backend/ ./
-RUN npm run build && npx drizzle-kit generate
+RUN npm run build
 
 # ----------------------------------------------------------------------------
 # Stage 3: Production Image
@@ -47,9 +47,6 @@ RUN npm ci --omit=dev
 # Copy built backend
 COPY --from=backend-build /app/backend/dist ./dist
 
-# Copy drizzle migrations
-COPY --from=backend-build /app/backend/drizzle ./drizzle
-
 # Copy frontend build to public folder (served by Express)
 COPY --from=frontend-build /app/frontend/dist ./public
 
@@ -63,5 +60,5 @@ ENV PORT=8080
 # Expose port for Railway
 EXPOSE 8080
 
-# Start the server (migrations run inline at startup)
+# Start the server
 CMD ["node", "dist/index.js"]
