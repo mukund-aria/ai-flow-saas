@@ -16,6 +16,8 @@ import {
   Loader2,
   ChevronDown,
   CheckCircle2,
+  ArrowRight,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { listFlowRuns } from '@/lib/api';
@@ -67,7 +69,7 @@ function getFlowColor(index: number) {
 
 const SETUP_STEPS = [
   { key: 'buildTemplate' as const, label: 'Build', description: 'Build a flow template', path: '/flows/new' },
-  { key: 'publishTemplate' as const, label: 'Publish', description: 'Publish it', path: '/flows' },
+  { key: 'publishTemplate' as const, label: 'Publish', description: 'Publish your template', path: '/flows' },
   { key: 'startFlow' as const, label: 'Execute', description: 'Start your first flow', path: '/runs' },
   { key: 'coordinateFlows' as const, label: 'Coordinate', description: 'Coordinate your flows', path: '/runs' },
 ];
@@ -123,57 +125,67 @@ export function HomePage() {
 
           return (
             <div className="bg-white border border-gray-200 rounded-xl px-6 py-5">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-5">
                 <p className="text-sm font-medium text-gray-900">
                   Getting Started &middot; {completedCount}/{SETUP_STEPS.length}
                 </p>
+                <a
+                  href="https://www.youtube.com/watch?v=6q1m5HQMJiE"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-violet-600 hover:text-violet-700 font-medium inline-flex items-center gap-1"
+                >
+                  Watch intro video <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
-              <div className="flex items-start">
+              <div className="flex items-center justify-between">
                 {SETUP_STEPS.map((step, idx) => {
                   const done = onboarding[step.key];
                   const isLast = idx === SETUP_STEPS.length - 1;
 
                   return (
-                    <div key={step.key} className="flex items-start flex-1">
+                    <div key={step.key} className="contents">
                       {/* Step */}
                       <button
                         onClick={() => !done && navigate(step.path)}
-                        className="flex flex-col items-center text-center group"
+                        className={`flex flex-col items-center text-center group flex-1 rounded-lg py-3 transition-colors ${
+                          done ? '' : 'hover:bg-violet-50 cursor-pointer'
+                        }`}
                         disabled={done}
                       >
                         {/* Circle */}
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                          className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                             done
                               ? 'bg-green-100'
-                              : 'bg-gray-100 group-hover:bg-violet-100'
+                              : 'bg-gray-100 group-hover:bg-violet-100 group-hover:ring-2 group-hover:ring-violet-200'
                           }`}
                         >
                           {done ? (
                             <CheckCircle2 className="w-5 h-5 text-green-500" />
                           ) : (
-                            <span className="text-xs font-semibold text-gray-400 group-hover:text-violet-600">
+                            <span className="text-xs font-bold text-gray-400 group-hover:text-violet-600">
                               {idx + 1}
                             </span>
                           )}
                         </div>
                         {/* Label */}
                         <span
-                          className={`text-xs font-medium mt-2 ${
-                            done ? 'text-gray-400' : 'text-gray-700 group-hover:text-violet-600'
+                          className={`text-xs font-semibold mt-2 ${
+                            done ? 'text-gray-400' : 'text-gray-800 group-hover:text-violet-700'
                           }`}
                         >
                           {step.label}
                         </span>
-                        <span className="text-[11px] text-gray-400 mt-0.5 max-w-[100px]">
+                        <span className={`text-[11px] mt-0.5 whitespace-nowrap ${done ? 'text-gray-300' : 'text-gray-400'}`}>
                           {step.description}
                         </span>
                       </button>
 
-                      {/* Connector line */}
+                      {/* Arrow connector */}
                       {!isLast && (
-                        <div className="flex-1 mt-4 mx-2">
-                          <div className={`h-0.5 rounded-full ${done ? 'bg-green-300' : 'bg-gray-200'}`} />
+                        <div className="flex-shrink-0 px-1">
+                          <ArrowRight className={`w-4 h-4 ${done ? 'text-green-300' : 'text-gray-300'}`} />
                         </div>
                       )}
                     </div>
@@ -188,12 +200,9 @@ export function HomePage() {
             1. AI Prompt Area
         ============================================================== */}
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-1">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-5">
             What process can we help you run today?
           </h2>
-          <p className="text-gray-500 text-sm mb-5">
-            Describe what you need or pick a template to get started.
-          </p>
 
           <form onSubmit={handleSubmit}>
             <div className="relative bg-white border border-gray-200 rounded-xl p-4">
