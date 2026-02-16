@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import { db, flows, users, organizations } from '../db/index.js';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
 const router = Router();
@@ -18,8 +18,10 @@ const router = Router();
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    // For now, return all flows (will add org filtering with auth later)
+    // Filter by organization if available (production with orgScope middleware)
+    const orgId = req.organizationId;
     const allFlows = await db.query.flows.findMany({
+      ...(orgId ? { where: eq(flows.organizationId, orgId) } : {}),
       orderBy: [desc(flows.updatedAt)],
       with: {
         createdBy: {

@@ -86,11 +86,49 @@ export interface WaitDuration {
   unit: 'minutes' | 'hours' | 'days';
 }
 
+export type FormFieldType =
+  | 'TEXT_SINGLE_LINE'
+  | 'TEXT_MULTI_LINE'
+  | 'SINGLE_SELECT'
+  | 'MULTI_SELECT'
+  | 'DROPDOWN'
+  | 'FILE_UPLOAD'
+  | 'DATE'
+  | 'NUMBER'
+  | 'EMAIL'
+  | 'PHONE'
+  | 'CURRENCY'
+  | 'NAME'
+  | 'ADDRESS'
+  | 'HEADING'
+  | 'PARAGRAPH';
+
+export const FORM_FIELD_TYPES: { value: FormFieldType; label: string; category: string }[] = [
+  { value: 'TEXT_SINGLE_LINE', label: 'Short Text', category: 'basic' },
+  { value: 'TEXT_MULTI_LINE', label: 'Long Text', category: 'basic' },
+  { value: 'SINGLE_SELECT', label: 'Single Select', category: 'basic' },
+  { value: 'MULTI_SELECT', label: 'Multi Select', category: 'basic' },
+  { value: 'DROPDOWN', label: 'Dropdown', category: 'basic' },
+  { value: 'FILE_UPLOAD', label: 'File Upload', category: 'basic' },
+  { value: 'DATE', label: 'Date', category: 'predefined' },
+  { value: 'NUMBER', label: 'Number', category: 'predefined' },
+  { value: 'EMAIL', label: 'Email', category: 'predefined' },
+  { value: 'PHONE', label: 'Phone', category: 'predefined' },
+  { value: 'CURRENCY', label: 'Currency', category: 'predefined' },
+  { value: 'NAME', label: 'Full Name', category: 'predefined' },
+  { value: 'ADDRESS', label: 'Address', category: 'predefined' },
+  { value: 'HEADING', label: 'Heading', category: 'layout' },
+  { value: 'PARAGRAPH', label: 'Paragraph', category: 'layout' },
+];
+
 export interface FormField {
   fieldId: string;
   label: string;
-  type: string;
+  type: FormFieldType;
   required?: boolean;
+  placeholder?: string;
+  helpText?: string;
+  options?: { label: string; value: string }[];
 }
 
 export interface Milestone {

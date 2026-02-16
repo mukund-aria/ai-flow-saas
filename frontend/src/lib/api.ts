@@ -4,6 +4,9 @@
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+/** Default fetch options for authenticated API calls */
+const fetchOpts: RequestInit = { credentials: 'include' };
+
 export interface ChatRequest {
   message: string;
   sessionId?: string;
@@ -26,6 +29,7 @@ export interface PublishRequest {
  */
 export async function createSession(): Promise<{ sessionId: string }> {
   const res = await fetch(`${API_BASE}/sessions`, {
+    ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({}),
@@ -38,7 +42,7 @@ export async function createSession(): Promise<{ sessionId: string }> {
  * Get session details
  */
 export async function getSession(sessionId: string) {
-  const res = await fetch(`${API_BASE}/sessions/${sessionId}`);
+  const res = await fetch(`${API_BASE}/sessions/${sessionId}`, fetchOpts);
   const data = await res.json();
   return data.session;
 }
@@ -47,7 +51,7 @@ export async function getSession(sessionId: string) {
  * List all sessions
  */
 export async function listSessions() {
-  const res = await fetch(`${API_BASE}/sessions`);
+  const res = await fetch(`${API_BASE}/sessions`, fetchOpts);
   const data = await res.json();
   return data.sessions;
 }
@@ -56,7 +60,7 @@ export async function listSessions() {
  * Delete a session
  */
 export async function deleteSession(sessionId: string): Promise<void> {
-  await fetch(`${API_BASE}/sessions/${sessionId}`, { method: 'DELETE' });
+  await fetch(`${API_BASE}/sessions/${sessionId}`, { ...fetchOpts, method: 'DELETE' });
 }
 
 /**
@@ -64,6 +68,7 @@ export async function deleteSession(sessionId: string): Promise<void> {
  */
 export async function sendMessage(request: ChatRequest) {
   const res = await fetch(`${API_BASE}/chat`, {
+    ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...request, stream: false }),
@@ -119,6 +124,7 @@ async function* parseSSEStream(res: Response): AsyncGenerator<StreamEvent> {
  */
 export async function* streamMessage(request: ChatRequest): AsyncGenerator<StreamEvent> {
   const res = await fetch(`${API_BASE}/chat`, {
+    ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...request, stream: true }),
@@ -162,6 +168,7 @@ export async function uploadFile(request: UploadRequest) {
   if (request.prompt) formData.append('prompt', request.prompt);
 
   const res = await fetch(`${API_BASE}/chat/upload`, {
+    ...fetchOpts,
     method: 'POST',
     body: formData,
   });
@@ -173,6 +180,7 @@ export async function uploadFile(request: UploadRequest) {
  */
 export async function publishPlan(sessionId: string, planId: string) {
   const res = await fetch(`${API_BASE}/sessions/${sessionId}/publish`, {
+    ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ planId }),
@@ -184,14 +192,14 @@ export async function publishPlan(sessionId: string, planId: string) {
  * Discard a pending plan
  */
 export async function discardPlan(sessionId: string): Promise<void> {
-  await fetch(`${API_BASE}/sessions/${sessionId}/plan`, { method: 'DELETE' });
+  await fetch(`${API_BASE}/sessions/${sessionId}/plan`, { ...fetchOpts, method: 'DELETE' });
 }
 
 /**
  * Get workflow from session
  */
 export async function getWorkflow(sessionId: string) {
-  const res = await fetch(`${API_BASE}/sessions/${sessionId}/workflow`);
+  const res = await fetch(`${API_BASE}/sessions/${sessionId}/workflow`, fetchOpts);
   return res.json();
 }
 
@@ -227,7 +235,7 @@ export interface CreateFlowRequest {
  * List all flows
  */
 export async function listFlows(): Promise<Flow[]> {
-  const res = await fetch(`${API_BASE}/flows`);
+  const res = await fetch(`${API_BASE}/flows`, fetchOpts);
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to list flows');
   return data.data;
@@ -237,7 +245,7 @@ export async function listFlows(): Promise<Flow[]> {
  * Get a single flow by ID
  */
 export async function getFlow(id: string): Promise<Flow> {
-  const res = await fetch(`${API_BASE}/flows/${id}`);
+  const res = await fetch(`${API_BASE}/flows/${id}`, fetchOpts);
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Flow not found');
   return data.data;
@@ -248,6 +256,7 @@ export async function getFlow(id: string): Promise<Flow> {
  */
 export async function createFlow(request: CreateFlowRequest): Promise<Flow> {
   const res = await fetch(`${API_BASE}/flows`, {
+    ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -262,6 +271,7 @@ export async function createFlow(request: CreateFlowRequest): Promise<Flow> {
  */
 export async function updateFlow(id: string, updates: Partial<CreateFlowRequest>): Promise<Flow> {
   const res = await fetch(`${API_BASE}/flows/${id}`, {
+    ...fetchOpts,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
@@ -275,7 +285,7 @@ export async function updateFlow(id: string, updates: Partial<CreateFlowRequest>
  * Delete (archive) a flow
  */
 export async function deleteFlow(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/flows/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${API_BASE}/flows/${id}`, { ...fetchOpts, method: 'DELETE' });
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to delete flow');
 }
@@ -284,7 +294,7 @@ export async function deleteFlow(id: string): Promise<void> {
  * Publish a draft flow (set status to ACTIVE)
  */
 export async function publishFlow(id: string): Promise<Flow> {
-  const res = await fetch(`${API_BASE}/flows/${id}/publish`, { method: 'POST' });
+  const res = await fetch(`${API_BASE}/flows/${id}/publish`, { ...fetchOpts, method: 'POST' });
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to publish flow');
   return data.data;
@@ -315,7 +325,7 @@ export interface StartFlowRunRequest {
  * List all flow runs
  */
 export async function listFlowRuns(): Promise<FlowRun[]> {
-  const res = await fetch(`${API_BASE}/runs`);
+  const res = await fetch(`${API_BASE}/runs`, fetchOpts);
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to list flow runs');
   return data.data;
@@ -325,7 +335,7 @@ export async function listFlowRuns(): Promise<FlowRun[]> {
  * Get a single flow run by ID
  */
 export async function getFlowRun(id: string): Promise<FlowRun> {
-  const res = await fetch(`${API_BASE}/runs/${id}`);
+  const res = await fetch(`${API_BASE}/runs/${id}`, fetchOpts);
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Flow run not found');
   return data.data;
@@ -336,6 +346,7 @@ export async function getFlowRun(id: string): Promise<FlowRun> {
  */
 export async function startFlowRun(flowId: string, name: string): Promise<FlowRun> {
   const res = await fetch(`${API_BASE}/flows/${flowId}/runs`, {
+    ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),

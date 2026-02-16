@@ -97,6 +97,13 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
                 </p>
               )}
 
+              {/* Form fields count (FORM steps only) */}
+              {step.type === 'FORM' && step.config.formFields && step.config.formFields.length > 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {step.config.formFields.length} form field{step.config.formFields.length !== 1 ? 's' : ''}
+                </p>
+              )}
+
               {/* Assignee */}
               {step.config.assignee && (
                 <div className="flex items-center gap-1.5 mt-2">

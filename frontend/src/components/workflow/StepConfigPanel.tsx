@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { Step, StepConfig, AssigneePlaceholder } from '@/types';
+import { FormFieldsBuilder } from './FormFieldsBuilder';
+import type { Step, StepConfig, AssigneePlaceholder, FormField } from '@/types';
 
 interface StepConfigPanelProps {
   step: Step;
@@ -13,13 +14,21 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
   const [name, setName] = useState(step.config.name || '');
   const [description, setDescription] = useState(step.config.description || '');
   const [assignee, setAssignee] = useState(step.config.assignee || '');
+  const [formFields, setFormFields] = useState<FormField[]>(step.config.formFields || []);
 
   const handleSave = () => {
-    onSave(step.stepId, {
+    const updates: Partial<StepConfig> = {
       name: name.trim(),
       description: description.trim() || undefined,
       assignee: assignee || undefined,
-    });
+    };
+
+    // Include form fields for FORM steps
+    if (step.type === 'FORM') {
+      updates.formFields = formFields;
+    }
+
+    onSave(step.stepId, updates);
   };
 
   return (
@@ -71,6 +80,45 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
           ))}
         </select>
       </div>
+
+      {/* Step-type-specific configuration */}
+      {step.type === 'FORM' && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <FormFieldsBuilder fields={formFields} onChange={setFormFields} />
+        </div>
+      )}
+
+      {step.type === 'APPROVAL' && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <p className="text-xs text-gray-500">
+            The assignee will be asked to approve or reject. Configure the approval details in the step name and description.
+          </p>
+        </div>
+      )}
+
+      {step.type === 'TODO' && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <p className="text-xs text-gray-500">
+            The assignee will mark this task as complete when finished.
+          </p>
+        </div>
+      )}
+
+      {step.type === 'ACKNOWLEDGEMENT' && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <p className="text-xs text-gray-500">
+            The assignee must acknowledge they have read and understood the content.
+          </p>
+        </div>
+      )}
+
+      {step.type === 'FILE_REQUEST' && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <p className="text-xs text-gray-500">
+            The assignee will be asked to upload the requested files.
+          </p>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-2">
