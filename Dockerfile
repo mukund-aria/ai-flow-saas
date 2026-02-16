@@ -64,4 +64,4 @@ ENV PORT=8080
 EXPOSE 8080
 
 # Start the server (migrations run first)
-CMD ["sh", "-c", "node dist/db/migrate.js && node dist/index.js"]
+CMD ["sh", "-c", "node dist/db/migrate.js && echo 'Migration exited, starting server...' && node dist/index.js 2>&1"]
