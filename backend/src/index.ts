@@ -14,6 +14,9 @@ import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import postgres from 'postgres';
 import apiRoutes from './routes/index.js';
 import { errorHandler } from './middleware/index.js';
 import { passport, configurePassport, authRoutes, requireAuth } from './auth/index.js';
@@ -21,6 +24,18 @@ import publicChatRouter, { publicChatLimiter } from './routes/public-chat.js';
 import publicTaskRouter from './routes/public-task.js';
 
 dotenv.config();
+
+// Run migrations inline before starting the server
+try {
+  console.log('Running database migrations...');
+  const migrationClient = postgres(process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aiflow', { max: 1 });
+  await migrate(drizzle(migrationClient), { migrationsFolder: './drizzle' });
+  await migrationClient.end({ timeout: 5 });
+  console.log('Migrations completed successfully.');
+} catch (err: any) {
+  console.error('Migration failed:', err.message || err);
+  process.exit(1);
+}
 
 const isProduction = process.env.NODE_ENV === 'production';
 

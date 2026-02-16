@@ -63,5 +63,5 @@ ENV PORT=8080
 # Expose port for Railway
 EXPOSE 8080
 
-# Start the server (migrations run first)
-CMD ["sh", "-c", "node dist/db/migrate.js && echo 'Migration exited, starting server...' && node dist/index.js 2>&1"]
+# Start the server (migrations run inline at startup)
+CMD ["node", "dist/index.js"]
