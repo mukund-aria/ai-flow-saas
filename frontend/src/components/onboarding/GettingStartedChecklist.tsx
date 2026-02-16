@@ -16,8 +16,8 @@ interface ChecklistItem {
 }
 
 const CHECKLIST_ITEMS: ChecklistItem[] = [
-  { key: 'buildTemplate', label: 'Explore and publish a template', path: '/flows/new' },
-  { key: 'publishTemplate', label: 'Publish a flow template', path: '/flows' },
+  { key: 'buildTemplate', label: 'Build a flow template', path: '/flows/new' },
+  { key: 'publishTemplate', label: 'Publish it', path: '/flows' },
   { key: 'startFlow', label: 'Start your first flow', path: '/runs' },
   { key: 'coordinateFlows', label: 'Coordinate your flows', path: '/runs' },
 ];
