@@ -9,6 +9,7 @@ import { Router } from 'express';
 import { db, flows, flowRuns, stepExecutions, users, organizations, FlowRunStatus } from '../db/index.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
+import { logAction } from '../services/audit.js';
 
 const router = Router();
 
@@ -207,30 +208,30 @@ router.post(
       return;
     }
 
-    // For development, get or create default user
-    let defaultOrg = await db.query.organizations.findFirst();
-    if (!defaultOrg) {
-      const [newOrg] = await db
-        .insert(organizations)
-        .values({
-          name: 'Default Organization',
-          slug: 'default',
-        })
-        .returning();
-      defaultOrg = newOrg;
-    }
+    // Use authenticated user context (set by requireAuth + orgScope middleware in production)
+    let userId = req.user?.id;
+    let orgId = req.organizationId;
 
-    let defaultUser = await db.query.users.findFirst();
-    if (!defaultUser) {
-      const [newUser] = await db
-        .insert(users)
-        .values({
-          email: 'dev@localhost',
-          name: 'Developer',
-          organizationId: defaultOrg.id,
-        })
-        .returning();
-      defaultUser = newUser;
+    // Dev fallback: create default user/org if not authenticated
+    if (!userId || !orgId) {
+      let defaultOrg = await db.query.organizations.findFirst();
+      if (!defaultOrg) {
+        const [newOrg] = await db
+          .insert(organizations)
+          .values({ name: 'Default Organization', slug: 'default' })
+          .returning();
+        defaultOrg = newOrg;
+      }
+      let defaultUser = await db.query.users.findFirst();
+      if (!defaultUser) {
+        const [newUser] = await db
+          .insert(users)
+          .values({ email: 'dev@localhost', name: 'Developer', activeOrganizationId: defaultOrg.id })
+          .returning();
+        defaultUser = newUser;
+      }
+      userId = defaultUser.id;
+      orgId = defaultOrg.id;
     }
 
     // Create the flow run
@@ -243,7 +244,8 @@ router.post(
         name: runName,
         status: 'IN_PROGRESS',
         currentStepIndex: 0,
-        startedById: defaultUser.id,
+        startedById: userId,
+        organizationId: orgId,
       })
       .returning();
 
@@ -279,6 +281,14 @@ router.post(
           orderBy: [stepExecutions.stepIndex],
         },
       },
+    });
+
+    // Audit: run started
+    logAction({
+      flowRunId: newRun.id,
+      action: 'RUN_STARTED',
+      actorId: userId,
+      details: { flowId: flow.id, flowName: flow.name, runName },
     });
 
     res.status(201).json({
@@ -395,6 +405,13 @@ router.post(
         .where(eq(flowRuns.id, runId));
     }
 
+    // Audit: step completed
+    logAction({
+      flowRunId: runId,
+      action: 'STEP_COMPLETED',
+      details: { stepId, stepIndex: stepExecution.stepIndex, hasNextStep: !!nextStepExecution },
+    });
+
     // Fetch the updated run
     const updatedRun = await db.query.flowRuns.findFirst({
       where: eq(flowRuns.id, runId),
@@ -497,6 +514,12 @@ router.post(
           eq(stepExecutions.status, 'IN_PROGRESS')
         )
       );
+
+    // Audit: run cancelled
+    logAction({
+      flowRunId: id,
+      action: 'RUN_CANCELLED',
+    });
 
     // Fetch the updated run with step executions
     const updatedRun = await db.query.flowRuns.findFirst({

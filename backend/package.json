@@ -27,7 +27,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@types/multer": "^2.0.0",
-    "better-sqlite3": "^12.6.2",
+    "connect-redis": "^8.0.1",
+    "ioredis": "^5.4.2",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
@@ -38,11 +39,11 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "postgres": "^3.4.8",
+    "resend": "^4.1.2",
     "uuid": "^13.0.0",
     "yaml": "^2.8.2"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.18.2",

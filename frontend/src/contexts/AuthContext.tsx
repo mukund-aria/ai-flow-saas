@@ -2,9 +2,10 @@
  * Authentication Context
  *
  * Provides authentication state and methods throughout the app.
+ * Extended with organization info for multi-tenant support.
  */
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 
 // ============================================================================
@@ -16,6 +17,10 @@ interface User {
   email: string;
   name: string;
   picture?: string;
+  activeOrganizationId?: string | null;
+  organizationName?: string | null;
+  role?: string | null;
+  needsOnboarding?: boolean;
 }
 
 interface AuthContextType {
@@ -25,6 +30,7 @@ interface AuthContextType {
   error: string | null;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  switchOrg: (organizationId: string) => Promise<void>;
 }
 
 // ============================================================================
@@ -37,6 +43,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Provider
 // ============================================================================
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -46,12 +54,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/auth/me', {
+      const response = await fetch(`${API_BASE}/auth/me`, {
         credentials: 'include',
       });
 
@@ -64,16 +72,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (err) {
       console.error('Auth check failed:', err);
       setUser(null);
-      // Don't set error for network failures during initial check
-      // This allows the app to work in development without auth
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const logout = async () => {
     try {
-      await fetch('/auth/logout', {
+      await fetch(`${API_BASE}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -81,15 +87,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Logout error:', err);
     } finally {
       setUser(null);
-      // Redirect to landing page
       window.location.href = '/';
+    }
+  };
+
+  const switchOrg = async (organizationId: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/organizations/switch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ organizationId }),
+      });
+
+      if (response.ok) {
+        // Re-check auth to get updated user
+        await checkAuth();
+      }
+    } catch (err) {
+      console.error('Org switch error:', err);
     }
   };
 
   // Check authentication on mount
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   return (
     <AuthContext.Provider
@@ -100,6 +123,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         error,
         logout,
         checkAuth,
+        switchOrg,
       }}
     >
       {children}

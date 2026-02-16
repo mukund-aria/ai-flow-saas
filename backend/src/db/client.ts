@@ -1,25 +1,30 @@
 /**
  * Database Client
  *
- * Supports SQLite for development and PostgreSQL for production.
- * The database driver is selected based on the DATABASE_URL environment variable.
+ * PostgreSQL via postgres.js driver and Drizzle ORM.
  */
 
-import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from './schema.js';
 
-// SQLite database for development
-const sqliteDb = new Database(process.env.DATABASE_URL || 'data/local.db');
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aiflow';
 
-// Enable WAL mode for better concurrent access
-sqliteDb.pragma('journal_mode = WAL');
+// Create postgres.js connection
+const client = postgres(connectionString, {
+  max: 10,
+  idle_timeout: 20,
+  connect_timeout: 10,
+});
 
 // Create the Drizzle client
-export const db = drizzleSqlite(sqliteDb, { schema });
+export const db = drizzle(client, { schema });
 
 // Export schema for type inference
 export * from './schema.js';
 
 // Type helper for database transactions
 export type DbClient = typeof db;
+
+// Export raw client for migrations
+export { client };

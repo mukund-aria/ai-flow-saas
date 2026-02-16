@@ -2,13 +2,13 @@
  * Flow Builder Page
  *
  * The AI-powered flow builder with chat interface and workflow preview.
- * This integrates the existing AI Flow Copilot functionality.
+ * Supports AI mode (chat-based) and Manual mode (visual editor).
  * Supports loading a preview workflow after auth redirect (fromPreview flow).
  */
 
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, MessageSquare } from 'lucide-react';
-import { useEffect, useState, useRef } from 'react';
+import { ArrowLeft, Loader2, MessageSquare, Sparkles, PenLine } from 'lucide-react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { ChatContainer } from '@/components/chat/ChatContainer';
 import { WorkflowPanel } from '@/components/workflow/WorkflowPanel';
 import { useChat } from '@/hooks/useChat';
@@ -16,28 +16,58 @@ import { useWorkflowStore } from '@/stores/workflowStore';
 import { usePreviewStore } from '@/stores/previewStore';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Button } from '@/components/ui/button';
-import { publishFlow as publishFlowApi, createFlow } from '@/lib/api';
+import { publishFlow as publishFlowApi, createFlow, updateFlow } from '@/lib/api';
+
+type BuilderMode = 'ai' | 'manual';
 
 export function FlowBuilderPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { sendMessage, startNewChat } = useChat();
-  const { workflow, savedFlowId, savedFlowStatus, isSaving, setSavedFlow, setWorkflow, setSaving } = useWorkflowStore();
+  const { workflow, savedFlowId, savedFlowStatus, isSaving, setSavedFlow, setWorkflow, setSaving, initEmptyWorkflow } = useWorkflowStore();
   const { previewWorkflow, previewPrompt, clearPreview } = usePreviewStore();
   const { completeBuildFlow } = useOnboardingStore();
   const [isPublishing, setIsPublishing] = useState(false);
-  const [showAIChat, setShowAIChat] = useState(true);
   const [showPreviewToast, setShowPreviewToast] = useState(false);
   const previewLoadedRef = useRef(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Builder mode from URL search params
+  const modeParam = searchParams.get('mode') as BuilderMode | null;
+  const [builderMode, setBuilderMode] = useState<BuilderMode>(modeParam === 'manual' ? 'manual' : 'ai');
+  const [showAIChat, setShowAIChat] = useState(builderMode === 'ai');
 
   // Check if we have a prompt from navigation state (from Home page)
   const initialPrompt = (location.state as { prompt?: string })?.prompt;
   const fromPreview = searchParams.get('fromPreview') === 'true';
 
+  // Sync builderMode with URL
+  const handleModeChange = (mode: BuilderMode) => {
+    setBuilderMode(mode);
+    setShowAIChat(mode === 'ai');
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('mode', mode);
+      return next;
+    });
+
+    // Initialize empty workflow when switching to manual mode if none exists
+    if (mode === 'manual' && !workflow) {
+      initEmptyWorkflow();
+    }
+  };
+
   // Start a new chat when component mounts
   useEffect(() => {
     startNewChat();
+  }, []);
+
+  // Initialize empty workflow in manual mode on mount
+  useEffect(() => {
+    if (builderMode === 'manual' && !workflow) {
+      initEmptyWorkflow();
+    }
   }, []);
 
   // Load preview workflow if coming from preview flow
@@ -81,6 +111,58 @@ export function FlowBuilderPage() {
       return () => clearTimeout(timer);
     }
   }, [initialPrompt, fromPreview]);
+
+  // Auto-save in manual mode (debounced)
+  const autoSave = useCallback(async () => {
+    const currentWorkflow = useWorkflowStore.getState().workflow;
+    const currentSavedId = useWorkflowStore.getState().savedFlowId;
+    if (!currentWorkflow) return;
+
+    setSaving(true);
+    try {
+      if (currentSavedId) {
+        // Update existing flow
+        const saved = await updateFlow(currentSavedId, {
+          name: currentWorkflow.name || 'Untitled Flow',
+          description: currentWorkflow.description || '',
+          definition: currentWorkflow as unknown as Record<string, unknown>,
+        });
+        setSavedFlow(saved.id, saved.status);
+      } else {
+        // Create new flow
+        const saved = await createFlow({
+          name: currentWorkflow.name || 'Untitled Flow',
+          description: currentWorkflow.description || '',
+          definition: currentWorkflow as unknown as Record<string, unknown>,
+          status: 'DRAFT',
+        });
+        setSavedFlow(saved.id, 'DRAFT');
+        completeBuildFlow();
+      }
+    } catch (err) {
+      console.error('Auto-save failed:', err);
+      setSaving(false);
+    }
+  }, [setSaving, setSavedFlow, completeBuildFlow]);
+
+  // Watch for workflow changes in manual mode and trigger auto-save
+  useEffect(() => {
+    if (builderMode !== 'manual' || !workflow) return;
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      autoSave();
+    }, 1000);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [workflow, builderMode, autoSave]);
 
   // Handle publish
   const handlePublish = async () => {
@@ -133,6 +215,34 @@ export function FlowBuilderPage() {
             Back to Flow Templates
           </Button>
           <div className="h-6 w-px bg-gray-200" />
+
+          {/* Mode Toggle */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+            <button
+              onClick={() => handleModeChange('ai')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                builderMode === 'ai'
+                  ? 'bg-white text-violet-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              AI
+            </button>
+            <button
+              onClick={() => handleModeChange('manual')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                builderMode === 'manual'
+                  ? 'bg-white text-violet-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <PenLine className="w-3.5 h-3.5" />
+              Manual
+            </button>
+          </div>
+
+          <div className="h-6 w-px bg-gray-200" />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold text-gray-900">
@@ -159,7 +269,11 @@ export function FlowBuilderPage() {
               )}
             </div>
             <p className="text-sm text-gray-500">
-              {workflow ? `${workflow.steps?.length || 0} steps` : 'Describe your workflow and let AI build it'}
+              {builderMode === 'manual'
+                ? `${workflow?.steps?.length || 0} steps — Visual editor`
+                : workflow
+                ? `${workflow.steps?.length || 0} steps`
+                : 'Describe your workflow and let AI build it'}
             </p>
           </div>
         </div>
@@ -169,15 +283,17 @@ export function FlowBuilderPage() {
           {savedFlowId && savedFlowStatus === 'ACTIVE' && (
             <span className="text-sm text-green-600 font-medium">Published</span>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAIChat(!showAIChat)}
-            className={`relative ${showAIChat ? 'bg-violet-50 border-violet-200 text-violet-700' : ''}`}
-            title={showAIChat ? 'Hide AI Chat' : 'Show AI Chat'}
-          >
-            <MessageSquare className={`w-4 h-4 ${showAIChat ? 'fill-violet-200' : ''}`} />
-          </Button>
+          {builderMode === 'ai' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAIChat(!showAIChat)}
+              className={`relative ${showAIChat ? 'bg-violet-50 border-violet-200 text-violet-700' : ''}`}
+              title={showAIChat ? 'Hide AI Chat' : 'Show AI Chat'}
+            >
+              <MessageSquare className={`w-4 h-4 ${showAIChat ? 'fill-violet-200' : ''}`} />
+            </Button>
+          )}
           <Button
             onClick={handlePublish}
             disabled={!canPublish}
@@ -195,25 +311,34 @@ export function FlowBuilderPage() {
         </div>
       </div>
 
-      {/* Main Content - Split View */}
+      {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Chat Panel */}
-        <div
-          className={`border-r border-gray-200 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-            showAIChat ? 'w-1/2 opacity-100' : 'w-0 opacity-0'
-          }`}
-        >
-          {showAIChat && <ChatContainer />}
-        </div>
+        {builderMode === 'ai' ? (
+          <>
+            {/* Chat Panel */}
+            <div
+              className={`border-r border-gray-200 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
+                showAIChat ? 'w-1/2 opacity-100' : 'w-0 opacity-0'
+              }`}
+            >
+              {showAIChat && <ChatContainer />}
+            </div>
 
-        {/* Workflow Preview Panel */}
-        <div
-          className={`bg-gray-50 overflow-auto transition-all duration-300 ease-in-out ${
-            showAIChat ? 'w-1/2' : 'w-full'
-          }`}
-        >
-          <WorkflowPanel />
-        </div>
+            {/* Workflow Preview Panel */}
+            <div
+              className={`bg-gray-50 overflow-auto transition-all duration-300 ease-in-out ${
+                showAIChat ? 'w-1/2' : 'w-full'
+              }`}
+            >
+              <WorkflowPanel />
+            </div>
+          </>
+        ) : (
+          /* Manual Mode - Full-width workflow editor */
+          <div className="w-full bg-gray-50 overflow-auto">
+            <WorkflowPanel editMode />
+          </div>
+        )}
       </div>
     </div>
   );

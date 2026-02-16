@@ -1,11 +1,15 @@
 /**
  * Passport.js Configuration for Google OAuth 2.0
  *
- * Handles authentication via Google and enforces email whitelist.
+ * Handles authentication via Google, syncs users to DB,
+ * and manages organization memberships.
  */
 
 import passport from 'passport';
 import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20';
+import { db } from '../db/client.js';
+import { users, userOrganizations } from '../db/schema.js';
+import { eq } from 'drizzle-orm';
 
 // ============================================================================
 // Types
@@ -16,6 +20,10 @@ export interface AuthUser {
   email: string;
   name: string;
   picture?: string;
+  activeOrganizationId?: string | null;
+  organizationName?: string | null;
+  role?: string | null;
+  needsOnboarding?: boolean;
 }
 
 // Extend Express Request to include our user type
@@ -30,7 +38,6 @@ declare global {
 // ============================================================================
 
 // Email whitelist from environment (comma-separated)
-// If empty, all authenticated users are allowed
 const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS || '')
   .split(',')
   .map(e => e.trim().toLowerCase())
@@ -56,44 +63,152 @@ export function configurePassport(): void {
       clientSecret,
       callbackURL,
     },
-    (
+    async (
       _accessToken: string,
       _refreshToken: string,
       profile: Profile,
       done: (error: Error | null, user?: AuthUser | false, info?: { message: string }) => void
     ) => {
-      const email = profile.emails?.[0]?.value?.toLowerCase();
+      try {
+        const email = profile.emails?.[0]?.value?.toLowerCase();
 
-      if (!email) {
-        return done(null, false, { message: 'No email provided by Google' });
+        if (!email) {
+          return done(null, false, { message: 'No email provided by Google' });
+        }
+
+        // Check if email is in whitelist (if whitelist is configured)
+        if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(email)) {
+          console.log(`Auth denied for email: ${email} (not in whitelist)`);
+          return done(null, false, { message: 'Email not authorized' });
+        }
+
+        // Find or create user in DB
+        let dbUser = await db.query.users.findFirst({
+          where: eq(users.email, email),
+        });
+
+        if (!dbUser) {
+          // Create new user
+          const [newUser] = await db.insert(users).values({
+            email,
+            name: profile.displayName || email,
+            picture: profile.photos?.[0]?.value,
+          }).returning();
+          dbUser = newUser;
+        } else {
+          // Update existing user's profile
+          await db.update(users)
+            .set({
+              name: profile.displayName || dbUser.name,
+              picture: profile.photos?.[0]?.value || dbUser.picture,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, dbUser.id));
+        }
+
+        // Check org memberships
+        const memberships = await db.query.userOrganizations.findMany({
+          where: eq(userOrganizations.userId, dbUser.id),
+          with: { organization: true },
+        });
+
+        const needsOnboarding = memberships.length === 0;
+
+        // Get active org info
+        let organizationName: string | null = null;
+        let role: string | null = null;
+        if (dbUser.activeOrganizationId) {
+          const activeMembership = memberships.find(
+            m => m.organizationId === dbUser!.activeOrganizationId
+          );
+          if (activeMembership) {
+            organizationName = (activeMembership as any).organization?.name || null;
+            role = activeMembership.role;
+          }
+        } else if (memberships.length > 0) {
+          // Auto-set first org as active
+          const first = memberships[0];
+          await db.update(users)
+            .set({ activeOrganizationId: first.organizationId })
+            .where(eq(users.id, dbUser.id));
+          dbUser = { ...dbUser, activeOrganizationId: first.organizationId };
+          organizationName = (first as any).organization?.name || null;
+          role = first.role;
+        }
+
+        const authUser: AuthUser = {
+          id: dbUser.id,
+          email: dbUser.email,
+          name: dbUser.name,
+          picture: dbUser.picture || undefined,
+          activeOrganizationId: dbUser.activeOrganizationId,
+          organizationName,
+          role,
+          needsOnboarding,
+        };
+
+        console.log(`Auth success for: ${email} (org: ${organizationName || 'none'})`);
+        return done(null, authUser);
+      } catch (err) {
+        console.error('OAuth callback error:', err);
+        return done(err as Error);
       }
-
-      // Check if email is in whitelist (if whitelist is configured)
-      if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(email)) {
-        console.log(`Auth denied for email: ${email} (not in whitelist)`);
-        return done(null, false, { message: 'Email not authorized' });
-      }
-
-      const user: AuthUser = {
-        id: profile.id,
-        email,
-        name: profile.displayName || email,
-        picture: profile.photos?.[0]?.value,
-      };
-
-      console.log(`Auth success for: ${email}`);
-      return done(null, user);
     }
   ));
 
-  // Serialize user to session
+  // Serialize only user ID to session
   passport.serializeUser((user: Express.User, done) => {
-    done(null, user);
+    done(null, user.id);
   });
 
-  // Deserialize user from session
-  passport.deserializeUser((user: AuthUser, done) => {
-    done(null, user);
+  // Deserialize user from DB
+  passport.deserializeUser(async (id: string, done) => {
+    try {
+      const dbUser = await db.query.users.findFirst({
+        where: eq(users.id, id),
+      });
+
+      if (!dbUser) {
+        return done(null, false);
+      }
+
+      // Get active org info
+      let organizationName: string | null = null;
+      let role: string | null = null;
+      let needsOnboarding = true;
+
+      const memberships = await db.query.userOrganizations.findMany({
+        where: eq(userOrganizations.userId, dbUser.id),
+        with: { organization: true },
+      });
+
+      needsOnboarding = memberships.length === 0;
+
+      if (dbUser.activeOrganizationId) {
+        const activeMembership = memberships.find(
+          m => m.organizationId === dbUser.activeOrganizationId
+        );
+        if (activeMembership) {
+          organizationName = (activeMembership as any).organization?.name || null;
+          role = activeMembership.role;
+        }
+      }
+
+      const authUser: AuthUser = {
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.name,
+        picture: dbUser.picture || undefined,
+        activeOrganizationId: dbUser.activeOrganizationId,
+        organizationName,
+        role,
+        needsOnboarding,
+      };
+
+      done(null, authUser);
+    } catch (err) {
+      done(err);
+    }
   });
 
   console.log('Google OAuth configured');

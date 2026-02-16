@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { listFlows, startFlowRun, type Flow } from '@/lib/api';
 import { useOnboardingStore } from '@/stores/onboardingStore';
+import { CreateFlowDialog } from '@/components/workflow/CreateFlowDialog';
 
 type SortOption = 'lastModified' | 'name' | 'created' | 'steps';
 
@@ -224,6 +225,7 @@ export function FlowsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('lastModified');
   const [startingFlowId, setStartingFlowId] = useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Handler to start a flow run
   const handleStartFlowRun = async (flow: Flow) => {
@@ -286,7 +288,7 @@ export function FlowsPage() {
       }
     });
 
-  const handleCreateFlow = () => navigate('/flows/new');
+  const handleCreateFlow = () => setShowCreateDialog(true);
   const handleEditFlow = (flowId: string) => navigate(`/flows/${flowId}`);
 
   // Loading state
@@ -315,6 +317,8 @@ export function FlowsPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      <CreateFlowDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">

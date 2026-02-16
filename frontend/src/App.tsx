@@ -39,6 +39,9 @@ import {
   LoginPage,
   LandingPage,
   FlowPreviewPage,
+  OnboardingPage,
+  TeamPage,
+  AssigneeTaskPage,
 } from '@/pages';
 
 // ============================================================================
@@ -76,6 +79,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function OnboardingGuard({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) return null;
+
+  // Redirect to onboarding if user needs it (in production)
+  if (!import.meta.env.DEV && user?.needsOnboarding) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 // ============================================================================
 // App Routes
 // ============================================================================
@@ -89,13 +105,17 @@ function AppRoutes() {
       </Route>
       <Route path="/preview" element={<FlowPreviewPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route path="/task/:token" element={<AssigneeTaskPage />} />
 
       {/* Protected Routes - Coordinator Portal */}
       <Route
         path="/home"
         element={
           <ProtectedRoute>
-            <CoordinatorLayout />
+            <OnboardingGuard>
+              <CoordinatorLayout />
+            </OnboardingGuard>
           </ProtectedRoute>
         }
       >
@@ -105,7 +125,9 @@ function AppRoutes() {
         path="/"
         element={
           <ProtectedRoute>
-            <CoordinatorLayout />
+            <OnboardingGuard>
+              <CoordinatorLayout />
+            </OnboardingGuard>
           </ProtectedRoute>
         }
       >
@@ -119,6 +141,7 @@ function AppRoutes() {
         <Route path="schedules" element={<SchedulesPage />} />
         <Route path="integrations" element={<IntegrationsPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="team" element={<TeamPage />} />
       </Route>
 
       {/* Catch-all redirect */}

@@ -16,12 +16,12 @@ import {
   Plug,
   Plus,
   Settings,
-  ChevronDown,
-  Sparkles,
+  UsersRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { GettingStartedChecklist } from '@/components/onboarding/GettingStartedChecklist';
+import { OrgSwitcher } from './OrgSwitcher';
 
 interface NavItemProps {
   to: string;
@@ -63,22 +63,9 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      {/* Organization Header */}
+      {/* Organization Switcher */}
       <div className="p-4 border-b border-gray-200">
-        <button className="flex items-center gap-2 w-full px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex-1 text-left">
-            <p className="text-sm font-semibold text-gray-900 truncate">
-              {user?.name || 'My Organization'}
-            </p>
-            <p className="text-xs text-gray-500 truncate">
-              {user?.email || 'Free Plan'}
-            </p>
-          </div>
-          <ChevronDown className="w-4 h-4 text-gray-400" />
-        </button>
+        <OrgSwitcher />
       </div>
 
       {/* Create Flow Button */}
@@ -120,6 +107,11 @@ export function Sidebar() {
           to="/contacts"
           icon={<Users className="w-5 h-5" />}
           label="Contacts"
+        />
+        <NavItem
+          to="/team"
+          icon={<UsersRound className="w-5 h-5" />}
+          label="Team"
         />
         <NavItem
           to="/schedules"

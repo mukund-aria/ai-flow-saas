@@ -124,24 +124,27 @@ router.post(
       return;
     }
 
-    // For development, get or create a default organization
-    let defaultOrg = await db.query.organizations.findFirst();
-    if (!defaultOrg) {
-      const [newOrg] = await db
-        .insert(organizations)
-        .values({
-          name: 'Default Organization',
-          slug: 'default',
-        })
-        .returning();
-      defaultOrg = newOrg;
+    // Use authenticated org context (set by orgScope middleware in production)
+    let orgId = req.organizationId;
+
+    // Dev fallback: get or create a default organization
+    if (!orgId) {
+      let defaultOrg = await db.query.organizations.findFirst();
+      if (!defaultOrg) {
+        const [newOrg] = await db
+          .insert(organizations)
+          .values({ name: 'Default Organization', slug: 'default' })
+          .returning();
+        defaultOrg = newOrg;
+      }
+      orgId = defaultOrg.id;
     }
 
     // Check if contact with same email already exists in the organization
     const existingContact = await db.query.contacts.findFirst({
       where: and(
         eq(contacts.email, email),
-        eq(contacts.organizationId, defaultOrg.id)
+        eq(contacts.organizationId, orgId)
       ),
     });
 
@@ -161,7 +164,7 @@ router.post(
         email,
         type,
         status,
-        organizationId: defaultOrg.id,
+        organizationId: orgId,
       })
       .returning();
 

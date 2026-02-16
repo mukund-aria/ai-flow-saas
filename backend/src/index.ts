@@ -18,12 +18,41 @@ import apiRoutes from './routes/index.js';
 import { errorHandler } from './middleware/index.js';
 import { passport, configurePassport, authRoutes, requireAuth } from './auth/index.js';
 import publicChatRouter, { publicChatLimiter } from './routes/public-chat.js';
+import publicTaskRouter from './routes/public-task.js';
 
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 3002;
 const isProduction = process.env.NODE_ENV === 'production';
+
+// ============================================================================
+// Production environment variable validation
+// ============================================================================
+
+if (isProduction) {
+  const required = ['DATABASE_URL', 'SESSION_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'ANTHROPIC_API_KEY'];
+  const missing = required.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    console.error(`FATAL: Missing required environment variables: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
+
+// Redis session store (optional - uses in-memory if REDIS_URL not set)
+let sessionStore: session.Store | undefined;
+if (process.env.REDIS_URL) {
+  try {
+    const { RedisStore } = await import('connect-redis');
+    const { Redis } = await import('ioredis');
+    const redisClient = new Redis(process.env.REDIS_URL);
+    sessionStore = new RedisStore({ client: redisClient });
+    console.log('Redis session store configured');
+  } catch (err) {
+    console.warn('Failed to configure Redis session store, using in-memory:', err);
+  }
+}
+
+const app = express();
+const PORT = process.env.PORT || 3001;
 
 // Health check endpoint (before middleware for faster response)
 app.get('/ping', (_req, res) => {
@@ -60,6 +89,7 @@ if (isProduction) {
 
 // Session configuration
 app.use(session({
+  ...(sessionStore ? { store: sessionStore } : {}),
   secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
@@ -103,9 +133,11 @@ if (isProduction) {
 
   // SPA fallback - serve index.html for all non-API routes
   // This handles / and all frontend routes
-  app.get('/{*splat}', (req, res, next) => {
+  // Note: This MUST be placed before API routes but the express.static above
+  // handles exact file matches. This catches client-side routes like /flows, /runs, etc.
+  app.get('*', (req, res, next) => {
     // Skip API and auth routes - let them fall through to their handlers
-    if (req.path.startsWith('/api') || req.path.startsWith('/auth') || req.path === '/health') {
+    if (req.path.startsWith('/api') || req.path.startsWith('/auth') || req.path === '/health' || req.path === '/ping') {
       return next();
     }
     res.sendFile(path.join(publicPath, 'index.html'));
@@ -117,6 +149,7 @@ if (isProduction) {
 // ============================================================================
 
 app.use('/api/public/chat', publicChatRouter);
+app.use('/api/public/task', publicTaskRouter);
 
 // ============================================================================
 // API Routes (protected in production)

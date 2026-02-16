@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { Layers } from 'lucide-react';
 import { StepCard } from './StepCard';
 import { StepConnector } from './StepConnector';
 import { BranchLayout } from './BranchLayout';
-import type { Flow, Milestone, Step } from '@/types';
+import { AddStepPopover } from './AddStepPopover';
+import { useWorkflowStore } from '@/stores/workflowStore';
+import type { Flow, Milestone, Step, StepType } from '@/types';
 
 interface StepListProps {
   workflow: Flow;
+  editMode?: boolean;
 }
 
 // Check if a step has branches or outcomes (nested steps)
@@ -96,6 +100,11 @@ interface MilestoneContainerProps {
   globalStartIndex: number;
   assigneeIndices: Map<string, number>;
   isFirst: boolean;
+  editMode?: boolean;
+  addPopoverIndex: number | null;
+  onSetAddPopoverIndex: (index: number | null) => void;
+  onAddStep: (index: number, stepType: StepType) => void;
+  assigneePlaceholders: Flow['assigneePlaceholders'];
 }
 
 function MilestoneContainer({
@@ -104,6 +113,11 @@ function MilestoneContainer({
   globalStartIndex,
   assigneeIndices,
   isFirst,
+  editMode,
+  addPopoverIndex,
+  onSetAddPopoverIndex,
+  onAddStep,
+  assigneePlaceholders,
 }: MilestoneContainerProps) {
   const renderSteps = () => (
     <>
@@ -117,12 +131,32 @@ function MilestoneContainer({
         return (
           <div key={step.stepId}>
             {/* Connector before step (except first in group, unless not first group) */}
-            {(index > 0 || !isFirst) && <StepConnector showAddButton />}
+            {(index > 0 || !isFirst) && (
+              <div className="relative">
+                <StepConnector
+                  showAddButton={!!editMode}
+                  onAdd={() => onSetAddPopoverIndex(globalIndex)}
+                />
+                {editMode && addPopoverIndex === globalIndex && (
+                  <AddStepPopover
+                    open
+                    onOpenChange={(open) => { if (!open) onSetAddPopoverIndex(null); }}
+                    onSelect={(type) => onAddStep(globalIndex, type)}
+                  />
+                )}
+              </div>
+            )}
 
             {/* Branch Layout for steps with paths/outcomes */}
             {isBranchStep ? (
               <div>
-                <StepCard step={step} index={globalIndex} assigneeIndex={assigneeIndex} />
+                <StepCard
+                  step={step}
+                  index={globalIndex}
+                  assigneeIndex={assigneeIndex}
+                  editMode={editMode}
+                  assigneePlaceholders={assigneePlaceholders}
+                />
                 <BranchLayout
                   step={step}
                   stepIndex={globalIndex}
@@ -130,7 +164,13 @@ function MilestoneContainer({
                 />
               </div>
             ) : (
-              <StepCard step={step} index={globalIndex} assigneeIndex={assigneeIndex} />
+              <StepCard
+                step={step}
+                index={globalIndex}
+                assigneeIndex={assigneeIndex}
+                editMode={editMode}
+                assigneePlaceholders={assigneePlaceholders}
+              />
             )}
           </div>
         );
@@ -168,9 +208,12 @@ function MilestoneContainer({
 // Main StepList Component
 // ============================================================================
 
-export function StepList({ workflow }: StepListProps) {
+export function StepList({ workflow, editMode = false }: StepListProps) {
   const steps = workflow.steps;
   const milestones = workflow.milestones || [];
+  const [addPopoverIndex, setAddPopoverIndex] = useState<number | null>(null);
+  const [endPopoverOpen, setEndPopoverOpen] = useState(false);
+  const { addStep } = useWorkflowStore();
 
   // Group steps by milestones
   const stepGroups = groupStepsByMilestones(steps, milestones);
@@ -180,6 +223,12 @@ export function StepList({ workflow }: StepListProps) {
   workflow.assigneePlaceholders?.forEach((a, i) => {
     assigneeIndices.set(a.roleName, i);
   });
+
+  const handleAddStep = (index: number, stepType: StepType) => {
+    addStep(index, stepType);
+    setAddPopoverIndex(null);
+    setEndPopoverOpen(false);
+  };
 
   return (
     <div className="space-y-0">
@@ -191,11 +240,30 @@ export function StepList({ workflow }: StepListProps) {
           globalStartIndex={group.globalStartIndex}
           assigneeIndices={assigneeIndices}
           isFirst={groupIndex === 0}
+          editMode={editMode}
+          addPopoverIndex={addPopoverIndex}
+          onSetAddPopoverIndex={setAddPopoverIndex}
+          onAddStep={handleAddStep}
+          assigneePlaceholders={workflow.assigneePlaceholders || []}
         />
       ))}
 
-      {/* Final connector */}
-      {steps.length > 0 && <StepConnector />}
+      {/* Final connector with add button in edit mode */}
+      {steps.length > 0 && (
+        <div className="relative">
+          <StepConnector
+            showAddButton={!!editMode}
+            onAdd={() => setEndPopoverOpen(true)}
+          />
+          {editMode && endPopoverOpen && (
+            <AddStepPopover
+              open
+              onOpenChange={setEndPopoverOpen}
+              onSelect={(type) => handleAddStep(steps.length, type)}
+            />
+          )}
+        </div>
+      )}
 
       {/* End indicator */}
       <div className="flex items-center justify-center">

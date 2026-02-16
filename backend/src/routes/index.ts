@@ -11,8 +11,20 @@ import uploadRouter from './upload.js';
 import flowsRouter from './flows.js';
 import runsRouter from './runs.js';
 import contactsRouter from './contacts.js';
+import organizationsRouter from './organizations.js';
+import teamRouter from './team.js';
+import { orgScope } from '../middleware/org-scope.js';
 
 const router = Router();
+
+// Organization management (no org-scope needed - used before onboarding)
+router.use('/organizations', organizationsRouter);
+
+// Team management (needs org-scope for most routes, but accept-invite is public-ish)
+router.use('/team', teamRouter);
+
+// Apply org-scope to all data-scoped routes below
+router.use(orgScope);
 
 // Chat endpoint (AI builder)
 router.use('/chat', chatRouter);

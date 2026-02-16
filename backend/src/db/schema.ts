@@ -1,15 +1,15 @@
 /**
  * Database Schema for AI Flow SaaS
  *
- * Using Drizzle ORM with SQLite for development and PostgreSQL for production.
+ * Using Drizzle ORM with PostgreSQL.
  * This schema defines all tables for the SaaS platform.
  */
 
-import { sqliteTable, text, integer, blob } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, timestamp, jsonb, uniqueIndex } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // ============================================================================
-// Enums (stored as text in SQLite)
+// Enums (stored as text in PostgreSQL)
 // ============================================================================
 
 export type UserRole = 'ADMIN' | 'MEMBER';
@@ -23,90 +23,120 @@ export type ContactStatus = 'ACTIVE' | 'INACTIVE';
 // Organizations
 // ============================================================================
 
-export const organizations = sqliteTable('organizations', {
+export const organizations = pgTable('organizations', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 // ============================================================================
 // Users
 // ============================================================================
 
-export const users = sqliteTable('users', {
+export const users = pgTable('users', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
   picture: text('picture'),
-  role: text('role').$type<UserRole>().default('MEMBER').notNull(),
+  activeOrganizationId: text('active_organization_id').references(() => organizations.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// User-Organization Memberships (many-to-many with role)
+// ============================================================================
+
+export const userOrganizations = pgTable('user_organizations', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id),
   organizationId: text('organization_id').notNull().references(() => organizations.id),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  role: text('role').$type<UserRole>().default('MEMBER').notNull(),
+  joinedAt: timestamp('joined_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('user_org_unique').on(table.userId, table.organizationId),
+]);
+
+// ============================================================================
+// Organization Invites
+// ============================================================================
+
+export const organizationInvites = pgTable('organization_invites', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  email: text('email').notNull(),
+  role: text('role').$type<UserRole>().default('MEMBER').notNull(),
+  token: text('token').notNull().unique().$defaultFn(() => crypto.randomUUID()),
+  invitedById: text('invited_by_id').notNull().references(() => users.id),
+  expiresAt: timestamp('expires_at').notNull(),
+  acceptedAt: timestamp('accepted_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 // ============================================================================
 // Flows (Workflow Templates)
 // ============================================================================
 
-export const flows = sqliteTable('flows', {
+export const flows = pgTable('flows', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
   description: text('description'),
   version: text('version').default('1.0').notNull(),
   status: text('status').$type<FlowStatus>().default('DRAFT').notNull(),
-  definition: text('definition', { mode: 'json' }).$type<Record<string, unknown>>(), // Full workflow JSON
+  definition: jsonb('definition').$type<Record<string, unknown>>(),
   createdById: text('created_by_id').notNull().references(() => users.id),
   organizationId: text('organization_id').notNull().references(() => organizations.id),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 // ============================================================================
 // Flow Runs (Workflow Instances)
 // ============================================================================
 
-export const flowRuns = sqliteTable('flow_runs', {
+export const flowRuns = pgTable('flow_runs', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   flowId: text('flow_id').notNull().references(() => flows.id),
-  name: text('name').notNull(), // e.g., "TechNova Solutions - SOC 2 Type II"
+  name: text('name').notNull(),
   status: text('status').$type<FlowRunStatus>().default('IN_PROGRESS').notNull(),
   currentStepIndex: integer('current_step_index').default(0).notNull(),
   startedById: text('started_by_id').notNull().references(() => users.id),
-  startedAt: integer('started_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  completedAt: integer('completed_at', { mode: 'timestamp' }),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
 });
 
 // ============================================================================
 // Contacts (External Assignees)
 // ============================================================================
 
-export const contacts = sqliteTable('contacts', {
+export const contacts = pgTable('contacts', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   email: text('email').notNull(),
   name: text('name').notNull(),
   organizationId: text('organization_id').notNull().references(() => organizations.id),
   type: text('type').$type<ContactType>().default('ASSIGNEE').notNull(),
   status: text('status').$type<ContactStatus>().default('ACTIVE').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 // ============================================================================
 // Step Executions (Individual Step Progress)
 // ============================================================================
 
-export const stepExecutions = sqliteTable('step_executions', {
+export const stepExecutions = pgTable('step_executions', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   flowRunId: text('flow_run_id').notNull().references(() => flowRuns.id),
-  stepId: text('step_id').notNull(), // References step in flow definition
+  stepId: text('step_id').notNull(),
   stepIndex: integer('step_index').notNull(),
   status: text('status').$type<StepExecutionStatus>().default('PENDING').notNull(),
   assignedToUserId: text('assigned_to_user_id').references(() => users.id),
   assignedToContactId: text('assigned_to_contact_id').references(() => contacts.id),
-  resultData: text('result_data', { mode: 'json' }).$type<Record<string, unknown>>(), // Form responses, approval decision, etc.
-  startedAt: integer('started_at', { mode: 'timestamp' }),
-  completedAt: integer('completed_at', { mode: 'timestamp' }),
+  resultData: jsonb('result_data').$type<Record<string, unknown>>(),
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
   completedById: text('completed_by_id'),
 });
 
@@ -114,27 +144,27 @@ export const stepExecutions = sqliteTable('step_executions', {
 // Magic Links (Token-based Access for Assignees)
 // ============================================================================
 
-export const magicLinks = sqliteTable('magic_links', {
+export const magicLinks = pgTable('magic_links', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   token: text('token').notNull().unique().$defaultFn(() => crypto.randomUUID()),
   stepExecutionId: text('step_execution_id').notNull().unique().references(() => stepExecutions.id),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-  usedAt: integer('used_at', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  expiresAt: timestamp('expires_at').notNull(),
+  usedAt: timestamp('used_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 // ============================================================================
 // Audit Logs (Activity Tracking)
 // ============================================================================
 
-export const auditLogs = sqliteTable('audit_logs', {
+export const auditLogs = pgTable('audit_logs', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   flowRunId: text('flow_run_id').notNull().references(() => flowRuns.id),
-  action: text('action').notNull(), // e.g., "STEP_COMPLETED", "RUN_STARTED"
+  action: text('action').notNull(),
   actorId: text('actor_id'),
   actorEmail: text('actor_email'),
-  details: text('details', { mode: 'json' }).$type<Record<string, unknown>>(),
-  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  details: jsonb('details').$type<Record<string, unknown>>(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 // ============================================================================
@@ -142,19 +172,44 @@ export const auditLogs = sqliteTable('audit_logs', {
 // ============================================================================
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
-  users: many(users),
+  userOrganizations: many(userOrganizations),
   flows: many(flows),
   contacts: many(contacts),
+  flowRuns: many(flowRuns),
+  invites: many(organizationInvites),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
-  organization: one(organizations, {
-    fields: [users.organizationId],
+  activeOrganization: one(organizations, {
+    fields: [users.activeOrganizationId],
     references: [organizations.id],
   }),
+  userOrganizations: many(userOrganizations),
   flowsCreated: many(flows),
   flowRunsStarted: many(flowRuns),
   stepExecutions: many(stepExecutions),
+}));
+
+export const userOrganizationsRelations = relations(userOrganizations, ({ one }) => ({
+  user: one(users, {
+    fields: [userOrganizations.userId],
+    references: [users.id],
+  }),
+  organization: one(organizations, {
+    fields: [userOrganizations.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+export const organizationInvitesRelations = relations(organizationInvites, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [organizationInvites.organizationId],
+    references: [organizations.id],
+  }),
+  invitedBy: one(users, {
+    fields: [organizationInvites.invitedById],
+    references: [users.id],
+  }),
 }));
 
 export const flowsRelations = relations(flows, ({ one, many }) => ({
@@ -177,6 +232,10 @@ export const flowRunsRelations = relations(flowRuns, ({ one, many }) => ({
   startedBy: one(users, {
     fields: [flowRuns.startedById],
     references: [users.id],
+  }),
+  organization: one(organizations, {
+    fields: [flowRuns.organizationId],
+    references: [organizations.id],
   }),
   stepExecutions: many(stepExecutions),
   auditLogs: many(auditLogs),

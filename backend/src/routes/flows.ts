@@ -106,30 +106,30 @@ router.post(
       return;
     }
 
-    // For development, create a default user and org if they don't exist
-    let defaultOrg = await db.query.organizations.findFirst();
-    if (!defaultOrg) {
-      const [newOrg] = await db
-        .insert(organizations)
-        .values({
-          name: 'Default Organization',
-          slug: 'default',
-        })
-        .returning();
-      defaultOrg = newOrg;
-    }
+    // Use authenticated user context (set by requireAuth + orgScope middleware in production)
+    let userId = req.user?.id;
+    let orgId = req.organizationId;
 
-    let defaultUser = await db.query.users.findFirst();
-    if (!defaultUser) {
-      const [newUser] = await db
-        .insert(users)
-        .values({
-          email: 'dev@localhost',
-          name: 'Developer',
-          organizationId: defaultOrg.id,
-        })
-        .returning();
-      defaultUser = newUser;
+    // Dev fallback: create default user/org if not authenticated
+    if (!userId || !orgId) {
+      let defaultOrg = await db.query.organizations.findFirst();
+      if (!defaultOrg) {
+        const [newOrg] = await db
+          .insert(organizations)
+          .values({ name: 'Default Organization', slug: 'default' })
+          .returning();
+        defaultOrg = newOrg;
+      }
+      let defaultUser = await db.query.users.findFirst();
+      if (!defaultUser) {
+        const [newUser] = await db
+          .insert(users)
+          .values({ email: 'dev@localhost', name: 'Developer', activeOrganizationId: defaultOrg.id })
+          .returning();
+        defaultUser = newUser;
+      }
+      userId = defaultUser.id;
+      orgId = defaultOrg.id;
     }
 
     // Create the flow
@@ -140,8 +140,8 @@ router.post(
         description,
         definition: definition || {},
         status,
-        createdById: defaultUser.id,
-        organizationId: defaultOrg.id,
+        createdById: userId,
+        organizationId: orgId,
       })
       .returning();
 
