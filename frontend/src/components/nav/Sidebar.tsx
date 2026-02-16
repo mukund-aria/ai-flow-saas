@@ -66,9 +66,6 @@ export function Sidebar() {
         </NavLink>
       </div>
 
-      {/* Getting Started Checklist */}
-      <GettingStartedChecklist />
-
       {/* Navigation Links */}
       <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
         <NavItem to="/home" icon={<Home className="w-5 h-5" />} label="Home" />
@@ -78,6 +75,9 @@ export function Sidebar() {
         <NavItem to="/schedules" icon={<Calendar className="w-5 h-5" />} label="Schedules" />
         <NavItem to="/integrations" icon={<Plug className="w-5 h-5" />} label="Integrations" />
       </nav>
+
+      {/* Getting Started Checklist */}
+      <GettingStartedChecklist />
 
       {/* Bottom Section */}
       <div className="p-3 border-t border-gray-200">

@@ -15,10 +15,12 @@ import {
   ChevronRight,
   Loader2,
   ChevronDown,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { listFlowRuns } from '@/lib/api';
 import type { FlowRun } from '@/lib/api';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -60,11 +62,23 @@ function getFlowColor(index: number) {
 }
 
 // ---------------------------------------------------------------------------
+// Setup Steps (horizontal tracker)
+// ---------------------------------------------------------------------------
+
+const SETUP_STEPS = [
+  { key: 'buildTemplate' as const, label: 'Build', description: 'Build a flow template', path: '/flows/new' },
+  { key: 'publishTemplate' as const, label: 'Publish', description: 'Publish it', path: '/flows' },
+  { key: 'startFlow' as const, label: 'Execute', description: 'Start your first flow', path: '/runs' },
+  { key: 'coordinateFlows' as const, label: 'Coordinate', description: 'Coordinate your flows', path: '/runs' },
+];
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export function HomePage() {
   const navigate = useNavigate();
+  const onboarding = useOnboardingStore();
 
   const [runs, setRuns] = useState<FlowRun[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,6 +114,76 @@ export function HomePage() {
   return (
     <div className="min-h-full bg-gray-50/50">
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
+        {/* ==============================================================
+            0. Horizontal Setup Tracker
+        ============================================================== */}
+        {(() => {
+          const completedCount = SETUP_STEPS.filter((s) => onboarding[s.key]).length;
+          if (completedCount >= SETUP_STEPS.length || onboarding.isChecklistDismissed) return null;
+
+          return (
+            <div className="bg-white border border-gray-200 rounded-xl px-6 py-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-medium text-gray-900">
+                  Getting Started &middot; {completedCount}/{SETUP_STEPS.length}
+                </p>
+              </div>
+              <div className="flex items-start">
+                {SETUP_STEPS.map((step, idx) => {
+                  const done = onboarding[step.key];
+                  const isLast = idx === SETUP_STEPS.length - 1;
+
+                  return (
+                    <div key={step.key} className="flex items-start flex-1">
+                      {/* Step */}
+                      <button
+                        onClick={() => !done && navigate(step.path)}
+                        className="flex flex-col items-center text-center group"
+                        disabled={done}
+                      >
+                        {/* Circle */}
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                            done
+                              ? 'bg-green-100'
+                              : 'bg-gray-100 group-hover:bg-violet-100'
+                          }`}
+                        >
+                          {done ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          ) : (
+                            <span className="text-xs font-semibold text-gray-400 group-hover:text-violet-600">
+                              {idx + 1}
+                            </span>
+                          )}
+                        </div>
+                        {/* Label */}
+                        <span
+                          className={`text-xs font-medium mt-2 ${
+                            done ? 'text-gray-400' : 'text-gray-700 group-hover:text-violet-600'
+                          }`}
+                        >
+                          {step.label}
+                        </span>
+                        <span className="text-[11px] text-gray-400 mt-0.5 max-w-[100px]">
+                          {step.description}
+                        </span>
+                      </button>
+
+                      {/* Connector line */}
+                      {!isLast && (
+                        <div className="flex-1 mt-4 mx-2">
+                          <div className={`h-0.5 rounded-full ${done ? 'bg-green-300' : 'bg-gray-200'}`} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ==============================================================
             1. AI Prompt Area
         ============================================================== */}
