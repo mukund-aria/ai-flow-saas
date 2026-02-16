@@ -360,7 +360,7 @@ export function OrgSetupPage() {
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Your organization is ready!</h1>
-          <p className="mt-2 text-lg text-gray-500">Taking you in...</p>
+          <p className="mt-2 text-gray-500">Human + AI workflows — powered by AI Flow</p>
         </div>
       </div>
     );
