@@ -32,7 +32,7 @@ const SCENES = [
   },
   {
     title: 'Assignee Experience',
-    subtitle: 'External participants complete tasks in a guided interface — no account needed.',
+    subtitle: 'External participants complete tasks in a simple, guided interface — no account needed.',
   },
 ];
 
