@@ -55,15 +55,15 @@ router.post(
       role: 'ADMIN',
     });
 
-    // Seed default "Client Onboarding" flow template
+    // Seed default "Onboarding (Sample)" flow template
     const [defaultFlow] = await db.insert(flows).values({
-      name: 'Client Onboarding',
+      name: 'Onboarding (Sample)',
       description: 'A standard client onboarding workflow with intake, document collection, review, agreement, and completion steps.',
       version: '1.0',
       status: 'ACTIVE',
       isDefault: true,
       definition: {
-        name: 'Client Onboarding',
+        name: 'Onboarding (Sample)',
         description: 'A standard client onboarding workflow with intake, document collection, review, agreement, and completion steps.',
         steps: [
           {
@@ -131,7 +131,7 @@ router.post(
     // Seed a sample flow run with first step assigned to the creating user
     const [sampleRun] = await db.insert(flowRuns).values({
       flowId: defaultFlow.id,
-      name: 'Client Onboarding - Sample',
+      name: 'Onboarding (Sample)',
       status: 'IN_PROGRESS',
       isSample: true,
       currentStepIndex: 0,
