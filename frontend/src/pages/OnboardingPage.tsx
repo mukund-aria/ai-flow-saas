@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -36,6 +37,7 @@ export function OnboardingPage() {
 
       if (res.ok) {
         await checkAuth();
+        useOnboardingStore.getState().resetOnboarding();
         navigate('/org-setup');
       } else {
         const data = await res.json();

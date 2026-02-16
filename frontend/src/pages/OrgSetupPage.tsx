@@ -4,9 +4,12 @@
  * Moxo-inspired animated walkthrough shown after creating a new organization.
  * Each scene has a live mini-UI animation demonstrating the product concept.
  * 4 scenes + final frame, then redirects to /home.
+ *
+ * Title + progress bar stay fixed. Scene content slides in from the left;
+ * exiting content slides out to the right.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap } from 'lucide-react';
 
@@ -35,6 +38,7 @@ const SCENES = [
 
 const SCENE_DURATION = 9000;
 const FINAL_FRAME_DURATION = 4000;
+const INITIAL_DELAY = 1500;
 
 // ============================================================================
 // Scene 1: Build — AI prompt + flow generation
@@ -312,40 +316,51 @@ const SCENE_ANIMATIONS = [BuildAnimation, ExecuteAnimation, CoordinateAnimation,
 // Main Page
 // ============================================================================
 
-const INITIAL_DELAY = 1500;
-
 export function OrgSetupPage() {
   const navigate = useNavigate();
   const [sceneIndex, setSceneIndex] = useState(0);
   const [isFinal, setIsFinal] = useState(false);
   const [showScenes, setShowScenes] = useState(false);
+  // Track transition state: 'enter' | 'exit' | null
+  const [transition, setTransition] = useState<'enter' | 'exit' | null>(null);
+  const pendingSceneRef = useRef<number | null>(null);
 
   // Brief pause showing only the title before scene content appears
   useEffect(() => {
-    const delay = setTimeout(() => setShowScenes(true), INITIAL_DELAY);
+    const delay = setTimeout(() => {
+      setShowScenes(true);
+      setTransition('enter');
+    }, INITIAL_DELAY);
     return () => clearTimeout(delay);
   }, []);
 
-  // Advance scenes (only after initial delay)
+  // Advance scenes with exit → enter transition
   useEffect(() => {
     if (!showScenes) return;
     const timer = setInterval(() => {
-      setSceneIndex((prev) => {
-        if (prev < SCENES.length - 1) return prev + 1;
+      if (sceneIndex >= SCENES.length - 1) {
         clearInterval(timer);
-        return prev;
-      });
+        return;
+      }
+      // Start exit animation
+      setTransition('exit');
+      pendingSceneRef.current = sceneIndex + 1;
+      // After exit completes, switch scene and enter
+      setTimeout(() => {
+        setSceneIndex(pendingSceneRef.current!);
+        setTransition('enter');
+      }, 400);
     }, SCENE_DURATION);
     return () => clearInterval(timer);
-  }, [showScenes]);
+  }, [showScenes, sceneIndex]);
 
   // Show final frame after last scene
   useEffect(() => {
-    if (sceneIndex === SCENES.length - 1) {
+    if (sceneIndex === SCENES.length - 1 && showScenes) {
       const timeout = setTimeout(() => setIsFinal(true), SCENE_DURATION);
       return () => clearTimeout(timeout);
     }
-  }, [sceneIndex]);
+  }, [sceneIndex, showScenes]);
 
   // Redirect after final frame
   useEffect(() => {
@@ -363,7 +378,7 @@ export function OrgSetupPage() {
   if (isFinal) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-        <div key="final" className="animate-fade-in text-center">
+        <div key="final" className="animate-scene-enter text-center">
           <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
             <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -378,51 +393,56 @@ export function OrgSetupPage() {
 
   const scene = SCENES[sceneIndex];
   const AnimationComponent = SCENE_ANIMATIONS[sceneIndex];
+  const transitionClass = transition === 'enter'
+    ? 'animate-scene-enter'
+    : transition === 'exit'
+      ? 'animate-scene-exit'
+      : 'opacity-0';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
       <div className="w-full max-w-sm text-center">
-        {/* Persistent top title — always visible */}
+        {/* Fixed: Title — always visible, always same position */}
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Setting up your organization...</h1>
 
-        {/* Progress bar */}
-        <div className="w-full max-w-xs mx-auto h-1 bg-gray-200 rounded-full mb-10 overflow-hidden">
+        {/* Fixed: Progress bar — always visible, always same position */}
+        <div className="w-full max-w-xs mx-auto h-1 bg-gray-200 rounded-full mb-6 overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 rounded-full transition-all duration-700 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
 
-        {/* Scene content — appears after initial delay */}
-        {showScenes && (
-          <>
-            {/* Scene title + subtitle */}
-            <div key={`text-${sceneIndex}`} className="animate-fade-in mb-8">
-              <h2 className="text-lg font-semibold text-violet-600">{scene.title}</h2>
-              <p className="mt-1 text-sm text-gray-500">{scene.subtitle}</p>
-            </div>
+        {/* Fixed: Step dots — always visible, always same position */}
+        <div className="flex justify-center gap-2 mb-8">
+          {SCENES.map((_, i) => (
+            <div
+              key={i}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                i === sceneIndex
+                  ? 'bg-violet-600 w-6'
+                  : i < sceneIndex
+                    ? 'bg-violet-300 w-1.5'
+                    : 'bg-gray-200 w-1.5'
+              }`}
+            />
+          ))}
+        </div>
 
-            {/* Live animation */}
-            <div key={`anim-${sceneIndex}`} className="animate-fade-in">
+        {/* Sliding content area — fixed height to prevent layout shift */}
+        {showScenes && (
+          <div className="min-h-[340px] overflow-hidden">
+            <div key={sceneIndex} className={transitionClass}>
+              {/* Scene title + subtitle */}
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold text-violet-600">{scene.title}</h2>
+                <p className="mt-1 text-sm text-gray-500">{scene.subtitle}</p>
+              </div>
+
+              {/* Live animation */}
               <AnimationComponent />
             </div>
-
-            {/* Step dots */}
-            <div className="flex justify-center gap-2 mt-8">
-              {SCENES.map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-1.5 rounded-full transition-all duration-500 ${
-                    i === sceneIndex
-                      ? 'bg-violet-600 w-6'
-                      : i < sceneIndex
-                        ? 'bg-violet-300 w-1.5'
-                        : 'bg-gray-200 w-1.5'
-                  }`}
-                />
-              ))}
-            </div>
-          </>
+          </div>
         )}
       </div>
     </div>
