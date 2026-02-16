@@ -3,7 +3,7 @@
  *
  * Sections:
  * 1. AI Prompt Area (simplified)
- * 2. Needs Attention (rich status badges)
+ * 2. Attention Needed (rich status badges)
  * 3. Recent Activity (actor + event variety)
  */
 
@@ -247,13 +247,13 @@ export function HomePage() {
         </div>
 
         {/* ==============================================================
-            2. Needs Attention
+            2. Attention Needed
         ============================================================== */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-red-500" />
-              <h2 className="text-base font-semibold text-gray-900">Needs Attention</h2>
+              <h2 className="text-base font-semibold text-gray-900">Attention Needed</h2>
               {inProgressRuns.length > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
                   {inProgressRuns.length}
