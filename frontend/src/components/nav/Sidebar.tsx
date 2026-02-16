@@ -4,6 +4,7 @@
  * Main navigation sidebar for the Coordinator Portal.
  */
 
+import { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Home,
@@ -14,9 +15,12 @@ import {
   Plug,
   Plus,
   Settings,
+  LogOut,
+  RotateCcw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 import { OrgSwitcher } from './OrgSwitcher';
 
 interface NavItemProps {
@@ -46,6 +50,22 @@ function NavItem({ to, icon, label }: NavItemProps) {
 
 export function Sidebar() {
   const { user, logout } = useAuth();
+  const resetOnboarding = useOnboardingStore((s) => s.resetOnboarding);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+    }
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showUserMenu]);
 
   return (
     <aside className="w-56 bg-white border-r border-gray-200 flex flex-col">
@@ -79,28 +99,66 @@ export function Sidebar() {
       <div className="p-3 border-t border-gray-200">
         <NavItem to="/settings" icon={<Settings className="w-5 h-5" />} label="Settings" />
 
-        {/* User Profile */}
+        {/* User Profile with Popover Menu */}
         {user && (
-          <button
-            onClick={() => logout()}
-            className="flex items-center gap-3 w-full px-3 py-2 mt-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            {user.picture ? (
-              <img
-                src={user.picture}
-                alt={user.name}
-                className="w-8 h-8 rounded-full"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-medium">
-                {user.name?.charAt(0) || 'U'}
+          <div className="relative mt-2" ref={menuRef}>
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              {user.picture ? (
+                <img
+                  src={user.picture}
+                  alt={user.name}
+                  className="w-8 h-8 rounded-full"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-medium">
+                  {user.name?.charAt(0) || 'U'}
+                </div>
+              )}
+              <div className="flex-1 text-left min-w-0">
+                <p className="font-medium text-gray-900 truncate">{user.name}</p>
+                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+              </div>
+            </button>
+
+            {/* Popover Menu */}
+            {showUserMenu && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
+                <div className="px-4 py-2.5 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                </div>
+
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      resetOnboarding();
+                      setShowUserMenu(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <RotateCcw className="w-4 h-4 text-gray-400" />
+                    Restart onboarding tour
+                  </button>
+                </div>
+
+                <div className="border-t border-gray-100 py-1">
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      logout();
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4 text-gray-400" />
+                    Log out
+                  </button>
+                </div>
               </div>
             )}
-            <div className="flex-1 text-left">
-              <p className="font-medium text-gray-900 truncate">{user.name}</p>
-              <p className="text-xs text-gray-500">Sign out</p>
-            </div>
-          </button>
+          </div>
         )}
       </div>
     </aside>
