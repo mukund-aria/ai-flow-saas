@@ -20,19 +20,19 @@ import { Zap } from 'lucide-react';
 const SCENES = [
   {
     title: 'Build',
-    subtitle: 'Create your process with AI or drag & drop.',
+    subtitle: 'Describe your process and AI creates a flow template — or build one manually.',
   },
   {
     title: 'Execute',
-    subtitle: 'Start flows manually or through automated triggers.',
+    subtitle: 'Publish a template, then execute it manually, via start link, email, or on a schedule.',
   },
   {
     title: 'Coordinate',
-    subtitle: 'Monitor and manage active flows.',
+    subtitle: 'Track every active flow run\u2019s progress and see who\u2019s next in real time.',
   },
   {
-    title: 'Assignee Experience',
-    subtitle: 'Participants complete actions in a simple, guided interface.',
+    title: 'Assignee Portal',
+    subtitle: 'External participants complete tasks in a guided interface — no account needed.',
   },
 ];
 
