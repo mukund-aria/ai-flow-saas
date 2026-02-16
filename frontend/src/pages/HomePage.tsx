@@ -10,11 +10,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  Sparkles,
   AlertCircle,
   PlayCircle,
-  CheckCircle2,
-  Clock,
   ChevronRight,
   Loader2,
   ChevronDown,
@@ -85,23 +82,6 @@ export function HomePage() {
   const inProgressRuns = runs.filter((r) => r.status === 'IN_PROGRESS');
   const needsAttentionRuns = inProgressRuns.slice(0, 5);
 
-  const recentActivity = runs
-    .flatMap((run) => {
-      const events: { type: 'started' | 'completed' | 'cancelled'; run: FlowRun; date: string }[] = [
-        { type: 'started', run, date: run.startedAt },
-      ];
-      if (run.completedAt) {
-        events.push({
-          type: run.status === 'CANCELLED' ? 'cancelled' : 'completed',
-          run,
-          date: run.completedAt,
-        });
-      }
-      return events;
-    })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 6);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim()) {
@@ -120,9 +100,6 @@ export function HomePage() {
   return (
     <div className="min-h-full bg-gray-50/50">
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
-        {/* Page Title */}
-        <h1 className="text-xl font-semibold text-gray-900">Home</h1>
-
         {/* ==============================================================
             1. AI Prompt Area
         ============================================================== */}
@@ -285,71 +262,6 @@ export function HomePage() {
           )}
         </div>
 
-        {/* ==============================================================
-            3. Recent Activity
-        ============================================================== */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-gray-900">Recent Activity</h2>
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-            </div>
-            <Link
-              to="/runs"
-              className="text-sm text-gray-500 hover:text-gray-700 font-medium inline-flex items-center gap-1"
-            >
-              View all <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          {recentActivity.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
-              <p className="text-sm text-gray-400">No recent activity yet.</p>
-            </div>
-          ) : (
-            <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
-              {recentActivity.map((event, idx) => {
-                let icon: React.ReactNode;
-                let label: string;
-
-                switch (event.type) {
-                  case 'completed':
-                    icon = <CheckCircle2 className="w-5 h-5 text-green-500" />;
-                    label = 'completed';
-                    break;
-                  case 'cancelled':
-                    icon = <AlertCircle className="w-5 h-5 text-gray-400" />;
-                    label = 'was cancelled';
-                    break;
-                  default:
-                    icon = <Clock className="w-5 h-5 text-blue-500" />;
-                    label = 'was started';
-                    break;
-                }
-
-                return (
-                  <div
-                    key={`${event.run.id}-${event.type}-${idx}`}
-                    className="flex items-center gap-3 px-4 py-3"
-                  >
-                    <div className="flex-shrink-0">{icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm text-gray-700">
-                        <span className="font-medium text-gray-900">{event.run.name}</span>{' '}
-                        {label}
-                      </span>
-                      <span className="text-sm text-gray-400"> in </span>
-                      <span className="text-sm text-gray-600">{event.run.flow?.name || 'Flow'}</span>
-                    </div>
-                    <span className="text-xs text-gray-400 flex-shrink-0">
-                      {formatTimeAgo(event.date)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
