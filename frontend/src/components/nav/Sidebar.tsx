@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { GettingStartedChecklist } from '@/components/onboarding/GettingStartedChecklist';
 import { OrgSwitcher } from './OrgSwitcher';
 
 interface NavItemProps {
@@ -75,9 +74,6 @@ export function Sidebar() {
         <NavItem to="/schedules" icon={<Calendar className="w-5 h-5" />} label="Schedules" />
         <NavItem to="/integrations" icon={<Plug className="w-5 h-5" />} label="Integrations" />
       </nav>
-
-      {/* Getting Started Checklist */}
-      <GettingStartedChecklist />
 
       {/* Bottom Section */}
       <div className="p-3 border-t border-gray-200">
