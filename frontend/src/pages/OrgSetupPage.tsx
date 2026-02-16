@@ -68,7 +68,7 @@ function BuildAnimation() {
     { label: 'Collect Info', color: 'bg-green-500', delay: '0.15s' },
     { label: 'AI Extract', color: 'bg-cyan-500', delay: '0.3s' },
     { label: 'AI Review', color: 'bg-indigo-500', delay: '0.45s' },
-    { label: 'Review', color: 'bg-blue-500', delay: '0.6s' },
+    { label: 'Approval', color: 'bg-blue-500', delay: '0.6s' },
     { label: 'E-Sign', color: 'bg-pink-500', delay: '0.75s' },
     { label: 'Complete', color: 'bg-amber-500', delay: '0.9s' },
   ];
