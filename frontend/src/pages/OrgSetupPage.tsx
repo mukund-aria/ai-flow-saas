@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap } from 'lucide-react';
+import { Zap, Sparkles } from 'lucide-react';
 
 // ============================================================================
 // Scene Configuration
@@ -64,13 +64,13 @@ function BuildAnimation() {
   }, []);
 
   const steps = [
-    { label: 'Kickoff', color: 'bg-violet-500', delay: '0s' },
-    { label: 'Collect Info', color: 'bg-green-500', delay: '0.15s' },
-    { label: 'AI Extract', color: 'bg-cyan-500', delay: '0.3s' },
-    { label: 'AI Review', color: 'bg-indigo-500', delay: '0.45s' },
-    { label: 'Approval', color: 'bg-blue-500', delay: '0.6s' },
-    { label: 'E-Sign', color: 'bg-pink-500', delay: '0.75s' },
-    { label: 'Complete', color: 'bg-amber-500', delay: '0.9s' },
+    { label: 'Kickoff', color: 'bg-violet-500', delay: '0s', ai: false },
+    { label: 'Collect Info', color: 'bg-green-500', delay: '0.15s', ai: false },
+    { label: 'AI Extract', color: 'bg-cyan-500', delay: '0.3s', ai: true },
+    { label: 'AI Review', color: 'bg-indigo-500', delay: '0.45s', ai: true },
+    { label: 'Approval', color: 'bg-blue-500', delay: '0.6s', ai: false },
+    { label: 'E-Sign', color: 'bg-pink-500', delay: '0.75s', ai: false },
+    { label: 'Complete', color: 'bg-amber-500', delay: '0.9s', ai: false },
   ];
 
   return (
@@ -96,7 +96,10 @@ function BuildAnimation() {
               style={{ animationDelay: step.delay }}
             >
               <div className={`w-2 h-2 rounded-full ${step.color} flex-shrink-0`} />
-              <span className="text-xs font-medium text-gray-700">{step.label}</span>
+              <span className="text-xs font-medium text-gray-700 flex items-center gap-1">
+                {step.ai && <Sparkles className="w-3 h-3 text-violet-500" />}
+                {step.label}
+              </span>
               {i < steps.length - 1 && (
                 <div className="ml-auto w-4 h-px bg-gray-200" />
               )}
