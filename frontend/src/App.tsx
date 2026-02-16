@@ -100,10 +100,7 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route element={<PublicLayout />}>
-        <Route path="/" element={<LandingPage />} />
-      </Route>
-      <Route path="/preview" element={<FlowPreviewPage />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/task/:token" element={<AssigneeTaskPage />} />
