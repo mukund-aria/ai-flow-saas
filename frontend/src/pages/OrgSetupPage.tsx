@@ -24,14 +24,14 @@ const SCENES = [
   },
   {
     title: 'Execute',
-    subtitle: 'Publish a template, then execute it manually, via start link, email, or on a schedule.',
+    subtitle: 'Launch flows manually or through automated triggers.',
   },
   {
     title: 'Coordinate',
-    subtitle: 'Track every active flow run\u2019s progress and see who\u2019s next in real time.',
+    subtitle: 'Monitor and manage your active flows.',
   },
   {
-    title: 'Assignee Portal',
+    title: 'Assignee Experience',
     subtitle: 'External participants complete tasks in a guided interface — no account needed.',
   },
 ];
