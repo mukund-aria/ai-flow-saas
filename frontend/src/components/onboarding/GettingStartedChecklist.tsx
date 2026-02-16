@@ -2,7 +2,7 @@
  * Getting Started Checklist
  *
  * Compact onboarding checklist displayed in the sidebar.
- * Tracks 4 steps: Build, Publish, Execute, Coordinate.
+ * Tracks 5 steps: Build, Publish, Execute, Action, Coordinate.
  */
 
 import { CheckCircle2, Circle, X, ChevronRight } from 'lucide-react';
@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 
 interface ChecklistItem {
-  key: 'buildTemplate' | 'publishTemplate' | 'startFlow' | 'coordinateFlows';
+  key: 'buildTemplate' | 'publishTemplate' | 'startFlow' | 'completeAction' | 'coordinateFlows';
   label: string;
   path: string;
 }
@@ -19,6 +19,7 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   { key: 'buildTemplate', label: 'Build a flow template', path: '/flows/new' },
   { key: 'publishTemplate', label: 'Publish your template', path: '/flows' },
   { key: 'startFlow', label: 'Start your first flow', path: '/runs' },
+  { key: 'completeAction', label: 'Complete an action', path: '/runs' },
   { key: 'coordinateFlows', label: 'Coordinate your flows', path: '/runs' },
 ];
 

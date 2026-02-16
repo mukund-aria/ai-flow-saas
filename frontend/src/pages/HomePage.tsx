@@ -71,6 +71,7 @@ const SETUP_STEPS = [
   { key: 'buildTemplate' as const, label: 'Build', description: 'Build a flow template', path: '/flows/new' },
   { key: 'publishTemplate' as const, label: 'Publish', description: 'Publish your template', path: '/flows' },
   { key: 'startFlow' as const, label: 'Execute', description: 'Start your first flow', path: '/runs' },
+  { key: 'completeAction' as const, label: 'Action', description: 'Complete an action', path: '/runs/latest' },
   { key: 'coordinateFlows' as const, label: 'Coordinate', description: 'Coordinate your flows', path: '/runs' },
 ];
 
@@ -147,7 +148,14 @@ export function HomePage() {
                     <div key={step.key} className="contents">
                       {/* Step */}
                       <button
-                        onClick={() => !done && navigate(step.path)}
+                        onClick={() => {
+                          if (done) return;
+                          if (step.key === 'completeAction' && inProgressRuns.length > 0) {
+                            navigate(`/runs/${inProgressRuns[0].id}`);
+                          } else {
+                            navigate(step.path);
+                          }
+                        }}
                         className={`flex flex-col items-center text-center group flex-1 rounded-lg py-3 transition-colors ${
                           done ? '' : 'hover:bg-violet-50 cursor-pointer'
                         }`}

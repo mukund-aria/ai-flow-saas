@@ -241,8 +241,9 @@ export function FlowRunDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
-  // Track onboarding: viewed a run
+  // Track onboarding: viewed a run completes both action + coordinate steps
   useEffect(() => {
+    useOnboardingStore.getState().completeCompleteAction();
     useOnboardingStore.getState().completeCoordinateFlows();
   }, []);
 
