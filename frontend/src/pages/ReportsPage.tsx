@@ -234,7 +234,7 @@ function ProgressInsightsSection({ timeRange }: { timeRange: TimeRange }) {
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
             <Layers className="w-5 h-5 text-gray-400" />
-            <span className="text-sm text-gray-500">Active Flows</span>
+            <span className="text-sm text-gray-500">Active Flow Templates</span>
           </div>
           <div className="text-2xl font-bold text-gray-900">{data.activeFlows}</div>
         </div>
@@ -311,13 +311,13 @@ function FlowReportTab() {
     <div className="bg-white rounded-xl border border-gray-200">
       <div className="p-6 border-b border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900">Flow Performance</h3>
-        <p className="text-sm text-gray-500">Overview of workflow template performance</p>
+        <p className="text-sm text-gray-500">Overview of flow template performance</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100">
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Flow Name</th>
+              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Flow Template</th>
               <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Total Runs</th>
               <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Completed</th>
               <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Completion Rate</th>
@@ -485,7 +485,7 @@ export function ReportsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Monitor workflow performance and team productivity
+            Reports show how your flows perform — completion times, bottlenecks, and activity
           </p>
         </div>
         <Badge variant="secondary" className="text-sm font-medium bg-violet-50 text-violet-700">

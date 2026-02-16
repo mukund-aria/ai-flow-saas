@@ -97,12 +97,12 @@ export function HomePage() {
                 <FileText className="w-5 h-5 text-violet-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Flows</h3>
+                <h3 className="font-medium text-gray-900">Flow Templates</h3>
                 <p className="text-sm text-gray-500">0 templates</p>
               </div>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              Create your first workflow template to get started.
+              Create your first flow template to get started.
             </p>
             <Button
               variant="outline"
@@ -110,7 +110,7 @@ export function HomePage() {
               onClick={() => navigate('/flows')}
               className="w-full"
             >
-              View Flows
+              View Templates
             </Button>
           </div>
 
@@ -121,12 +121,12 @@ export function HomePage() {
                 <PlayCircle className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">Flow Runs</h3>
+                <h3 className="font-medium text-gray-900">Flows</h3>
                 <p className="text-sm text-gray-500">0 active</p>
               </div>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              No active flow runs. Start one from your flows.
+              No active flows. Start one from your flow templates.
             </p>
             <Button
               variant="outline"
@@ -134,7 +134,7 @@ export function HomePage() {
               onClick={() => navigate('/runs')}
               className="w-full"
             >
-              View Runs
+              View Flows
             </Button>
           </div>
 

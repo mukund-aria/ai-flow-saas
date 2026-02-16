@@ -389,8 +389,8 @@ export function ContactsPage() {
             No contacts yet
           </h3>
           <p className="text-gray-500 mb-8 max-w-md mx-auto leading-relaxed">
-            Add external contacts to assign them tasks in your workflows.
-            Contacts will receive magic links to complete their assigned steps.
+            Contacts are people who participate in your flows. They access tasks via
+            secure magic links — no account needed.
           </p>
 
           <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-violet-200/50">

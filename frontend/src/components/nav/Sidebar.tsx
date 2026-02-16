@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { GettingStartedChecklist } from '@/components/onboarding/GettingStartedChecklist';
 
 interface NavItemProps {
   to: string;
@@ -93,17 +94,17 @@ export function Sidebar() {
 
       {/* Navigation Links */}
       <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-        <NavItem to="/" icon={<Home className="w-5 h-5" />} label="Home" />
+        <NavItem to="/home" icon={<Home className="w-5 h-5" />} label="Home" />
         <NavItem
           to="/flows"
           icon={<FileText className="w-5 h-5" />}
-          label="Flows"
+          label="Flow Templates"
           badge={flowCount}
         />
         <NavItem
           to="/runs"
           icon={<PlayCircle className="w-5 h-5" />}
-          label="Flow Runs"
+          label="Flows"
           badge={runCount}
         />
         <NavItem
@@ -131,6 +132,9 @@ export function Sidebar() {
           label="Integrations"
         />
       </nav>
+
+      {/* Onboarding Checklist */}
+      <GettingStartedChecklist />
 
       {/* Bottom Section */}
       <div className="p-3 border-t border-gray-200">

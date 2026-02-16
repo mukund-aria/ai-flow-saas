@@ -2,6 +2,7 @@
  * Login Page
  *
  * Simple login page with Google OAuth sign-in button.
+ * Supports returnTo query param for post-auth redirect.
  */
 
 import { useEffect } from 'react';
@@ -13,13 +14,15 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const error = searchParams.get('error');
+  const returnTo = searchParams.get('returnTo');
 
-  // Redirect to home if already authenticated
+  // Redirect to returnTo or /home if already authenticated
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      navigate('/');
+      const destination = returnTo || '/home';
+      navigate(destination);
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate, returnTo]);
 
   if (isLoading) {
     return (
@@ -28,6 +31,11 @@ export function LoginPage() {
       </div>
     );
   }
+
+  // Build Google auth URL with returnTo
+  const googleAuthUrl = returnTo
+    ? `/auth/google?returnTo=${encodeURIComponent(returnTo)}`
+    : '/auth/google';
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
@@ -49,7 +57,7 @@ export function LoginPage() {
               />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">AI Flow Copilot</h1>
+          <h1 className="text-3xl font-bold text-gray-900">AI Flow</h1>
           <p className="mt-2 text-gray-600">
             Build workflows with AI
           </p>
@@ -79,7 +87,7 @@ export function LoginPage() {
 
           {/* Sign In Button */}
           <a
-            href="/auth/google"
+            href={googleAuthUrl}
             className="w-full flex items-center justify-center gap-3 px-6 py-3.5 border border-gray-200 rounded-xl shadow-sm bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 group"
           >
             {/* Google Icon */}

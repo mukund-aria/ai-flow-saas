@@ -110,7 +110,7 @@ export function FlowRunsPage() {
         setRuns(data);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load flow runs');
+        setError(err instanceof Error ? err.message : 'Failed to load flows');
       } finally {
         setIsLoading(false);
       }
@@ -133,7 +133,7 @@ export function FlowRunsPage() {
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-violet-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Loading flow runs...</p>
+          <p className="text-sm text-gray-500">Loading flows...</p>
         </div>
       </div>
     );
@@ -144,7 +144,7 @@ export function FlowRunsPage() {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          <p className="font-medium">Error loading flow runs</p>
+          <p className="font-medium">Error loading flows</p>
           <p className="text-sm mt-1">{error}</p>
         </div>
       </div>
@@ -155,9 +155,9 @@ export function FlowRunsPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Flow Runs</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Flows</h1>
         <p className="text-sm text-gray-500 mt-1">
-          {runs.length} workflow instance{runs.length !== 1 ? 's' : ''}
+          {runs.length} flow{runs.length !== 1 ? 's' : ''}
         </p>
       </div>
 
@@ -167,7 +167,7 @@ export function FlowRunsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search runs..."
+            placeholder="Search flows..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
@@ -208,7 +208,7 @@ export function FlowRunsPage() {
                     <div>
                       <h3 className="font-medium text-gray-900">{run.name}</h3>
                       <p className="text-sm text-gray-500">
-                        {run.flow?.name || 'Unknown Flow'}
+                        {run.flow?.name || 'Unknown Flow Template'}
                       </p>
                     </div>
                   </div>
@@ -256,10 +256,10 @@ export function FlowRunsPage() {
             <PlayCircle className="w-8 h-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No flow runs yet
+            No flows yet
           </h3>
           <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-            Start a flow run from one of your workflow templates to see it here.
+            Flows are live instances of your workflow templates. Publish a flow template, then start a flow to see progress here.
           </p>
         </div>
       )}

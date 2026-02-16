@@ -72,20 +72,9 @@ export async function sendMessage(request: ChatRequest) {
 }
 
 /**
- * Send a chat message with SSE streaming
- * Returns an async generator that yields stream events
+ * Parse SSE stream from a fetch response into stream events
  */
-export async function* streamMessage(request: ChatRequest): AsyncGenerator<StreamEvent> {
-  const res = await fetch(`${API_BASE}/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...request, stream: true }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`HTTP error! status: ${res.status}`);
-  }
-
+async function* parseSSEStream(res: Response): AsyncGenerator<StreamEvent> {
   const reader = res.body?.getReader();
   if (!reader) {
     throw new Error('No response body');
@@ -122,6 +111,45 @@ export async function* streamMessage(request: ChatRequest): AsyncGenerator<Strea
       }
     }
   }
+}
+
+/**
+ * Send a chat message with SSE streaming
+ * Returns an async generator that yields stream events
+ */
+export async function* streamMessage(request: ChatRequest): AsyncGenerator<StreamEvent> {
+  const res = await fetch(`${API_BASE}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...request, stream: true }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP error! status: ${res.status}`);
+  }
+
+  yield* parseSSEStream(res);
+}
+
+/**
+ * Send a chat message to the public (unauthenticated) chat endpoint
+ * Used for the landing page preview experience
+ */
+export async function* streamPublicMessage(request: { message: string; sessionId?: string }): AsyncGenerator<StreamEvent> {
+  const res = await fetch(`${API_BASE}/public/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+
+  if (!res.ok) {
+    if (res.status === 429) {
+      throw new Error('Rate limit reached. Sign up for unlimited access.');
+    }
+    throw new Error(`HTTP error! status: ${res.status}`);
+  }
+
+  yield* parseSSEStream(res);
 }
 
 /**

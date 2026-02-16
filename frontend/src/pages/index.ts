@@ -13,3 +13,5 @@ export { SchedulesPage } from './SchedulesPage';
 export { IntegrationsPage } from './IntegrationsPage';
 export { SettingsPage } from './SettingsPage';
 export { LoginPage } from './LoginPage';
+export { LandingPage } from './LandingPage';
+export { FlowPreviewPage } from './FlowPreviewPage';

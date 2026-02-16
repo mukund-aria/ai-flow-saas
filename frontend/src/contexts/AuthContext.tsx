@@ -81,8 +81,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Logout error:', err);
     } finally {
       setUser(null);
-      // Redirect to login page
-      window.location.href = '/login';
+      // Redirect to landing page
+      window.location.href = '/';
     }
   };
 

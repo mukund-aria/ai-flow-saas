@@ -3,44 +3,84 @@
  *
  * The AI-powered flow builder with chat interface and workflow preview.
  * This integrates the existing AI Flow Copilot functionality.
+ * Supports loading a preview workflow after auth redirect (fromPreview flow).
  */
 
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, MessageSquare } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ChatContainer } from '@/components/chat/ChatContainer';
 import { WorkflowPanel } from '@/components/workflow/WorkflowPanel';
 import { useChat } from '@/hooks/useChat';
 import { useWorkflowStore } from '@/stores/workflowStore';
+import { usePreviewStore } from '@/stores/previewStore';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Button } from '@/components/ui/button';
-import { publishFlow } from '@/lib/api';
+import { publishFlow as publishFlowApi, createFlow } from '@/lib/api';
 
 export function FlowBuilderPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { sendMessage, startNewChat } = useChat();
-  const { workflow, savedFlowId, savedFlowStatus, isSaving, setSavedFlow } = useWorkflowStore();
+  const { workflow, savedFlowId, savedFlowStatus, isSaving, setSavedFlow, setWorkflow, setSaving } = useWorkflowStore();
+  const { previewWorkflow, previewPrompt, clearPreview } = usePreviewStore();
+  const { completeBuildFlow } = useOnboardingStore();
   const [isPublishing, setIsPublishing] = useState(false);
   const [showAIChat, setShowAIChat] = useState(true);
+  const [showPreviewToast, setShowPreviewToast] = useState(false);
+  const previewLoadedRef = useRef(false);
 
   // Check if we have a prompt from navigation state (from Home page)
   const initialPrompt = (location.state as { prompt?: string })?.prompt;
+  const fromPreview = searchParams.get('fromPreview') === 'true';
 
   // Start a new chat when component mounts
   useEffect(() => {
     startNewChat();
   }, []);
 
-  // Send initial prompt if provided
+  // Load preview workflow if coming from preview flow
   useEffect(() => {
-    if (initialPrompt) {
-      // Small delay to ensure chat is ready
+    if (fromPreview && previewWorkflow && !previewLoadedRef.current) {
+      previewLoadedRef.current = true;
+
+      // Load the preview workflow into the workflow store
+      setWorkflow(previewWorkflow);
+
+      // Auto-save as DRAFT
+      setSaving(true);
+      createFlow({
+        name: previewWorkflow.name || 'Untitled Flow',
+        description: previewWorkflow.description || '',
+        definition: previewWorkflow as unknown as Record<string, unknown>,
+        status: 'DRAFT',
+      })
+        .then((savedFlow) => {
+          setSavedFlow(savedFlow.id, 'DRAFT');
+          completeBuildFlow();
+          setShowPreviewToast(true);
+          // Auto-dismiss toast after 5 seconds
+          setTimeout(() => setShowPreviewToast(false), 5000);
+        })
+        .catch((err) => {
+          console.error('Failed to save preview flow:', err);
+        });
+
+      // Clear the preview store
+      clearPreview();
+    }
+  }, [fromPreview, previewWorkflow, setWorkflow, setSaving, setSavedFlow, clearPreview, completeBuildFlow]);
+
+  // Send initial prompt if provided (from Home page, not preview)
+  useEffect(() => {
+    if (initialPrompt && !fromPreview) {
       const timer = setTimeout(() => {
         sendMessage(initialPrompt);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [initialPrompt]);
+  }, [initialPrompt, fromPreview]);
 
   // Handle publish
   const handlePublish = async () => {
@@ -48,8 +88,10 @@ export function FlowBuilderPage() {
 
     setIsPublishing(true);
     try {
-      const published = await publishFlow(savedFlowId);
+      const published = await publishFlowApi(savedFlowId);
       setSavedFlow(published.id, 'ACTIVE');
+      // Track onboarding: flow published
+      useOnboardingStore.getState().completePublishFlow();
       // Navigate to flows page after publish
       navigate('/flows');
     } catch (err) {
@@ -64,6 +106,20 @@ export function FlowBuilderPage() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Preview Toast */}
+      {showPreviewToast && (
+        <div className="absolute top-4 right-4 z-50 bg-green-50 border border-green-200 rounded-xl p-4 shadow-lg max-w-sm animate-in fade-in slide-in-from-top-4 duration-300">
+          <p className="text-sm font-medium text-green-900">Your workflow has been saved!</p>
+          <p className="text-sm text-green-700 mt-1">You can now edit and run it.</p>
+          <button
+            onClick={() => setShowPreviewToast(false)}
+            className="mt-2 text-xs text-green-600 underline hover:no-underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-4">
@@ -74,13 +130,13 @@ export function FlowBuilderPage() {
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Flows
+            Back to Flow Templates
           </Button>
           <div className="h-6 w-px bg-gray-200" />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold text-gray-900">
-                {workflow ? workflowName : 'Create New Flow'}
+                {workflow ? workflowName : 'Create New Flow Template'}
               </h1>
               {savedFlowStatus && (
                 <span

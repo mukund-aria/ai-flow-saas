@@ -2,7 +2,13 @@
  * AI Flow SaaS - Main Application
  *
  * Routes:
- * - / : Home page with AI prompt
+ * Public:
+ * - / : Landing page (public)
+ * - /preview : Flow preview page (public)
+ * - /login : Login page
+ *
+ * Protected (Coordinator Portal):
+ * - /home : Dashboard with AI prompt
  * - /flows : Flow templates list
  * - /flows/new : AI flow builder
  * - /flows/:id : Flow detail (edit)
@@ -13,12 +19,12 @@
  * - /schedules : Coming soon
  * - /integrations : Coming soon
  * - /settings : Settings
- * - /login : Login page
  */
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { CoordinatorLayout } from '@/layouts/CoordinatorLayout';
+import { PublicLayout } from '@/layouts/PublicLayout';
 import {
   HomePage,
   FlowsPage,
@@ -31,6 +37,8 @@ import {
   IntegrationsPage,
   SettingsPage,
   LoginPage,
+  LandingPage,
+  FlowPreviewPage,
 } from '@/pages';
 
 // ============================================================================
@@ -39,6 +47,7 @@ import {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
 
   // Show loading spinner while checking auth
   if (isLoading) {
@@ -55,12 +64,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // In development without auth configured, allow access
   const isDev = import.meta.env.DEV;
   if (isDev && !isAuthenticated) {
-    // In development, allow access without auth for easier testing
     return <>{children}</>;
   }
 
-  // In production, redirect to login if not authenticated
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  // In production, redirect to login with returnTo
+  if (!isAuthenticated) {
+    const returnTo = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/login?returnTo=${returnTo}`} replace />;
+  }
+
+  return <>{children}</>;
 }
 
 // ============================================================================
@@ -71,9 +84,23 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<LandingPage />} />
+      </Route>
+      <Route path="/preview" element={<FlowPreviewPage />} />
       <Route path="/login" element={<LoginPage />} />
 
       {/* Protected Routes - Coordinator Portal */}
+      <Route
+        path="/home"
+        element={
+          <ProtectedRoute>
+            <CoordinatorLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<HomePage />} />
+      </Route>
       <Route
         path="/"
         element={
@@ -82,7 +109,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<HomePage />} />
         <Route path="flows" element={<FlowsPage />} />
         <Route path="flows/new" element={<FlowBuilderPage />} />
         <Route path="flows/:id" element={<FlowBuilderPage />} />

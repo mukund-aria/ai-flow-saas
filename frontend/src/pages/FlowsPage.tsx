@@ -22,6 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { listFlows, startFlowRun, type Flow } from '@/lib/api';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 
 type SortOption = 'lastModified' | 'name' | 'created' | 'steps';
 
@@ -159,7 +160,7 @@ function FlowCard({ flow, onEdit, onStartRun, isStarting }: FlowCardProps) {
         ) : (
           <>
             <Play className="w-4 h-4 mr-2" />
-            Start Flow Run
+            Start Flow
           </>
         )}
       </Button>
@@ -189,11 +190,11 @@ function EmptyState({ onCreateFlow }: { onCreateFlow: () => void }) {
       </div>
 
       <h3 className="text-xl font-semibold text-gray-900 mb-3">
-        Create your first workflow
+        Create your first flow template
       </h3>
       <p className="text-gray-500 mb-8 max-w-md mx-auto leading-relaxed">
-        Workflows help you automate business processes. Start by creating a template
-        that defines the steps your team will follow.
+        Flow Templates are reusable workflow blueprints. Create one with AI or from scratch
+        to define the steps your team will follow.
       </p>
 
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -203,7 +204,7 @@ function EmptyState({ onCreateFlow }: { onCreateFlow: () => void }) {
           className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-violet-200/50"
         >
           <Plus className="w-5 h-5 mr-2" />
-          Create your first flow
+          Create your first template
         </Button>
         <Button variant="outline" size="lg" className="text-gray-600">
           <FileText className="w-5 h-5 mr-2" />
@@ -235,6 +236,8 @@ export function FlowsPage() {
         minute: '2-digit',
       })}`;
       const run = await startFlowRun(flow.id, runName);
+      // Track onboarding: flow run started
+      useOnboardingStore.getState().completeRunFlow();
       navigate(`/runs/${run.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start flow run');
@@ -292,7 +295,7 @@ export function FlowsPage() {
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-violet-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Loading flows...</p>
+          <p className="text-sm text-gray-500">Loading templates...</p>
         </div>
       </div>
     );
@@ -303,7 +306,7 @@ export function FlowsPage() {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          <p className="font-medium">Error loading flows</p>
+          <p className="font-medium">Error loading templates</p>
           <p className="text-sm mt-1">{error}</p>
         </div>
       </div>
@@ -315,7 +318,7 @@ export function FlowsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Flows</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Flow Templates</h1>
           <Badge variant="secondary" className="text-sm font-medium">
             {flows.length}
           </Badge>
@@ -336,7 +339,7 @@ export function FlowsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search flows..."
+            placeholder="Search templates..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow"
@@ -402,7 +405,7 @@ export function FlowsPage() {
             <Search className="w-8 h-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No flows found
+            No templates found
           </h3>
           <p className="text-gray-500 mb-4">
             Try adjusting your search or filter criteria

@@ -17,6 +17,7 @@ import dotenv from 'dotenv';
 import apiRoutes from './routes/index.js';
 import { errorHandler } from './middleware/index.js';
 import { passport, configurePassport, authRoutes, requireAuth } from './auth/index.js';
+import publicChatRouter, { publicChatLimiter } from './routes/public-chat.js';
 
 dotenv.config();
 
@@ -110,6 +111,12 @@ if (isProduction) {
     res.sendFile(path.join(publicPath, 'index.html'));
   });
 }
+
+// ============================================================================
+// Public Chat API (unauthenticated, rate-limited)
+// ============================================================================
+
+app.use('/api/public/chat', publicChatRouter);
 
 // ============================================================================
 // API Routes (protected in production)

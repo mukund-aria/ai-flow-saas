@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { StepIcon } from '@/components/workflow/StepIcon';
 import { getFlowRun, type FlowRun } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 import type { StepType } from '@/types';
 
 // ============================================================================
@@ -240,6 +241,11 @@ export function FlowRunDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
+  // Track onboarding: viewed a run
+  useEffect(() => {
+    useOnboardingStore.getState().completeViewRun();
+  }, []);
+
   // Fetch flow run details on mount
   useEffect(() => {
     async function fetchRun() {
@@ -256,7 +262,7 @@ export function FlowRunDetailPage() {
         setRun(runWithSteps);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load flow run');
+        setError(err instanceof Error ? err.message : 'Failed to load flow');
       } finally {
         setIsLoading(false);
       }
@@ -266,7 +272,7 @@ export function FlowRunDetailPage() {
 
   // Handle cancel run action
   const handleCancelRun = async () => {
-    if (!run || !window.confirm('Are you sure you want to cancel this flow run? This action cannot be undone.')) {
+    if (!run || !window.confirm('Are you sure you want to cancel this flow? This action cannot be undone.')) {
       return;
     }
 
@@ -289,7 +295,7 @@ export function FlowRunDetailPage() {
       <div className="p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin text-violet-600 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Loading flow run...</p>
+          <p className="text-sm text-gray-500">Loading flow...</p>
         </div>
       </div>
     );
@@ -307,12 +313,12 @@ export function FlowRunDetailPage() {
             className="gap-2 text-gray-600"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Flow Runs
+            Back to Flows
           </Button>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          <p className="font-medium">Error loading flow run</p>
-          <p className="text-sm mt-1">{error || 'Flow run not found'}</p>
+          <p className="font-medium">Error loading flow</p>
+          <p className="text-sm mt-1">{error || 'Flow not found'}</p>
         </div>
       </div>
     );
@@ -335,7 +341,7 @@ export function FlowRunDetailPage() {
           className="gap-2 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Flow Runs
+          Back to Flows
         </Button>
       </div>
 
@@ -349,7 +355,7 @@ export function FlowRunDetailPage() {
             <div>
               <h1 className="text-xl font-bold text-gray-900">{run.name}</h1>
               <p className="text-sm text-gray-500 mt-0.5">
-                {run.flow?.name || 'Unknown Flow'} &middot; Started {formatTimeAgo(run.startedAt)}
+                {run.flow?.name || 'Unknown Flow Template'} &middot; Started {formatTimeAgo(run.startedAt)}
               </p>
             </div>
           </div>
@@ -529,7 +535,7 @@ export function FlowRunDetailPage() {
             <div className="w-12 h-12 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-3">
               <AlertCircle className="w-6 h-6 text-gray-400" />
             </div>
-            <p className="text-gray-500">No steps found for this flow run.</p>
+            <p className="text-gray-500">No steps found for this flow.</p>
           </div>
         )}
       </div>
@@ -540,7 +546,7 @@ export function FlowRunDetailPage() {
           <div className="flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5 text-green-600" />
             <div>
-              <p className="font-medium text-green-900">Flow Run Completed</p>
+              <p className="font-medium text-green-900">Flow Completed</p>
               <p className="text-sm text-green-700 mt-0.5">
                 Completed on {formatDateTime(run.completedAt)}
               </p>
@@ -555,9 +561,9 @@ export function FlowRunDetailPage() {
           <div className="flex items-center gap-3">
             <XCircle className="w-5 h-5 text-red-600" />
             <div>
-              <p className="font-medium text-red-900">Flow Run Cancelled</p>
+              <p className="font-medium text-red-900">Flow Cancelled</p>
               <p className="text-sm text-red-700 mt-0.5">
-                This flow run was cancelled before completion.
+                This flow was cancelled before completion.
               </p>
             </div>
           </div>

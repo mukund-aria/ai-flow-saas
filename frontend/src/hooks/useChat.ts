@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useChatStore } from '@/stores/chatStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useWorkflowStore } from '@/stores/workflowStore';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 import { streamMessage, publishPlan, uploadFile, getSession, createFlow } from '@/lib/api';
 import { getUserFriendlyError } from '@/lib/friendly-errors';
 import type { PendingPlan, Flow, MessageAttachment, Message, Clarification, SuggestedAction } from '@/types';
@@ -424,6 +425,9 @@ export function useChat() {
               status: 'DRAFT',
             });
             setSavedFlow(savedFlow.id, 'DRAFT');
+
+            // Track onboarding: flow built
+            useOnboardingStore.getState().completeBuildFlow();
 
             // Message 1: Workflow saved confirmation
             addAssistantMessage(
