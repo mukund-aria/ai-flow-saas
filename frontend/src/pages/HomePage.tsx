@@ -251,7 +251,7 @@ export function HomePage() {
                     <button
                       key={s}
                       type="button"
-                      onClick={() => navigate('/flows/new', { state: { prompt: s } })}
+                      onClick={() => setPrompt(s)}
                       className="px-3 py-1.5 rounded-full text-sm bg-gray-100 text-gray-600 hover:bg-violet-50 hover:text-violet-700 transition-colors"
                     >
                       {s}
