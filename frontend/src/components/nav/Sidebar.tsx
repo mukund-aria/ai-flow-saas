@@ -68,8 +68,8 @@ export function Sidebar() {
       {/* Navigation Links */}
       <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
         <NavItem to="/home" icon={<Home className="w-5 h-5" />} label="Home" />
-        <NavItem to="/flows" icon={<FileText className="w-5 h-5" />} label="Flow Templates" />
         <NavItem to="/runs" icon={<PlayCircle className="w-5 h-5" />} label="Flows" />
+        <NavItem to="/flows" icon={<FileText className="w-5 h-5" />} label="Flow Templates" />
         <NavItem to="/reports" icon={<BarChart3 className="w-5 h-5" />} label="Reports" />
         <NavItem to="/schedules" icon={<Calendar className="w-5 h-5" />} label="Schedules" />
         <NavItem to="/integrations" icon={<Plug className="w-5 h-5" />} label="Integrations" />
