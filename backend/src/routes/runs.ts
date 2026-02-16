@@ -1,8 +1,8 @@
 /**
- * Flow Runs API Routes
+ * Flows API Routes (Active Instances)
  *
- * Endpoints for executing workflow instances (flow runs).
- * Handles creating runs from templates and tracking step progress.
+ * Endpoints for executing workflow instances (flows).
+ * Handles creating flows from templates and tracking step progress.
  */
 
 import { Router } from 'express';
@@ -14,7 +14,7 @@ import { logAction } from '../services/audit.js';
 const router = Router();
 
 // ============================================================================
-// GET /api/runs - List all flow runs
+// GET /api/flows - List all flows (active instances)
 // ============================================================================
 
 router.get(
@@ -117,7 +117,7 @@ router.get(
 );
 
 // ============================================================================
-// GET /api/runs/:id - Get single flow run with step executions
+// GET /api/flows/:id - Get single flow with step executions
 // ============================================================================
 
 router.get(
@@ -174,13 +174,13 @@ router.get(
 );
 
 // ============================================================================
-// POST /api/flows/:flowId/runs - Start a new flow run from a flow template
+// POST /api/templates/:templateId/flows - Start a new flow from a template
 // ============================================================================
 
 router.post(
-  '/flows/:flowId/runs',
+  '/templates/:templateId/flows',
   asyncHandler(async (req, res) => {
-    const flowId = req.params.flowId as string;
+    const flowId = req.params.templateId as string;
     const { name } = req.body;
 
     // Get the flow template
@@ -299,7 +299,7 @@ router.post(
 );
 
 // ============================================================================
-// POST /api/runs/:id/steps/:stepId/complete - Mark a step as completed
+// POST /api/flows/:id/steps/:stepId/complete - Mark a step as completed
 // ============================================================================
 
 router.post(
@@ -443,7 +443,7 @@ router.post(
 );
 
 // ============================================================================
-// POST /api/runs/:id/cancel - Cancel a flow run
+// POST /api/flows/:id/cancel - Cancel a flow
 // ============================================================================
 
 router.post(

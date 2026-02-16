@@ -9,11 +9,11 @@
  *
  * Protected (Coordinator Portal):
  * - /home : Dashboard with AI prompt
- * - /flows : Flow templates list
- * - /flows/new : AI flow builder
- * - /flows/:id : Flow detail (edit)
- * - /runs : Flow runs list
- * - /runs/:id : Flow run detail
+ * - /templates : Templates list (workflow blueprints)
+ * - /templates/new : AI template builder
+ * - /templates/:id : Template detail (edit)
+ * - /flows : Flows list (active instances)
+ * - /flows/:id : Flow detail
  * - /reports : Analytics dashboard
  * - /contacts : Contact management
  * - /schedules : Coming soon
@@ -146,11 +146,11 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route path="flows" element={<FlowsPage />} />
-        <Route path="flows/new" element={<FlowBuilderPage />} />
-        <Route path="flows/:id" element={<FlowBuilderPage />} />
-        <Route path="runs" element={<FlowRunsPage />} />
-        <Route path="runs/:id" element={<FlowRunDetailPage />} />
+        <Route path="templates" element={<FlowsPage />} />
+        <Route path="templates/new" element={<FlowBuilderPage />} />
+        <Route path="templates/:id" element={<FlowBuilderPage />} />
+        <Route path="flows" element={<FlowRunsPage />} />
+        <Route path="flows/:id" element={<FlowRunDetailPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="contacts" element={<ContactsPage />} />
         <Route path="schedules" element={<SchedulesPage />} />

@@ -16,7 +16,7 @@ import { useWorkflowStore } from '@/stores/workflowStore';
 import { usePreviewStore } from '@/stores/previewStore';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Button } from '@/components/ui/button';
-import { publishFlow as publishFlowApi, createFlow, updateFlow } from '@/lib/api';
+import { publishTemplate as publishTemplateApi, createTemplate, updateTemplate } from '@/lib/api';
 
 type BuilderMode = 'ai' | 'manual';
 
@@ -80,8 +80,8 @@ export function FlowBuilderPage() {
 
       // Auto-save as DRAFT
       setSaving(true);
-      createFlow({
-        name: previewWorkflow.name || 'Untitled Flow',
+      createTemplate({
+        name: previewWorkflow.name || 'Untitled Template',
         description: previewWorkflow.description || '',
         definition: previewWorkflow as unknown as Record<string, unknown>,
         status: 'DRAFT',
@@ -121,17 +121,17 @@ export function FlowBuilderPage() {
     setSaving(true);
     try {
       if (currentSavedId) {
-        // Update existing flow
-        const saved = await updateFlow(currentSavedId, {
-          name: currentWorkflow.name || 'Untitled Flow',
+        // Update existing template
+        const saved = await updateTemplate(currentSavedId, {
+          name: currentWorkflow.name || 'Untitled Template',
           description: currentWorkflow.description || '',
           definition: currentWorkflow as unknown as Record<string, unknown>,
         });
         setSavedFlow(saved.id, saved.status);
       } else {
-        // Create new flow
-        const saved = await createFlow({
-          name: currentWorkflow.name || 'Untitled Flow',
+        // Create new template
+        const saved = await createTemplate({
+          name: currentWorkflow.name || 'Untitled Template',
           description: currentWorkflow.description || '',
           definition: currentWorkflow as unknown as Record<string, unknown>,
           status: 'DRAFT',
@@ -170,12 +170,12 @@ export function FlowBuilderPage() {
 
     setIsPublishing(true);
     try {
-      const published = await publishFlowApi(savedFlowId);
+      const published = await publishTemplateApi(savedFlowId);
       setSavedFlow(published.id, 'ACTIVE');
       // Track onboarding: flow published
       useOnboardingStore.getState().completePublishTemplate();
       // Navigate to flows page after publish
-      navigate('/flows');
+      navigate('/templates');
     } catch (err) {
       console.error('Failed to publish flow:', err);
     } finally {
@@ -208,11 +208,11 @@ export function FlowBuilderPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/flows')}
+            onClick={() => navigate('/templates')}
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Flow Templates
+            Back to Templates
           </Button>
           <div className="h-6 w-px bg-gray-200" />
 
@@ -246,7 +246,7 @@ export function FlowBuilderPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold text-gray-900">
-                {workflow ? workflowName : 'Create New Flow Template'}
+                {workflow ? workflowName : 'Create New Template'}
               </h1>
               {savedFlowStatus && (
                 <span

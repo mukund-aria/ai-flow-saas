@@ -204,10 +204,10 @@ export async function getWorkflow(sessionId: string) {
 }
 
 // ============================================================================
-// Flows API
+// Templates API (workflow blueprints)
 // ============================================================================
 
-export interface Flow {
+export interface Template {
   id: string;
   name: string;
   description?: string;
@@ -225,7 +225,7 @@ export interface Flow {
   updatedAt?: string;
 }
 
-export interface CreateFlowRequest {
+export interface CreateTemplateRequest {
   name: string;
   description?: string;
   definition?: Record<string, unknown>;
@@ -233,7 +233,98 @@ export interface CreateFlowRequest {
 }
 
 /**
- * List all flows
+ * List all templates
+ */
+export async function listTemplates(): Promise<Template[]> {
+  const res = await fetch(`${API_BASE}/templates`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list templates');
+  return data.data;
+}
+
+/**
+ * Get a single template by ID
+ */
+export async function getTemplate(id: string): Promise<Template> {
+  const res = await fetch(`${API_BASE}/templates/${id}`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Template not found');
+  return data.data;
+}
+
+/**
+ * Create a new template
+ */
+export async function createTemplate(request: CreateTemplateRequest): Promise<Template> {
+  const res = await fetch(`${API_BASE}/templates`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to create template');
+  return data.data;
+}
+
+/**
+ * Update a template
+ */
+export async function updateTemplate(id: string, updates: Partial<CreateTemplateRequest>): Promise<Template> {
+  const res = await fetch(`${API_BASE}/templates/${id}`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to update template');
+  return data.data;
+}
+
+/**
+ * Delete (archive) a template
+ */
+export async function deleteTemplate(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/templates/${id}`, { ...fetchOpts, method: 'DELETE' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to delete template');
+}
+
+/**
+ * Publish a draft template (set status to ACTIVE)
+ */
+export async function publishTemplate(id: string): Promise<Template> {
+  const res = await fetch(`${API_BASE}/templates/${id}/publish`, { ...fetchOpts, method: 'POST' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to publish template');
+  return data.data;
+}
+
+// ============================================================================
+// Flows API (active workflow instances)
+// ============================================================================
+
+export interface Flow {
+  id: string;
+  flowId: string;
+  name: string;
+  status: 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'PAUSED';
+  isSample?: boolean;
+  currentStepIndex: number;
+  totalSteps: number;
+  startedAt: string;
+  completedAt?: string;
+  flow?: { id: string; name: string };
+}
+
+export interface StartFlowRequest {
+  templateId: string;
+  name: string;
+}
+
+/**
+ * List all flows (active instances)
  */
 export async function listFlows(): Promise<Flow[]> {
   const res = await fetch(`${API_BASE}/flows`, fetchOpts);
@@ -253,108 +344,17 @@ export async function getFlow(id: string): Promise<Flow> {
 }
 
 /**
- * Create a new flow
+ * Start a new flow from a template
  */
-export async function createFlow(request: CreateFlowRequest): Promise<Flow> {
-  const res = await fetch(`${API_BASE}/flows`, {
-    ...fetchOpts,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Failed to create flow');
-  return data.data;
-}
-
-/**
- * Update a flow
- */
-export async function updateFlow(id: string, updates: Partial<CreateFlowRequest>): Promise<Flow> {
-  const res = await fetch(`${API_BASE}/flows/${id}`, {
-    ...fetchOpts,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates),
-  });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Failed to update flow');
-  return data.data;
-}
-
-/**
- * Delete (archive) a flow
- */
-export async function deleteFlow(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/flows/${id}`, { ...fetchOpts, method: 'DELETE' });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Failed to delete flow');
-}
-
-/**
- * Publish a draft flow (set status to ACTIVE)
- */
-export async function publishFlow(id: string): Promise<Flow> {
-  const res = await fetch(`${API_BASE}/flows/${id}/publish`, { ...fetchOpts, method: 'POST' });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Failed to publish flow');
-  return data.data;
-}
-
-// ============================================================================
-// Flow Runs API
-// ============================================================================
-
-export interface FlowRun {
-  id: string;
-  flowId: string;
-  name: string;
-  status: 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'PAUSED';
-  isSample?: boolean;
-  currentStepIndex: number;
-  totalSteps: number;
-  startedAt: string;
-  completedAt?: string;
-  flow?: { id: string; name: string };
-}
-
-export interface StartFlowRunRequest {
-  flowId: string;
-  name: string;
-}
-
-/**
- * List all flow runs
- */
-export async function listFlowRuns(): Promise<FlowRun[]> {
-  const res = await fetch(`${API_BASE}/runs`, fetchOpts);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Failed to list flow runs');
-  return data.data;
-}
-
-/**
- * Get a single flow run by ID
- */
-export async function getFlowRun(id: string): Promise<FlowRun> {
-  const res = await fetch(`${API_BASE}/runs/${id}`, fetchOpts);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Flow run not found');
-  return data.data;
-}
-
-/**
- * Start a new flow run
- */
-export async function startFlowRun(flowId: string, name: string): Promise<FlowRun> {
-  const res = await fetch(`${API_BASE}/flows/${flowId}/runs`, {
+export async function startFlow(templateId: string, name: string): Promise<Flow> {
+  const res = await fetch(`${API_BASE}/templates/${templateId}/flows`, {
     ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
   });
   const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Failed to start flow run');
+  if (!data.success) throw new Error(data.error?.message || 'Failed to start flow');
   return data.data;
 }
 

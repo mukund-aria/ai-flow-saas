@@ -16,7 +16,7 @@ describe('workflowStore', () => {
 
       const { workflow } = useWorkflowStore.getState();
       expect(workflow).not.toBeNull();
-      expect(workflow!.name).toBe('Untitled Flow');
+      expect(workflow!.name).toBe('Untitled Template');
       expect(workflow!.steps).toEqual([]);
       expect(workflow!.milestones).toEqual([]);
       expect(workflow!.assigneePlaceholders).toEqual([]);

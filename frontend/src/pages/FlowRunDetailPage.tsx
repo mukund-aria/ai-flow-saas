@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIcon } from '@/components/workflow/StepIcon';
-import { getFlowRun, type FlowRun } from '@/lib/api';
+import { getFlow, type Flow } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import type { StepType } from '@/types';
@@ -44,7 +44,7 @@ interface FlowRunStep {
   startedAt?: string;
 }
 
-interface FlowRunDetail extends FlowRun {
+interface FlowRunDetail extends Flow {
   steps?: FlowRunStep[];
 }
 
@@ -52,7 +52,7 @@ interface FlowRunDetail extends FlowRun {
 // Helper Functions
 // ============================================================================
 
-function getStatusIcon(status: FlowRun['status']) {
+function getStatusIcon(status: Flow['status']) {
   switch (status) {
     case 'IN_PROGRESS':
       return <PlayCircle className="w-5 h-5 text-blue-500" />;
@@ -67,7 +67,7 @@ function getStatusIcon(status: FlowRun['status']) {
   }
 }
 
-function getStatusBadge(status: FlowRun['status']) {
+function getStatusBadge(status: Flow['status']) {
   const baseClasses = 'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full';
 
   switch (status) {
@@ -176,7 +176,7 @@ function formatTimeAgo(dateString: string): string {
 }
 
 // Mock steps for demonstration - in production this would come from the API
-function generateMockSteps(run: FlowRun): FlowRunStep[] {
+function generateMockSteps(run: Flow): FlowRunStep[] {
   const stepTypes: StepType[] = [
     'FORM',
     'APPROVAL',
@@ -254,7 +254,7 @@ export function FlowRunDetailPage() {
 
       try {
         setIsLoading(true);
-        const data = await getFlowRun(id);
+        const data = await getFlow(id);
         // Enhance with mock steps for demonstration
         const runWithSteps: FlowRunDetail = {
           ...data,
@@ -273,7 +273,7 @@ export function FlowRunDetailPage() {
 
   // Handle cancel run action
   const handleCancelRun = async () => {
-    if (!run || !window.confirm('Are you sure you want to cancel this flow? This action cannot be undone.')) {
+    if (!run || !window.confirm('Are you sure you want to cancel this flow? This cannot be undone.')) {
       return;
     }
 
@@ -310,7 +310,7 @@ export function FlowRunDetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/runs')}
+            onClick={() => navigate('/flows')}
             className="gap-2 text-gray-600"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -347,7 +347,7 @@ export function FlowRunDetailPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/runs')}
+          onClick={() => navigate('/flows')}
           className="gap-2 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -365,7 +365,7 @@ export function FlowRunDetailPage() {
             <div>
               <h1 className="text-xl font-bold text-gray-900">{run.name}</h1>
               <p className="text-sm text-gray-500 mt-0.5">
-                {run.flow?.name || 'Unknown Flow Template'} &middot; Started {formatTimeAgo(run.startedAt)}
+                {run.flow?.name || 'Unknown Template'} &middot; Started {formatTimeAgo(run.startedAt)}
               </p>
             </div>
           </div>

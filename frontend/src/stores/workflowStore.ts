@@ -68,7 +68,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     set({
       workflow: {
         flowId: `flow-${Date.now()}`,
-        name: name || 'Untitled Flow',
+        name: name || 'Untitled Template',
         description: '',
         steps: [],
         milestones: [],

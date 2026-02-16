@@ -1,5 +1,5 @@
 /**
- * Flows API Routes
+ * Templates API Routes
  *
  * CRUD operations for workflow templates.
  */
@@ -12,7 +12,7 @@ import { asyncHandler } from '../middleware/async-handler.js';
 const router = Router();
 
 // ============================================================================
-// GET /api/flows - List all flows
+// GET /api/templates - List all templates
 // ============================================================================
 
 router.get(
@@ -56,7 +56,7 @@ router.get(
 );
 
 // ============================================================================
-// GET /api/flows/:id - Get single flow
+// GET /api/templates/:id - Get single template
 // ============================================================================
 
 router.get(
@@ -93,7 +93,7 @@ router.get(
 );
 
 // ============================================================================
-// POST /api/flows - Create new flow
+// POST /api/templates - Create new template
 // ============================================================================
 
 router.post(
@@ -156,7 +156,7 @@ router.post(
 );
 
 // ============================================================================
-// PUT /api/flows/:id - Update flow
+// PUT /api/templates/:id - Update template
 // ============================================================================
 
 router.put(
@@ -203,7 +203,7 @@ router.put(
 );
 
 // ============================================================================
-// DELETE /api/flows/:id - Delete (archive) flow
+// DELETE /api/templates/:id - Delete (archive) template
 // ============================================================================
 
 router.delete(
@@ -239,7 +239,7 @@ router.delete(
 );
 
 // ============================================================================
-// POST /api/flows/:id/publish - Publish a draft flow
+// POST /api/templates/:id/publish - Publish a draft template
 // ============================================================================
 
 router.post(

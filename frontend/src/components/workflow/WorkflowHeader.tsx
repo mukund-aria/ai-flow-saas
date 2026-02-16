@@ -61,7 +61,7 @@ export function WorkflowHeader({ workflow, editMode = false }: WorkflowHeaderPro
                 <button
                   onClick={() => { setNameValue(workflow.name); setIsEditingName(true); }}
                   className="p-1 text-gray-400 hover:text-violet-600 opacity-0 group-hover:opacity-100 transition-opacity rounded"
-                  title="Edit flow name"
+                  title="Edit template name"
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </button>

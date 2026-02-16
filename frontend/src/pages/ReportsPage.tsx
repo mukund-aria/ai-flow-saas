@@ -234,7 +234,7 @@ function ProgressInsightsSection({ timeRange }: { timeRange: TimeRange }) {
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
             <Layers className="w-5 h-5 text-gray-400" />
-            <span className="text-sm text-gray-500">Active Flow Templates</span>
+            <span className="text-sm text-gray-500">Active Templates</span>
           </div>
           <div className="text-2xl font-bold text-gray-900">{data.activeFlows}</div>
         </div>
@@ -311,13 +311,13 @@ function FlowReportTab() {
     <div className="bg-white rounded-xl border border-gray-200">
       <div className="p-6 border-b border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900">Flow Performance</h3>
-        <p className="text-sm text-gray-500">Overview of flow template performance</p>
+        <p className="text-sm text-gray-500">Overview of template performance</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100">
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Flow Template</th>
+              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Template</th>
               <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Total Runs</th>
               <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Completed</th>
               <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Completion Rate</th>

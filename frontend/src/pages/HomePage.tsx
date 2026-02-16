@@ -20,8 +20,8 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { listFlowRuns } from '@/lib/api';
-import type { FlowRun } from '@/lib/api';
+import { listFlows } from '@/lib/api';
+import type { Flow } from '@/lib/api';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 
 // ---------------------------------------------------------------------------
@@ -68,11 +68,11 @@ function getFlowColor(index: number) {
 // ---------------------------------------------------------------------------
 
 const SETUP_STEPS = [
-  { key: 'buildTemplate' as const, label: 'Build', description: 'Build a flow template', path: '/flows/new' },
-  { key: 'publishTemplate' as const, label: 'Publish', description: 'Publish your template', path: '/flows' },
-  { key: 'startFlow' as const, label: 'Execute', description: 'Start your first flow', path: '/runs' },
-  { key: 'completeAction' as const, label: 'Action', description: 'Complete an action', path: '/runs/latest' },
-  { key: 'coordinateFlows' as const, label: 'Coordinate', description: 'Coordinate your flows', path: '/runs' },
+  { key: 'buildTemplate' as const, label: 'Build', description: 'Build a template', path: '/templates/new' },
+  { key: 'publishTemplate' as const, label: 'Publish', description: 'Publish your template', path: '/templates' },
+  { key: 'startFlow' as const, label: 'Execute', description: 'Start your first flow', path: '/flows' },
+  { key: 'completeAction' as const, label: 'Action', description: 'Complete an action', path: '/flows/latest' },
+  { key: 'coordinateFlows' as const, label: 'Coordinate', description: 'Coordinate your flows', path: '/flows' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -83,13 +83,13 @@ export function HomePage() {
   const navigate = useNavigate();
   const onboarding = useOnboardingStore();
 
-  const [runs, setRuns] = useState<FlowRun[]>([]);
+  const [runs, setRuns] = useState<Flow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [prompt, setPrompt] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
-    listFlowRuns()
+    listFlows()
       .then((data) => setRuns(data))
       .catch(() => {})
       .finally(() => setIsLoading(false));
@@ -102,7 +102,7 @@ export function HomePage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim()) {
-      navigate('/flows/new', { state: { prompt: prompt.trim() } });
+      navigate('/templates/new', { state: { prompt: prompt.trim() } });
     }
   };
 
@@ -151,7 +151,7 @@ export function HomePage() {
                         onClick={() => {
                           if (done) return;
                           if (step.key === 'completeAction' && inProgressRuns.length > 0) {
-                            navigate(`/runs/${inProgressRuns[0].id}`);
+                            navigate(`/flows/${inProgressRuns[0].id}`);
                           } else {
                             navigate(step.path);
                           }
@@ -240,7 +240,7 @@ export function HomePage() {
                   disabled={!prompt.trim()}
                   className="bg-gray-900 hover:bg-gray-800 text-white px-5"
                 >
-                  Generate flow
+                  Generate template
                 </Button>
               </div>
 
@@ -278,7 +278,7 @@ export function HomePage() {
               )}
             </div>
             <Link
-              to="/runs"
+              to="/flows"
               className="text-sm text-gray-500 hover:text-gray-700 font-medium inline-flex items-center gap-1"
             >
               View all <ChevronRight className="w-4 h-4" />
@@ -308,7 +308,7 @@ export function HomePage() {
                 return (
                   <button
                     key={run.id}
-                    onClick={() => navigate(`/runs/${run.id}`)}
+                    onClick={() => navigate(`/flows/${run.id}`)}
                     className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 transition-colors text-left"
                   >
                     {/* Flow icon */}

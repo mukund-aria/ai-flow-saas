@@ -5,7 +5,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home,
   FileText,
@@ -17,11 +17,14 @@ import {
   Settings,
   LogOut,
   RotateCcw,
+  Play,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { OrgSwitcher } from './OrgSwitcher';
+import { listTemplates, startFlow, type Template } from '@/lib/api';
 
 interface NavItemProps {
   to: string;
@@ -50,11 +53,17 @@ function NavItem({ to, icon, label }: NavItemProps) {
 
 export function Sidebar() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const resetOnboarding = useOnboardingStore((s) => s.resetOnboarding);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showStartFlow, setShowStartFlow] = useState(false);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [startingTemplateId, setStartingTemplateId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const startFlowRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on outside click
+  // Close user menu on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -67,6 +76,48 @@ export function Sidebar() {
     }
   }, [showUserMenu]);
 
+  // Close start flow dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (startFlowRef.current && !startFlowRef.current.contains(e.target as Node)) {
+        setShowStartFlow(false);
+      }
+    }
+    if (showStartFlow) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showStartFlow]);
+
+  // Fetch published templates when dropdown opens
+  useEffect(() => {
+    if (showStartFlow) {
+      setIsLoadingTemplates(true);
+      listTemplates()
+        .then((data) => setTemplates(data.filter((t) => t.status === 'ACTIVE')))
+        .catch(() => setTemplates([]))
+        .finally(() => setIsLoadingTemplates(false));
+    }
+  }, [showStartFlow]);
+
+  const handleStartFlow = async (template: Template) => {
+    try {
+      setStartingTemplateId(template.id);
+      const runName = `${template.name} - ${new Date().toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })}`;
+      const flow = await startFlow(template.id, runName);
+      useOnboardingStore.getState().completeStartFlow();
+      setShowStartFlow(false);
+      navigate(`/flows/${flow.id}`);
+    } catch {
+      setStartingTemplateId(null);
+    }
+  };
+
   return (
     <aside className="w-56 bg-white border-r border-gray-200 flex flex-col">
       {/* Organization Switcher */}
@@ -74,22 +125,68 @@ export function Sidebar() {
         <OrgSwitcher />
       </div>
 
-      {/* Create Template Button */}
-      <div className="p-4">
-        <NavLink
-          to="/flows/new"
+      {/* Start Flow Button + Dropdown */}
+      <div className="p-4 relative" ref={startFlowRef}>
+        <button
+          onClick={() => setShowStartFlow(!showStartFlow)}
           className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors text-sm"
         >
-          <Plus className="w-4 h-4" />
-          Create Template
-        </NavLink>
+          <Play className="w-4 h-4" />
+          Start Flow
+        </button>
+
+        {/* Start Flow Dropdown */}
+        {showStartFlow && (
+          <div className="absolute left-4 right-4 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+            {isLoadingTemplates ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-5 h-5 animate-spin text-violet-600" />
+              </div>
+            ) : templates.length > 0 ? (
+              <div className="max-h-64 overflow-y-auto py-1">
+                {templates.map((template) => (
+                  <button
+                    key={template.id}
+                    onClick={() => handleStartFlow(template)}
+                    disabled={startingTemplateId === template.id}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <PlayCircle className="w-4 h-4 text-violet-500 flex-shrink-0" />
+                    <span className="truncate text-gray-700">{template.name}</span>
+                    {startingTemplateId === template.id && (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-500 ml-auto flex-shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="py-6 text-center text-sm text-gray-400">
+                No published templates yet
+              </div>
+            )}
+
+            {/* Divider + Create new template */}
+            <div className="border-t border-gray-100">
+              <button
+                onClick={() => {
+                  setShowStartFlow(false);
+                  navigate('/templates/new');
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm text-violet-600 hover:bg-violet-50 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Create new template
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Navigation Links */}
       <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
         <NavItem to="/home" icon={<Home className="w-5 h-5" />} label="Home" />
-        <NavItem to="/runs" icon={<PlayCircle className="w-5 h-5" />} label="Flows" />
-        <NavItem to="/flows" icon={<FileText className="w-5 h-5" />} label="Flow Templates" />
+        <NavItem to="/flows" icon={<PlayCircle className="w-5 h-5" />} label="Flows" />
+        <NavItem to="/templates" icon={<FileText className="w-5 h-5" />} label="Templates" />
         <NavItem to="/reports" icon={<BarChart3 className="w-5 h-5" />} label="Reports" />
         <NavItem to="/schedules" icon={<Calendar className="w-5 h-5" />} label="Schedules" />
         <NavItem to="/integrations" icon={<Plug className="w-5 h-5" />} label="Integrations" />

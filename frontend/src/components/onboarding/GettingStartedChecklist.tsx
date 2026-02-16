@@ -16,11 +16,11 @@ interface ChecklistItem {
 }
 
 const CHECKLIST_ITEMS: ChecklistItem[] = [
-  { key: 'buildTemplate', label: 'Build a flow template', path: '/flows/new' },
-  { key: 'publishTemplate', label: 'Publish your template', path: '/flows' },
-  { key: 'startFlow', label: 'Start your first flow', path: '/runs' },
-  { key: 'completeAction', label: 'Complete an action', path: '/runs' },
-  { key: 'coordinateFlows', label: 'Coordinate your flows', path: '/runs' },
+  { key: 'buildTemplate', label: 'Build a template', path: '/templates/new' },
+  { key: 'publishTemplate', label: 'Publish your template', path: '/templates' },
+  { key: 'startFlow', label: 'Start your first flow', path: '/flows' },
+  { key: 'completeAction', label: 'Complete an action', path: '/flows' },
+  { key: 'coordinateFlows', label: 'Coordinate your flows', path: '/flows' },
 ];
 
 export function GettingStartedChecklist() {

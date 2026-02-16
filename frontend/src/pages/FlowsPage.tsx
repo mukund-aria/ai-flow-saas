@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { listFlows, startFlowRun, type Flow } from '@/lib/api';
+import { listTemplates, startFlow, type Template } from '@/lib/api';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { CreateFlowDialog } from '@/components/workflow/CreateFlowDialog';
 
@@ -72,7 +72,7 @@ function FlowIcon() {
 }
 
 interface FlowCardProps {
-  flow: Flow;
+  flow: Template;
   onEdit: () => void;
   onStartRun: () => void;
   isStarting: boolean;
@@ -191,10 +191,10 @@ function EmptyState({ onCreateFlow }: { onCreateFlow: () => void }) {
       </div>
 
       <h3 className="text-xl font-semibold text-gray-900 mb-3">
-        Create your first flow template
+        Create your first template
       </h3>
       <p className="text-gray-500 mb-8 max-w-md mx-auto leading-relaxed">
-        Flow Templates are reusable workflow blueprints. Create one with AI or from scratch
+        Templates are reusable workflow blueprints. Create one with AI or from scratch
         to define the steps your team will follow.
       </p>
 
@@ -218,7 +218,7 @@ function EmptyState({ onCreateFlow }: { onCreateFlow: () => void }) {
 
 export function FlowsPage() {
   const navigate = useNavigate();
-  const [flows, setFlows] = useState<Flow[]>([]);
+  const [flows, setFlows] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -227,41 +227,41 @@ export function FlowsPage() {
   const [startingFlowId, setStartingFlowId] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  // Handler to start a flow run
-  const handleStartFlowRun = async (flow: Flow) => {
+  // Handler to start a flow from a template
+  const handleStartFlow = async (template: Template) => {
     try {
-      setStartingFlowId(flow.id);
-      const runName = `${flow.name} - ${new Date().toLocaleDateString('en-US', {
+      setStartingFlowId(template.id);
+      const runName = `${template.name} - ${new Date().toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
       })}`;
-      const run = await startFlowRun(flow.id, runName);
-      // Track onboarding: flow run started
+      const run = await startFlow(template.id, runName);
+      // Track onboarding: flow started
       useOnboardingStore.getState().completeStartFlow();
-      navigate(`/runs/${run.id}`);
+      navigate(`/flows/${run.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start flow run');
+      setError(err instanceof Error ? err.message : 'Failed to start flow');
       setStartingFlowId(null);
     }
   };
 
-  // Fetch flows on mount
+  // Fetch templates on mount
   useEffect(() => {
-    async function fetchFlows() {
+    async function fetchTemplates() {
       try {
         setIsLoading(true);
-        const data = await listFlows();
+        const data = await listTemplates();
         setFlows(data);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load flows');
+        setError(err instanceof Error ? err.message : 'Failed to load templates');
       } finally {
         setIsLoading(false);
       }
     }
-    fetchFlows();
+    fetchTemplates();
   }, []);
 
   // Filter and sort flows
@@ -289,7 +289,7 @@ export function FlowsPage() {
     });
 
   const handleCreateFlow = () => setShowCreateDialog(true);
-  const handleEditFlow = (flowId: string) => navigate(`/flows/${flowId}`);
+  const handleEditFlow = (flowId: string) => navigate(`/templates/${flowId}`);
 
   // Loading state
   if (isLoading) {
@@ -322,7 +322,7 @@ export function FlowsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Flow Templates</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Templates</h1>
           <Badge variant="secondary" className="text-sm font-medium">
             {flows.length}
           </Badge>
@@ -397,7 +397,7 @@ export function FlowsPage() {
               key={flow.id}
               flow={flow}
               onEdit={() => handleEditFlow(flow.id)}
-              onStartRun={() => handleStartFlowRun(flow)}
+              onStartRun={() => handleStartFlow(flow)}
               isStarting={startingFlowId === flow.id}
             />
           ))}

@@ -13,7 +13,7 @@ export function CreateFlowDialog({ open, onOpenChange }: CreateFlowDialogProps) 
 
   const handleSelect = (mode: 'ai' | 'manual') => {
     onOpenChange(false);
-    navigate(`/flows/new?mode=${mode}`);
+    navigate(`/templates/new?mode=${mode}`);
   };
 
   return (
@@ -36,7 +36,7 @@ export function CreateFlowDialog({ open, onOpenChange }: CreateFlowDialogProps) 
 
         {/* Header */}
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Create New Flow Template
+          Create New Template
         </h2>
         <p className="text-sm text-gray-500 mb-6">
           Choose how you'd like to build your workflow

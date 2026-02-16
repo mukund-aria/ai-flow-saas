@@ -20,7 +20,7 @@ import { Zap, Sparkles } from 'lucide-react';
 const SCENES = [
   {
     title: 'Build',
-    subtitle: 'Create flow templates with AI or drag & drop.',
+    subtitle: 'Create templates with AI or drag & drop.',
   },
   {
     title: 'Execute',

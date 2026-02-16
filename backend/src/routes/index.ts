@@ -35,13 +35,13 @@ router.use('/chat/upload', uploadRouter);
 // Session management endpoints (AI builder sessions)
 router.use('/sessions', sessionsRouter);
 
-// Flows API (workflow templates CRUD)
-router.use('/flows', flowsRouter);
+// Templates API (workflow templates CRUD)
+router.use('/templates', flowsRouter);
 
-// Flow Runs API (workflow execution)
-// Note: POST /api/flows/:flowId/runs is handled by runsRouter
-router.use('/runs', runsRouter);
-router.use('/', runsRouter); // For /flows/:flowId/runs endpoint
+// Flows API (workflow execution — active instances)
+// Note: POST /api/templates/:templateId/flows is handled by runsRouter
+router.use('/flows', runsRouter);
+router.use('/', runsRouter); // For /templates/:templateId/flows endpoint
 
 // Contacts API (external assignees management)
 router.use('/contacts', contactsRouter);

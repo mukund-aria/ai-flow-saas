@@ -16,9 +16,9 @@ import {
   Loader2,
   XCircle,
 } from 'lucide-react';
-import { listFlowRuns, type FlowRun } from '@/lib/api';
+import { listFlows, type Flow } from '@/lib/api';
 
-function getStatusIcon(status: FlowRun['status']) {
+function getStatusIcon(status: Flow['status']) {
   switch (status) {
     case 'IN_PROGRESS':
       return <PlayCircle className="w-4 h-4 text-blue-500" />;
@@ -33,7 +33,7 @@ function getStatusIcon(status: FlowRun['status']) {
   }
 }
 
-function getStatusBadge(status: FlowRun['status']) {
+function getStatusBadge(status: Flow['status']) {
   const baseClasses = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full';
 
   switch (status) {
@@ -95,18 +95,18 @@ function formatTimeAgo(dateString: string): string {
 
 export function FlowRunsPage() {
   const navigate = useNavigate();
-  const [runs, setRuns] = useState<FlowRun[]>([]);
+  const [runs, setRuns] = useState<Flow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Fetch flow runs on mount
+  // Fetch flows on mount
   useEffect(() => {
     async function fetchRuns() {
       try {
         setIsLoading(true);
-        const data = await listFlowRuns();
+        const data = await listFlows();
         setRuns(data);
         setError(null);
       } catch (err) {
@@ -198,7 +198,7 @@ export function FlowRunsPage() {
               <div
                 key={run.id}
                 className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                onClick={() => navigate(`/runs/${run.id}`)}
+                onClick={() => navigate(`/flows/${run.id}`)}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -208,7 +208,7 @@ export function FlowRunsPage() {
                     <div>
                       <h3 className="font-medium text-gray-900">{run.name}</h3>
                       <p className="text-sm text-gray-500">
-                        {run.flow?.name || 'Unknown Flow Template'}
+                        {run.flow?.name || 'Unknown Template'}
                       </p>
                     </div>
                   </div>
@@ -259,7 +259,7 @@ export function FlowRunsPage() {
             No flows yet
           </h3>
           <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-            Flows are live instances of your workflow templates. Publish a flow template, then start a flow to see progress here.
+            Flows are live instances of your workflow templates. Publish a template, then start a flow to see progress here.
           </p>
         </div>
       )}
