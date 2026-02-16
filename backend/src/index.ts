@@ -15,6 +15,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import apiRoutes from './routes/index.js';
+import organizationsRouter from './routes/organizations.js';
 import { errorHandler } from './middleware/index.js';
 import { passport, configurePassport, authRoutes, requireAuth } from './auth/index.js';
 import { orgScope } from './middleware/org-scope.js';
@@ -154,6 +155,8 @@ app.use('/api/public/task', publicTaskRouter);
 // ============================================================================
 
 if (isProduction) {
+  // Organizations route needs auth but NOT org-scope (used before org exists)
+  app.use('/api/organizations', requireAuth, organizationsRouter);
   app.use('/api', requireAuth, orgScope, apiRoutes);
 } else {
   app.use('/api', apiRoutes);
