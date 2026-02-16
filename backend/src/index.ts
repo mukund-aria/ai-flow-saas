@@ -147,12 +147,9 @@ if (isProduction) {
   app.use(express.static(publicPath));
 
   // SPA fallback - serve index.html for all non-API routes
-  // This handles / and all frontend routes
-  // Note: This MUST be placed before API routes but the express.static above
-  // handles exact file matches. This catches client-side routes like /flows, /runs, etc.
-  app.get('*', (req, res, next) => {
-    // Skip API and auth routes - let them fall through to their handlers
-    if (req.path.startsWith('/api') || req.path.startsWith('/auth') || req.path === '/health' || req.path === '/ping') {
+  // Uses middleware instead of app.get('*') for path-to-regexp v8 compatibility
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api') || req.path.startsWith('/auth') || req.path === '/health' || req.path === '/ping') {
       return next();
     }
     res.sendFile(path.join(publicPath, 'index.html'));
