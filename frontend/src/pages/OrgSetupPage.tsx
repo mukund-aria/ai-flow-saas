@@ -33,8 +33,8 @@ const SCENES = [
   },
 ];
 
-const SCENE_DURATION = 5000;
-const FINAL_FRAME_DURATION = 3000;
+const SCENE_DURATION = 9000;
+const FINAL_FRAME_DURATION = 4000;
 
 // ============================================================================
 // Scene 1: Build — AI prompt + flow generation
@@ -354,11 +354,13 @@ export function OrgSetupPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
         <div key="final" className="animate-fade-in text-center">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg">
-            <Zap className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Human + AI workflows</h1>
-          <p className="mt-2 text-lg text-gray-500">Run on AI Flow</p>
+          <h1 className="text-3xl font-bold text-gray-900">Your organization is ready!</h1>
+          <p className="mt-2 text-lg text-gray-500">Taking you in...</p>
         </div>
       </div>
     );
@@ -378,10 +380,13 @@ export function OrgSetupPage() {
           />
         </div>
 
-        {/* Title + subtitle */}
+        {/* Persistent top title */}
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Setting up your organization...</h1>
+
+        {/* Scene title + subtitle */}
         <div key={`text-${sceneIndex}`} className="animate-fade-in mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">{scene.title}</h1>
-          <p className="mt-2 text-sm text-gray-500">{scene.subtitle}</p>
+          <h2 className="text-lg font-semibold text-violet-600">{scene.title}</h2>
+          <p className="mt-1 text-sm text-gray-500">{scene.subtitle}</p>
         </div>
 
         {/* Live animation */}
