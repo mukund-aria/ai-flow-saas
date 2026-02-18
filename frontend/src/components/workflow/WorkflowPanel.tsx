@@ -4,7 +4,6 @@ import { FlowStartCard } from './FlowStartCard';
 import { StepList } from './StepList';
 import { StepConnector } from './StepConnector';
 import { EmptyWorkflow } from './EmptyWorkflow';
-import { AssigneeManager } from './AssigneeManager';
 import { useWorkflowStore } from '@/stores/workflowStore';
 
 interface WorkflowPanelProps {
@@ -18,36 +17,39 @@ export function WorkflowPanel({ editMode = false }: WorkflowPanelProps) {
     return <EmptyWorkflow editMode={editMode} />;
   }
 
-  // In edit mode with no steps, show empty state with assignee manager
-  if (editMode && workflow.steps.length === 0) {
+  // In edit mode, AssigneeManager and header are rendered at the page level
+  // so the canvas is just the step content
+  if (editMode) {
     return (
       <div className="flex flex-col h-full">
-        <WorkflowHeader workflow={workflow} editMode={editMode} />
         <ScrollArea className="flex-1">
-          <div className="p-4 max-w-4xl mx-auto space-y-4">
-            <AssigneeManager />
+          <div className="p-6 max-w-2xl mx-auto">
+            {workflow.steps.length === 0 ? (
+              <EmptyWorkflow editMode={editMode} />
+            ) : (
+              <>
+                {/* Flow Start Card */}
+                <FlowStartCard workflow={workflow} />
+
+                {/* Connector */}
+                <StepConnector />
+
+                {/* Step List */}
+                <StepList workflow={workflow} editMode={editMode} />
+              </>
+            )}
           </div>
         </ScrollArea>
-        <EmptyWorkflow editMode={editMode} />
       </div>
     );
   }
 
+  // Read-only mode (AI chat preview) — keep header for context
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <WorkflowHeader workflow={workflow} editMode={editMode} />
-
-      {/* Workflow Content */}
+      <WorkflowHeader workflow={workflow} editMode={false} />
       <ScrollArea className="flex-1">
         <div className="p-4 max-w-4xl mx-auto">
-          {/* Assignee Manager (edit mode only) */}
-          {editMode && (
-            <div className="mb-4">
-              <AssigneeManager />
-            </div>
-          )}
-
           {/* Flow Start Card */}
           <FlowStartCard workflow={workflow} />
 
@@ -55,7 +57,7 @@ export function WorkflowPanel({ editMode = false }: WorkflowPanelProps) {
           <StepConnector />
 
           {/* Step List */}
-          <StepList workflow={workflow} editMode={editMode} />
+          <StepList workflow={workflow} editMode={false} />
         </div>
       </ScrollArea>
     </div>

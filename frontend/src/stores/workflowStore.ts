@@ -22,10 +22,12 @@ interface WorkflowStore {
   removeStep: (stepId: string) => void;
   updateStep: (stepId: string, updates: Partial<StepConfig>) => void;
   moveStep: (stepId: string, newIndex: number) => void;
+  duplicateStep: (stepId: string) => void;
   // Assignee management
   addAssigneePlaceholder: (roleName: string, description?: string) => void;
   removeAssigneePlaceholder: (placeholderId: string) => void;
   updateFlowMetadata: (updates: Partial<Pick<Flow, 'name' | 'description'>>) => void;
+  updateNotificationSettings: (notifications: Record<string, unknown>) => void;
 }
 
 let stepCounter = 0;
@@ -121,6 +123,28 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     set({ workflow: { ...workflow, steps } });
   },
 
+  duplicateStep: (stepId) => {
+    const { workflow } = get();
+    if (!workflow) return;
+
+    const index = workflow.steps.findIndex((s) => s.stepId === stepId);
+    if (index === -1) return;
+
+    const original = workflow.steps[index];
+    const duplicate: Step = {
+      ...JSON.parse(JSON.stringify(original)),
+      stepId: generateStepId(),
+    };
+    // Append " (copy)" to the name
+    if (duplicate.config.name) {
+      duplicate.config.name = `${duplicate.config.name} (copy)`;
+    }
+
+    const steps = [...workflow.steps];
+    steps.splice(index + 1, 0, duplicate);
+    set({ workflow: { ...workflow, steps } });
+  },
+
   addAssigneePlaceholder: (roleName, description) => {
     const { workflow } = get();
     if (!workflow) return;
@@ -169,5 +193,20 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     if (!workflow) return;
 
     set({ workflow: { ...workflow, ...updates } });
+  },
+
+  updateNotificationSettings: (notifications) => {
+    const { workflow } = get();
+    if (!workflow) return;
+
+    set({
+      workflow: {
+        ...workflow,
+        settings: {
+          ...(workflow.settings || {}),
+          notifications,
+        },
+      },
+    });
   },
 }));

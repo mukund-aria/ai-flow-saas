@@ -144,9 +144,8 @@ function FlowCard({ flow, onEdit, onStartRun, isStarting }: FlowCardProps) {
 
       {/* Start Flow Run button */}
       <Button
-        variant="outline"
         size="sm"
-        className="w-full group-hover:border-violet-300 group-hover:text-violet-700 transition-colors"
+        className="w-full bg-gray-900 text-white hover:bg-gray-800 transition-colors"
         disabled={isStarting || flow.status !== 'ACTIVE'}
         onClick={(e) => {
           e.stopPropagation();

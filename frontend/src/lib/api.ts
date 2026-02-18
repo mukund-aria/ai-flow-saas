@@ -358,6 +358,65 @@ export async function startFlow(templateId: string, name: string): Promise<Flow>
   return data.data;
 }
 
+/**
+ * Start a test flow run from a template (works on DRAFT templates too)
+ */
+export async function startTestFlow(templateId: string, name: string): Promise<Flow> {
+  const res = await fetch(`${API_BASE}/templates/${templateId}/flows`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, isTest: true }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to start test flow');
+  return data.data;
+}
+
+// ============================================================================
+// Notifications API
+// ============================================================================
+
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  flowRunId?: string;
+  stepExecutionId?: string;
+  readAt?: string;
+  dismissedAt?: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export async function listNotifications(params?: { unreadOnly?: boolean }): Promise<AppNotification[]> {
+  const query = params?.unreadOnly ? '?unreadOnly=true' : '';
+  const res = await fetch(`${API_BASE}/notifications${query}`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list notifications');
+  return data.data;
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  const res = await fetch(`${API_BASE}/notifications/unread-count`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) return 0;
+  return data.data.count;
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  await fetch(`${API_BASE}/notifications/${id}/read`, { ...fetchOpts, method: 'PATCH' });
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  await fetch(`${API_BASE}/notifications/read-all`, { ...fetchOpts, method: 'POST' });
+}
+
+export async function dismissNotification(id: string): Promise<void> {
+  await fetch(`${API_BASE}/notifications/${id}/dismiss`, { ...fetchOpts, method: 'PATCH' });
+}
+
 // ============================================================================
 // Stream Event Types
 // ============================================================================

@@ -6,6 +6,10 @@ import { BranchLayout } from './BranchLayout';
 import { AddStepPopover } from './AddStepPopover';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type { Flow, Milestone, Step, StepType } from '@/types';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 interface StepListProps {
   workflow: Flow;
@@ -29,36 +33,26 @@ interface StepGroup {
   globalStartIndex: number;
 }
 
-/**
- * Groups steps by their milestones for visual rendering.
- * Milestones act as phase markers - steps after a milestone's afterStepId
- * belong to that milestone until the next milestone.
- */
 function groupStepsByMilestones(steps: Step[], milestones: Milestone[]): StepGroup[] {
   if (!steps || steps.length === 0) {
     return [];
   }
 
   if (!milestones || milestones.length === 0) {
-    // No milestones - return all steps ungrouped
     return [{ steps, globalStartIndex: 0 }];
   }
 
-  // Build a map of stepId to index
   const stepIdToIndex = new Map(steps.map((s, i) => [s.stepId, i]));
 
-  // Determine where each milestone starts (the step index AFTER which it appears)
   const milestoneStartPoints = milestones.map(m => ({
     milestone: m,
     startAfterIndex: m.afterStepId ? (stepIdToIndex.get(m.afterStepId) ?? -1) : -1,
   }));
 
-  // Sort by start position
   milestoneStartPoints.sort((a, b) => a.startAfterIndex - b.startAfterIndex);
 
   const groups: StepGroup[] = [];
 
-  // Check if there are steps before the first milestone
   const firstMilestoneStart = milestoneStartPoints.length > 0
     ? milestoneStartPoints[0].startAfterIndex + 1
     : steps.length;
@@ -70,7 +64,6 @@ function groupStepsByMilestones(steps: Step[], milestones: Milestone[]): StepGro
     });
   }
 
-  // Add milestone groups
   for (let i = 0; i < milestoneStartPoints.length; i++) {
     const current = milestoneStartPoints[i];
     const next = milestoneStartPoints[i + 1];
@@ -130,12 +123,13 @@ function MilestoneContainer({
 
         return (
           <div key={step.stepId}>
-            {/* Connector before step (except first in group, unless not first group) */}
+            {/* Connector before step */}
             {(index > 0 || !isFirst) && (
               <div className="relative">
                 <StepConnector
                   showAddButton={!!editMode}
                   onAdd={() => onSetAddPopoverIndex(globalIndex)}
+                  dropId={editMode ? `drop-zone-${globalIndex}` : undefined}
                 />
                 {editMode && addPopoverIndex === globalIndex && (
                   <AddStepPopover
@@ -178,21 +172,16 @@ function MilestoneContainer({
     </>
   );
 
-  // If no milestone, render steps without container
   if (!milestone) {
     return <>{renderSteps()}</>;
   }
 
-  // Render milestone container with dashed border (matching Moxo UI)
   return (
     <div className="relative my-2">
-      {/* Milestone header */}
       <div className="flex items-center gap-2 px-4 py-2 bg-white border border-dashed border-gray-300 rounded-t-lg">
         <Layers className="w-4 h-4 text-gray-500" />
         <span className="text-sm font-medium text-gray-700">{milestone.name}</span>
       </div>
-
-      {/* Steps container with dashed border */}
       <div className="border border-t-0 border-dashed border-gray-300 rounded-b-lg px-4 py-3 bg-gray-50/30">
         {steps.length > 0 ? (
           renderSteps()
@@ -215,7 +204,6 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
   const [endPopoverOpen, setEndPopoverOpen] = useState(false);
   const { addStep } = useWorkflowStore();
 
-  // Group steps by milestones
   const stepGroups = groupStepsByMilestones(steps, milestones);
 
   // Build assignee index map for consistent colors
@@ -230,7 +218,9 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
     setEndPopoverOpen(false);
   };
 
-  return (
+  const stepIds = steps.map((s) => s.stepId);
+
+  const content = (
     <div className="space-y-0">
       {stepGroups.map((group, groupIndex) => (
         <MilestoneContainer
@@ -248,12 +238,13 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
         />
       ))}
 
-      {/* Final connector with add button in edit mode */}
+      {/* Final connector with add button */}
       {steps.length > 0 && (
         <div className="relative">
           <StepConnector
             showAddButton={!!editMode}
             onAdd={() => setEndPopoverOpen(true)}
+            dropId={editMode ? `drop-zone-${steps.length}` : undefined}
           />
           {editMode && endPopoverOpen && (
             <AddStepPopover
@@ -267,10 +258,21 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
 
       {/* End indicator */}
       <div className="flex items-center justify-center">
-        <div className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-500 font-medium">
+        <div className="px-4 py-1.5 bg-gray-100 rounded-full text-xs text-gray-500 font-medium">
           End of Flow
         </div>
       </div>
     </div>
   );
+
+  // Wrap in SortableContext for reorder support (parent DndContext lives in FlowBuilderPage)
+  if (editMode) {
+    return (
+      <SortableContext items={stepIds} strategy={verticalListSortingStrategy}>
+        {content}
+      </SortableContext>
+    );
+  }
+
+  return content;
 }

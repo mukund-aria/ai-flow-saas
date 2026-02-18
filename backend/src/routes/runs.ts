@@ -10,6 +10,7 @@ import { db, flows, flowRuns, stepExecutions, users, organizations, FlowRunStatu
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
+import { onStepActivated, onStepCompleted, onFlowCompleted, onFlowCancelled, updateFlowActivity } from '../services/execution.js';
 
 const router = Router();
 
@@ -181,7 +182,7 @@ router.post(
   '/templates/:templateId/flows',
   asyncHandler(async (req, res) => {
     const flowId = req.params.templateId as string;
-    const { name } = req.body;
+    const { name, isTest } = req.body;
 
     // Get the flow template
     const flow = await db.query.flows.findFirst({
@@ -192,6 +193,15 @@ router.post(
       res.status(404).json({
         success: false,
         error: { code: 'NOT_FOUND', message: 'Flow not found' },
+      });
+      return;
+    }
+
+    // Allow DRAFT templates only for test runs
+    if (flow.status === 'DRAFT' && !isTest) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Cannot start a real run from a DRAFT template. Publish first or use test mode.' },
       });
       return;
     }
@@ -235,7 +245,7 @@ router.post(
     }
 
     // Create the flow run
-    const runName = name || `${flow.name} - Run ${new Date().toISOString().split('T')[0]}`;
+    const runName = name || `${flow.name} - ${isTest ? 'Test' : 'Run'} ${new Date().toISOString().split('T')[0]}`;
 
     const [newRun] = await db
       .insert(flowRuns)
@@ -243,6 +253,7 @@ router.post(
         flowId: flow.id,
         name: runName,
         status: 'IN_PROGRESS',
+        isSample: !!isTest,
         currentStepIndex: 0,
         startedById: userId,
         organizationId: orgId,
@@ -259,6 +270,21 @@ router.post(
     }));
 
     await db.insert(stepExecutions).values(stepExecutionValues);
+
+    // Schedule notification jobs for the first step if it has a due date
+    const firstStep = steps[0] as { id: string; due?: { value: number; unit: string } };
+    const firstStepExec = await db.query.stepExecutions.findFirst({
+      where: and(
+        eq(stepExecutions.flowRunId, newRun.id),
+        eq(stepExecutions.stepIndex, 0)
+      ),
+    });
+    if (firstStepExec) {
+      await onStepActivated(firstStepExec.id, firstStep.due, flow.definition);
+    }
+
+    // Set initial activity timestamp
+    await updateFlowActivity(newRun.id);
 
     // Fetch the complete run with step executions
     const completeRun = await db.query.flowRuns.findFirst({
@@ -373,6 +399,10 @@ router.post(
       })
       .where(eq(stepExecutions.id, stepExecution.id));
 
+    // Notify: step completed (cancel jobs, notify coordinator)
+    await onStepCompleted(stepExecution, run);
+    await updateFlowActivity(runId);
+
     // Check if there's a next step
     const currentIndex = stepExecution.stepIndex;
     const nextStepExecution = run.stepExecutions.find((se) => se.stepIndex === currentIndex + 1);
@@ -386,6 +416,11 @@ router.post(
           startedAt: new Date(),
         })
         .where(eq(stepExecutions.id, nextStepExecution.id));
+
+      // Schedule notification jobs for the next step
+      const definition = run.flow?.definition as { steps?: Array<{ id: string; due?: { value: number; unit: string } }> } | null;
+      const nextStepDef = definition?.steps?.find(s => s.id === nextStepExecution.stepId);
+      await onStepActivated(nextStepExecution.id, nextStepDef?.due, run.flow?.definition as Record<string, unknown>);
 
       // Update current step index on the run
       await db
@@ -403,6 +438,9 @@ router.post(
           completedAt: new Date(),
         })
         .where(eq(flowRuns.id, runId));
+
+      // Notify: flow completed
+      await onFlowCompleted(run);
     }
 
     // Audit: step completed
@@ -514,6 +552,12 @@ router.post(
           eq(stepExecutions.status, 'IN_PROGRESS')
         )
       );
+
+    // Notify: flow cancelled (cancel all jobs, notify assignees)
+    const allStepExecs = await db.query.stepExecutions.findMany({
+      where: eq(stepExecutions.flowRunId, id),
+    });
+    await onFlowCancelled(run, allStepExecs.map(se => se.id));
 
     // Audit: run cancelled
     logAction({

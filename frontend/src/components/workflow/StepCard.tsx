@@ -3,11 +3,13 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StepIcon } from './StepIcon';
 import { StepConfigPanel } from './StepConfigPanel';
-import { GripVertical, GitBranch, Pencil, Trash2 } from 'lucide-react';
+import { GripVertical, GitBranch, Pencil, Trash2, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type { Step, AssigneePlaceholder } from '@/types';
 import { STEP_TYPE_META, getRoleColor, getRoleInitials } from '@/types';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface StepCardProps {
   step: Step;
@@ -19,7 +21,24 @@ interface StepCardProps {
 
 export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePlaceholders = [] }: StepCardProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const { removeStep, updateStep } = useWorkflowStore();
+  const { removeStep, updateStep, duplicateStep } = useWorkflowStore();
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: step.stepId,
+    disabled: !editMode,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   const meta = STEP_TYPE_META[step.type] || {
     label: step.type,
@@ -40,54 +59,64 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
     removeStep(step.stepId);
   };
 
+  const handleDuplicate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    duplicateStep(step.stepId);
+  };
+
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsEditing(!isEditing);
   };
 
   return (
-    <div>
+    <div ref={setNodeRef} style={style}>
       <Card
         className={cn(
-          'relative bg-white shadow-sm hover:shadow-md transition-shadow group',
-          'border-l-4',
-          editMode && 'cursor-pointer'
+          'relative bg-white shadow-sm hover:shadow-md transition-all group overflow-hidden',
+          editMode && 'cursor-pointer',
+          isDragging && 'opacity-50 shadow-lg ring-2 ring-violet-300',
         )}
-        style={{ borderLeftColor: meta.color }}
         onClick={editMode ? () => setIsEditing(!isEditing) : undefined}
       >
-        <div className="p-3">
-          <div className="flex items-start gap-3">
-            {/* Drag Handle */}
-            <div className="flex items-center mt-1 text-gray-300 cursor-grab active:cursor-grabbing">
-              <GripVertical className="w-4 h-4" />
-            </div>
+        {/* Colored header band */}
+        <div
+          className="flex items-center gap-2 px-3 py-1.5"
+          style={{ backgroundColor: meta.color }}
+        >
+          <StepIcon type={step.type} className="w-3.5 h-3.5 text-white" />
+          <span className="text-xs font-semibold text-white tracking-wide">
+            {meta.label}
+          </span>
+          {isComplex && (
+            <GitBranch className="w-3 h-3 text-white/80 ml-auto" />
+          )}
+        </div>
 
-            {/* Icon */}
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-              style={{ backgroundColor: `${meta.color}15` }}
-            >
-              <StepIcon type={step.type} className="w-4 h-4" style={{ color: meta.color }} />
-            </div>
+        {/* Card body */}
+        <div className="p-3">
+          <div className="flex items-start gap-2">
+            {/* Drag Handle */}
+            {editMode && (
+              <div
+                className="flex items-center mt-0.5 text-gray-300 cursor-grab active:cursor-grabbing hover:text-gray-500 transition-colors"
+                {...attributes}
+                {...listeners}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <GripVertical className="w-4 h-4" />
+              </div>
+            )}
 
             {/* Content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="text-[10px] shrink-0"
-                  style={{ borderColor: meta.color, color: meta.color }}
-                >
-                  {meta.label}
-                </Badge>
-                <span className="text-xs text-gray-400">Step {index + 1}</span>
-                {isComplex && (
-                  <GitBranch className="w-3 h-3 text-amber-500" />
-                )}
+                <span className="text-[11px] font-medium text-gray-400">
+                  Step {index + 1}
+                </span>
               </div>
 
-              <h4 className="font-medium text-gray-900 mt-1 truncate">
+              <h4 className="font-medium text-gray-900 mt-0.5 truncate text-sm">
                 {step.config.name || (editMode ? 'Click to configure...' : 'Untitled Step')}
               </h4>
 
@@ -97,7 +126,7 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
                 </p>
               )}
 
-              {/* Form fields count (FORM steps only) */}
+              {/* Form fields count */}
               {step.type === 'FORM' && step.config.formFields && step.config.formFields.length > 0 && (
                 <p className="text-xs text-gray-500 mt-1">
                   {step.config.formFields.length} form field{step.config.formFields.length !== 1 ? 's' : ''}
@@ -107,7 +136,7 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
               {/* Assignee */}
               {step.config.assignee && (
                 <div className="flex items-center gap-1.5 mt-2">
-                  <span className="text-xs text-gray-500">Assigned to:</span>
+                  <span className="text-[11px] text-gray-400">Assigned to:</span>
                   <div
                     className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs"
                     style={{
@@ -116,7 +145,7 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
                     }}
                   >
                     <span
-                      className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
+                      className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
                       style={{ backgroundColor: getRoleColor(assigneeIndex) }}
                     >
                       {getRoleInitials(step.config.assignee)}
@@ -127,15 +156,22 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
               )}
             </div>
 
-            {/* Edit/Delete buttons (edit mode only, visible on hover) */}
+            {/* Edit/Delete buttons */}
             {editMode && (
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                 <button
                   onClick={handleEdit}
                   className="p-1.5 rounded-lg text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
                   title="Edit step"
                 >
                   <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleDuplicate}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                  title="Duplicate step"
+                >
+                  <Copy className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={handleDelete}
