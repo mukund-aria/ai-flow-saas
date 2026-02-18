@@ -19,20 +19,20 @@ import { Zap, Sparkles } from 'lucide-react';
 
 const SCENES = [
   {
-    title: 'Build',
-    subtitle: 'Create templates with AI or drag & drop.',
+    title: 'Turn manual coordination into structured flows',
+    subtitle: 'Bring every stakeholder into a single orchestrated process. If it requires the participation of multiple humans, it belongs here.',
   },
   {
-    title: 'Execute',
-    subtitle: 'Launch flows manually or through automated triggers.',
+    title: 'Combine human judgment with AI speed',
+    subtitle: 'AI handles the work around every human action — the preparation, review, coordination, and follow-through.',
   },
   {
-    title: 'Coordinate',
-    subtitle: 'Monitor and manage your active flows.',
+    title: 'Guide every participant with clear, one-click actions',
+    subtitle: 'Every assignee is notified at the right time and sees exactly what they need to do — no confusion, no email chaos.',
   },
   {
-    title: 'Assignee Experience',
-    subtitle: 'Participants complete tasks in a simple, guided interface — no account needed.',
+    title: 'Operationalize every process, end to end',
+    subtitle: 'Design reusable flow templates, coordinate every flow run, track progress in real time, and maintain a complete audit trail.',
   },
 ];
 
@@ -390,7 +390,7 @@ export function OrgSetupPage() {
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Your organization is ready!</h1>
-          <p className="mt-2 text-gray-500">Build, run, and manage human + AI workflows</p>
+          <p className="mt-2 text-gray-500">Orchestrate people, AI, and systems in one flow</p>
         </div>
       </div>
     );
