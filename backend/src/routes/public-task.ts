@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, magicLinks, stepExecutions, flowRuns } from '../db/index.js';
+import { db, magicLinks, stepExecutions, flowRuns, contacts } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { validateMagicLink } from '../services/magic-link.js';
@@ -155,7 +155,24 @@ router.post(
           .set({ currentStepIndex: stepExec.stepIndex + 1 })
           .where(eq(flowRuns.id, run.id));
 
-        // TODO: If next step has a contact assignee, create magic link and send email
+        // If next step has a contact assignee, create magic link and send email
+        if (nextStep.assignedToContactId) {
+          const { createMagicLink } = await import('../services/magic-link.js');
+          const { sendMagicLink } = await import('../services/email.js');
+          const mlToken = await createMagicLink(nextStep.id);
+          const contact = await db.query.contacts.findFirst({
+            where: eq(contacts.id, nextStep.assignedToContactId),
+          });
+          if (contact) {
+            await sendMagicLink({
+              to: contact.email,
+              contactName: contact.name,
+              stepName: `Step ${nextStep.stepIndex + 1}`,
+              flowName: run.flow?.name || 'Flow',
+              token: mlToken,
+            });
+          }
+        }
       } else {
         // No more steps - mark run as completed
         await db.update(flowRuns)

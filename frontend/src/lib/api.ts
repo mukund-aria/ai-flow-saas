@@ -316,6 +316,18 @@ export interface Flow {
   startedAt: string;
   completedAt?: string;
   flow?: { id: string; name: string };
+  startedBy?: { id: string; name: string; email: string };
+  stepExecutions?: Array<{
+    id: string;
+    stepId: string;
+    stepIndex: number;
+    status: string;
+    resultData?: Record<string, unknown>;
+    startedAt?: string;
+    completedAt?: string;
+    assignedToUser?: { id: string; name: string; email: string };
+    assignedToContact?: { id: string; name: string; email: string };
+  }>;
 }
 
 export interface StartFlowRequest {
@@ -373,6 +385,41 @@ export async function startTestFlow(templateId: string, name: string): Promise<F
   return data.data;
 }
 
+/**
+ * Cancel a flow run
+ */
+export async function cancelFlow(id: string): Promise<Flow> {
+  const res = await fetch(`${API_BASE}/flows/${id}/cancel`, { ...fetchOpts, method: 'POST' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to cancel flow');
+  return data.data;
+}
+
+/**
+ * Complete a step in a flow run
+ */
+export async function completeStep(runId: string, stepId: string, resultData?: Record<string, unknown>): Promise<Flow> {
+  const res = await fetch(`${API_BASE}/flows/${runId}/steps/${stepId}/complete`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resultData }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to complete step');
+  return data.data;
+}
+
+/**
+ * Duplicate a template
+ */
+export async function duplicateTemplate(id: string): Promise<Template> {
+  const res = await fetch(`${API_BASE}/templates/${id}/duplicate`, { ...fetchOpts, method: 'POST' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to duplicate template');
+  return data.data;
+}
+
 // ============================================================================
 // Notifications API
 // ============================================================================
@@ -415,6 +462,69 @@ export async function markAllNotificationsRead(): Promise<void> {
 
 export async function dismissNotification(id: string): Promise<void> {
   await fetch(`${API_BASE}/notifications/${id}/dismiss`, { ...fetchOpts, method: 'PATCH' });
+}
+
+// ============================================================================
+// Contacts API
+// ============================================================================
+
+export interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  type: 'ADMIN' | 'ASSIGNEE';
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function listContacts(): Promise<Contact[]> {
+  const res = await fetch(`${API_BASE}/contacts`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list contacts');
+  return data.data;
+}
+
+export async function createContact(contact: { name: string; email: string; type?: string; status?: string }): Promise<Contact> {
+  const res = await fetch(`${API_BASE}/contacts`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(contact),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to create contact');
+  return data.data;
+}
+
+export async function updateContact(id: string, updates: Partial<{ name: string; email: string; type: string; status: string }>): Promise<Contact> {
+  const res = await fetch(`${API_BASE}/contacts/${id}`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to update contact');
+  return data.data;
+}
+
+export async function deleteContact(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/contacts/${id}`, { ...fetchOpts, method: 'DELETE' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to delete contact');
+}
+
+export async function toggleContactStatus(id: string, status: 'ACTIVE' | 'INACTIVE'): Promise<Contact> {
+  const res = await fetch(`${API_BASE}/contacts/${id}/status`, {
+    ...fetchOpts,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to update contact status');
+  return data.data;
 }
 
 // ============================================================================

@@ -274,4 +274,45 @@ router.post(
   })
 );
 
+// ============================================================================
+// POST /api/templates/:id/duplicate - Duplicate a template
+// ============================================================================
+
+router.post(
+  '/:id/duplicate',
+  asyncHandler(async (req, res) => {
+    const id = req.params.id as string;
+
+    const existing = await db.query.flows.findFirst({
+      where: eq(flows.id, id),
+    });
+
+    if (!existing) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow not found' },
+      });
+      return;
+    }
+
+    // Create a copy with DRAFT status
+    const [duplicate] = await db
+      .insert(flows)
+      .values({
+        name: `${existing.name} (Copy)`,
+        description: existing.description,
+        definition: existing.definition,
+        status: 'DRAFT',
+        createdById: existing.createdById,
+        organizationId: existing.organizationId,
+      })
+      .returning();
+
+    res.status(201).json({
+      success: true,
+      data: duplicate,
+    });
+  })
+);
+
 export default router;

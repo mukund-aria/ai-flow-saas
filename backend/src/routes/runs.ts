@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, flows, flowRuns, stepExecutions, users, organizations, FlowRunStatus } from '../db/index.js';
+import { db, flows, flowRuns, stepExecutions, users, organizations, contacts, FlowRunStatus } from '../db/index.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
@@ -47,6 +47,9 @@ router.get(
               email: true,
             },
           },
+          stepExecutions: {
+            columns: { id: true },
+          },
         },
       });
     } else if (status) {
@@ -66,6 +69,9 @@ router.get(
               name: true,
               email: true,
             },
+          },
+          stepExecutions: {
+            columns: { id: true },
           },
         },
       });
@@ -87,6 +93,9 @@ router.get(
               email: true,
             },
           },
+          stepExecutions: {
+            columns: { id: true },
+          },
         },
       });
     } else {
@@ -106,13 +115,21 @@ router.get(
               email: true,
             },
           },
+          stepExecutions: {
+            columns: { id: true },
+          },
         },
       });
     }
 
+    const runsWithTotalSteps = allRuns.map(run => ({
+      ...run,
+      totalSteps: (run as any).stepExecutions?.length || 0,
+    }));
+
     res.json({
       success: true,
-      data: allRuns,
+      data: runsWithTotalSteps,
     });
   })
 );
@@ -271,6 +288,43 @@ router.post(
 
     await db.insert(stepExecutions).values(stepExecutionValues);
 
+    // Create magic links for steps assigned to contacts
+    for (const step of steps) {
+      const stepDef = step as any;
+      if (stepDef.assignedTo?.contactId) {
+        const stepExec = await db.query.stepExecutions.findFirst({
+          where: and(
+            eq(stepExecutions.flowRunId, newRun.id),
+            eq(stepExecutions.stepId, step.id)
+          ),
+        });
+        if (stepExec) {
+          await db.update(stepExecutions)
+            .set({ assignedToContactId: stepDef.assignedTo.contactId })
+            .where(eq(stepExecutions.id, stepExec.id));
+
+          // Create magic link and send email for first step
+          if (stepExec.stepIndex === 0) {
+            const { createMagicLink } = await import('../services/magic-link.js');
+            const { sendMagicLink } = await import('../services/email.js');
+            const token = await createMagicLink(stepExec.id);
+            const contact = await db.query.contacts.findFirst({
+              where: eq(contacts.id, stepDef.assignedTo.contactId),
+            });
+            if (contact) {
+              await sendMagicLink({
+                to: contact.email,
+                contactName: contact.name,
+                stepName: stepDef.config?.name || 'Task',
+                flowName: flow.name,
+                token,
+              });
+            }
+          }
+        }
+      }
+    }
+
     // Schedule notification jobs for the first step if it has a due date
     const firstStep = steps[0] as { id: string; due?: { value: number; unit: string } };
     const firstStepExec = await db.query.stepExecutions.findFirst({
@@ -421,6 +475,25 @@ router.post(
       const definition = run.flow?.definition as { steps?: Array<{ id: string; due?: { value: number; unit: string } }> } | null;
       const nextStepDef = definition?.steps?.find(s => s.id === nextStepExecution.stepId);
       await onStepActivated(nextStepExecution.id, nextStepDef?.due, run.flow?.definition as Record<string, unknown>);
+
+      // If next step has a contact assignee, create magic link and send email
+      if (nextStepExecution.assignedToContactId) {
+        const { createMagicLink } = await import('../services/magic-link.js');
+        const { sendMagicLink } = await import('../services/email.js');
+        const token = await createMagicLink(nextStepExecution.id);
+        const contact = await db.query.contacts.findFirst({
+          where: eq(contacts.id, nextStepExecution.assignedToContactId),
+        });
+        if (contact) {
+          await sendMagicLink({
+            to: contact.email,
+            contactName: contact.name,
+            stepName: `Step ${nextStepExecution.stepIndex + 1}`,
+            flowName: run.flow?.name || 'Flow',
+            token,
+          });
+        }
+      }
 
       // Update current step index on the run
       await db

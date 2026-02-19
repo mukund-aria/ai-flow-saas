@@ -3,9 +3,10 @@
  *
  * Manage external contacts (assignees) with search, sorting, and table view.
  * Matches Moxo Action Hub design with violet/indigo theme.
+ * Wired to real API endpoints for full CRUD.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   Plus,
@@ -15,77 +16,19 @@ import {
   ChevronUp,
   ChevronDown,
   Building2,
+  Loader2,
+  Trash2,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
-// Contact type definition
-interface Contact {
-  id: string;
-  name: string;
-  email: string;
-  account?: string;
-  type: 'ADMIN' | 'ASSIGNEE';
-  status: 'ACTIVE' | 'INACTIVE';
-  lastActive?: string;
-}
-
-// Mock data for development
-const MOCK_CONTACTS: Contact[] = [
-  {
-    id: '1',
-    name: 'Sarah Chen',
-    email: 'sarah.chen@technova.com',
-    account: 'TechNova Solutions',
-    type: 'ADMIN',
-    status: 'ACTIVE',
-    lastActive: '2025-01-24T10:30:00Z',
-  },
-  {
-    id: '2',
-    name: 'Michael Torres',
-    email: 'michael.t@acmecorp.io',
-    account: 'Acme Corporation',
-    type: 'ASSIGNEE',
-    status: 'ACTIVE',
-    lastActive: '2025-01-23T14:15:00Z',
-  },
-  {
-    id: '3',
-    name: 'Emily Watson',
-    email: 'ewatson@globalfinance.com',
-    account: 'Global Finance Ltd',
-    type: 'ASSIGNEE',
-    status: 'ACTIVE',
-    lastActive: '2025-01-22T09:00:00Z',
-  },
-  {
-    id: '4',
-    name: 'James Liu',
-    email: 'james.liu@startupxyz.co',
-    account: 'StartupXYZ',
-    type: 'ADMIN',
-    status: 'INACTIVE',
-    lastActive: '2025-01-10T16:45:00Z',
-  },
-  {
-    id: '5',
-    name: 'Anna Schmidt',
-    email: 'anna.s@eurotech.eu',
-    account: 'EuroTech GmbH',
-    type: 'ASSIGNEE',
-    status: 'ACTIVE',
-    lastActive: '2025-01-21T11:20:00Z',
-  },
-  {
-    id: '6',
-    name: 'David Park',
-    email: 'dpark@innovatelabs.com',
-    type: 'ASSIGNEE',
-    status: 'INACTIVE',
-    lastActive: '2024-12-15T08:30:00Z',
-  },
-];
+import {
+  listContacts,
+  createContact,
+  deleteContact,
+  toggleContactStatus,
+  type Contact,
+} from '@/lib/api';
 
 // Sort configuration
 type SortField = 'name' | 'email' | 'status' | 'type' | 'lastActive';
@@ -175,12 +118,180 @@ function SortableHeader({ label, field, sortConfig, onSort }: SortableHeaderProp
   );
 }
 
+// Add Contact Dialog
+interface AddContactDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (contact: { name: string; email: string; type: 'ADMIN' | 'ASSIGNEE' }) => Promise<void>;
+}
+
+function AddContactDialog({ open, onOpenChange, onSubmit }: AddContactDialogProps) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [type, setType] = useState<'ADMIN' | 'ASSIGNEE'>('ASSIGNEE');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  if (!open) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError(null);
+    setIsSubmitting(true);
+    try {
+      await onSubmit({ name: name.trim(), email: email.trim(), type });
+      setName('');
+      setEmail('');
+      setType('ASSIGNEE');
+      onOpenChange(false);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to create contact');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={() => onOpenChange(false)}
+      />
+
+      {/* Dialog */}
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 animate-in fade-in zoom-in-95 duration-200">
+        {/* Close button */}
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        {/* Header */}
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">Add Contact</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Add a new contact to your organization
+        </p>
+
+        {submitError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {submitError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name */}
+          <div>
+            <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-1">
+              Name
+            </label>
+            <input
+              id="contact-name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Sarah Chen"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              id="contact-email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. sarah@company.com"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow"
+            />
+          </div>
+
+          {/* Type */}
+          <div>
+            <label htmlFor="contact-type" className="block text-sm font-medium text-gray-700 mb-1">
+              Type
+            </label>
+            <div className="relative">
+              <select
+                id="contact-type"
+                value={type}
+                onChange={(e) => setType(e.target.value as 'ADMIN' | 'ASSIGNEE')}
+                className="w-full appearance-none px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent cursor-pointer"
+              >
+                <option value="ASSIGNEE">Assignee</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !name.trim() || !email.trim()}
+              className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add Contact'
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export function ContactsPage() {
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     field: 'name',
     direction: 'asc',
   });
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // Fetch contacts on mount
+  useEffect(() => {
+    async function fetchContacts() {
+      try {
+        setIsLoading(true);
+        const data = await listContacts();
+        setContacts(data);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load contacts');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchContacts();
+  }, []);
 
   // Handle sort
   const handleSort = (field: SortField) => {
@@ -190,13 +301,40 @@ export function ContactsPage() {
     }));
   };
 
+  // Handle add contact
+  const handleAddContact = async (contact: { name: string; email: string; type: 'ADMIN' | 'ASSIGNEE' }) => {
+    const newContact = await createContact(contact);
+    setContacts((prev) => [...prev, newContact]);
+  };
+
+  // Handle delete contact
+  const handleDeleteContact = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this contact?')) return;
+    try {
+      await deleteContact(id);
+      setContacts((prev) => prev.filter((c) => c.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete contact');
+    }
+  };
+
+  // Handle status toggle
+  const handleToggleStatus = async (contact: Contact) => {
+    const newStatus = contact.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    try {
+      const updated = await toggleContactStatus(contact.id, newStatus);
+      setContacts((prev) => prev.map((c) => (c.id === contact.id ? updated : c)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update contact status');
+    }
+  };
+
   // Filter and sort contacts
   const filteredContacts = useMemo(() => {
-    let result = MOCK_CONTACTS.filter(
+    let result = contacts.filter(
       (contact) =>
         contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (contact.account?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+        contact.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     // Sort
@@ -212,29 +350,73 @@ export function ContactsPage() {
           return direction * a.status.localeCompare(b.status);
         case 'type':
           return direction * a.type.localeCompare(b.type);
-        case 'lastActive':
-          const dateA = a.lastActive ? new Date(a.lastActive).getTime() : 0;
-          const dateB = b.lastActive ? new Date(b.lastActive).getTime() : 0;
+        case 'lastActive': {
+          const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
           return direction * (dateA - dateB);
+        }
         default:
           return 0;
       }
     });
 
     return result;
-  }, [searchQuery, sortConfig]);
+  }, [contacts, searchQuery, sortConfig]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-violet-600 mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Loading contacts...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state (only if no contacts loaded)
+  if (error && contacts.length === 0) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          <p className="font-medium">Error loading contacts</p>
+          <p className="text-sm mt-1">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      <AddContactDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onSubmit={handleAddContact}
+      />
+
+      {/* Inline error banner for action errors */}
+      {error && contacts.length > 0 && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
           <Badge variant="secondary" className="text-sm font-medium">
-            {MOCK_CONTACTS.length}
+            {contacts.length}
           </Badge>
         </div>
-        <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-violet-200/50">
+        <Button
+          onClick={() => setShowAddDialog(true)}
+          className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-violet-200/50"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add new
         </Button>
@@ -265,7 +447,7 @@ export function ContactsPage() {
                   onSort={handleSort}
                 />
                 <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Email / Account
+                  Email
                 </th>
                 <SortableHeader
                   label="Status"
@@ -306,33 +488,31 @@ export function ContactsPage() {
                     </div>
                   </td>
 
-                  {/* Email / Account */}
+                  {/* Email */}
                   <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm">{contact.email}</span>
-                      </div>
-                      {contact.account && (
-                        <div className="flex items-center gap-2 text-gray-500">
-                          <Building2 className="w-4 h-4 text-gray-300" />
-                          <span className="text-xs">{contact.account}</span>
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm">{contact.email}</span>
                     </div>
                   </td>
 
-                  {/* Status */}
+                  {/* Status (clickable toggle) */}
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${
-                        contact.status === 'ACTIVE'
-                          ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20'
-                          : 'bg-gray-100 text-gray-600 ring-1 ring-gray-500/20'
-                      }`}
+                    <button
+                      onClick={() => handleToggleStatus(contact)}
+                      className="focus:outline-none"
+                      title={`Click to ${contact.status === 'ACTIVE' ? 'deactivate' : 'activate'}`}
                     >
-                      {contact.status === 'ACTIVE' ? 'Active' : 'Inactive'}
-                    </span>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full cursor-pointer transition-colors ${
+                          contact.status === 'ACTIVE'
+                            ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 hover:bg-emerald-100'
+                            : 'bg-gray-100 text-gray-600 ring-1 ring-gray-500/20 hover:bg-gray-200'
+                        }`}
+                      >
+                        {contact.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+                      </span>
+                    </button>
                   </td>
 
                   {/* Type */}
@@ -350,21 +530,46 @@ export function ContactsPage() {
 
                   {/* Last Active */}
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {formatRelativeDate(contact.lastActive)}
+                    {formatRelativeDate(contact.updatedAt)}
                   </td>
 
-                  {/* Actions */}
+                  {/* Actions (3-dot menu) */}
                   <td className="px-6 py-4">
-                    <button className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === contact.id ? null : contact.id)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      {openMenuId === contact.id && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setOpenMenuId(null)}
+                          />
+                          <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden py-1">
+                            <button
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                handleDeleteContact(contact.id);
+                              }}
+                              className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      ) : MOCK_CONTACTS.length === 0 ? (
+      ) : contacts.length === 0 ? (
         /* Empty State - No contacts at all */
         <div className="text-center py-20 px-6">
           {/* Illustration */}
@@ -390,10 +595,13 @@ export function ContactsPage() {
           </h3>
           <p className="text-gray-500 mb-8 max-w-md mx-auto leading-relaxed">
             Contacts are people who participate in your flows. They access tasks via
-            secure magic links — no account needed.
+            secure magic links -- no account needed.
           </p>
 
-          <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-violet-200/50">
+          <Button
+            onClick={() => setShowAddDialog(true)}
+            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-lg shadow-violet-200/50"
+          >
             <Plus className="w-5 h-5 mr-2" />
             Add your first contact
           </Button>

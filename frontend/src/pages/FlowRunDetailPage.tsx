@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIcon } from '@/components/workflow/StepIcon';
-import { getFlow, type Flow } from '@/lib/api';
+import { getFlow, cancelFlow, type Flow } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import type { StepType } from '@/types';
@@ -28,24 +28,22 @@ import type { StepType } from '@/types';
 // Types
 // ============================================================================
 
-type StepStatus = 'COMPLETED' | 'IN_PROGRESS' | 'PENDING' | 'SKIPPED';
+type StepStatus = 'COMPLETED' | 'IN_PROGRESS' | 'PENDING' | 'SKIPPED' | 'WAITING_FOR_ASSIGNEE';
 
 interface FlowRunStep {
   id: string;
+  stepId: string;
   name: string;
   type: StepType;
   status: StepStatus;
   assignee?: {
     id: string;
     name: string;
-    avatar?: string;
+    type: 'user' | 'contact';
   };
+  resultData?: Record<string, unknown>;
   completedAt?: string;
   startedAt?: string;
-}
-
-interface FlowRunDetail extends Flow {
-  steps?: FlowRunStep[];
 }
 
 // ============================================================================
@@ -175,60 +173,6 @@ function formatTimeAgo(dateString: string): string {
   });
 }
 
-// Mock steps for demonstration - in production this would come from the API
-function generateMockSteps(run: Flow): FlowRunStep[] {
-  const stepTypes: StepType[] = [
-    'FORM',
-    'APPROVAL',
-    'FILE_REQUEST',
-    'DECISION',
-    'TODO',
-    'ACKNOWLEDGEMENT',
-    'SYSTEM_EMAIL',
-  ];
-
-  const mockAssignees = [
-    { id: '1', name: 'John Smith' },
-    { id: '2', name: 'Sarah Johnson' },
-    { id: '3', name: 'Mike Davis' },
-    { id: '4', name: 'Emily Chen' },
-    { id: '5', name: 'Alex Wilson' },
-  ];
-
-  const steps: FlowRunStep[] = [];
-  const baseDate = new Date(run.startedAt);
-
-  for (let i = 0; i < run.totalSteps; i++) {
-    let status: StepStatus;
-    let completedAt: string | undefined;
-    let startedAt: string | undefined;
-
-    if (i < run.currentStepIndex) {
-      status = 'COMPLETED';
-      const stepDate = new Date(baseDate.getTime() + i * 3600000); // 1 hour apart
-      completedAt = stepDate.toISOString();
-      startedAt = new Date(stepDate.getTime() - 1800000).toISOString(); // 30 mins before
-    } else if (i === run.currentStepIndex && run.status === 'IN_PROGRESS') {
-      status = 'IN_PROGRESS';
-      startedAt = new Date(baseDate.getTime() + i * 3600000).toISOString();
-    } else {
-      status = 'PENDING';
-    }
-
-    steps.push({
-      id: `step-${i + 1}`,
-      name: `Step ${i + 1}: ${stepTypes[i % stepTypes.length].replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}`,
-      type: stepTypes[i % stepTypes.length],
-      status,
-      assignee: mockAssignees[i % mockAssignees.length],
-      completedAt,
-      startedAt,
-    });
-  }
-
-  return steps;
-}
-
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -236,18 +180,19 @@ function generateMockSteps(run: Flow): FlowRunStep[] {
 export function FlowRunDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [run, setRun] = useState<FlowRunDetail | null>(null);
+  const [run, setRun] = useState<Flow | null>(null);
+  const [steps, setSteps] = useState<FlowRunStep[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
-  // Track onboarding: viewed a run completes both action + coordinate steps
+  // Track onboarding
   useEffect(() => {
     useOnboardingStore.getState().completeCompleteAction();
     useOnboardingStore.getState().completeCoordinateFlows();
   }, []);
 
-  // Fetch flow run details on mount
+  // Fetch flow run details
   useEffect(() => {
     async function fetchRun() {
       if (!id) return;
@@ -255,12 +200,34 @@ export function FlowRunDetailPage() {
       try {
         setIsLoading(true);
         const data = await getFlow(id);
-        // Enhance with mock steps for demonstration
-        const runWithSteps: FlowRunDetail = {
-          ...data,
-          steps: generateMockSteps(data),
-        };
-        setRun(runWithSteps);
+        setRun(data);
+
+        // Map step executions to display steps using flow definition
+        const definition = (data as any).flow?.definition as { steps?: Array<{ stepId: string; type: string; config?: { name?: string; description?: string } }> } | undefined;
+        const defSteps = definition?.steps || [];
+
+        const mappedSteps: FlowRunStep[] = (data.stepExecutions || []).map((se) => {
+          const defStep = defSteps.find((d) => d.stepId === se.stepId);
+          const assignee = se.assignedToUser
+            ? { id: se.assignedToUser.id, name: se.assignedToUser.name, type: 'user' as const }
+            : se.assignedToContact
+            ? { id: se.assignedToContact.id, name: se.assignedToContact.name, type: 'contact' as const }
+            : undefined;
+
+          return {
+            id: se.id,
+            stepId: se.stepId,
+            name: defStep?.config?.name || `Step ${se.stepIndex + 1}`,
+            type: (defStep?.type || 'TODO') as StepType,
+            status: se.status as StepStatus,
+            assignee,
+            resultData: se.resultData,
+            completedAt: se.completedAt,
+            startedAt: se.startedAt,
+          };
+        });
+
+        setSteps(mappedSteps);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load flow');
@@ -271,7 +238,7 @@ export function FlowRunDetailPage() {
     fetchRun();
   }, [id]);
 
-  // Handle cancel run action
+  // Handle cancel run
   const handleCancelRun = async () => {
     if (!run || !window.confirm('Are you sure you want to cancel this flow? This cannot be undone.')) {
       return;
@@ -279,10 +246,17 @@ export function FlowRunDetailPage() {
 
     try {
       setIsCancelling(true);
-      // In production, this would call an API endpoint like:
-      // await cancelFlowRun(run.id);
-      // For now, we'll just update the local state
-      setRun(prev => prev ? { ...prev, status: 'CANCELLED' } : null);
+      const updated = await cancelFlow(run.id);
+      setRun(updated);
+      // Re-map steps from the updated run
+      const updatedSteps = (updated.stepExecutions || []).map((se) => {
+        const existing = steps.find(s => s.id === se.id);
+        return {
+          ...existing!,
+          status: se.status as StepStatus,
+        };
+      });
+      setSteps(updatedSteps);
     } catch (err) {
       console.error('Failed to cancel run:', err);
     } finally {
@@ -325,11 +299,9 @@ export function FlowRunDetailPage() {
     );
   }
 
-  const progressPercent = run.totalSteps > 0
-    ? (run.currentStepIndex / run.totalSteps) * 100
-    : 0;
-
-  const completedSteps = run.steps?.filter(s => s.status === 'COMPLETED').length || 0;
+  const totalSteps = steps.length;
+  const completedSteps = steps.filter(s => s.status === 'COMPLETED').length;
+  const progressPercent = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
 
   return (
     <div className="p-6 relative">
@@ -394,7 +366,7 @@ export function FlowRunDetailPage() {
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="text-gray-600 font-medium">Progress</span>
             <span className="text-gray-900 font-semibold">
-              {completedSteps} of {run.totalSteps} steps completed
+              {completedSteps} of {totalSteps} steps completed
             </span>
           </div>
           <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
@@ -428,7 +400,7 @@ export function FlowRunDetailPage() {
         </div>
 
         <div className="divide-y divide-gray-100">
-          {run.steps?.map((step, index) => (
+          {steps.map((step, index) => (
             <div
               key={step.id}
               className={cn(
@@ -454,8 +426,7 @@ export function FlowRunDetailPage() {
                       index + 1
                     )}
                   </div>
-                  {/* Connector line */}
-                  {index < (run.steps?.length || 0) - 1 && (
+                  {index < steps.length - 1 && (
                     <div
                       className={cn(
                         'absolute top-8 w-0.5 h-full',
@@ -510,6 +481,9 @@ export function FlowRunDetailPage() {
                     <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
                       <User className="w-3.5 h-3.5" />
                       <span>{step.assignee.name}</span>
+                      {step.assignee.type === 'contact' && (
+                        <span className="text-xs text-gray-400">(external)</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -539,8 +513,7 @@ export function FlowRunDetailPage() {
           ))}
         </div>
 
-        {/* Empty state if no steps */}
-        {(!run.steps || run.steps.length === 0) && (
+        {steps.length === 0 && (
           <div className="px-6 py-12 text-center">
             <div className="w-12 h-12 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-3">
               <AlertCircle className="w-6 h-6 text-gray-400" />

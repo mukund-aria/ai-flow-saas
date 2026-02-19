@@ -18,10 +18,13 @@ import {
   Layers,
   Sparkles,
   ArrowUpDown,
+  Pencil,
+  Copy,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { listTemplates, startFlow, type Template } from '@/lib/api';
+import { listTemplates, startFlow, deleteTemplate, duplicateTemplate, type Template } from '@/lib/api';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { CreateFlowDialog } from '@/components/workflow/CreateFlowDialog';
 
@@ -75,10 +78,14 @@ interface FlowCardProps {
   flow: Template;
   onEdit: () => void;
   onStartRun: () => void;
+  onDelete: () => void;
+  onDuplicate: () => void;
   isStarting: boolean;
 }
 
-function FlowCard({ flow, onEdit, onStartRun, isStarting }: FlowCardProps) {
+function FlowCard({ flow, onEdit, onStartRun, onDelete, onDuplicate, isStarting }: FlowCardProps) {
+  const [showMenu, setShowMenu] = useState(false);
+
   return (
     <div
       className="group bg-white rounded-xl border border-gray-200 p-5 hover:border-violet-300 hover:shadow-md transition-all cursor-pointer"
@@ -102,15 +109,58 @@ function FlowCard({ flow, onEdit, onStartRun, isStarting }: FlowCardProps) {
             V{flow.version || '1'}
           </span>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            // TODO: Show dropdown menu
-          }}
-          className="p-1.5 rounded-lg text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-100 hover:text-gray-600 transition-all"
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+            className="p-1.5 rounded-lg text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-100 hover:text-gray-600 transition-all"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+          {showMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMenu(false); }} />
+              <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden py-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(false);
+                    onEdit();
+                  }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                  Edit
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(false);
+                    onDuplicate();
+                  }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5 text-gray-400" />
+                  Duplicate
+                </button>
+                <div className="border-t border-gray-100 my-1" />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(false);
+                    onDelete();
+                  }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Icon and name row */}
@@ -243,6 +293,27 @@ export function FlowsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start flow');
       setStartingFlowId(null);
+    }
+  };
+
+  // Handler to delete (archive) a template
+  const handleDeleteFlow = async (flowId: string) => {
+    if (!window.confirm('Are you sure you want to archive this template?')) return;
+    try {
+      await deleteTemplate(flowId);
+      setFlows(prev => prev.filter(f => f.id !== flowId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete template');
+    }
+  };
+
+  // Handler to duplicate a template
+  const handleDuplicateFlow = async (flowId: string) => {
+    try {
+      const dup = await duplicateTemplate(flowId);
+      setFlows(prev => [dup as unknown as Template, ...prev]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to duplicate template');
     }
   };
 
@@ -397,6 +468,8 @@ export function FlowsPage() {
               flow={flow}
               onEdit={() => handleEditFlow(flow.id)}
               onStartRun={() => handleStartFlow(flow)}
+              onDelete={() => handleDeleteFlow(flow.id)}
+              onDuplicate={() => handleDuplicateFlow(flow.id)}
               isStarting={startingFlowId === flow.id}
             />
           ))}

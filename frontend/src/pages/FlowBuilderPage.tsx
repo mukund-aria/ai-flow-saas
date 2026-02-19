@@ -13,6 +13,7 @@ import { ChatContainer } from '@/components/chat/ChatContainer';
 import { WorkflowPanel } from '@/components/workflow/WorkflowPanel';
 import { AssigneeBar } from '@/components/workflow/AssigneeBar';
 import { StepPalette } from '@/components/workflow/StepPalette';
+import { FlowNotificationSettingsPanel } from '@/components/workflow/FlowNotificationSettings';
 import { useChat } from '@/hooks/useChat';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { usePreviewStore } from '@/stores/previewStore';
@@ -51,6 +52,7 @@ export function FlowBuilderPage() {
   const [showPreviewToast, setShowPreviewToast] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
   const previewLoadedRef = useRef(false);
   const templateLoadedRef = useRef(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -469,7 +471,12 @@ export function FlowBuilderPage() {
             Test
           </Button>
           <button
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            onClick={() => setShowSettings(!showSettings)}
+            className={`p-1.5 rounded-lg transition-colors ${
+              showSettings
+                ? 'text-violet-600 bg-violet-50'
+                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+            }`}
             title="Settings"
           >
             <Settings className="w-4 h-4" />
@@ -496,7 +503,30 @@ export function FlowBuilderPage() {
       {workflow && <AssigneeBar />}
 
       {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Settings Panel Slide-over */}
+        {showSettings && (
+          <>
+            <div
+              className="absolute inset-0 bg-black/10 z-30"
+              onClick={() => setShowSettings(false)}
+            />
+            <div className="absolute right-0 top-0 bottom-0 w-[380px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto animate-in slide-in-from-right duration-200">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-900">Template Settings</h3>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-4">
+                <FlowNotificationSettingsPanel />
+              </div>
+            </div>
+          </>
+        )}
         {builderMode === 'ai' ? (
           <>
             {/* AI mode: Chat panel + Canvas */}
