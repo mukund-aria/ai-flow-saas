@@ -131,3 +131,162 @@ export async function sendFlowCompleted(params: {
     </div>
   `);
 }
+
+// ============================================================================
+// Notification Email Templates
+// ============================================================================
+
+export async function sendReminder(params: {
+  to: string;
+  contactName: string;
+  flowName: string;
+  stepName: string;
+  token?: string;
+  dueAt?: Date | null;
+}) {
+  const taskUrl = params.token ? `${frontendUrl}/task/${params.token}` : `${frontendUrl}/home`;
+  const dueText = params.dueAt
+    ? `due ${params.dueAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
+    : 'due soon';
+
+  await sendEmail(params.to, `Reminder: ${params.stepName} is ${dueText}`, `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 0;">
+      <h2 style="color: #111; margin-bottom: 16px;">Friendly Reminder</h2>
+      <p style="color: #555; line-height: 1.6;">
+        Hi ${params.contactName}, your task in <strong>${params.flowName}</strong> is ${dueText}.
+      </p>
+      <div style="background: #fef3c7; border-radius: 8px; padding: 16px; margin: 16px 0; border-left: 4px solid #f59e0b;">
+        <p style="color: #92400e; font-weight: 600; margin: 0;">${params.stepName}</p>
+      </div>
+      <a href="${taskUrl}" style="display: inline-block; margin-top: 12px; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+        Complete Task
+      </a>
+      <p style="color: #999; font-size: 13px; margin-top: 24px;">
+        This is an automated reminder. No account is needed to complete this task.
+      </p>
+    </div>
+  `);
+}
+
+export async function sendOverdueNotice(params: {
+  to: string;
+  contactName: string;
+  flowName: string;
+  stepName: string;
+  token?: string;
+}) {
+  const taskUrl = params.token ? `${frontendUrl}/task/${params.token}` : `${frontendUrl}/home`;
+
+  await sendEmail(params.to, `Overdue: ${params.stepName}`, `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 0;">
+      <h2 style="color: #111; margin-bottom: 16px;">Task Overdue</h2>
+      <p style="color: #555; line-height: 1.6;">
+        Hi ${params.contactName}, your task in <strong>${params.flowName}</strong> is past due.
+      </p>
+      <div style="background: #fef2f2; border-radius: 8px; padding: 16px; margin: 16px 0; border-left: 4px solid #ef4444;">
+        <p style="color: #991b1b; font-weight: 600; margin: 0;">${params.stepName}</p>
+        <p style="color: #b91c1c; font-size: 13px; margin: 4px 0 0 0;">This task is overdue. Please complete it as soon as possible.</p>
+      </div>
+      <a href="${taskUrl}" style="display: inline-block; margin-top: 12px; padding: 12px 24px; background: #dc2626; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+        Complete Task Now
+      </a>
+    </div>
+  `);
+}
+
+export async function sendEscalation(params: {
+  to: string;
+  userName: string;
+  flowName: string;
+  stepName: string;
+  runName: string;
+}) {
+  await sendEmail(params.to, `Escalation: ${params.stepName} in ${params.runName}`, `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 0;">
+      <h2 style="color: #111; margin-bottom: 16px;">Task Escalated</h2>
+      <p style="color: #555; line-height: 1.6;">
+        Hi ${params.userName}, a task in <strong>${params.runName}</strong> (${params.flowName})
+        has been escalated to you because it is significantly overdue.
+      </p>
+      <div style="background: #fef2f2; border-radius: 8px; padding: 16px; margin: 16px 0; border-left: 4px solid #ef4444;">
+        <p style="color: #991b1b; font-weight: 600; margin: 0;">${params.stepName}</p>
+        <p style="color: #b91c1c; font-size: 13px; margin: 4px 0 0 0;">This task has exceeded the escalation threshold.</p>
+      </div>
+      <a href="${frontendUrl}/flows" style="display: inline-block; margin-top: 12px; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+        View Flow
+      </a>
+    </div>
+  `);
+}
+
+export async function sendFlowCancelled(params: {
+  to: string;
+  contactName: string;
+  flowName: string;
+}) {
+  await sendEmail(params.to, `Task cancelled: ${params.flowName}`, `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 0;">
+      <h2 style="color: #111; margin-bottom: 16px;">Task No Longer Needed</h2>
+      <p style="color: #555; line-height: 1.6;">
+        Hi ${params.contactName}, the flow <strong>${params.flowName}</strong> has been cancelled.
+        Your assigned task is no longer needed.
+      </p>
+      <p style="color: #999; font-size: 13px; margin-top: 24px;">
+        No action is required on your part.
+      </p>
+    </div>
+  `);
+}
+
+export async function sendFlowStalled(params: {
+  to: string;
+  userName: string;
+  flowName: string;
+  runName: string;
+}) {
+  await sendEmail(params.to, `No progress: ${params.runName}`, `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 0;">
+      <h2 style="color: #111; margin-bottom: 16px;">Flow Stalled</h2>
+      <p style="color: #555; line-height: 1.6;">
+        Hi ${params.userName}, the flow run <strong>${params.runName}</strong>
+        (${params.flowName}) has had no progress for over 72 hours.
+      </p>
+      <div style="background: #fef3c7; border-radius: 8px; padding: 16px; margin: 16px 0; border-left: 4px solid #f59e0b;">
+        <p style="color: #92400e; font-weight: 600; margin: 0;">No activity detected</p>
+        <p style="color: #a16207; font-size: 13px; margin: 4px 0 0 0;">Consider checking in with the assignee or reassigning the task.</p>
+      </div>
+      <a href="${frontendUrl}/flows" style="display: inline-block; margin-top: 12px; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+        View Flows
+      </a>
+    </div>
+  `);
+}
+
+export async function sendDailyDigest(params: {
+  to: string;
+  userName: string;
+  overdueCount: number;
+  activeFlowCount: number;
+}) {
+  await sendEmail(params.to, `Daily digest: ${params.overdueCount} overdue tasks`, `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 0;">
+      <h2 style="color: #111; margin-bottom: 16px;">Your Daily Digest</h2>
+      <p style="color: #555; line-height: 1.6;">
+        Hi ${params.userName}, here's your daily summary:
+      </p>
+      <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: #64748b;">Overdue tasks:</span>
+          <strong style="color: ${params.overdueCount > 0 ? '#ef4444' : '#22c55e'};">${params.overdueCount}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #64748b;">Active flows:</span>
+          <strong style="color: #111;">${params.activeFlowCount}</strong>
+        </div>
+      </div>
+      <a href="${frontendUrl}/flows" style="display: inline-block; margin-top: 12px; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+        View Dashboard
+      </a>
+    </div>
+  `);
+}

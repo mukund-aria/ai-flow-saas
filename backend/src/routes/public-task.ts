@@ -11,6 +11,7 @@ import { eq } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { validateMagicLink } from '../services/magic-link.js';
 import { logAction } from '../services/audit.js';
+import { onStepActivated, onStepCompleted, onFlowCompleted, updateFlowActivity } from '../services/execution.js';
 
 const router = Router();
 
@@ -123,6 +124,7 @@ router.post(
     const run = await db.query.flowRuns.findFirst({
       where: eq(flowRuns.id, stepExec.flowRunId),
       with: {
+        flow: true,
         stepExecutions: {
           orderBy: (se, { asc }) => [asc(se.stepIndex)],
         },
@@ -130,6 +132,10 @@ router.post(
     });
 
     if (run) {
+      // Notify: step completed (cancel jobs, notify coordinator)
+      await onStepCompleted(stepExec, run);
+      await updateFlowActivity(run.id);
+
       const nextStep = run.stepExecutions.find(
         se => se.stepIndex === stepExec.stepIndex + 1
       );
@@ -139,6 +145,11 @@ router.post(
         await db.update(stepExecutions)
           .set({ status: 'IN_PROGRESS', startedAt: new Date() })
           .where(eq(stepExecutions.id, nextStep.id));
+
+        // Schedule notification jobs for the next step
+        const definition = run.flow?.definition as { steps?: Array<{ id: string; due?: { value: number; unit: string } }> } | null;
+        const nextStepDef = definition?.steps?.find(s => s.id === nextStep.stepId);
+        await onStepActivated(nextStep.id, nextStepDef?.due, run.flow?.definition as Record<string, unknown>);
 
         await db.update(flowRuns)
           .set({ currentStepIndex: stepExec.stepIndex + 1 })
@@ -150,6 +161,9 @@ router.post(
         await db.update(flowRuns)
           .set({ status: 'COMPLETED', completedAt: new Date() })
           .where(eq(flowRuns.id, run.id));
+
+        // Notify: flow completed
+        await onFlowCompleted(run);
       }
     }
 

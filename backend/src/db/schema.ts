@@ -18,6 +18,9 @@ export type FlowRunStatus = 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'PAUSED'
 export type StepExecutionStatus = 'PENDING' | 'WAITING_FOR_ASSIGNEE' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED';
 export type ContactType = 'ADMIN' | 'ASSIGNEE';
 export type ContactStatus = 'ACTIVE' | 'INACTIVE';
+export type NotificationChannel = 'EMAIL' | 'IN_APP' | 'SLACK' | 'WEBHOOK';
+export type NotificationStatus = 'SENT' | 'FAILED' | 'SKIPPED';
+export type DigestFrequency = 'NONE' | 'DAILY' | 'WEEKLY';
 
 // ============================================================================
 // Organizations
@@ -107,6 +110,8 @@ export const flowRuns = pgTable('flow_runs', {
   organizationId: text('organization_id').notNull().references(() => organizations.id),
   startedAt: timestamp('started_at').defaultNow().notNull(),
   completedAt: timestamp('completed_at'),
+  dueAt: timestamp('due_at'),
+  lastActivityAt: timestamp('last_activity_at'),
 });
 
 // ============================================================================
@@ -140,6 +145,10 @@ export const stepExecutions = pgTable('step_executions', {
   startedAt: timestamp('started_at'),
   completedAt: timestamp('completed_at'),
   completedById: text('completed_by_id'),
+  dueAt: timestamp('due_at'),
+  lastReminderSentAt: timestamp('last_reminder_sent_at'),
+  reminderCount: integer('reminder_count').default(0).notNull(),
+  escalatedAt: timestamp('escalated_at'),
 });
 
 // ============================================================================
@@ -170,6 +179,59 @@ export const auditLogs = pgTable('audit_logs', {
 });
 
 // ============================================================================
+// Notifications (In-App Notification Feed)
+// ============================================================================
+
+export const notifications = pgTable('notifications', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  userId: text('user_id').notNull().references(() => users.id),
+  type: text('type').notNull(),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  flowRunId: text('flow_run_id').references(() => flowRuns.id),
+  stepExecutionId: text('step_execution_id').references(() => stepExecutions.id),
+  readAt: timestamp('read_at'),
+  dismissedAt: timestamp('dismissed_at'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Notification Log (Audit Trail of All Sent Notifications)
+// ============================================================================
+
+export const notificationLog = pgTable('notification_log', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  recipientEmail: text('recipient_email'),
+  recipientUserId: text('recipient_user_id').references(() => users.id),
+  channel: text('channel').$type<NotificationChannel>().notNull(),
+  eventType: text('event_type').notNull(),
+  flowRunId: text('flow_run_id').references(() => flowRuns.id),
+  stepExecutionId: text('step_execution_id').references(() => stepExecutions.id),
+  status: text('status').$type<NotificationStatus>().notNull(),
+  errorMessage: text('error_message'),
+  sentAt: timestamp('sent_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// User Notification Preferences
+// ============================================================================
+
+export const userNotificationPrefs = pgTable('user_notification_prefs', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text('user_id').notNull().references(() => users.id),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  emailEnabled: boolean('email_enabled').default(true).notNull(),
+  inAppEnabled: boolean('in_app_enabled').default(true).notNull(),
+  mutedEventTypes: jsonb('muted_event_types').$type<string[]>().default([]),
+  digestFrequency: text('digest_frequency').$type<DigestFrequency>().default('NONE').notNull(),
+}, (table) => [
+  uniqueIndex('user_notif_prefs_unique').on(table.userId, table.organizationId),
+]);
+
+// ============================================================================
 // Relations (for Drizzle query builder)
 // ============================================================================
 
@@ -190,6 +252,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   flowsCreated: many(flows),
   flowRunsStarted: many(flowRuns),
   stepExecutions: many(stepExecutions),
+  notifications: many(notifications),
+  notificationPrefs: many(userNotificationPrefs),
 }));
 
 export const userOrganizationsRelations = relations(userOrganizations, ({ one }) => ({
@@ -281,5 +345,54 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   flowRun: one(flowRuns, {
     fields: [auditLogs.flowRunId],
     references: [flowRuns.id],
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [notifications.organizationId],
+    references: [organizations.id],
+  }),
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+  flowRun: one(flowRuns, {
+    fields: [notifications.flowRunId],
+    references: [flowRuns.id],
+  }),
+  stepExecution: one(stepExecutions, {
+    fields: [notifications.stepExecutionId],
+    references: [stepExecutions.id],
+  }),
+}));
+
+export const notificationLogRelations = relations(notificationLog, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [notificationLog.organizationId],
+    references: [organizations.id],
+  }),
+  recipientUser: one(users, {
+    fields: [notificationLog.recipientUserId],
+    references: [users.id],
+  }),
+  flowRun: one(flowRuns, {
+    fields: [notificationLog.flowRunId],
+    references: [flowRuns.id],
+  }),
+  stepExecution: one(stepExecutions, {
+    fields: [notificationLog.stepExecutionId],
+    references: [stepExecutions.id],
+  }),
+}));
+
+export const userNotificationPrefsRelations = relations(userNotificationPrefs, ({ one }) => ({
+  user: one(users, {
+    fields: [userNotificationPrefs.userId],
+    references: [users.id],
+  }),
+  organization: one(organizations, {
+    fields: [userNotificationPrefs.organizationId],
+    references: [organizations.id],
   }),
 }));

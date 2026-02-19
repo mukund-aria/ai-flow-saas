@@ -6,7 +6,17 @@
  */
 
 import type { AssigneeRef, AssigneeOrAssignees } from './assignees.js';
-import type { RelativeDue } from './workflow.js';
+import type { RelativeDue, ReminderConfig, EscalationConfig } from './workflow.js';
+
+// ============================================================================
+// Step-Level Reminder Override
+// ============================================================================
+
+export interface StepReminderOverride {
+  useFlowDefaults: boolean;
+  reminder?: ReminderConfig;
+  escalation?: EscalationConfig;
+}
 
 // ============================================================================
 // Step Type Enum
@@ -103,6 +113,7 @@ export interface FormStep extends BaseStep {
   type: 'FORM';
   assignees: AssigneeOrAssignees;
   due?: RelativeDue;
+  reminderOverride?: StepReminderOverride;
   options?: StepOptions;
   form: {
     fields: FormField[];
@@ -133,6 +144,7 @@ export interface FileRequestStep extends BaseStep {
   assignees: AssigneeOrAssignees;
   reviewer?: AssigneeRef;
   due?: RelativeDue;
+  reminderOverride?: StepReminderOverride;
   options?: StepOptions;
   outputs?: StepOutput[];
 }
@@ -144,6 +156,7 @@ export interface TodoStep extends BaseStep {
   type: 'TODO';
   assignees: AssigneeOrAssignees;
   due?: RelativeDue;
+  reminderOverride?: StepReminderOverride;
   options?: StepOptions;
   completion?: {
     mode: CompletionMode;
@@ -158,6 +171,7 @@ export interface ApprovalStep extends BaseStep {
   assignees: AssigneeOrAssignees;
   attachments?: { ref: string }[];
   due?: RelativeDue;
+  reminderOverride?: StepReminderOverride;
   options?: StepOptions;
   approval: {
     completion: { mode: CompletionMode };
@@ -195,6 +209,7 @@ export interface DecisionStep extends BaseStep {
   type: 'DECISION';
   assignee: AssigneeRef;  // Single assignee only
   due?: RelativeDue;
+  reminderOverride?: StepReminderOverride;
   options?: StepOptions;
   outcomes: DecisionOutcome[];
 }

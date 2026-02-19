@@ -19,6 +19,7 @@ import { errorHandler } from './middleware/index.js';
 import { passport, configurePassport, authRoutes, requireAuth } from './auth/index.js';
 import publicChatRouter, { publicChatLimiter } from './routes/public-chat.js';
 import publicTaskRouter from './routes/public-task.js';
+import { initScheduler } from './services/scheduler.js';
 
 dotenv.config();
 
@@ -195,6 +196,11 @@ app.use(errorHandler);
 // ============================================================================
 // Server Startup
 // ============================================================================
+
+// Initialize notification scheduler (BullMQ + Redis)
+initScheduler().catch((err) => {
+  console.warn('[Scheduler] Failed to start:', err);
+});
 
 app.listen(Number(PORT), '0.0.0.0', () => {
   const authStatus = process.env.GOOGLE_CLIENT_ID ? 'Google OAuth enabled' : 'Auth disabled (dev mode)';

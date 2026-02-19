@@ -17,6 +17,7 @@ export interface Flow {
   assigneePlaceholders: AssigneePlaceholder[];
   parameters?: Parameter[];
   triggerConfig?: TriggerConfig;
+  settings?: Record<string, unknown>;
 }
 
 export interface Step {
@@ -61,6 +62,7 @@ export interface StepConfig {
   formFields?: FormField[];
   targetStepId?: string;
   destinationId?: string;
+  reminderOverride?: Record<string, unknown>;
 }
 
 export interface StepOption {

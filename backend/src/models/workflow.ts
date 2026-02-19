@@ -84,6 +84,64 @@ export interface FlowSettings {
   autoArchiveEnabled: boolean;
   coverImage?: string | 'DEFAULT';
   advancedCoordinatorRoleSetting?: string;
+  notifications?: FlowNotificationSettings;
+}
+
+// ============================================================================
+// Notification Settings
+// ============================================================================
+
+export interface ReminderConfig {
+  enabled: boolean;
+  firstReminderBefore: { value: number; unit: DueUnit };
+  repeatAfterDue: boolean;
+  repeatInterval: { value: number; unit: DueUnit };
+  maxReminders: number;
+}
+
+export interface EscalationConfig {
+  enabled: boolean;
+  escalateAfter: { value: number; unit: DueUnit };
+  escalateTo: 'COORDINATOR' | 'CUSTOM_EMAIL';
+  customEmail?: string;
+}
+
+export interface CoordinatorNotificationPrefs {
+  stepCompleted: boolean;
+  stepOverdue: boolean;
+  flowCompleted: boolean;
+  flowStalled: boolean;
+  dailyDigest: boolean;
+}
+
+export interface FlowNotificationSettings {
+  defaultReminder: ReminderConfig;
+  escalation: EscalationConfig;
+  coordinatorNotifications: CoordinatorNotificationPrefs;
+}
+
+export function defaultFlowNotificationSettings(): FlowNotificationSettings {
+  return {
+    defaultReminder: {
+      enabled: true,
+      firstReminderBefore: { value: 24, unit: 'HOURS' },
+      repeatAfterDue: true,
+      repeatInterval: { value: 24, unit: 'HOURS' },
+      maxReminders: 3,
+    },
+    escalation: {
+      enabled: true,
+      escalateAfter: { value: 48, unit: 'HOURS' },
+      escalateTo: 'COORDINATOR',
+    },
+    coordinatorNotifications: {
+      stepCompleted: true,
+      stepOverdue: true,
+      flowCompleted: true,
+      flowStalled: true,
+      dailyDigest: false,
+    },
+  };
 }
 
 // ============================================================================

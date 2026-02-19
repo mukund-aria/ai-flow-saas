@@ -11,6 +11,7 @@ import uploadRouter from './upload.js';
 import flowsRouter from './flows.js';
 import runsRouter from './runs.js';
 import contactsRouter from './contacts.js';
+import notificationsRouter from './notifications.js';
 import organizationsRouter from './organizations.js';
 import teamRouter from './team.js';
 import { orgScope } from '../middleware/org-scope.js';
@@ -45,5 +46,8 @@ router.use('/', runsRouter); // For /templates/:templateId/flows endpoint
 
 // Contacts API (external assignees management)
 router.use('/contacts', contactsRouter);
+
+// Notifications API (in-app notifications)
+router.use('/notifications', notificationsRouter);
 
 export default router;

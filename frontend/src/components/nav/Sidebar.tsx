@@ -24,6 +24,8 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { OrgSwitcher } from './OrgSwitcher';
+import { NotificationBell } from './NotificationBell';
+import { NotificationPanel } from './NotificationPanel';
 import { listTemplates, startFlow, type Template } from '@/lib/api';
 
 interface NavItemProps {
@@ -194,6 +196,10 @@ export function Sidebar() {
 
       {/* Bottom Section */}
       <div className="p-3 border-t border-gray-200">
+        <div className="relative">
+          <NotificationBell />
+          <NotificationPanel />
+        </div>
         <NavItem to="/settings" icon={<Settings className="w-5 h-5" />} label="Settings" />
 
         {/* User Profile with Popover Menu */}
