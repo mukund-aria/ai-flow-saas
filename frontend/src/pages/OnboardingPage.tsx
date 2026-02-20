@@ -28,7 +28,7 @@ export function OnboardingPage() {
     setError('');
 
     try {
-      const res = await fetch(`${API_BASE}/api/organizations`, {
+      const res = await fetch(`${API_BASE}/organizations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

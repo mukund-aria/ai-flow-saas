@@ -30,7 +30,7 @@ export function OrgSelectPage() {
   useEffect(() => {
     async function fetchOrgs() {
       try {
-        const res = await fetch(`${API_BASE}/api/organizations`, {
+        const res = await fetch(`${API_BASE}/organizations`, {
           credentials: 'include',
         });
         if (res.ok) {

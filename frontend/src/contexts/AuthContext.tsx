@@ -43,6 +43,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Provider
 // ============================================================================
 
+// Auth routes are at /auth/*, API routes are at /api/*
+const AUTH_BASE = import.meta.env.VITE_API_URL || '';
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 interface AuthProviderProps {
@@ -59,7 +61,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`${API_BASE}/auth/me`, {
+      const response = await fetch(`${AUTH_BASE}/auth/me`, {
         credentials: 'include',
       });
 
@@ -79,7 +81,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE}/auth/logout`, {
+      await fetch(`${AUTH_BASE}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -93,7 +95,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const switchOrg = async (organizationId: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/organizations/switch`, {
+      const response = await fetch(`${API_BASE}/organizations/switch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

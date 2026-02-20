@@ -373,7 +373,7 @@ export function FlowRunDetailPage() {
     if (!run) return;
     setSendingReminder(step.id);
     try {
-      await fetch(`${API_BASE}/api/flows/${run.id}/steps/${step.stepId}/remind`, {
+      await fetch(`${API_BASE}/flows/${run.id}/steps/${step.stepId}/remind`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
