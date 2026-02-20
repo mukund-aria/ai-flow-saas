@@ -191,9 +191,29 @@ router.post(
       details: { stepId: stepExec.stepId, stepIndex: stepExec.stepIndex },
     });
 
+    // Check if the next step is assigned to the same contact - return its magic link token
+    let nextTaskToken: string | null = null;
+    if (run) {
+      const nextStep = run.stepExecutions.find(
+        se => se.stepIndex === stepExec.stepIndex + 1
+      );
+      if (nextStep && nextStep.assignedToContactId === stepExec.assignedToContactId) {
+        // Find or create magic link for the next step
+        const existingLink = await db.query.magicLinks.findFirst({
+          where: eq(magicLinks.stepExecutionId, nextStep.id),
+        });
+        if (existingLink && !existingLink.usedAt && new Date() < existingLink.expiresAt) {
+          nextTaskToken = existingLink.token;
+        }
+      }
+    }
+
     res.json({
       success: true,
-      data: { message: 'Task completed successfully' },
+      data: {
+        message: 'Task completed successfully',
+        nextTaskToken,
+      },
     });
   })
 );

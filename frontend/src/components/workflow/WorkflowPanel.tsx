@@ -8,9 +8,10 @@ import { useWorkflowStore } from '@/stores/workflowStore';
 
 interface WorkflowPanelProps {
   editMode?: boolean;
+  onStartConfigClick?: () => void;
 }
 
-export function WorkflowPanel({ editMode = false }: WorkflowPanelProps) {
+export function WorkflowPanel({ editMode = false, onStartConfigClick }: WorkflowPanelProps) {
   const workflow = useWorkflowStore((state) => state.workflow);
 
   if (!workflow) {
@@ -29,7 +30,11 @@ export function WorkflowPanel({ editMode = false }: WorkflowPanelProps) {
             ) : (
               <>
                 {/* Flow Start Card */}
-                <FlowStartCard workflow={workflow} />
+                <FlowStartCard
+                  workflow={workflow}
+                  editMode
+                  onConfigClick={onStartConfigClick}
+                />
 
                 {/* Connector */}
                 <StepConnector />

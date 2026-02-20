@@ -1,35 +1,72 @@
 import { Card } from '@/components/ui/card';
-import { PlayCircle, Zap, UserCircle } from 'lucide-react';
-import type { Flow } from '@/types';
+import { PlayCircle, Zap, UserCircle, FileText, Link, ChevronRight, Settings2 } from 'lucide-react';
+import type { Flow, StartMode } from '@/types';
 
 interface FlowStartCardProps {
   workflow: Flow;
+  editMode?: boolean;
+  onConfigClick?: () => void;
 }
 
-export function FlowStartCard({ workflow }: FlowStartCardProps) {
-  const triggerType = workflow.triggerConfig?.type || 'manual';
+const START_MODE_LABELS: Record<StartMode, { label: string; icon: typeof UserCircle; description: string }> = {
+  MANUAL_EXECUTE: { label: 'Manual', icon: UserCircle, description: 'Coordinator starts this flow manually' },
+  KICKOFF_FORM: { label: 'Kickoff Form', icon: FileText, description: 'Collect info before the flow starts' },
+  START_LINK: { label: 'Start Link', icon: Link, description: 'Anyone with the link can start this flow' },
+  WEBHOOK: { label: 'Webhook', icon: Zap, description: 'Triggered by external system' },
+  SCHEDULE: { label: 'Schedule', icon: Zap, description: 'Runs on a recurring schedule' },
+  INTEGRATION: { label: 'Integration', icon: Zap, description: 'Triggered by an integration' },
+};
+
+export function FlowStartCard({ workflow, editMode, onConfigClick }: FlowStartCardProps) {
+  const startMode = workflow.kickoff?.defaultStartMode || 'MANUAL_EXECUTE';
+  const modeInfo = START_MODE_LABELS[startMode] || START_MODE_LABELS.MANUAL_EXECUTE;
+  const ModeIcon = modeInfo.icon;
+
+  const hasKickoffForm = workflow.kickoff?.kickoffFormEnabled && (workflow.kickoff?.kickoffFormFields?.length || 0) > 0;
+  const variableCount = workflow.kickoff?.flowVariables?.length || 0;
 
   return (
-    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 overflow-hidden">
+    <Card
+      className={`bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 overflow-hidden ${
+        editMode ? 'cursor-pointer hover:border-blue-400 hover:shadow-md transition-all group' : ''
+      }`}
+      onClick={editMode ? onConfigClick : undefined}
+    >
       {/* Colored top band */}
       <div className="bg-blue-500 px-3 py-1.5 flex items-center gap-2">
         <PlayCircle className="w-3.5 h-3.5 text-white" />
-        <span className="text-xs font-semibold text-white">Flow Start</span>
+        <span className="text-xs font-semibold text-white flex-1">Flow Start</span>
+        {editMode && (
+          <Settings2 className="w-3 h-3 text-blue-200 opacity-0 group-hover:opacity-100 transition-opacity" />
+        )}
       </div>
       <div className="p-3">
         <div className="flex items-center gap-1.5">
-          {triggerType === 'manual' ? (
-            <>
-              <UserCircle className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-xs text-gray-500">Coordinator starts this flow manually</span>
-            </>
-          ) : (
-            <>
-              <Zap className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-xs text-gray-500 capitalize">{triggerType} trigger</span>
-            </>
+          <ModeIcon className="w-3.5 h-3.5 text-gray-400" />
+          <span className="text-xs text-gray-500 flex-1">{modeInfo.description}</span>
+          {editMode && (
+            <ChevronRight className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
           )}
         </div>
+
+        {/* Show kickoff form indicator */}
+        {hasKickoffForm && (
+          <div className="mt-2 flex items-center gap-1.5 px-2 py-1 bg-blue-100/50 rounded-md">
+            <FileText className="w-3 h-3 text-blue-500" />
+            <span className="text-[11px] text-blue-600 font-medium">
+              Kickoff form: {workflow.kickoff!.kickoffFormFields!.length} fields
+            </span>
+          </div>
+        )}
+
+        {/* Show variable count */}
+        {variableCount > 0 && (
+          <div className="mt-1.5 flex items-center gap-1.5 px-2 py-1 bg-blue-100/50 rounded-md">
+            <span className="text-[11px] text-blue-600 font-medium">
+              {variableCount} flow variable{variableCount > 1 ? 's' : ''}
+            </span>
+          </div>
+        )}
       </div>
     </Card>
   );

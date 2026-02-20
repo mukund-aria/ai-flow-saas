@@ -13,7 +13,8 @@ import { ChatContainer } from '@/components/chat/ChatContainer';
 import { WorkflowPanel } from '@/components/workflow/WorkflowPanel';
 import { AssigneeBar } from '@/components/workflow/AssigneeBar';
 import { StepPalette } from '@/components/workflow/StepPalette';
-import { FlowNotificationSettingsPanel } from '@/components/workflow/FlowNotificationSettings';
+import { FlowSettingsPanel } from '@/components/workflow/FlowSettingsPanel';
+import { FlowStartConfigPanel } from '@/components/workflow/FlowStartConfigPanel';
 import { useChat } from '@/hooks/useChat';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { usePreviewStore } from '@/stores/previewStore';
@@ -44,7 +45,7 @@ export function FlowBuilderPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { sendMessage, startNewChat } = useChat();
   const { workflow, savedFlowId, savedFlowStatus, isSaving, setSavedFlow, setWorkflow, setSaving, initEmptyWorkflow, updateFlowMetadata } = useWorkflowStore();
-  const { previewWorkflow, previewPrompt, clearPreview } = usePreviewStore();
+  const { previewWorkflow, clearPreview } = usePreviewStore();
   const { completeBuildTemplate } = useOnboardingStore();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
@@ -53,6 +54,7 @@ export function FlowBuilderPage() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [showStartConfig, setShowStartConfig] = useState(false);
   const previewLoadedRef = useRef(false);
   const templateLoadedRef = useRef(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -265,7 +267,6 @@ export function FlowBuilderPage() {
   };
 
   // DnD setup for manual mode (shared context for palette drag + step reorder)
-  const { addStep, moveStep } = useWorkflowStore.getState();
   const [activeDragType, setActiveDragType] = useState<StepType | null>(null);
 
   const sensors = useSensors(
@@ -511,19 +512,21 @@ export function FlowBuilderPage() {
               className="absolute inset-0 bg-black/10 z-30"
               onClick={() => setShowSettings(false)}
             />
-            <div className="absolute right-0 top-0 bottom-0 w-[380px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto animate-in slide-in-from-right duration-200">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900">Template Settings</h3>
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="p-4">
-                <FlowNotificationSettingsPanel />
-              </div>
+            <div className="absolute right-0 top-0 bottom-0 w-[400px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto animate-in slide-in-from-right duration-200">
+              <FlowSettingsPanel onClose={() => setShowSettings(false)} />
+            </div>
+          </>
+        )}
+
+        {/* Flow Start Config Panel Slide-over */}
+        {showStartConfig && (
+          <>
+            <div
+              className="absolute inset-0 bg-black/10 z-30"
+              onClick={() => setShowStartConfig(false)}
+            />
+            <div className="absolute right-0 top-0 bottom-0 w-[400px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto animate-in slide-in-from-right duration-200">
+              <FlowStartConfigPanel onClose={() => setShowStartConfig(false)} />
             </div>
           </>
         )}
@@ -555,7 +558,7 @@ export function FlowBuilderPage() {
           >
             <StepPalette onSwitchToAI={() => handleModeChange('ai')} />
             <div className="flex-1 bg-gray-50 overflow-auto">
-              <WorkflowPanel editMode />
+              <WorkflowPanel editMode onStartConfigClick={() => setShowStartConfig(true)} />
             </div>
 
             {/* Drag overlay for palette items */}

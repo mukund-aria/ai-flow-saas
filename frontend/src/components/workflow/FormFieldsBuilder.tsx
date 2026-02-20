@@ -235,7 +235,6 @@ export function FormFieldsBuilder({ fields, onChange }: FormFieldsBuilderProps) 
   const [showAddMenu, setShowAddMenu] = useState(false);
 
   const addField = (type: FormFieldType) => {
-    const meta = FORM_FIELD_TYPES.find((f) => f.value === type);
     const newField: FormField = {
       fieldId: generateFieldId(),
       label: '',

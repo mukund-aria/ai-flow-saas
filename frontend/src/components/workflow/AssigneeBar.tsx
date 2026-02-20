@@ -2,13 +2,21 @@
  * Assignee Bar
  *
  * Compact horizontal bar showing assignee role avatars below the builder header.
- * Extracts visual presentation from AssigneeManager into a slim horizontal layout.
+ * Shows resolution type indicators for each role.
  */
 
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, UserCheck, PlayCircle, FileText, RefreshCw } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { getRoleColor, getRoleInitials } from '@/types';
+import type { ResolutionType } from '@/types';
+
+const RESOLUTION_ICONS: Partial<Record<ResolutionType, typeof UserCheck>> = {
+  FIXED_CONTACT: UserCheck,
+  WORKSPACE_INITIALIZER: PlayCircle,
+  KICKOFF_FORM_FIELD: FileText,
+  ROUND_ROBIN: RefreshCw,
+};
 
 export function AssigneeBar() {
   const { workflow, addAssigneePlaceholder, removeAssigneePlaceholder } = useWorkflowStore();
@@ -44,27 +52,35 @@ export function AssigneeBar() {
       <span className="text-xs font-medium text-gray-500 mr-1 shrink-0">Roles:</span>
 
       {/* Assignee avatars */}
-      {assignees.map((assignee, index) => (
-        <div
-          key={assignee.placeholderId}
-          className="group relative flex items-center gap-1.5 px-2 py-1 rounded-full bg-white border border-gray-200 hover:border-gray-300 transition-colors"
-        >
-          <span
-            className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
-            style={{ backgroundColor: getRoleColor(index) }}
+      {assignees.map((assignee, index) => {
+        const resType = assignee.resolution?.type;
+        const ResIcon = resType ? RESOLUTION_ICONS[resType] : undefined;
+
+        return (
+          <div
+            key={assignee.placeholderId}
+            className="group relative flex items-center gap-1.5 px-2 py-1 rounded-full bg-white border border-gray-200 hover:border-gray-300 transition-colors"
           >
-            {getRoleInitials(assignee.roleName)}
-          </span>
-          <span className="text-xs font-medium text-gray-700">{assignee.roleName}</span>
-          <button
-            onClick={() => removeAssigneePlaceholder(assignee.placeholderId)}
-            className="p-0.5 rounded-full text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-            title="Remove role"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      ))}
+            <span
+              className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+              style={{ backgroundColor: getRoleColor(index) }}
+            >
+              {getRoleInitials(assignee.roleName)}
+            </span>
+            <span className="text-xs font-medium text-gray-700">{assignee.roleName}</span>
+            {ResIcon && (
+              <ResIcon className="w-3 h-3 text-gray-400" />
+            )}
+            <button
+              onClick={() => removeAssigneePlaceholder(assignee.placeholderId)}
+              className="p-0.5 rounded-full text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+              title="Remove role"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        );
+      })}
 
       {/* Add role */}
       {isAdding ? (

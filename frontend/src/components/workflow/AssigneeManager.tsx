@@ -4,17 +4,31 @@
  * Panel for managing assignee roles (placeholders) in the flow builder.
  * Each role represents a person who will be assigned tasks when the flow runs.
  * At runtime, coordinators map roles to actual contacts.
+ * Now supports resolution type configuration (how roles resolve to contacts).
  */
 
 import { useState } from 'react';
-import { Plus, X, UserPlus, Users } from 'lucide-react';
+import { Plus, X, UserPlus, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { getRoleColor, getRoleInitials } from '@/types';
+import type { Resolution } from '@/types';
+import { ResolutionTypeEditor } from './ResolutionTypeEditor';
+
+const RESOLUTION_LABELS: Record<string, string> = {
+  CONTACT_TBD: 'Assigned at start',
+  FIXED_CONTACT: 'Fixed contact',
+  WORKSPACE_INITIALIZER: 'Flow starter',
+  KICKOFF_FORM_FIELD: 'From kickoff',
+  FLOW_VARIABLE: 'From variable',
+  RULES: 'Rules-based',
+  ROUND_ROBIN: 'Round robin',
+};
 
 export function AssigneeManager() {
-  const { workflow, addAssigneePlaceholder, removeAssigneePlaceholder } = useWorkflowStore();
+  const { workflow, addAssigneePlaceholder, removeAssigneePlaceholder, setWorkflow } = useWorkflowStore();
   const [newRoleName, setNewRoleName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [expandedRole, setExpandedRole] = useState<string | null>(null);
 
   if (!workflow) return null;
 
@@ -22,12 +36,9 @@ export function AssigneeManager() {
 
   const handleAdd = () => {
     if (!newRoleName.trim()) return;
-
-    // Check for duplicates
     if (assignees.some(a => a.roleName.toLowerCase() === newRoleName.trim().toLowerCase())) {
       return;
     }
-
     addAssigneePlaceholder(newRoleName.trim());
     setNewRoleName('');
     setIsAdding(false);
@@ -41,6 +52,14 @@ export function AssigneeManager() {
       setIsAdding(false);
       setNewRoleName('');
     }
+  };
+
+  const handleResolutionChange = (placeholderId: string, resolution: Resolution) => {
+    if (!workflow) return;
+    const updatedPlaceholders = assignees.map(a =>
+      a.placeholderId === placeholderId ? { ...a, resolution } : a
+    );
+    setWorkflow({ ...workflow, assigneePlaceholders: updatedPlaceholders });
   };
 
   return (
@@ -62,32 +81,56 @@ export function AssigneeManager() {
       </div>
 
       <p className="text-xs text-gray-500 mb-3">
-        Define roles for people who will complete tasks in this flow. When you run the flow, you'll assign real contacts to each role.
+        Define roles for people who will complete tasks in this flow. Configure how each role resolves to a contact.
       </p>
 
       {/* Assignee list */}
       <div className="space-y-2">
         {assignees.map((assignee, index) => (
-          <div
-            key={assignee.placeholderId}
-            className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg group"
-          >
-            <span
-              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-              style={{ backgroundColor: getRoleColor(index) }}
+          <div key={assignee.placeholderId} className="border border-gray-100 rounded-lg overflow-hidden">
+            <div
+              className="flex items-center gap-2 px-3 py-2 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => setExpandedRole(expandedRole === assignee.placeholderId ? null : assignee.placeholderId)}
             >
-              {getRoleInitials(assignee.roleName)}
-            </span>
-            <span className="text-sm font-medium text-gray-700 flex-1 truncate">
-              {assignee.roleName}
-            </span>
-            <button
-              onClick={() => removeAssigneePlaceholder(assignee.placeholderId)}
-              className="p-1 rounded text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-              title="Remove role"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
+              <span
+                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                style={{ backgroundColor: getRoleColor(index) }}
+              >
+                {getRoleInitials(assignee.roleName)}
+              </span>
+              <span className="text-sm font-medium text-gray-700 flex-1 truncate">
+                {assignee.roleName}
+              </span>
+              <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                {RESOLUTION_LABELS[assignee.resolution?.type || 'CONTACT_TBD']}
+              </span>
+              {expandedRole === assignee.placeholderId ? (
+                <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeAssigneePlaceholder(assignee.placeholderId);
+                }}
+                className="p-1 rounded text-gray-400 hover:text-red-500 transition-all"
+                title="Remove role"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Resolution type editor */}
+            {expandedRole === assignee.placeholderId && (
+              <div className="px-3 py-3 border-t border-gray-100 bg-white">
+                <ResolutionTypeEditor
+                  resolution={assignee.resolution || { type: 'CONTACT_TBD' }}
+                  onChange={(resolution) => handleResolutionChange(assignee.placeholderId, resolution)}
+                  kickoff={workflow.kickoff}
+                />
+              </div>
+            )}
           </div>
         ))}
 

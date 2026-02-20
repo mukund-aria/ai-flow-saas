@@ -209,8 +209,8 @@ function ActionCardComponent({ card }: { card: ActionCard }) {
   );
 }
 
-function ProgressInsightsSection({ timeRange }: { timeRange: TimeRange }) {
-  // In a real app, this would fetch data based on timeRange
+function ProgressInsightsSection({ timeRange: _timeRange }: { timeRange: TimeRange }) {
+  // TODO: fetch data based on _timeRange
   const data = mockProgressData;
 
   return (

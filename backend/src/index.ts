@@ -19,7 +19,10 @@ import { errorHandler } from './middleware/index.js';
 import { passport, configurePassport, authRoutes, requireAuth } from './auth/index.js';
 import publicChatRouter, { publicChatLimiter } from './routes/public-chat.js';
 import publicTaskRouter from './routes/public-task.js';
+import publicStartRouter from './routes/public-start.js';
+import webhooksRouter from './routes/webhooks.js';
 import { initScheduler } from './services/scheduler.js';
+import { initFlowScheduler } from './services/flow-scheduler.js';
 
 dotenv.config();
 
@@ -148,6 +151,8 @@ if (isProduction) {
 
 app.use('/api/public/chat', publicChatRouter);
 app.use('/api/public/task', publicTaskRouter);
+app.use('/api/public/start', publicStartRouter);
+app.use('/api/webhooks/flows', webhooksRouter);
 
 // ============================================================================
 // API Routes (protected in production)
@@ -200,6 +205,11 @@ app.use(errorHandler);
 // Initialize notification scheduler (BullMQ + Redis)
 initScheduler().catch((err) => {
   console.warn('[Scheduler] Failed to start:', err);
+});
+
+// Initialize flow scheduler (BullMQ + Redis)
+initFlowScheduler().catch((err) => {
+  console.warn('[FlowScheduler] Failed to start:', err);
 });
 
 app.listen(Number(PORT), '0.0.0.0', () => {

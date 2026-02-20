@@ -48,10 +48,7 @@ export function AnimatedWorkflowPanel({ workflow, isBuilding }: AnimatedWorkflow
     <div className="p-6 max-w-2xl mx-auto">
       {/* Flow Start */}
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <FlowStartCard
-          parameters={workflow.parameters}
-          triggerConfig={workflow.triggerConfig}
-        />
+        <FlowStartCard workflow={workflow} />
       </div>
 
       {visibleSteps.length > 0 && <StepConnector />}

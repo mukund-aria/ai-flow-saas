@@ -26,7 +26,7 @@ interface StepGroup {
 const STEP_GROUPS: StepGroup[] = [
   {
     label: 'Actions',
-    types: ['FORM', 'TODO', 'FILE_REQUEST', 'APPROVAL', 'ACKNOWLEDGEMENT', 'DECISION', 'ESIGN'],
+    types: ['FORM', 'QUESTIONNAIRE', 'TODO', 'FILE_REQUEST', 'APPROVAL', 'ACKNOWLEDGEMENT', 'DECISION', 'ESIGN'],
   },
   {
     label: 'Flow control',

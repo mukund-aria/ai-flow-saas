@@ -24,7 +24,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { CoordinatorLayout } from '@/layouts/CoordinatorLayout';
-import { PublicLayout } from '@/layouts/PublicLayout';
+// import { PublicLayout } from '@/layouts/PublicLayout';
 import {
   HomePage,
   FlowsPage,
@@ -37,14 +37,15 @@ import {
   IntegrationsPage,
   SettingsPage,
   LoginPage,
-  LandingPage,
-  FlowPreviewPage,
+  // LandingPage,
+  // FlowPreviewPage,
   OnboardingPage,
   OrgSelectPage,
   OrgSetupPage,
   TeamPage,
   AssigneeTaskPage,
 } from '@/pages';
+import { TemplateDetailPage } from '@/pages/TemplateDetailPage';
 
 // ============================================================================
 // Protected Route Component
@@ -149,6 +150,7 @@ function AppRoutes() {
         <Route path="templates" element={<FlowsPage />} />
         <Route path="templates/new" element={<FlowBuilderPage />} />
         <Route path="templates/:id" element={<FlowBuilderPage />} />
+        <Route path="templates/:id/detail" element={<TemplateDetailPage />} />
         <Route path="flows" element={<FlowRunsPage />} />
         <Route path="flows/:id" element={<FlowRunDetailPage />} />
         <Route path="reports" element={<ReportsPage />} />

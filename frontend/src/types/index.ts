@@ -12,12 +12,137 @@ export interface Flow {
   flowId: string;
   name: string;
   description?: string;
+  workspaceNameTemplate?: string;
+  kickoff?: KickoffConfig;
+  permissions?: FlowPermissions;
+  settings?: FlowSettings;
   steps: Step[];
   milestones: Milestone[];
   assigneePlaceholders: AssigneePlaceholder[];
   parameters?: Parameter[];
   triggerConfig?: TriggerConfig;
-  settings?: Record<string, unknown>;
+}
+
+// ============================================================================
+// Kickoff / Trigger Configuration
+// ============================================================================
+
+export type StartMode =
+  | 'MANUAL_EXECUTE'
+  | 'KICKOFF_FORM'
+  | 'START_LINK'
+  | 'WEBHOOK'
+  | 'SCHEDULE'
+  | 'INTEGRATION';
+
+export interface KickoffConfig {
+  defaultStartMode: StartMode;
+  supportedStartModes: StartMode[];
+  kickoffFormEnabled?: boolean;
+  kickoffFormFields?: FormField[];
+  startLinkEnabled?: boolean;
+  flowVariables: FlowVariable[];
+  notes?: string[];
+}
+
+export interface FlowVariable {
+  key: string;
+  type: 'TEXT' | 'FILE';
+  required: boolean;
+  description?: string;
+}
+
+// ============================================================================
+// Permissions
+// ============================================================================
+
+export type PermissionType = 'EXPLICIT_USERS' | 'ALL_MEMBERS' | 'ADMINS_ONLY';
+
+export interface PermissionConfig {
+  type: PermissionType;
+  principals?: string[];
+}
+
+export interface FlowPermissions {
+  execute: PermissionConfig;
+  edit: PermissionConfig;
+  coordinate: PermissionConfig;
+}
+
+// ============================================================================
+// Flow Settings
+// ============================================================================
+
+export interface FlowSettings {
+  chatAssistanceEnabled?: boolean;
+  chatAssistanceDefault?: 'ON' | 'OFF';
+  autoArchiveEnabled?: boolean;
+  coverImage?: string | 'DEFAULT';
+  notifications?: FlowNotificationSettings;
+  assigneeExperience?: AssigneeExperienceConfig;
+}
+
+export interface AssigneeExperienceConfig {
+  welcomeMessage?: string;
+  headerImage?: string;
+  chatEnabled?: boolean;
+  viewMode?: 'SPOTLIGHT' | 'GALLERY';
+}
+
+export type DueUnit = 'HOURS' | 'DAYS' | 'WEEKS';
+
+export interface FlowNotificationSettings {
+  defaultReminder: {
+    enabled: boolean;
+    firstReminderBefore: { value: number; unit: DueUnit };
+    repeatAfterDue: boolean;
+    repeatInterval: { value: number; unit: DueUnit };
+    maxReminders: number;
+  };
+  escalation: {
+    enabled: boolean;
+    escalateAfter: { value: number; unit: DueUnit };
+    escalateTo: 'COORDINATOR' | 'CUSTOM_EMAIL';
+    customEmail?: string;
+  };
+  coordinatorNotifications: {
+    stepCompleted: boolean;
+    stepOverdue: boolean;
+    flowCompleted: boolean;
+    flowStalled: boolean;
+    dailyDigest: boolean;
+  };
+}
+
+// ============================================================================
+// Assignee Resolution Types
+// ============================================================================
+
+export type ResolutionType =
+  | 'CONTACT_TBD'
+  | 'FIXED_CONTACT'
+  | 'WORKSPACE_INITIALIZER'
+  | 'KICKOFF_FORM_FIELD'
+  | 'FLOW_VARIABLE'
+  | 'RULES'
+  | 'ROUND_ROBIN';
+
+export interface Resolution {
+  type: ResolutionType;
+  email?: string;
+  fieldKey?: string;
+  variableKey?: string;
+  emails?: string[];
+  config?: {
+    source: 'FLOW_VARIABLE' | 'KICKOFF_FORM_FIELD' | 'STEP_OUTPUT';
+    variableKey?: string;
+    fieldKey?: string;
+    rules: Array<{
+      if: { contains?: string; equals?: string; notEmpty?: boolean };
+      then: { type: ResolutionType; email?: string };
+    }>;
+    default: { type: ResolutionType; email?: string };
+  };
 }
 
 export interface Step {
@@ -63,6 +188,36 @@ export interface StepConfig {
   targetStepId?: string;
   destinationId?: string;
   reminderOverride?: Record<string, unknown>;
+  // Questionnaire config
+  questionnaire?: QuestionnaireConfig;
+  // E-Sign config
+  esign?: ESignConfig;
+  // File request config
+  fileRequest?: FileRequestConfig;
+}
+
+export interface QuestionnaireConfig {
+  questions: QuestionnaireQuestion[];
+}
+
+export interface QuestionnaireQuestion {
+  questionId: string;
+  question: string;
+  answerType: 'SINGLE_SELECT' | 'MULTI_SELECT' | 'TEXT' | 'YES_NO';
+  choices?: string[];
+  required?: boolean;
+}
+
+export interface ESignConfig {
+  documentName?: string;
+  documentDescription?: string;
+  signingOrder: 'SEQUENTIAL' | 'PARALLEL';
+}
+
+export interface FileRequestConfig {
+  maxFiles?: number;
+  allowedTypes?: string[];
+  instructions?: string;
 }
 
 export interface StepOption {
@@ -143,6 +298,7 @@ export interface AssigneePlaceholder {
   placeholderId: string;
   roleName: string;
   description?: string;
+  resolution?: Resolution;
 }
 
 export interface Parameter {

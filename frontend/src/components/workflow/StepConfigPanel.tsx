@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormFieldsBuilder } from './FormFieldsBuilder';
 import { StepReminderOverride } from './StepReminderOverride';
+import { DDRTextInput } from './DDRTextInput';
 import { Plus, X, GripVertical } from 'lucide-react';
-import type { Step, StepConfig, AssigneePlaceholder, FormField, BranchPath, DecisionOutcome } from '@/types';
+import { useWorkflowStore } from '@/stores/workflowStore';
+import type { Step, StepConfig, AssigneePlaceholder, FormField, BranchPath, DecisionOutcome, QuestionnaireConfig, QuestionnaireQuestion, ESignConfig, FileRequestConfig } from '@/types';
 
 interface StepConfigPanelProps {
   step: Step;
@@ -246,6 +248,244 @@ function ApprovalOptionsEditor({
 }
 
 // ============================================================================
+// Questionnaire Config Editor
+// ============================================================================
+
+function QuestionnaireConfigEditor({
+  config,
+  onChange,
+}: {
+  config: QuestionnaireConfig;
+  onChange: (config: QuestionnaireConfig) => void;
+}) {
+  const addQuestion = () => {
+    onChange({
+      questions: [
+        ...config.questions,
+        {
+          questionId: generateId('q'),
+          question: '',
+          answerType: 'SINGLE_SELECT',
+          choices: ['Option 1', 'Option 2'],
+          required: true,
+        },
+      ],
+    });
+  };
+
+  const updateQuestion = (index: number, updates: Partial<QuestionnaireQuestion>) => {
+    const updated = config.questions.map((q, i) => (i === index ? { ...q, ...updates } : q));
+    onChange({ questions: updated });
+  };
+
+  const removeQuestion = (index: number) => {
+    onChange({ questions: config.questions.filter((_, i) => i !== index) });
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-xs font-medium text-gray-600">Questions</label>
+        <button
+          type="button"
+          onClick={addQuestion}
+          className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 font-medium"
+        >
+          <Plus className="w-3 h-3" />
+          Add Question
+        </button>
+      </div>
+
+      {config.questions.length === 0 && (
+        <p className="text-xs text-gray-400 mb-2">No questions yet. Add questions for the assignee to answer.</p>
+      )}
+
+      <div className="space-y-3">
+        {config.questions.map((q, index) => (
+          <div key={q.questionId} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
+            <div className="flex items-start gap-2 mb-2">
+              <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                {index + 1}
+              </span>
+              <div className="flex-1 space-y-2">
+                <input
+                  type="text"
+                  value={q.question}
+                  onChange={(e) => updateQuestion(index, { question: e.target.value })}
+                  placeholder="Enter your question..."
+                  className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+                />
+                <div className="flex items-center gap-2">
+                  <select
+                    value={q.answerType}
+                    onChange={(e) => {
+                      const answerType = e.target.value as QuestionnaireQuestion['answerType'];
+                      const updates: Partial<QuestionnaireQuestion> = { answerType };
+                      if (answerType === 'TEXT' || answerType === 'YES_NO') {
+                        updates.choices = undefined;
+                      } else if (!q.choices?.length) {
+                        updates.choices = ['Option 1', 'Option 2'];
+                      }
+                      updateQuestion(index, updates);
+                    }}
+                    className="px-2 py-1 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+                  >
+                    <option value="SINGLE_SELECT">Single Select</option>
+                    <option value="MULTI_SELECT">Multi Select</option>
+                    <option value="TEXT">Free Text</option>
+                    <option value="YES_NO">Yes / No</option>
+                  </select>
+                  <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={q.required ?? true}
+                      onChange={(e) => updateQuestion(index, { required: e.target.checked })}
+                      className="w-3.5 h-3.5 rounded border-gray-300 text-violet-600"
+                    />
+                    Required
+                  </label>
+                </div>
+                {/* Choices editor for select types */}
+                {(q.answerType === 'SINGLE_SELECT' || q.answerType === 'MULTI_SELECT') && (
+                  <div className="space-y-1">
+                    {(q.choices || []).map((choice, ci) => (
+                      <div key={ci} className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-gray-400 w-4 text-right">{ci + 1}.</span>
+                        <input
+                          type="text"
+                          value={choice}
+                          onChange={(e) => {
+                            const newChoices = [...(q.choices || [])];
+                            newChoices[ci] = e.target.value;
+                            updateQuestion(index, { choices: newChoices });
+                          }}
+                          placeholder={`Choice ${ci + 1}`}
+                          className="flex-1 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newChoices = (q.choices || []).filter((_, i) => i !== ci);
+                            updateQuestion(index, { choices: newChoices });
+                          }}
+                          className="p-0.5 text-gray-300 hover:text-red-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => updateQuestion(index, { choices: [...(q.choices || []), ''] })}
+                      className="text-[11px] text-violet-600 hover:text-violet-700 font-medium"
+                    >
+                      + Add choice
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => removeQuestion(index)}
+                className="p-1 text-gray-300 hover:text-red-500 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// E-Sign Config Editor
+// ============================================================================
+
+function ESignConfigEditor({
+  config,
+  onChange,
+}: {
+  config: ESignConfig;
+  onChange: (config: ESignConfig) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Document Name</label>
+        <input
+          type="text"
+          value={config.documentName || ''}
+          onChange={(e) => onChange({ ...config, documentName: e.target.value || undefined })}
+          placeholder="e.g., Non-Disclosure Agreement"
+          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Instructions</label>
+        <textarea
+          value={config.documentDescription || ''}
+          onChange={(e) => onChange({ ...config, documentDescription: e.target.value || undefined })}
+          placeholder="Instructions for the signer..."
+          rows={2}
+          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Signing Order</label>
+        <select
+          value={config.signingOrder}
+          onChange={(e) => onChange({ ...config, signingOrder: e.target.value as 'SEQUENTIAL' | 'PARALLEL' })}
+          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+        >
+          <option value="SEQUENTIAL">Sequential (one after another)</option>
+          <option value="PARALLEL">Parallel (all at once)</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// File Request Config Editor
+// ============================================================================
+
+function FileRequestConfigEditor({
+  config,
+  onChange,
+}: {
+  config: FileRequestConfig;
+  onChange: (config: FileRequestConfig) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Instructions</label>
+        <textarea
+          value={config.instructions || ''}
+          onChange={(e) => onChange({ ...config, instructions: e.target.value || undefined })}
+          placeholder="Describe which files the assignee should upload..."
+          rows={2}
+          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Max Files</label>
+        <input
+          type="number"
+          min={1}
+          max={20}
+          value={config.maxFiles || 5}
+          onChange={(e) => onChange({ ...config, maxFiles: parseInt(e.target.value) || 5 })}
+          className="w-20 px-2 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+        />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Due Date Editor
 // ============================================================================
 
@@ -325,6 +565,7 @@ function DueDateEditor({
 // ============================================================================
 
 export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }: StepConfigPanelProps) {
+  const workflow = useWorkflowStore((s) => s.workflow);
   const [name, setName] = useState(step.config.name || '');
   const [description, setDescription] = useState(step.config.description || '');
   const [assignee, setAssignee] = useState(step.config.assignee || '');
@@ -364,6 +605,24 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
       : [])
   );
 
+  // Questionnaire config
+  const isQuestionnaireStep = step.type === 'QUESTIONNAIRE';
+  const [questionnaireConfig, setQuestionnaireConfig] = useState<QuestionnaireConfig>(
+    step.config.questionnaire || { questions: [] }
+  );
+
+  // E-Sign config
+  const isESignStep = step.type === 'ESIGN';
+  const [esignConfig, setEsignConfig] = useState<ESignConfig>(
+    step.config.esign || { signingOrder: 'SEQUENTIAL' }
+  );
+
+  // File request config
+  const isFileRequestStep = step.type === 'FILE_REQUEST';
+  const [fileRequestConfig, setFileRequestConfig] = useState<FileRequestConfig>(
+    step.config.fileRequest || { maxFiles: 5 }
+  );
+
   // Due date
   const [dueDate, setDueDate] = useState<{ value: number; unit: 'hours' | 'days' } | undefined>(
     step.config.waitDuration as { value: number; unit: 'hours' | 'days' } | undefined
@@ -373,7 +632,7 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
   const hasAssignee = !['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO', 'GOTO_DESTINATION', 'TERMINATE'].includes(step.type);
 
   // Steps that support due dates
-  const hasDueDate = ['FORM', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION', 'ACKNOWLEDGEMENT'].includes(step.type);
+  const hasDueDate = ['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION', 'ACKNOWLEDGEMENT', 'ESIGN'].includes(step.type);
 
   const handleSave = () => {
     const updates: Partial<StepConfig> = {
@@ -401,11 +660,23 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
       updates.options = approvalOptions;
     }
 
+    if (isQuestionnaireStep) {
+      updates.questionnaire = questionnaireConfig;
+    }
+
+    if (isESignStep) {
+      updates.esign = esignConfig;
+    }
+
+    if (isFileRequestStep) {
+      updates.fileRequest = fileRequestConfig;
+    }
+
     if (hasDueDate && dueDate) {
       updates.waitDuration = dueDate;
     }
 
-    const stepsWithReminders = ['FORM', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION'];
+    const stepsWithReminders = ['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION', 'ESIGN'];
     if (stepsWithReminders.includes(step.type) && reminderOverride) {
       updates.reminderOverride = reminderOverride;
     }
@@ -430,18 +701,32 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
         />
       </div>
 
-      {/* Description */}
+      {/* Description (with DDR support) */}
       <div className="mb-3">
-        <label className="block text-xs font-medium text-gray-600 mb-1">
-          Description
-        </label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Describe what this step does..."
-          rows={2}
-          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
-        />
+        {workflow ? (
+          <DDRTextInput
+            label="Description"
+            value={description}
+            onChange={setDescription}
+            placeholder="Describe what this step does..."
+            multiline
+            workflow={workflow}
+            currentStepIndex={workflow.steps.findIndex((s) => s.stepId === step.stepId)}
+          />
+        ) : (
+          <>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe what this step does..."
+              rows={2}
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
+            />
+          </>
+        )}
       </div>
 
       {/* Assignee (only for steps that need it) */}
@@ -518,11 +803,24 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
         </div>
       )}
 
-      {step.type === 'FILE_REQUEST' && (
+      {/* Questionnaire Config */}
+      {isQuestionnaireStep && (
         <div className="mb-4 pt-3 border-t border-gray-100">
-          <p className="text-xs text-gray-500">
-            The assignee will be asked to upload the requested files.
-          </p>
+          <QuestionnaireConfigEditor config={questionnaireConfig} onChange={setQuestionnaireConfig} />
+        </div>
+      )}
+
+      {/* E-Sign Config */}
+      {isESignStep && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <ESignConfigEditor config={esignConfig} onChange={setEsignConfig} />
+        </div>
+      )}
+
+      {/* File Request Config */}
+      {isFileRequestStep && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <FileRequestConfigEditor config={fileRequestConfig} onChange={setFileRequestConfig} />
         </div>
       )}
 
@@ -551,7 +849,7 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
       )}
 
       {/* Reminder & Escalation Override */}
-      {['FORM', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION'].includes(step.type) && (
+      {['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION', 'ESIGN'].includes(step.type) && (
         <div className="mb-4 pt-3 border-t border-gray-100">
           <StepReminderOverride
             value={reminderOverride as { useFlowDefaults: boolean } | undefined}

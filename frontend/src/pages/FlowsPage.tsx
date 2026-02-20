@@ -24,9 +24,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { listTemplates, startFlow, deleteTemplate, duplicateTemplate, type Template } from '@/lib/api';
+import { listTemplates, deleteTemplate, duplicateTemplate, type Template } from '@/lib/api';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { CreateFlowDialog } from '@/components/workflow/CreateFlowDialog';
+import { ExecuteFlowDialog } from '@/components/workflow/ExecuteFlowDialog';
 
 type SortOption = 'lastModified' | 'name' | 'created' | 'steps';
 
@@ -81,15 +82,16 @@ interface FlowCardProps {
   onDelete: () => void;
   onDuplicate: () => void;
   isStarting: boolean;
+  onClick?: () => void;
 }
 
-function FlowCard({ flow, onEdit, onStartRun, onDelete, onDuplicate, isStarting }: FlowCardProps) {
+function FlowCard({ flow, onEdit, onStartRun, onDelete, onDuplicate, isStarting, onClick }: FlowCardProps) {
   const [showMenu, setShowMenu] = useState(false);
 
   return (
     <div
       className="group bg-white rounded-xl border border-gray-200 p-5 hover:border-violet-300 hover:shadow-md transition-all cursor-pointer"
-      onClick={onEdit}
+      onClick={onClick || onEdit}
     >
       {/* Top row: Badges and menu */}
       <div className="flex items-center justify-between mb-4">
@@ -273,27 +275,20 @@ export function FlowsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('lastModified');
-  const [startingFlowId, setStartingFlowId] = useState<string | null>(null);
+  const [startingFlowId] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [executeTemplate, setExecuteTemplate] = useState<Template | null>(null);
 
-  // Handler to start a flow from a template
-  const handleStartFlow = async (template: Template) => {
-    try {
-      setStartingFlowId(template.id);
-      const runName = `${template.name} - ${new Date().toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      })}`;
-      const run = await startFlow(template.id, runName);
-      // Track onboarding: flow started
-      useOnboardingStore.getState().completeStartFlow();
-      navigate(`/flows/${run.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start flow');
-      setStartingFlowId(null);
-    }
+  // Handler to open the execute dialog
+  const handleStartFlow = (template: Template) => {
+    setExecuteTemplate(template);
+  };
+
+  // Handler when flow is actually started from the dialog
+  const handleFlowStarted = (run: { id: string }) => {
+    useOnboardingStore.getState().completeStartFlow();
+    setExecuteTemplate(null);
+    navigate(`/flows/${run.id}`);
   };
 
   // Handler to delete (archive) a template
@@ -360,6 +355,7 @@ export function FlowsPage() {
 
   const handleCreateFlow = () => setShowCreateDialog(true);
   const handleEditFlow = (flowId: string) => navigate(`/templates/${flowId}`);
+  const handleViewDetail = (flowId: string) => navigate(`/templates/${flowId}/detail`);
 
   // Loading state
   if (isLoading) {
@@ -388,6 +384,14 @@ export function FlowsPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <CreateFlowDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
+      {executeTemplate && (
+        <ExecuteFlowDialog
+          open={!!executeTemplate}
+          onOpenChange={(open) => { if (!open) setExecuteTemplate(null); }}
+          template={executeTemplate}
+          onFlowStarted={handleFlowStarted}
+        />
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
@@ -471,6 +475,7 @@ export function FlowsPage() {
               onDelete={() => handleDeleteFlow(flow.id)}
               onDuplicate={() => handleDuplicateFlow(flow.id)}
               isStarting={startingFlowId === flow.id}
+              onClick={() => handleViewDetail(flow.id)}
             />
           ))}
         </div>

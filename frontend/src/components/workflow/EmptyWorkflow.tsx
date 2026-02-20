@@ -10,7 +10,7 @@ interface EmptyWorkflowProps {
 
 export function EmptyWorkflow({ editMode = false }: EmptyWorkflowProps) {
   const [showPopover, setShowPopover] = useState(false);
-  const { addStep, initEmptyWorkflow, workflow } = useWorkflowStore();
+  const { initEmptyWorkflow, workflow } = useWorkflowStore();
 
   const handleAddFirstStep = (stepType: StepType) => {
     if (!workflow) {

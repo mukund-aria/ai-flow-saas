@@ -325,6 +325,8 @@ export interface Flow {
     resultData?: Record<string, unknown>;
     startedAt?: string;
     completedAt?: string;
+    dueAt?: string;
+    reminderCount?: number;
     assignedToUser?: { id: string; name: string; email: string };
     assignedToContact?: { id: string; name: string; email: string };
   }>;
@@ -333,6 +335,9 @@ export interface Flow {
 export interface StartFlowRequest {
   templateId: string;
   name: string;
+  roleAssignments?: Record<string, string>;
+  kickoffData?: Record<string, unknown>;
+  isTest?: boolean;
 }
 
 /**
@@ -358,12 +363,16 @@ export async function getFlow(id: string): Promise<Flow> {
 /**
  * Start a new flow from a template
  */
-export async function startFlow(templateId: string, name: string): Promise<Flow> {
+export async function startFlow(
+  templateId: string,
+  name: string,
+  options?: { roleAssignments?: Record<string, string>; kickoffData?: Record<string, unknown> }
+): Promise<Flow> {
   const res = await fetch(`${API_BASE}/templates/${templateId}/flows`, {
     ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, ...options }),
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to start flow');

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Flow, Step, StepType, StepConfig } from '@/types';
+import type { Flow, Step, StepType, StepConfig, KickoffConfig, FlowSettings, FlowPermissions } from '@/types';
 
 interface WorkflowStore {
   workflow: Flow | null;
@@ -26,8 +26,12 @@ interface WorkflowStore {
   // Assignee management
   addAssigneePlaceholder: (roleName: string, description?: string) => void;
   removeAssigneePlaceholder: (placeholderId: string) => void;
-  updateFlowMetadata: (updates: Partial<Pick<Flow, 'name' | 'description'>>) => void;
+  updateFlowMetadata: (updates: Partial<Pick<Flow, 'name' | 'description' | 'workspaceNameTemplate'>>) => void;
   updateNotificationSettings: (notifications: Record<string, unknown>) => void;
+  // New: Kickoff, Settings, Permissions
+  updateKickoffConfig: (kickoff: Partial<KickoffConfig>) => void;
+  updateFlowSettings: (settings: Partial<FlowSettings>) => void;
+  updateFlowPermissions: (permissions: Partial<FlowPermissions>) => void;
 }
 
 let stepCounter = 0;
@@ -204,8 +208,56 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
         ...workflow,
         settings: {
           ...(workflow.settings || {}),
-          notifications,
+          notifications: notifications as Flow['settings'] extends { notifications?: infer N } ? N : never,
         },
+      },
+    });
+  },
+
+  updateKickoffConfig: (kickoff) => {
+    const { workflow } = get();
+    if (!workflow) return;
+
+    const defaultKickoff: KickoffConfig = {
+      defaultStartMode: 'MANUAL_EXECUTE',
+      supportedStartModes: ['MANUAL_EXECUTE'],
+      flowVariables: [],
+    };
+
+    set({
+      workflow: {
+        ...workflow,
+        kickoff: { ...defaultKickoff, ...(workflow.kickoff || {}), ...kickoff },
+      },
+    });
+  },
+
+  updateFlowSettings: (settings) => {
+    const { workflow } = get();
+    if (!workflow) return;
+
+    set({
+      workflow: {
+        ...workflow,
+        settings: { ...(workflow.settings || {}), ...settings },
+      },
+    });
+  },
+
+  updateFlowPermissions: (permissions) => {
+    const { workflow } = get();
+    if (!workflow) return;
+
+    const defaultPerms: FlowPermissions = {
+      execute: { type: 'ALL_MEMBERS' },
+      edit: { type: 'ADMINS_ONLY' },
+      coordinate: { type: 'ALL_MEMBERS' },
+    };
+
+    set({
+      workflow: {
+        ...workflow,
+        permissions: { ...defaultPerms, ...(workflow.permissions || {}), ...permissions },
       },
     });
   },

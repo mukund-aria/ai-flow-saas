@@ -108,6 +108,8 @@ export const flowRuns = pgTable('flow_runs', {
   currentStepIndex: integer('current_step_index').default(0).notNull(),
   startedById: text('started_by_id').notNull().references(() => users.id),
   organizationId: text('organization_id').notNull().references(() => organizations.id),
+  roleAssignments: jsonb('role_assignments').$type<Record<string, string>>(),
+  kickoffData: jsonb('kickoff_data').$type<Record<string, unknown>>(),
   startedAt: timestamp('started_at').defaultNow().notNull(),
   completedAt: timestamp('completed_at'),
   dueAt: timestamp('due_at'),

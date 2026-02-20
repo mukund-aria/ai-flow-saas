@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, flows, flowRuns, stepExecutions, users, organizations, contacts, FlowRunStatus } from '../db/index.js';
+import { db, flows, flowRuns, stepExecutions, users, organizations, contacts, magicLinks, FlowRunStatus } from '../db/index.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
@@ -199,7 +199,7 @@ router.post(
   '/templates/:templateId/flows',
   asyncHandler(async (req, res) => {
     const flowId = req.params.templateId as string;
-    const { name, isTest } = req.body;
+    const { name, isTest, roleAssignments, kickoffData } = req.body;
 
     // Get the flow template
     const flow = await db.query.flows.findFirst({
@@ -274,52 +274,65 @@ router.post(
         currentStepIndex: 0,
         startedById: userId,
         organizationId: orgId,
+        roleAssignments: roleAssignments || null,
+        kickoffData: kickoffData || null,
       })
       .returning();
 
+    // Resolve role assignments: build map from role name -> contact ID
+    const resolvedRoles: Record<string, string> = {};
+    if (roleAssignments && typeof roleAssignments === 'object') {
+      for (const [roleName, contactId] of Object.entries(roleAssignments as Record<string, string>)) {
+        if (contactId && typeof contactId === 'string') {
+          resolvedRoles[roleName] = contactId;
+        }
+      }
+    }
+
     // Create step executions for each step in the flow
-    const stepExecutionValues = steps.map((step, index) => ({
-      flowRunId: newRun.id,
-      stepId: step.id,
-      stepIndex: index,
-      status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
-      startedAt: index === 0 ? new Date() : null,
-    }));
+    const stepExecutionValues = steps.map((step, index) => {
+      const stepDef = step as any;
+      const assigneeRole = stepDef.config?.assignee || stepDef.assignee;
+      const contactId = assigneeRole ? resolvedRoles[assigneeRole] : undefined;
+
+      return {
+        flowRunId: newRun.id,
+        stepId: step.id,
+        stepIndex: index,
+        status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
+        startedAt: index === 0 ? new Date() : null,
+        assignedToContactId: contactId || null,
+        assignedToUserId: (!contactId && assigneeRole === '__coordinator__') ? userId : null,
+      };
+    });
 
     await db.insert(stepExecutions).values(stepExecutionValues);
 
-    // Create magic links for steps assigned to contacts
-    for (const step of steps) {
-      const stepDef = step as any;
-      if (stepDef.assignedTo?.contactId) {
+    // Create magic links for contact-assigned steps
+    for (let i = 0; i < stepExecutionValues.length; i++) {
+      const stepVal = stepExecutionValues[i];
+      if (stepVal.assignedToContactId && i === 0) {
         const stepExec = await db.query.stepExecutions.findFirst({
           where: and(
             eq(stepExecutions.flowRunId, newRun.id),
-            eq(stepExecutions.stepId, step.id)
+            eq(stepExecutions.stepIndex, 0)
           ),
         });
         if (stepExec) {
-          await db.update(stepExecutions)
-            .set({ assignedToContactId: stepDef.assignedTo.contactId })
-            .where(eq(stepExecutions.id, stepExec.id));
-
-          // Create magic link and send email for first step
-          if (stepExec.stepIndex === 0) {
-            const { createMagicLink } = await import('../services/magic-link.js');
-            const { sendMagicLink } = await import('../services/email.js');
-            const token = await createMagicLink(stepExec.id);
-            const contact = await db.query.contacts.findFirst({
-              where: eq(contacts.id, stepDef.assignedTo.contactId),
+          const { createMagicLink } = await import('../services/magic-link.js');
+          const { sendMagicLink } = await import('../services/email.js');
+          const token = await createMagicLink(stepExec.id);
+          const contact = await db.query.contacts.findFirst({
+            where: eq(contacts.id, stepVal.assignedToContactId),
+          });
+          if (contact) {
+            await sendMagicLink({
+              to: contact.email,
+              contactName: contact.name,
+              stepName: (steps[0] as any).config?.name || 'Task',
+              flowName: flow.name,
+              token,
             });
-            if (contact) {
-              await sendMagicLink({
-                to: contact.email,
-                contactName: contact.name,
-                stepName: stepDef.config?.name || 'Task',
-                flowName: flow.name,
-                token,
-              });
-            }
           }
         }
       }
@@ -664,6 +677,106 @@ router.post(
     res.json({
       success: true,
       data: updatedRun,
+    });
+  })
+);
+
+// ============================================================================
+// POST /api/flows/:id/steps/:stepId/remind - Send reminder for a step
+// ============================================================================
+
+router.post(
+  '/:id/steps/:stepId/remind',
+  asyncHandler(async (req, res) => {
+    const id = req.params.id as string;
+    const stepId = req.params.stepId as string;
+
+    // Get step execution
+    const stepExec = await db.query.stepExecutions.findFirst({
+      where: and(
+        eq(stepExecutions.flowRunId, id),
+        eq(stepExecutions.stepId, stepId)
+      ),
+    });
+
+    if (!stepExec) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Step execution not found' },
+      });
+      return;
+    }
+
+    if (stepExec.status !== 'IN_PROGRESS' && stepExec.status !== 'WAITING_FOR_ASSIGNEE') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Can only send reminders for active steps' },
+      });
+      return;
+    }
+
+    // Get run for context
+    const run = await db.query.flowRuns.findFirst({
+      where: eq(flowRuns.id, id),
+      with: { flow: true },
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+      });
+      return;
+    }
+
+    // Get step name from definition
+    const definition = run.flow?.definition as any;
+    const defSteps = definition?.steps || [];
+    const defStep = defSteps.find((s: any) => s.stepId === stepId);
+    const stepName = defStep?.config?.name || `Step ${stepExec.stepIndex + 1}`;
+
+    // Send reminder email to the assigned contact
+    if (stepExec.assignedToContactId) {
+      const contact = await db.query.contacts.findFirst({
+        where: eq(contacts.id, stepExec.assignedToContactId),
+      });
+
+      if (contact) {
+        // Find existing magic link for this step
+        const existingLink = await db.query.magicLinks.findFirst({
+          where: eq(magicLinks.stepExecutionId, stepExec.id),
+        });
+
+        if (existingLink && !existingLink.usedAt) {
+          const { sendMagicLink } = await import('../services/email.js');
+          await sendMagicLink({
+            to: contact.email,
+            contactName: contact.name,
+            stepName,
+            flowName: run.flow?.name || 'Flow',
+            token: existingLink.token,
+          });
+        }
+      }
+    }
+
+    // Update reminder tracking
+    await db.update(stepExecutions)
+      .set({
+        lastReminderSentAt: new Date(),
+        reminderCount: (stepExec.reminderCount || 0) + 1,
+      })
+      .where(eq(stepExecutions.id, stepExec.id));
+
+    logAction({
+      flowRunId: id,
+      action: 'REMINDER_SENT',
+      details: { stepId, stepIndex: stepExec.stepIndex },
+    });
+
+    res.json({
+      success: true,
+      data: { message: 'Reminder sent successfully' },
     });
   })
 );
