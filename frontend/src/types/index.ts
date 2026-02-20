@@ -174,6 +174,7 @@ export type StepType =
   | 'SYSTEM_WEBHOOK'
   | 'SYSTEM_EMAIL'
   | 'SYSTEM_CHAT_MESSAGE'
+  | 'SYSTEM_UPDATE_WORKSPACE'
   | 'BUSINESS_RULE';
 
 export interface StepConfig {
@@ -194,6 +195,13 @@ export interface StepConfig {
   esign?: ESignConfig;
   // File request config
   fileRequest?: FileRequestConfig;
+  // Automation configs
+  aiAutomation?: AIAutomationConfig;
+  systemEmail?: SystemEmailConfig;
+  systemWebhook?: SystemWebhookConfig;
+  systemChatMessage?: SystemChatMessageConfig;
+  systemUpdateWorkspace?: SystemUpdateWorkspaceConfig;
+  businessRule?: BusinessRuleConfig;
 }
 
 export interface QuestionnaireConfig {
@@ -218,6 +226,75 @@ export interface FileRequestConfig {
   maxFiles?: number;
   allowedTypes?: string[];
   instructions?: string;
+}
+
+// ============================================================================
+// Automation Step Configs
+// ============================================================================
+
+export type AIActionType = 'CUSTOM_PROMPT' | 'EXTRACT' | 'SUMMARIZE' | 'CLASSIFY' | 'GENERATE';
+
+export type AIFieldType = 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'EMAIL' | 'PHONE' | 'URL' | 'DATE' | 'FILE';
+
+export interface AIInputField {
+  fieldId: string;
+  name: string;
+  type: AIFieldType;
+  value: string;
+}
+
+export interface AIOutputField {
+  fieldId: string;
+  name: string;
+  type: AIFieldType;
+  fileFormat?: string;
+  description?: string;
+  required?: boolean;
+}
+
+export interface AIAutomationConfig {
+  actionType: AIActionType;
+  inputFields: AIInputField[];
+  knowledgeSources: string[];
+  prompt: string;
+  outputFields: AIOutputField[];
+}
+
+export interface SystemEmailConfig {
+  to: string[];
+  subject: string;
+  body: string;
+}
+
+export interface SystemWebhookConfig {
+  url: string;
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH';
+  headers?: Record<string, string>;
+  payload?: string;
+}
+
+export interface SystemChatMessageConfig {
+  message: string;
+}
+
+export interface SystemUpdateWorkspaceConfig {
+  updates: Record<string, string>;
+}
+
+export interface BusinessRuleInput {
+  key: string;
+  ref: string;
+}
+
+export interface BusinessRuleCondition {
+  when: Record<string, string>;
+  set: Record<string, string>;
+}
+
+export interface BusinessRuleConfig {
+  inputs: BusinessRuleInput[];
+  rules: BusinessRuleCondition[];
+  outputs: AIOutputField[];
 }
 
 export interface StepOption {
@@ -567,6 +644,7 @@ export const STEP_TYPE_META: Record<StepType, { label: string; color: string; ca
   SYSTEM_WEBHOOK: { label: 'Webhook', color: '#6b7280', category: 'automation' },
   SYSTEM_EMAIL: { label: 'Email', color: '#6b7280', category: 'automation' },
   SYSTEM_CHAT_MESSAGE: { label: 'Chat Message', color: '#6b7280', category: 'automation' },
+  SYSTEM_UPDATE_WORKSPACE: { label: 'Update Workspace', color: '#6b7280', category: 'automation' },
   BUSINESS_RULE: { label: 'Business Rule', color: '#6b7280', category: 'automation' },
 };
 

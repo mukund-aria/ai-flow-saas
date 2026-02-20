@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 interface Organization {
   id: string;

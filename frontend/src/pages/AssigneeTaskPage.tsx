@@ -27,6 +27,7 @@ import {
   Layers,
   PenTool,
   ListChecks,
+  HelpCircle,
   X,
   File as FileIcon,
 } from 'lucide-react';
@@ -65,6 +66,8 @@ interface TaskContext {
     allowedTypes?: string[];
     instructions?: string;
   };
+  outcomes?: Array<{ outcomeId: string; label: string }>;
+  options?: Array<{ optionId: string; label: string }>;
   expired: boolean;
   completed: boolean;
   alreadyCompleted?: boolean;
@@ -87,6 +90,8 @@ function getStepTypeIcon(stepType: string) {
       return <HandMetal className={iconClass} />;
     case 'ESIGN':
       return <PenTool className={iconClass} />;
+    case 'DECISION':
+      return <HelpCircle className={iconClass} />;
     default:
       return <FileText className={iconClass} />;
   }
@@ -512,6 +517,28 @@ export function AssigneeTaskPage() {
                     >
                       <ThumbsDown className="w-4 h-4" /> Reject
                     </Button>
+                  </div>
+                </div>
+
+              /* ==================== DECISION ==================== */
+              ) : task.stepType === 'DECISION' && task.outcomes?.length ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600 text-center mb-4">Select your decision:</p>
+                  <div className="space-y-2">
+                    {task.outcomes.map((outcome, i) => (
+                      <Button
+                        key={outcome.outcomeId}
+                        onClick={() => handleSubmit({ decision: outcome.label, outcomeId: outcome.outcomeId })}
+                        disabled={isSubmitting}
+                        variant={i === 0 ? 'default' : 'outline'}
+                        className={`w-full h-11 text-base ${
+                          i === 0 ? 'bg-violet-600 hover:bg-violet-700' : ''
+                        }`}
+                      >
+                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                        {outcome.label}
+                      </Button>
+                    ))}
                   </div>
                 </div>
 

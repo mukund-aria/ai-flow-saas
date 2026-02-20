@@ -19,6 +19,7 @@ import {
   Calculator,
   HelpCircle,
   Globe,
+  Settings,
   type LucideProps,
 } from 'lucide-react';
 import type { StepType } from '@/types';
@@ -51,6 +52,7 @@ const ICONS: Record<StepType, React.ComponentType<LucideProps>> = {
   SYSTEM_WEBHOOK: Webhook,
   SYSTEM_EMAIL: Mail,
   SYSTEM_CHAT_MESSAGE: MessageCircle,
+  SYSTEM_UPDATE_WORKSPACE: Settings,
   BUSINESS_RULE: Calculator,
 };
 

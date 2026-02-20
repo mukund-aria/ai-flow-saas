@@ -3,9 +3,15 @@ import { Button } from '@/components/ui/button';
 import { FormFieldsBuilder } from './FormFieldsBuilder';
 import { StepReminderOverride } from './StepReminderOverride';
 import { DDRTextInput } from './DDRTextInput';
-import { Plus, X, GripVertical } from 'lucide-react';
+import { Plus, X, GripVertical, Sparkles } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
-import type { Step, StepConfig, AssigneePlaceholder, FormField, BranchPath, DecisionOutcome, QuestionnaireConfig, QuestionnaireQuestion, ESignConfig, FileRequestConfig } from '@/types';
+import type {
+  Step, StepConfig, AssigneePlaceholder, FormField, BranchPath, DecisionOutcome,
+  QuestionnaireConfig, QuestionnaireQuestion, ESignConfig, FileRequestConfig,
+  AIAutomationConfig, AIInputField, AIOutputField, AIActionType, AIFieldType,
+  SystemEmailConfig, SystemWebhookConfig, SystemChatMessageConfig,
+  SystemUpdateWorkspaceConfig, BusinessRuleConfig, BusinessRuleInput,
+} from '@/types';
 
 interface StepConfigPanelProps {
   step: Step;
@@ -486,6 +492,655 @@ function FileRequestConfigEditor({
 }
 
 // ============================================================================
+// AI Automation Config Editor (matches Moxo "Configure your prompt" panel)
+// ============================================================================
+
+const AI_ACTION_TYPES: { value: AIActionType; label: string; icon: string }[] = [
+  { value: 'CUSTOM_PROMPT', label: 'Custom prompt', icon: '✦' },
+  { value: 'EXTRACT', label: 'Extract', icon: '⇥' },
+  { value: 'SUMMARIZE', label: 'Summarize', icon: '≡' },
+  { value: 'CLASSIFY', label: 'Classify', icon: '◫' },
+  { value: 'GENERATE', label: 'Generate', icon: '⚡' },
+];
+
+const AI_FIELD_TYPES: { value: AIFieldType; label: string }[] = [
+  { value: 'TEXT', label: 'Text' },
+  { value: 'NUMBER', label: 'Number' },
+  { value: 'BOOLEAN', label: 'Boolean' },
+  { value: 'EMAIL', label: 'Email' },
+  { value: 'PHONE', label: 'Phone number' },
+  { value: 'URL', label: 'URL' },
+  { value: 'DATE', label: 'Date' },
+  { value: 'FILE', label: 'File' },
+];
+
+const FILE_FORMATS = ['CSV', 'JSON', 'PDF', 'XLSX', 'TXT', 'XML'];
+
+function AIAutomationConfigEditor({
+  config,
+  onChange,
+}: {
+  config: AIAutomationConfig;
+  onChange: (config: AIAutomationConfig) => void;
+}) {
+  const [editingInputIndex, setEditingInputIndex] = useState<number | null>(null);
+  const [editingOutputIndex, setEditingOutputIndex] = useState<number | null>(null);
+
+  const addInputField = () => {
+    onChange({
+      ...config,
+      inputFields: [
+        ...config.inputFields,
+        { fieldId: generateId('in'), name: '', type: 'TEXT', value: '' },
+      ],
+    });
+    setEditingInputIndex(config.inputFields.length);
+  };
+
+  const updateInputField = (index: number, updates: Partial<AIInputField>) => {
+    const updated = config.inputFields.map((f, i) => (i === index ? { ...f, ...updates } : f));
+    onChange({ ...config, inputFields: updated });
+  };
+
+  const removeInputField = (index: number) => {
+    onChange({ ...config, inputFields: config.inputFields.filter((_, i) => i !== index) });
+    setEditingInputIndex(null);
+  };
+
+  const addOutputField = () => {
+    onChange({
+      ...config,
+      outputFields: [
+        ...config.outputFields,
+        { fieldId: generateId('out'), name: '', type: 'TEXT', required: false },
+      ],
+    });
+    setEditingOutputIndex(config.outputFields.length);
+  };
+
+  const updateOutputField = (index: number, updates: Partial<AIOutputField>) => {
+    const updated = config.outputFields.map((f, i) => (i === index ? { ...f, ...updates } : f));
+    onChange({ ...config, outputFields: updated });
+  };
+
+  const removeOutputField = (index: number) => {
+    onChange({ ...config, outputFields: config.outputFields.filter((_, i) => i !== index) });
+    setEditingOutputIndex(null);
+  };
+
+  const addKnowledgeSource = () => {
+    const name = prompt('Document name:');
+    if (name?.trim()) {
+      onChange({ ...config, knowledgeSources: [...config.knowledgeSources, name.trim()] });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Action Type */}
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Action type</label>
+        <select
+          value={config.actionType}
+          onChange={(e) => onChange({ ...config, actionType: e.target.value as AIActionType })}
+          className="w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+        >
+          {AI_ACTION_TYPES.map(t => (
+            <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Input Fields */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-medium text-gray-600">Input fields</label>
+        </div>
+        {config.inputFields.length > 0 && (
+          <div className="space-y-2 mb-2">
+            {config.inputFields.map((field, index) => (
+              <div key={field.fieldId}>
+                {editingInputIndex === index ? (
+                  <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 space-y-2">
+                    <input
+                      type="text"
+                      value={field.name}
+                      onChange={(e) => updateInputField(index, { name: e.target.value })}
+                      placeholder="Field name"
+                      className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+                      autoFocus
+                    />
+                    <select
+                      value={field.type}
+                      onChange={(e) => updateInputField(index, { type: e.target.value as AIFieldType })}
+                      className="w-full px-2 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+                    >
+                      {AI_FIELD_TYPES.map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      value={field.value}
+                      onChange={(e) => updateInputField(index, { value: e.target.value })}
+                      placeholder="Enter text or insert data reference {..}"
+                      className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button type="button" onClick={() => removeInputField(index)} className="text-xs text-red-500 hover:text-red-600">Remove</button>
+                      <button type="button" onClick={() => setEditingInputIndex(null)} className="text-xs text-violet-600 hover:text-violet-700 font-medium">Done</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => setEditingInputIndex(index)}
+                    className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 cursor-pointer"
+                  >
+                    <span className="text-xs text-gray-400 font-mono">{field.type}</span>
+                    <span className="text-sm text-gray-700 flex-1 truncate">{field.name || 'Unnamed field'}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removeInputField(index); }}
+                      className="p-0.5 text-gray-300 hover:text-red-500"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={addInputField}
+          className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 font-medium"
+        >
+          <Plus className="w-3 h-3" />
+          Select a field to update
+        </button>
+      </div>
+
+      {/* Knowledge Sources */}
+      <div>
+        <label className="text-xs font-medium text-gray-600 block mb-2">Knowledge sources</label>
+        {config.knowledgeSources.length > 0 && (
+          <div className="space-y-1 mb-2">
+            {config.knowledgeSources.map((source, index) => (
+              <div key={index} className="flex items-center gap-2 px-2.5 py-1.5 bg-gray-50 rounded-md border border-gray-200">
+                <span className="text-sm text-gray-700 flex-1">{source}</span>
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...config, knowledgeSources: config.knowledgeSources.filter((_, i) => i !== index) })}
+                  className="p-0.5 text-gray-300 hover:text-red-500"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={addKnowledgeSource}
+          className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 font-medium"
+        >
+          <Plus className="w-3 h-3" />
+          Add document
+        </button>
+      </div>
+
+      {/* Extra Prompt */}
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Extra prompt</label>
+        <textarea
+          value={config.prompt}
+          onChange={(e) => onChange({ ...config, prompt: e.target.value })}
+          placeholder="Write your own prompt you want AI to perform."
+          rows={3}
+          className="w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
+        />
+      </div>
+
+      {/* Output Fields */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-medium text-gray-600">
+            Output fields <span className="text-red-500">*</span>
+          </label>
+        </div>
+        {config.outputFields.length > 0 && (
+          <div className="space-y-2 mb-2">
+            {config.outputFields.map((field, index) => (
+              <div key={field.fieldId}>
+                {editingOutputIndex === index ? (
+                  <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 space-y-2">
+                    <input
+                      type="text"
+                      value={field.name}
+                      onChange={(e) => updateOutputField(index, { name: e.target.value })}
+                      placeholder="Name for the output field"
+                      className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+                      autoFocus
+                    />
+                    <select
+                      value={field.type}
+                      onChange={(e) => updateOutputField(index, { type: e.target.value as AIFieldType })}
+                      className="w-full px-2 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+                    >
+                      {AI_FIELD_TYPES.map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                    {field.type === 'FILE' && (
+                      <select
+                        value={field.fileFormat || 'CSV'}
+                        onChange={(e) => updateOutputField(index, { fileFormat: e.target.value })}
+                        className="w-full px-2 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+                      >
+                        {FILE_FORMATS.map(f => (
+                          <option key={f} value={f}>{f}</option>
+                        ))}
+                      </select>
+                    )}
+                    <textarea
+                      value={field.description || ''}
+                      onChange={(e) => updateOutputField(index, { description: e.target.value || undefined })}
+                      placeholder="Enter a description of what values the output field should create."
+                      rows={2}
+                      className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
+                    />
+                    <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={field.required ?? false}
+                        onChange={(e) => updateOutputField(index, { required: e.target.checked })}
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-violet-600"
+                      />
+                      Is this output field required?
+                    </label>
+                    <div className="flex justify-end gap-2">
+                      <button type="button" onClick={() => removeOutputField(index)} className="text-xs text-red-500 hover:text-red-600">Remove</button>
+                      <button type="button" onClick={() => setEditingOutputIndex(null)} className="text-xs text-violet-600 hover:text-violet-700 font-medium">Done</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => setEditingOutputIndex(index)}
+                    className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 cursor-pointer"
+                  >
+                    <span className="text-xs text-gray-400 font-mono">{field.type}{field.type === 'FILE' && field.fileFormat ? `/${field.fileFormat}` : ''}</span>
+                    <span className="text-sm text-gray-700 flex-1 truncate">{field.name || 'Unnamed field'}</span>
+                    {field.required && <span className="text-[10px] text-red-400">required</span>}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removeOutputField(index); }}
+                      className="p-0.5 text-gray-300 hover:text-red-500"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={addOutputField}
+            className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 font-medium"
+          >
+            <Plus className="w-3 h-3" />
+            Select a field to update
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// System Email Config Editor
+// ============================================================================
+
+function SystemEmailConfigEditor({
+  config,
+  onChange,
+}: {
+  config: SystemEmailConfig;
+  onChange: (config: SystemEmailConfig) => void;
+}) {
+  const updateTo = (index: number, value: string) => {
+    const updated = [...config.to];
+    updated[index] = value;
+    onChange({ ...config, to: updated });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-xs font-medium text-gray-600">To</label>
+          <button
+            type="button"
+            onClick={() => onChange({ ...config, to: [...config.to, ''] })}
+            className="text-xs text-violet-600 hover:text-violet-700 font-medium"
+          >
+            + Add recipient
+          </button>
+        </div>
+        <div className="space-y-1.5">
+          {config.to.map((addr, index) => (
+            <div key={index} className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={addr}
+                onChange={(e) => updateTo(index, e.target.value)}
+                placeholder="Email or {Role: Client / Email}"
+                className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+              />
+              {config.to.length > 1 && (
+                <button type="button" onClick={() => onChange({ ...config, to: config.to.filter((_, i) => i !== index) })} className="p-0.5 text-gray-300 hover:text-red-500">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Subject</label>
+        <input
+          type="text"
+          value={config.subject}
+          onChange={(e) => onChange({ ...config, subject: e.target.value })}
+          placeholder="Email subject (supports {data references})"
+          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Body</label>
+        <textarea
+          value={config.body}
+          onChange={(e) => onChange({ ...config, body: e.target.value })}
+          placeholder="Email body (supports {data references})"
+          rows={4}
+          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
+        />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// System Webhook Config Editor
+// ============================================================================
+
+function SystemWebhookConfigEditor({
+  config,
+  onChange,
+}: {
+  config: SystemWebhookConfig;
+  onChange: (config: SystemWebhookConfig) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">URL</label>
+        <input
+          type="text"
+          value={config.url}
+          onChange={(e) => onChange({ ...config, url: e.target.value })}
+          placeholder="https://api.example.com/webhook"
+          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 font-mono"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Method</label>
+        <select
+          value={config.method}
+          onChange={(e) => onChange({ ...config, method: e.target.value as SystemWebhookConfig['method'] })}
+          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+        >
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+          <option value="PUT">PUT</option>
+          <option value="PATCH">PATCH</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Payload (JSON)</label>
+        <textarea
+          value={config.payload || ''}
+          onChange={(e) => onChange({ ...config, payload: e.target.value || undefined })}
+          placeholder='{"key": "{Step 1 / Field Name}", ...}'
+          rows={4}
+          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none font-mono"
+        />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// System Chat Message Config Editor
+// ============================================================================
+
+function SystemChatMessageConfigEditor({
+  config,
+  onChange,
+}: {
+  config: SystemChatMessageConfig;
+  onChange: (config: SystemChatMessageConfig) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-600 mb-1">Message</label>
+      <textarea
+        value={config.message}
+        onChange={(e) => onChange({ ...config, message: e.target.value })}
+        placeholder="Chat message to send (supports {data references})"
+        rows={3}
+        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
+      />
+    </div>
+  );
+}
+
+// ============================================================================
+// System Update Workspace Config Editor
+// ============================================================================
+
+function SystemUpdateWorkspaceConfigEditor({
+  config,
+  onChange,
+}: {
+  config: SystemUpdateWorkspaceConfig;
+  onChange: (config: SystemUpdateWorkspaceConfig) => void;
+}) {
+  const entries = Object.entries(config.updates);
+
+  const addEntry = () => {
+    onChange({ updates: { ...config.updates, '': '' } });
+  };
+
+  const updateEntry = (oldKey: string, newKey: string, value: string) => {
+    const newUpdates: Record<string, string> = {};
+    for (const [k, v] of Object.entries(config.updates)) {
+      if (k === oldKey) {
+        newUpdates[newKey] = value;
+      } else {
+        newUpdates[k] = v;
+      }
+    }
+    onChange({ updates: newUpdates });
+  };
+
+  const removeEntry = (key: string) => {
+    const newUpdates = { ...config.updates };
+    delete newUpdates[key];
+    onChange({ updates: newUpdates });
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-xs font-medium text-gray-600">Fields to update</label>
+        <button type="button" onClick={addEntry} className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 font-medium">
+          <Plus className="w-3 h-3" />
+          Add field
+        </button>
+      </div>
+      <div className="space-y-2">
+        {entries.map(([key, value], index) => (
+          <div key={index} className="flex items-center gap-1.5">
+            <input
+              type="text"
+              value={key}
+              onChange={(e) => updateEntry(key, e.target.value, value)}
+              placeholder="Field name"
+              className="w-1/3 px-2 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+            />
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => updateEntry(key, key, e.target.value)}
+              placeholder="Value or {data reference}"
+              className="flex-1 px-2 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+            />
+            <button type="button" onClick={() => removeEntry(key)} className="p-0.5 text-gray-300 hover:text-red-500">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Business Rule Config Editor
+// ============================================================================
+
+function BusinessRuleConfigEditor({
+  config,
+  onChange,
+}: {
+  config: BusinessRuleConfig;
+  onChange: (config: BusinessRuleConfig) => void;
+}) {
+  const addInput = () => {
+    onChange({ ...config, inputs: [...config.inputs, { key: '', ref: '' }] });
+  };
+
+  const updateInput = (index: number, updates: Partial<BusinessRuleInput>) => {
+    const updated = config.inputs.map((inp, i) => (i === index ? { ...inp, ...updates } : inp));
+    onChange({ ...config, inputs: updated });
+  };
+
+  const addRule = () => {
+    onChange({ ...config, rules: [...config.rules, { when: { '': '' }, set: { '': '' } }] });
+  };
+
+  const removeRule = (index: number) => {
+    onChange({ ...config, rules: config.rules.filter((_, i) => i !== index) });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Inputs */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-medium text-gray-600">Inputs</label>
+          <button type="button" onClick={addInput} className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 font-medium">
+            <Plus className="w-3 h-3" />
+            Add input
+          </button>
+        </div>
+        <div className="space-y-1.5">
+          {config.inputs.map((inp, index) => (
+            <div key={index} className="flex items-center gap-1.5">
+              <input
+                type="text"
+                value={inp.key}
+                onChange={(e) => updateInput(index, { key: e.target.value })}
+                placeholder="Variable name"
+                className="w-1/3 px-2 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+              />
+              <input
+                type="text"
+                value={inp.ref}
+                onChange={(e) => updateInput(index, { ref: e.target.value })}
+                placeholder="Data reference {..}"
+                className="flex-1 px-2 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+              />
+              <button type="button" onClick={() => onChange({ ...config, inputs: config.inputs.filter((_, i) => i !== index) })} className="p-0.5 text-gray-300 hover:text-red-500">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Rules */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-medium text-gray-600">Rules</label>
+          <button type="button" onClick={addRule} className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 font-medium">
+            <Plus className="w-3 h-3" />
+            Add rule
+          </button>
+        </div>
+        <p className="text-[11px] text-gray-400 mb-2">When conditions match, set output values.</p>
+        <div className="space-y-2">
+          {config.rules.map((rule, index) => (
+            <div key={index} className="border border-gray-200 rounded-lg p-2.5 bg-gray-50">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-gray-400 uppercase">Rule {index + 1}</span>
+                <button type="button" onClick={() => removeRule(index)} className="p-0.5 text-gray-300 hover:text-red-500">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-500 mb-1">WHEN: (condition key = value)</p>
+              <div className="flex gap-1.5 mb-2">
+                <input
+                  type="text"
+                  defaultValue={Object.keys(rule.when)[0] || ''}
+                  placeholder="field"
+                  className="w-1/3 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+                />
+                <input
+                  type="text"
+                  defaultValue={Object.values(rule.when)[0] || ''}
+                  placeholder="value"
+                  className="flex-1 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+                />
+              </div>
+              <p className="text-[11px] text-gray-500 mb-1">SET: (output key = value)</p>
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  defaultValue={Object.keys(rule.set)[0] || ''}
+                  placeholder="output"
+                  className="w-1/3 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+                />
+                <input
+                  type="text"
+                  defaultValue={Object.values(rule.set)[0] || ''}
+                  placeholder="value"
+                  className="flex-1 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Due Date Editor
 // ============================================================================
 
@@ -623,13 +1278,52 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
     step.config.fileRequest || { maxFiles: 5 }
   );
 
+  // AI Automation config
+  const isAIAutomation = step.type === 'AI_AUTOMATION';
+  const [aiAutomationConfig, setAiAutomationConfig] = useState<AIAutomationConfig>(
+    step.config.aiAutomation || { actionType: 'CUSTOM_PROMPT', inputFields: [], knowledgeSources: [], prompt: '', outputFields: [] }
+  );
+
+  // System Email config
+  const isSystemEmail = step.type === 'SYSTEM_EMAIL';
+  const [systemEmailConfig, setSystemEmailConfig] = useState<SystemEmailConfig>(
+    step.config.systemEmail || { to: [''], subject: '', body: '' }
+  );
+
+  // System Webhook config
+  const isSystemWebhook = step.type === 'SYSTEM_WEBHOOK';
+  const [systemWebhookConfig, setSystemWebhookConfig] = useState<SystemWebhookConfig>(
+    step.config.systemWebhook || { url: '', method: 'POST' }
+  );
+
+  // System Chat Message config
+  const isSystemChatMessage = step.type === 'SYSTEM_CHAT_MESSAGE';
+  const [systemChatMessageConfig, setSystemChatMessageConfig] = useState<SystemChatMessageConfig>(
+    step.config.systemChatMessage || { message: '' }
+  );
+
+  // System Update Workspace config
+  const isSystemUpdateWorkspace = step.type === 'SYSTEM_UPDATE_WORKSPACE';
+  const [systemUpdateWorkspaceConfig, setSystemUpdateWorkspaceConfig] = useState<SystemUpdateWorkspaceConfig>(
+    step.config.systemUpdateWorkspace || { updates: {} }
+  );
+
+  // Business Rule config
+  const isBusinessRule = step.type === 'BUSINESS_RULE';
+  const [businessRuleConfig, setBusinessRuleConfig] = useState<BusinessRuleConfig>(
+    step.config.businessRule || { inputs: [], rules: [], outputs: [] }
+  );
+
   // Due date
   const [dueDate, setDueDate] = useState<{ value: number; unit: 'hours' | 'days' } | undefined>(
     step.config.waitDuration as { value: number; unit: 'hours' | 'days' } | undefined
   );
 
+  // Automation step types don't have assignees
+  const automationTypes = ['AI_AUTOMATION', 'SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE'];
+
   // Steps that support assignee selection
-  const hasAssignee = !['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO', 'GOTO_DESTINATION', 'TERMINATE'].includes(step.type);
+  const hasAssignee = !['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO', 'GOTO_DESTINATION', 'TERMINATE', ...automationTypes].includes(step.type);
 
   // Steps that support due dates
   const hasDueDate = ['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION', 'ACKNOWLEDGEMENT', 'ESIGN'].includes(step.type);
@@ -670,6 +1364,30 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
 
     if (isFileRequestStep) {
       updates.fileRequest = fileRequestConfig;
+    }
+
+    if (isAIAutomation) {
+      updates.aiAutomation = aiAutomationConfig;
+    }
+
+    if (isSystemEmail) {
+      updates.systemEmail = systemEmailConfig;
+    }
+
+    if (isSystemWebhook) {
+      updates.systemWebhook = systemWebhookConfig;
+    }
+
+    if (isSystemChatMessage) {
+      updates.systemChatMessage = systemChatMessageConfig;
+    }
+
+    if (isSystemUpdateWorkspace) {
+      updates.systemUpdateWorkspace = systemUpdateWorkspaceConfig;
+    }
+
+    if (isBusinessRule) {
+      updates.businessRule = businessRuleConfig;
     }
 
     if (hasDueDate && dueDate) {
@@ -821,6 +1539,57 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
       {isFileRequestStep && (
         <div className="mb-4 pt-3 border-t border-gray-100">
           <FileRequestConfigEditor config={fileRequestConfig} onChange={setFileRequestConfig} />
+        </div>
+      )}
+
+      {/* AI Automation Config */}
+      {isAIAutomation && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-violet-500" />
+            <span className="text-xs font-semibold text-gray-600">Configure your prompt</span>
+          </div>
+          <AIAutomationConfigEditor config={aiAutomationConfig} onChange={setAiAutomationConfig} />
+        </div>
+      )}
+
+      {/* System Email Config */}
+      {isSystemEmail && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <label className="text-xs font-semibold text-gray-600 block mb-3">Email Configuration</label>
+          <SystemEmailConfigEditor config={systemEmailConfig} onChange={setSystemEmailConfig} />
+        </div>
+      )}
+
+      {/* System Webhook Config */}
+      {isSystemWebhook && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <label className="text-xs font-semibold text-gray-600 block mb-3">Webhook Configuration</label>
+          <SystemWebhookConfigEditor config={systemWebhookConfig} onChange={setSystemWebhookConfig} />
+        </div>
+      )}
+
+      {/* System Chat Message Config */}
+      {isSystemChatMessage && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <label className="text-xs font-semibold text-gray-600 block mb-3">Chat Message</label>
+          <SystemChatMessageConfigEditor config={systemChatMessageConfig} onChange={setSystemChatMessageConfig} />
+        </div>
+      )}
+
+      {/* System Update Workspace Config */}
+      {isSystemUpdateWorkspace && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <label className="text-xs font-semibold text-gray-600 block mb-3">Workspace Update</label>
+          <SystemUpdateWorkspaceConfigEditor config={systemUpdateWorkspaceConfig} onChange={setSystemUpdateWorkspaceConfig} />
+        </div>
+      )}
+
+      {/* Business Rule Config */}
+      {isBusinessRule && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <label className="text-xs font-semibold text-gray-600 block mb-3">Business Rule</label>
+          <BusinessRuleConfigEditor config={businessRuleConfig} onChange={setBusinessRuleConfig} />
         </div>
       )}
 

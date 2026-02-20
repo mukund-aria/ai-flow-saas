@@ -43,7 +43,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Provider
 // ============================================================================
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 interface AuthProviderProps {
   children: ReactNode;

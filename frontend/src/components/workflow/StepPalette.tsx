@@ -34,7 +34,7 @@ const STEP_GROUPS: StepGroup[] = [
   },
   {
     label: 'Automations',
-    types: ['SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'AI_AUTOMATION'],
+    types: ['SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE', 'AI_AUTOMATION'],
   },
 ];
 
