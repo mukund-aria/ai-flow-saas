@@ -21,6 +21,7 @@ import {
   Pencil,
   Copy,
   Trash2,
+  LayoutGrid,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ import { listTemplates, deleteTemplate, duplicateTemplate, type Template } from 
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { CreateFlowDialog } from '@/components/workflow/CreateFlowDialog';
 import { ExecuteFlowDialog } from '@/components/workflow/ExecuteFlowDialog';
+import { TemplateGalleryDialog } from '@/components/workflow/TemplateGalleryDialog';
 
 type SortOption = 'lastModified' | 'name' | 'created' | 'steps';
 
@@ -220,7 +222,7 @@ function FlowCard({ flow, onEdit, onStartRun, onDelete, onDuplicate, isStarting,
   );
 }
 
-function EmptyState({ onCreateFlow }: { onCreateFlow: () => void }) {
+function EmptyState({ onCreateFlow, onBrowseGallery }: { onCreateFlow: () => void; onBrowseGallery: () => void }) {
   return (
     <div className="text-center py-20 px-6">
       {/* Illustration */}
@@ -258,9 +260,9 @@ function EmptyState({ onCreateFlow }: { onCreateFlow: () => void }) {
           <Plus className="w-5 h-5 mr-2" />
           Create your first template
         </Button>
-        <Button variant="outline" size="lg" className="text-gray-600">
-          <FileText className="w-5 h-5 mr-2" />
-          Browse templates
+        <Button variant="outline" size="lg" className="text-gray-600" onClick={onBrowseGallery}>
+          <LayoutGrid className="w-5 h-5 mr-2" />
+          Browse Gallery
         </Button>
       </div>
     </div>
@@ -277,6 +279,7 @@ export function FlowsPage() {
   const [sortBy, setSortBy] = useState<SortOption>('lastModified');
   const [startingFlowId] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   const [executeTemplate, setExecuteTemplate] = useState<Template | null>(null);
 
   // Handler to open the execute dialog
@@ -310,6 +313,12 @@ export function FlowsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to duplicate template');
     }
+  };
+
+  // Handler when a gallery template is imported
+  const handleGalleryImported = (templateId: string) => {
+    setShowGallery(false);
+    navigate(`/templates/${templateId}`);
   };
 
   // Fetch templates on mount
@@ -384,6 +393,11 @@ export function FlowsPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <CreateFlowDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
+      <TemplateGalleryDialog
+        open={showGallery}
+        onOpenChange={setShowGallery}
+        onTemplateImported={handleGalleryImported}
+      />
       {executeTemplate && (
         <ExecuteFlowDialog
           open={!!executeTemplate}
@@ -401,13 +415,23 @@ export function FlowsPage() {
             {flows.length}
           </Badge>
         </div>
-        <Button
-          onClick={handleCreateFlow}
-          className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-violet-200/50"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setShowGallery(true)}
+            className="gap-2"
+          >
+            <LayoutGrid className="w-4 h-4" />
+            Browse Gallery
+          </Button>
+          <Button
+            onClick={handleCreateFlow}
+            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md shadow-violet-200/50"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create
+          </Button>
+        </div>
       </div>
 
       {/* Filters bar */}
@@ -463,7 +487,7 @@ export function FlowsPage() {
 
       {/* Flow Grid or Empty State */}
       {flows.length === 0 ? (
-        <EmptyState onCreateFlow={handleCreateFlow} />
+        <EmptyState onCreateFlow={handleCreateFlow} onBrowseGallery={() => setShowGallery(true)} />
       ) : filteredFlows.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredFlows.map((flow) => (
