@@ -79,11 +79,17 @@ function DeliverySelect({ value, onChange }: { value: DeliveryChannel; onChange:
         value={value}
         onChange={(e) => onChange(e.target.value as DeliveryChannel)}
         className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white text-gray-700"
+        title={value === 'AUTO' ? 'Push notification if enabled. Otherwise email or SMS when the user is offline.' : undefined}
       >
-        <option value="AUTO">Auto</option>
+        <option value="AUTO" title="Push notification if enabled. Otherwise email or SMS when the user is offline.">Auto</option>
         <option value="EMAIL_OR_SMS">Email or SMS</option>
         <option value="EMAIL_AND_SMS">Email and SMS</option>
       </select>
+      {value === 'AUTO' && (
+        <span className="text-[10px] text-gray-400" title="Push notification if enabled. Otherwise email or SMS when the user is offline.">
+          <Info className="w-3 h-3 inline text-gray-400 cursor-help" />
+        </span>
+      )}
     </div>
   );
 }
