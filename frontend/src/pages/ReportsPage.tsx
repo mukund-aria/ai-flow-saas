@@ -252,7 +252,7 @@ function ProgressInsightsSection({ timeRange: _timeRange }: { timeRange: TimeRan
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Weekly Activity</h3>
-            <p className="text-sm text-gray-500">Workflow runs over the past 7 days</p>
+            <p className="text-sm text-gray-500">Flows over the past 7 days</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">

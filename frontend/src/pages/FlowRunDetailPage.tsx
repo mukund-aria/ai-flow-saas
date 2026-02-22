@@ -732,7 +732,7 @@ export function FlowRunDetailPage() {
             <div className="px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">Steps Timeline</h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Track the progress of each step in this workflow run
+                Track the progress of each step in this flow
               </p>
             </div>
 

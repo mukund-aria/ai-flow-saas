@@ -572,15 +572,15 @@ export function ExecuteFlowDialog({
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-          {/* Run Name */}
+          {/* Flow Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Run Name
+              Flow Name
             </label>
             <Input
               value={runName}
               onChange={(e) => setRunName(e.target.value)}
-              placeholder="Enter a name for this flow run..."
+              placeholder="Enter a name for this flow..."
             />
           </div>
 

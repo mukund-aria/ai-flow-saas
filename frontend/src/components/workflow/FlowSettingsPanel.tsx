@@ -157,7 +157,7 @@ function GeneralTab({
         <div>
           <span className="text-sm font-medium text-gray-700">Auto-archive completed flows</span>
           <p className="text-[11px] text-gray-400 mt-0.5">
-            Automatically archive flow runs after they are completed
+            Automatically archive flows after they are completed
           </p>
         </div>
       </label>
@@ -173,7 +173,7 @@ function GeneralTab({
         <div>
           <span className="text-sm font-medium text-gray-700">Enable chat assistance</span>
           <p className="text-[11px] text-gray-400 mt-0.5">
-            Allow AI chat assistance within flow runs for coordinators
+            Allow AI chat assistance within flows for coordinators
           </p>
         </div>
       </label>

@@ -524,10 +524,10 @@ export function TemplateDetailPage() {
               <Play className="w-6 h-6 text-gray-400" />
             </div>
             <p className="text-sm font-medium text-gray-900 mb-1">
-              No runs yet
+              No flows yet
             </p>
             <p className="text-xs text-gray-500">
-              Execute this template to create your first flow run.
+              Execute this template to create your first flow.
             </p>
           </div>
         )}

@@ -5,7 +5,7 @@ const PERMISSION_ROWS: { key: keyof FlowPermissions; label: string; description:
   {
     key: 'execute',
     label: 'Execute',
-    description: 'Who can start new flow runs from this template',
+    description: 'Who can start new flows from this template',
   },
   {
     key: 'edit',
@@ -15,7 +15,7 @@ const PERMISSION_ROWS: { key: keyof FlowPermissions; label: string; description:
   {
     key: 'coordinate',
     label: 'Coordinate',
-    description: 'Who can manage active flow runs and reassign tasks',
+    description: 'Who can manage active flows and reassign tasks',
   },
 ];
 

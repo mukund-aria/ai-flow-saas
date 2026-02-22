@@ -32,7 +32,7 @@ const SCENES = [
   },
   {
     title: 'Operationalize every process, end to end',
-    subtitle: 'Design reusable flow templates, coordinate every flow run, track progress in real time, and maintain a complete audit trail.',
+    subtitle: 'Design reusable flow templates, coordinate every flow, track progress in real time, and maintain a complete audit trail.',
   },
 ];
 

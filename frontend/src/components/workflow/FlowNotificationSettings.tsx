@@ -233,7 +233,7 @@ function ChannelIntegrationsSection({
                 onChange={(v) => updateSlack({ channelMode: v })}
                 options={[
                   { value: 'SHARED', label: 'Shared channel' },
-                  { value: 'PER_FLOW_RUN', label: 'Per flow run' },
+                  { value: 'PER_FLOW_RUN', label: 'Per flow' },
                 ]}
               />
             </div>
@@ -322,7 +322,7 @@ function ChannelIntegrationsSection({
                 />
 
                 <InfoCallout>
-                  A new Slack channel is automatically created when a flow run starts.
+                  A new Slack channel is automatically created when a flow starts.
                 </InfoCallout>
               </div>
             )}
