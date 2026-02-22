@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react';
+import { Info, RotateCcw } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type { DeliveryChannel, FlowNotificationSettings } from '@/types';
 
@@ -128,30 +128,46 @@ export function FlowNotificationSettingsPanel() {
 
   const isCustom = settings.mode === 'custom';
 
+  const handleResetToDefaults = () => {
+    update({ ...defaultSettings, mode: 'custom' });
+  };
+
   return (
     <div className="space-y-4">
           {/* Mode Toggle */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => update({ ...settings, mode: 'default' })}
-              className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                !isCustom
-                  ? 'bg-violet-100 text-violet-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Default
-            </button>
-            <button
-              onClick={() => update({ ...settings, mode: 'custom' })}
-              className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                isCustom
-                  ? 'bg-violet-100 text-violet-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Customize
-            </button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+              <button
+                onClick={() => update({ ...settings, mode: 'default' })}
+                className={`px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                  !isCustom
+                    ? 'bg-white text-violet-700 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Default
+              </button>
+              <button
+                onClick={() => update({ ...settings, mode: 'custom' })}
+                className={`px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                  isCustom
+                    ? 'bg-white text-violet-700 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Customize
+              </button>
+            </div>
+            {isCustom && (
+              <button
+                onClick={handleResetToDefaults}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-500 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors"
+                title="Reset all notification settings to defaults"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset to defaults
+              </button>
+            )}
           </div>
 
           {/* Default Mode Summary */}
