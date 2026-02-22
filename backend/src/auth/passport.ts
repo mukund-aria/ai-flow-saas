@@ -181,6 +181,7 @@ export function configurePassport(): void {
       }
 
       // Get active org info
+      let activeOrgId = dbUser.activeOrganizationId;
       let organizationName: string | null = null;
       let role: string | null = null;
       let needsOnboarding = true;
@@ -192,14 +193,23 @@ export function configurePassport(): void {
 
       needsOnboarding = memberships.length === 0;
 
-      if (dbUser.activeOrganizationId) {
+      if (activeOrgId) {
         const activeMembership = memberships.find(
-          m => m.organizationId === dbUser.activeOrganizationId
+          m => m.organizationId === activeOrgId
         );
         if (activeMembership) {
           organizationName = (activeMembership as any).organization?.name || null;
           role = activeMembership.role;
         }
+      } else if (memberships.length > 0) {
+        // Auto-set first org as active during session restore
+        const first = memberships[0];
+        activeOrgId = first.organizationId;
+        await db.update(users)
+          .set({ activeOrganizationId: activeOrgId })
+          .where(eq(users.id, dbUser.id));
+        organizationName = (first as any).organization?.name || null;
+        role = first.role;
       }
 
       const authUser: AuthUser = {
@@ -207,7 +217,7 @@ export function configurePassport(): void {
         email: dbUser.email,
         name: dbUser.name,
         picture: dbUser.picture || undefined,
-        activeOrganizationId: dbUser.activeOrganizationId,
+        activeOrganizationId: activeOrgId,
         organizationName,
         role,
         needsOnboarding,
