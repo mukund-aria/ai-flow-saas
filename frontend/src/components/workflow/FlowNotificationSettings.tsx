@@ -148,7 +148,7 @@ function SegmentedControl<T extends string>({ value, onChange, options }: { valu
           onClick={() => onChange(opt.value)}
           className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
             value === opt.value
-              ? 'bg-white text-violet-700 shadow-sm'
+              ? 'bg-violet-600 text-white shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -400,7 +400,7 @@ export function FlowNotificationSettingsPanel() {
                 onClick={() => update({ ...settings, mode: 'default' })}
                 className={`px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
                   !isCustom
-                    ? 'bg-white text-violet-700 shadow-sm'
+                    ? 'bg-violet-600 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -410,7 +410,7 @@ export function FlowNotificationSettingsPanel() {
                 onClick={() => update({ ...settings, mode: 'custom' })}
                 className={`px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
                   isCustom
-                    ? 'bg-white text-violet-700 shadow-sm'
+                    ? 'bg-violet-600 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
