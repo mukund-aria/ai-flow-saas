@@ -1,6 +1,29 @@
-import { Info, RotateCcw } from 'lucide-react';
+import { Info, RotateCcw, Hash, MessageSquare } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
-import type { DeliveryChannel, FlowNotificationSettings } from '@/types';
+import type { DeliveryChannel, FlowNotificationSettings, SlackIntegrationSettings, ChannelIntegrations, SlackChannelMode, ChannelVisibility, ChannelInviteGroup } from '@/types';
+
+const defaultSlackSettings: SlackIntegrationSettings = {
+  enabled: false,
+  channelMode: 'SHARED',
+  shared: { channelName: '' },
+  perFlowRun: {
+    namingPattern: '{flowName}-{runId}',
+    visibility: 'PRIVATE',
+    inviteGroup: 'ALL_COORDINATORS',
+    additionalMembers: '',
+    autoArchiveOnComplete: true,
+  },
+  events: {
+    actionCompleted: true,
+    flowStarted: true,
+    flowCompleted: true,
+    chatMessages: false,
+  },
+};
+
+const defaultChannelIntegrations: ChannelIntegrations = {
+  slack: defaultSlackSettings,
+};
 
 const defaultSettings: FlowNotificationSettings = {
   mode: 'default',
@@ -45,6 +68,7 @@ const defaultSettings: FlowNotificationSettings = {
     },
     dailyDigest: false,
   },
+  channelIntegrations: defaultChannelIntegrations,
 };
 
 function DeliverySelect({ value, onChange }: { value: DeliveryChannel; onChange: (v: DeliveryChannel) => void }) {
@@ -112,6 +136,241 @@ function SectionHeader({ title }: { title: string }) {
 function GroupHeader({ title }: { title: string }) {
   return (
     <p className="text-sm font-medium text-gray-800 mb-2">{title}</p>
+  );
+}
+
+function SegmentedControl<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
+  return (
+    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
+            value === opt.value
+              ? 'bg-white text-violet-700 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+        checked ? 'bg-violet-600' : 'bg-gray-300'
+      }`}
+    >
+      <span
+        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+          checked ? 'translate-x-[18px]' : 'translate-x-[3px]'
+        }`}
+      />
+    </button>
+  );
+}
+
+function ChannelIntegrationsSection({
+  settings,
+  onChange,
+}: {
+  settings: FlowNotificationSettings;
+  onChange: (s: FlowNotificationSettings) => void;
+}) {
+  const ci = settings.channelIntegrations ?? defaultChannelIntegrations;
+  const slack = ci.slack;
+
+  const updateSlack = (partial: Partial<SlackIntegrationSettings>) => {
+    onChange({
+      ...settings,
+      channelIntegrations: {
+        ...ci,
+        slack: { ...slack, ...partial },
+      },
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="border-t border-gray-200 pt-4" />
+
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900">Channel Integrations</h3>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Stream all flow updates into a team channel. Everyone in the channel sees real-time activity without needing individual notifications.
+        </p>
+      </div>
+
+      {/* Slack */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+          <div className="flex items-center gap-2">
+            <Hash className="w-4 h-4 text-gray-600" />
+            <span className="text-sm font-medium text-gray-800">Slack</span>
+          </div>
+          <Toggle checked={slack.enabled} onChange={(v) => updateSlack({ enabled: v })} />
+        </div>
+
+        {slack.enabled && (
+          <div className="px-4 py-3 space-y-4">
+            {/* Channel Mode */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-600">Channel mode</label>
+              <SegmentedControl<SlackChannelMode>
+                value={slack.channelMode}
+                onChange={(v) => updateSlack({ channelMode: v })}
+                options={[
+                  { value: 'SHARED', label: 'Shared channel' },
+                  { value: 'PER_FLOW_RUN', label: 'Per flow run' },
+                ]}
+              />
+            </div>
+
+            {/* Shared Mode Config */}
+            {slack.channelMode === 'SHARED' && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-600">Channel name</label>
+                <input
+                  type="text"
+                  value={slack.shared.channelName}
+                  onChange={(e) => updateSlack({ shared: { channelName: e.target.value } })}
+                  placeholder="#project-updates"
+                  className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                />
+              </div>
+            )}
+
+            {/* Per Flow Run Config */}
+            {slack.channelMode === 'PER_FLOW_RUN' && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">Naming pattern</label>
+                  <input
+                    type="text"
+                    value={slack.perFlowRun.namingPattern}
+                    onChange={(e) => updateSlack({
+                      perFlowRun: { ...slack.perFlowRun, namingPattern: e.target.value },
+                    })}
+                    placeholder="{flowName}-{clientName}"
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-400">
+                    Variables: <code className="text-violet-600">{'{flowName}'}</code> <code className="text-violet-600">{'{clientName}'}</code> <code className="text-violet-600">{'{date}'}</code> <code className="text-violet-600">{'{runId}'}</code>
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">Channel visibility</label>
+                  <SegmentedControl<ChannelVisibility>
+                    value={slack.perFlowRun.visibility}
+                    onChange={(v) => updateSlack({
+                      perFlowRun: { ...slack.perFlowRun, visibility: v },
+                    })}
+                    options={[
+                      { value: 'PRIVATE', label: 'Private' },
+                      { value: 'PUBLIC', label: 'Public' },
+                    ]}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">Invite to channel</label>
+                  <select
+                    value={slack.perFlowRun.inviteGroup}
+                    onChange={(e) => updateSlack({
+                      perFlowRun: { ...slack.perFlowRun, inviteGroup: e.target.value as ChannelInviteGroup },
+                    })}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white text-gray-700"
+                  >
+                    <option value="ALL_COORDINATORS">All coordinators</option>
+                    <option value="COORDINATOR_ASSIGNEES">Coordinators + assignees</option>
+                    <option value="FLOW_OWNER_ONLY">Flow owner only</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-600">Additional members (optional)</label>
+                  <input
+                    type="text"
+                    value={slack.perFlowRun.additionalMembers}
+                    onChange={(e) => updateSlack({
+                      perFlowRun: { ...slack.perFlowRun, additionalMembers: e.target.value },
+                    })}
+                    placeholder="user@example.com, user2@example.com"
+                    className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  />
+                </div>
+
+                <Checkbox
+                  checked={slack.perFlowRun.autoArchiveOnComplete}
+                  onChange={(v) => updateSlack({
+                    perFlowRun: { ...slack.perFlowRun, autoArchiveOnComplete: v },
+                  })}
+                  label="Auto-archive channel when flow completes"
+                />
+
+                <InfoCallout>
+                  A new Slack channel is automatically created when a flow run starts.
+                </InfoCallout>
+              </div>
+            )}
+
+            {/* Events to post */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-600">Events to post</label>
+              <div className="grid grid-cols-2 gap-2">
+                <Checkbox
+                  checked={slack.events.actionCompleted}
+                  onChange={(v) => updateSlack({
+                    events: { ...slack.events, actionCompleted: v },
+                  })}
+                  label="Action completed"
+                />
+                <Checkbox
+                  checked={slack.events.flowStarted}
+                  onChange={(v) => updateSlack({
+                    events: { ...slack.events, flowStarted: v },
+                  })}
+                  label="Flow started"
+                />
+                <Checkbox
+                  checked={slack.events.flowCompleted}
+                  onChange={(v) => updateSlack({
+                    events: { ...slack.events, flowCompleted: v },
+                  })}
+                  label="Flow completed"
+                />
+                <Checkbox
+                  checked={slack.events.chatMessages}
+                  onChange={(v) => updateSlack({
+                    events: { ...slack.events, chatMessages: v },
+                  })}
+                  label="Chat messages"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Microsoft Teams (coming soon) */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden opacity-60">
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-gray-400" />
+            <span className="text-sm font-medium text-gray-500">Microsoft Teams</span>
+            <span className="px-1.5 py-0.5 text-[10px] font-medium text-gray-400 bg-gray-100 rounded">Coming soon</span>
+          </div>
+          <Toggle checked={false} onChange={() => {}} />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -484,6 +743,9 @@ export function FlowNotificationSettingsPanel() {
               </InfoCallout>
             </div>
           )}
+
+          {/* Channel Integrations — always visible */}
+          <ChannelIntegrationsSection settings={settings} onChange={update} />
     </div>
   );
 }

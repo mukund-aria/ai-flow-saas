@@ -150,6 +150,52 @@ export interface FlowNotificationSettings {
     chatAlerts: CoordinatorChatAlerts;
     dailyDigest: boolean;
   };
+
+  channelIntegrations?: ChannelIntegrations;
+}
+
+// ============================================================================
+// Channel Integration Types
+// ============================================================================
+
+export type SlackChannelMode = 'SHARED' | 'PER_FLOW_RUN';
+export type ChannelVisibility = 'PRIVATE' | 'PUBLIC';
+export type ChannelInviteGroup = 'ALL_COORDINATORS' | 'COORDINATOR_ASSIGNEES' | 'FLOW_OWNER_ONLY';
+
+export interface SlackEventConfig {
+  actionCompleted: boolean;
+  flowStarted: boolean;
+  flowCompleted: boolean;
+  chatMessages: boolean;
+}
+
+export interface SlackSharedConfig {
+  channelName: string;
+}
+
+export interface SlackPerFlowRunConfig {
+  namingPattern: string;
+  visibility: ChannelVisibility;
+  inviteGroup: ChannelInviteGroup;
+  additionalMembers: string;
+  autoArchiveOnComplete: boolean;
+}
+
+export interface SlackIntegrationSettings {
+  enabled: boolean;
+  channelMode: SlackChannelMode;
+  shared: SlackSharedConfig;
+  perFlowRun: SlackPerFlowRunConfig;
+  events: SlackEventConfig;
+}
+
+export interface TeamsIntegrationSettings {
+  enabled: boolean;
+}
+
+export interface ChannelIntegrations {
+  slack: SlackIntegrationSettings;
+  teams?: TeamsIntegrationSettings;
 }
 
 export function defaultFlowNotificationSettings(): FlowNotificationSettings {
@@ -195,6 +241,26 @@ export function defaultFlowNotificationSettings(): FlowNotificationSettings {
         delivery: 'AUTO',
       },
       dailyDigest: false,
+    },
+    channelIntegrations: {
+      slack: {
+        enabled: false,
+        channelMode: 'SHARED',
+        shared: { channelName: '' },
+        perFlowRun: {
+          namingPattern: '{flowName}-{runId}',
+          visibility: 'PRIVATE',
+          inviteGroup: 'ALL_COORDINATORS',
+          additionalMembers: '',
+          autoArchiveOnComplete: true,
+        },
+        events: {
+          actionCompleted: true,
+          flowStarted: true,
+          flowCompleted: true,
+          chatMessages: false,
+        },
+      },
     },
   };
 }
