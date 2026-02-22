@@ -388,7 +388,7 @@ export function FlowNotificationSettingsPanel() {
   const isCustom = settings.mode === 'custom';
 
   const handleResetToDefaults = () => {
-    update({ ...defaultSettings, mode: 'custom' });
+    update({ ...defaultSettings, mode: 'default' });
   };
 
   return (
