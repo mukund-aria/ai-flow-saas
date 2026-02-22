@@ -6,8 +6,8 @@
  */
 
 import { Router } from 'express';
-import { db, magicLinks, stepExecutions, flowRuns, contacts } from '../db/index.js';
-import { eq } from 'drizzle-orm';
+import { db, magicLinks, stepExecutions, flowRuns, contacts, flowRunConversations, flowRunMessages } from '../db/index.js';
+import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { validateMagicLink } from '../services/magic-link.js';
 import { logAction } from '../services/audit.js';
@@ -213,6 +213,160 @@ router.post(
       data: {
         message: 'Task completed successfully',
         nextTaskToken,
+      },
+    });
+  })
+);
+
+// ============================================================================
+// GET /api/public/task/:token/messages - Get messages for assignee's conversation
+// ============================================================================
+
+router.get(
+  '/:token/messages',
+  asyncHandler(async (req, res) => {
+    const token = req.params.token as string;
+
+    // Validate magic link and get context
+    const link = await db.query.magicLinks.findFirst({
+      where: eq(magicLinks.token, token),
+      with: { stepExecution: true },
+    });
+
+    if (!link || new Date() > link.expiresAt) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Invalid or expired link' } });
+      return;
+    }
+
+    const stepExec = link.stepExecution;
+    if (!stepExec?.assignedToContactId) {
+      res.json({ success: true, data: [] });
+      return;
+    }
+
+    // Find or create conversation for this contact + flow run
+    let conversation = await db.query.flowRunConversations.findFirst({
+      where: and(
+        eq(flowRunConversations.flowRunId, stepExec.flowRunId),
+        eq(flowRunConversations.contactId, stepExec.assignedToContactId)
+      ),
+    });
+
+    if (!conversation) {
+      // No conversation yet, return empty
+      res.json({ success: true, data: [] });
+      return;
+    }
+
+    const messages = await db.query.flowRunMessages.findMany({
+      where: eq(flowRunMessages.conversationId, conversation.id),
+      with: { attachments: true },
+      orderBy: (m, { asc }) => [asc(m.createdAt)],
+    });
+
+    res.json({
+      success: true,
+      data: messages.map((m) => ({
+        id: m.id,
+        senderType: m.senderType,
+        senderName: m.senderName,
+        content: m.content,
+        attachments: m.attachments.map((a) => ({
+          id: a.id,
+          fileName: a.fileName,
+          fileUrl: a.fileUrl,
+          fileType: a.fileType,
+          fileSize: a.fileSize,
+        })),
+        createdAt: m.createdAt,
+      })),
+    });
+  })
+);
+
+// ============================================================================
+// POST /api/public/task/:token/messages - Send message as assignee
+// ============================================================================
+
+router.post(
+  '/:token/messages',
+  asyncHandler(async (req, res) => {
+    const token = req.params.token as string;
+    const { content } = req.body;
+
+    if (!content?.trim()) {
+      res.status(400).json({ success: false, error: { code: 'INVALID_INPUT', message: 'Message content is required' } });
+      return;
+    }
+
+    // Validate magic link
+    const link = await db.query.magicLinks.findFirst({
+      where: eq(magicLinks.token, token),
+      with: { stepExecution: true },
+    });
+
+    if (!link || new Date() > link.expiresAt) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Invalid or expired link' } });
+      return;
+    }
+
+    const stepExec = link.stepExecution;
+    if (!stepExec?.assignedToContactId) {
+      res.status(400).json({ success: false, error: { code: 'INVALID_STATE', message: 'No contact assigned' } });
+      return;
+    }
+
+    // Get contact info
+    const contact = await db.query.contacts.findFirst({
+      where: eq(contacts.id, stepExec.assignedToContactId),
+    });
+
+    if (!contact) {
+      res.status(400).json({ success: false, error: { code: 'NOT_FOUND', message: 'Contact not found' } });
+      return;
+    }
+
+    // Find or create conversation
+    let conversation = await db.query.flowRunConversations.findFirst({
+      where: and(
+        eq(flowRunConversations.flowRunId, stepExec.flowRunId),
+        eq(flowRunConversations.contactId, contact.id)
+      ),
+    });
+
+    if (!conversation) {
+      const [newConv] = await db.insert(flowRunConversations).values({
+        flowRunId: stepExec.flowRunId,
+        contactId: contact.id,
+        lastMessageAt: new Date(),
+      }).returning();
+      conversation = newConv;
+    }
+
+    // Create the message
+    const [message] = await db.insert(flowRunMessages).values({
+      conversationId: conversation.id,
+      flowRunId: stepExec.flowRunId,
+      senderContactId: contact.id,
+      senderType: 'contact',
+      senderName: contact.name,
+      content: content.trim(),
+    }).returning();
+
+    // Update conversation lastMessageAt
+    await db.update(flowRunConversations)
+      .set({ lastMessageAt: new Date() })
+      .where(eq(flowRunConversations.id, conversation.id));
+
+    res.json({
+      success: true,
+      data: {
+        id: message.id,
+        senderType: message.senderType,
+        senderName: message.senderName,
+        content: message.content,
+        attachments: [],
+        createdAt: message.createdAt,
       },
     });
   })

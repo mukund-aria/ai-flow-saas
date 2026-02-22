@@ -218,6 +218,52 @@ export const notificationLog = pgTable('notification_log', {
 });
 
 // ============================================================================
+// Flow Run Conversations (In-Flow Chat)
+// ============================================================================
+
+export const flowRunConversations = pgTable('flow_run_conversations', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  flowRunId: text('flow_run_id').notNull().references(() => flowRuns.id),
+  contactId: text('contact_id').notNull().references(() => contacts.id),
+  resolvedAt: timestamp('resolved_at'),
+  resolvedByUserId: text('resolved_by_user_id').references(() => users.id),
+  lastMessageAt: timestamp('last_message_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Flow Run Messages (In-Flow Chat)
+// ============================================================================
+
+export type MessageSenderType = 'user' | 'contact';
+
+export const flowRunMessages = pgTable('flow_run_messages', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  conversationId: text('conversation_id').notNull().references(() => flowRunConversations.id),
+  flowRunId: text('flow_run_id').notNull().references(() => flowRuns.id),
+  senderUserId: text('sender_user_id').references(() => users.id),
+  senderContactId: text('sender_contact_id').references(() => contacts.id),
+  senderType: text('sender_type').$type<MessageSenderType>().notNull(),
+  senderName: text('sender_name').notNull(),
+  content: text('content'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Flow Run Message Attachments
+// ============================================================================
+
+export const flowRunMessageAttachments = pgTable('flow_run_message_attachments', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  messageId: text('message_id').notNull().references(() => flowRunMessages.id),
+  fileName: text('file_name').notNull(),
+  fileUrl: text('file_url').notNull(),
+  fileType: text('file_type'),
+  fileSize: integer('file_size'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
 // User Notification Preferences
 // ============================================================================
 
@@ -396,5 +442,52 @@ export const userNotificationPrefsRelations = relations(userNotificationPrefs, (
   organization: one(organizations, {
     fields: [userNotificationPrefs.organizationId],
     references: [organizations.id],
+  }),
+}));
+
+// ============================================================================
+// Chat Relations
+// ============================================================================
+
+export const flowRunConversationsRelations = relations(flowRunConversations, ({ one, many }) => ({
+  flowRun: one(flowRuns, {
+    fields: [flowRunConversations.flowRunId],
+    references: [flowRuns.id],
+  }),
+  contact: one(contacts, {
+    fields: [flowRunConversations.contactId],
+    references: [contacts.id],
+  }),
+  resolvedBy: one(users, {
+    fields: [flowRunConversations.resolvedByUserId],
+    references: [users.id],
+  }),
+  messages: many(flowRunMessages),
+}));
+
+export const flowRunMessagesRelations = relations(flowRunMessages, ({ one, many }) => ({
+  conversation: one(flowRunConversations, {
+    fields: [flowRunMessages.conversationId],
+    references: [flowRunConversations.id],
+  }),
+  flowRun: one(flowRuns, {
+    fields: [flowRunMessages.flowRunId],
+    references: [flowRuns.id],
+  }),
+  senderUser: one(users, {
+    fields: [flowRunMessages.senderUserId],
+    references: [users.id],
+  }),
+  senderContact: one(contacts, {
+    fields: [flowRunMessages.senderContactId],
+    references: [contacts.id],
+  }),
+  attachments: many(flowRunMessageAttachments),
+}));
+
+export const flowRunMessageAttachmentsRelations = relations(flowRunMessageAttachments, ({ one }) => ({
+  message: one(flowRunMessages, {
+    fields: [flowRunMessageAttachments.messageId],
+    references: [flowRunMessages.id],
   }),
 }));

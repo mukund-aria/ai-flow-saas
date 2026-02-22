@@ -88,60 +88,153 @@ export interface FlowSettings {
 }
 
 // ============================================================================
-// Notification Settings
+// Notification Settings (v2 — Two-audience model)
 // ============================================================================
 
-export interface ReminderConfig {
-  enabled: boolean;
-  firstReminderBefore: { value: number; unit: DueUnit };
-  repeatAfterDue: boolean;
-  repeatInterval: { value: number; unit: DueUnit };
-  maxReminders: number;
+export type DeliveryChannel = 'AUTO' | 'EMAIL_OR_SMS' | 'EMAIL_AND_SMS';
+
+export interface AssigneeActionAlerts {
+  actionAssigned: boolean;
+  dueDateApproaching: boolean;
+  dueDateApproachingDays: number;
+  actionDue: boolean;
+  actionOverdue: boolean;
+  actionOverdueRepeatDays: number;
+  actionOverdueMaxTimes: number;
+  delivery: DeliveryChannel;
 }
 
-export interface EscalationConfig {
-  enabled: boolean;
-  escalateAfter: { value: number; unit: DueUnit };
-  escalateTo: 'COORDINATOR' | 'CUSTOM_EMAIL';
-  customEmail?: string;
-}
-
-export interface CoordinatorNotificationPrefs {
-  stepCompleted: boolean;
-  stepOverdue: boolean;
+export interface AssigneeFlowCompletion {
   flowCompleted: boolean;
-  flowStalled: boolean;
-  dailyDigest: boolean;
+  delivery: DeliveryChannel;
+}
+
+export interface CoordinatorActionAlerts {
+  actionCompleted: boolean;
+  delivery: DeliveryChannel;
+}
+
+export interface CoordinatorFlowAlerts {
+  flowStarted: boolean;
+  flowOverdue: boolean;
+  flowOverdueRepeatDays: number;
+  flowOverdueMaxTimes: number;
+  flowCompleted: boolean;
+  delivery: DeliveryChannel;
+}
+
+export interface CoordinatorEscalationAlerts {
+  noActivityDays: number | null;
+  assigneeNotStartedDays: number | null;
+  automationFailure: boolean;
+  delivery: DeliveryChannel;
+}
+
+export interface CoordinatorChatAlerts {
+  newMessage: boolean;
+  delivery: DeliveryChannel;
 }
 
 export interface FlowNotificationSettings {
-  defaultReminder: ReminderConfig;
-  escalation: EscalationConfig;
-  coordinatorNotifications: CoordinatorNotificationPrefs;
+  mode: 'default' | 'custom';
+
+  assignee: {
+    actionAlerts: AssigneeActionAlerts;
+    flowCompletion: AssigneeFlowCompletion;
+  };
+
+  coordinator: {
+    actionAlerts: CoordinatorActionAlerts;
+    flowAlerts: CoordinatorFlowAlerts;
+    escalationAlerts: CoordinatorEscalationAlerts;
+    chatAlerts: CoordinatorChatAlerts;
+    dailyDigest: boolean;
+  };
 }
 
 export function defaultFlowNotificationSettings(): FlowNotificationSettings {
   return {
-    defaultReminder: {
-      enabled: true,
-      firstReminderBefore: { value: 24, unit: 'HOURS' },
-      repeatAfterDue: true,
-      repeatInterval: { value: 24, unit: 'HOURS' },
-      maxReminders: 3,
+    mode: 'default',
+    assignee: {
+      actionAlerts: {
+        actionAssigned: true,
+        dueDateApproaching: true,
+        dueDateApproachingDays: 1,
+        actionDue: true,
+        actionOverdue: true,
+        actionOverdueRepeatDays: 1,
+        actionOverdueMaxTimes: 3,
+        delivery: 'AUTO',
+      },
+      flowCompletion: {
+        flowCompleted: true,
+        delivery: 'AUTO',
+      },
     },
-    escalation: {
-      enabled: true,
-      escalateAfter: { value: 48, unit: 'HOURS' },
-      escalateTo: 'COORDINATOR',
-    },
-    coordinatorNotifications: {
-      stepCompleted: true,
-      stepOverdue: true,
-      flowCompleted: true,
-      flowStalled: true,
+    coordinator: {
+      actionAlerts: {
+        actionCompleted: true,
+        delivery: 'AUTO',
+      },
+      flowAlerts: {
+        flowStarted: true,
+        flowOverdue: true,
+        flowOverdueRepeatDays: 1,
+        flowOverdueMaxTimes: 3,
+        flowCompleted: true,
+        delivery: 'AUTO',
+      },
+      escalationAlerts: {
+        noActivityDays: 3,
+        assigneeNotStartedDays: 2,
+        automationFailure: true,
+        delivery: 'AUTO',
+      },
+      chatAlerts: {
+        newMessage: true,
+        delivery: 'AUTO',
+      },
       dailyDigest: false,
     },
   };
+}
+
+// ============================================================================
+// Legacy Notification Settings Migration
+// ============================================================================
+
+/** Migrate old-format notification settings to v2 format */
+export function migrateNotificationSettings(raw: Record<string, unknown>): FlowNotificationSettings {
+  // Already new format
+  if (raw.mode && raw.assignee && raw.coordinator) {
+    return raw as unknown as FlowNotificationSettings;
+  }
+
+  // Old format — map to new structure
+  const defaults = defaultFlowNotificationSettings();
+  const oldReminder = raw.defaultReminder as Record<string, unknown> | undefined;
+  const oldEscalation = raw.escalation as Record<string, unknown> | undefined;
+  const oldCoord = raw.coordinatorNotifications as Record<string, unknown> | undefined;
+
+  if (oldReminder) {
+    defaults.assignee.actionAlerts.dueDateApproaching = oldReminder.enabled as boolean ?? true;
+    defaults.assignee.actionAlerts.actionOverdue = oldReminder.repeatAfterDue as boolean ?? true;
+    defaults.assignee.actionAlerts.actionOverdueMaxTimes = oldReminder.maxReminders as number ?? 3;
+  }
+
+  if (oldEscalation) {
+    const enabled = oldEscalation.enabled as boolean ?? true;
+    defaults.coordinator.escalationAlerts.noActivityDays = enabled ? 3 : null;
+    defaults.coordinator.escalationAlerts.assigneeNotStartedDays = enabled ? 2 : null;
+  }
+
+  if (oldCoord) {
+    defaults.coordinator.actionAlerts.actionCompleted = oldCoord.stepCompleted as boolean ?? true;
+    defaults.coordinator.flowAlerts.flowCompleted = oldCoord.flowCompleted as boolean ?? true;
+    defaults.coordinator.dailyDigest = oldCoord.dailyDigest as boolean ?? false;
+  }
+
+  return defaults;
 }
 
 // ============================================================================

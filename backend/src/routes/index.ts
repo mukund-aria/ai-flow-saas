@@ -12,6 +12,7 @@ import flowsRouter from './flows.js';
 import runsRouter from './runs.js';
 import contactsRouter from './contacts.js';
 import notificationsRouter from './notifications.js';
+import messagesRouter from './messages.js';
 import organizationsRouter from './organizations.js';
 import teamRouter from './team.js';
 import { orgScope } from '../middleware/org-scope.js';
@@ -49,5 +50,8 @@ router.use('/contacts', contactsRouter);
 
 // Notifications API (in-app notifications)
 router.use('/notifications', notificationsRouter);
+
+// Messages API (in-flow chat conversations)
+router.use('/flows', messagesRouter);
 
 export default router;

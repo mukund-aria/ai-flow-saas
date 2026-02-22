@@ -6,7 +6,7 @@
  */
 
 import type { AssigneeRef, AssigneeOrAssignees } from './assignees.js';
-import type { RelativeDue, ReminderConfig, EscalationConfig } from './workflow.js';
+import type { RelativeDue, AssigneeActionAlerts, CoordinatorEscalationAlerts } from './workflow.js';
 
 // ============================================================================
 // Step-Level Reminder Override
@@ -14,8 +14,8 @@ import type { RelativeDue, ReminderConfig, EscalationConfig } from './workflow.j
 
 export interface StepReminderOverride {
   useFlowDefaults: boolean;
-  reminder?: ReminderConfig;
-  escalation?: EscalationConfig;
+  actionAlerts?: Partial<AssigneeActionAlerts>;
+  escalationAlerts?: Partial<CoordinatorEscalationAlerts>;
 }
 
 // ============================================================================

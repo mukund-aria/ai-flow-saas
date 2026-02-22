@@ -455,6 +455,78 @@ export async function notifyFlowStalled(
 }
 
 // ============================================================================
+// Chat Notifications
+// ============================================================================
+
+/**
+ * Notify coordinator when an assignee sends a chat message.
+ */
+export async function notifyChatMessage(
+  run: { id: string; name: string; organizationId: string; startedById: string; flowId: string },
+  senderName: string,
+  messagePreview: string
+): Promise<void> {
+  const coordinator = await db.query.users.findFirst({
+    where: eq(users.id, run.startedById),
+  });
+
+  if (coordinator) {
+    // In-app notification
+    await createInAppNotification({
+      organizationId: run.organizationId,
+      userId: coordinator.id,
+      type: 'CHAT_MESSAGE',
+      title: `New message from ${senderName}`,
+      body: messagePreview.length > 100 ? messagePreview.slice(0, 100) + '...' : messagePreview,
+      flowRunId: run.id,
+      metadata: { senderName },
+    });
+
+    // Check email frequency cap (batch messages within 5 minutes)
+    const canSend = await canSendChatEmail(run.id, coordinator.email);
+    if (canSend) {
+      await email.sendChatNotification({
+        to: coordinator.email,
+        userName: coordinator.name,
+        senderName,
+        flowName: run.name,
+        messagePreview,
+      });
+
+      await logNotification({
+        organizationId: run.organizationId,
+        recipientEmail: coordinator.email,
+        recipientUserId: coordinator.id,
+        channel: 'EMAIL',
+        eventType: 'CHAT_MESSAGE',
+        flowRunId: run.id,
+        status: 'SENT',
+      });
+    }
+  }
+}
+
+/**
+ * Chat email frequency cap — batch rapid-fire messages (5 minute window).
+ */
+async function canSendChatEmail(flowRunId: string, recipientEmail: string): Promise<boolean> {
+  const chatCapMs = 5 * 60 * 1000; // 5 minutes
+  const cutoff = new Date(Date.now() - chatCapMs);
+
+  const recent = await db.query.notificationLog.findFirst({
+    where: and(
+      eq(notificationLog.flowRunId, flowRunId),
+      eq(notificationLog.eventType, 'CHAT_MESSAGE'),
+      eq(notificationLog.recipientEmail, recipientEmail),
+      eq(notificationLog.channel, 'EMAIL'),
+      gte(notificationLog.sentAt, cutoff)
+    ),
+  });
+
+  return !recent;
+}
+
+// ============================================================================
 // Job Handlers (called from scheduler.ts worker)
 // ============================================================================
 

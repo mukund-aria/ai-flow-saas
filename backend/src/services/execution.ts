@@ -16,7 +16,7 @@ import { eq } from 'drizzle-orm';
 import { scheduleReminder, scheduleOverdueCheck, scheduleEscalation, cancelStepJobs } from './scheduler.js';
 import { notifyStepCompleted, notifyFlowCompleted, notifyFlowCancelled } from './notification.js';
 import type { FlowNotificationSettings } from '../models/workflow.js';
-import { defaultFlowNotificationSettings } from '../models/workflow.js';
+import { defaultFlowNotificationSettings, migrateNotificationSettings } from '../models/workflow.js';
 
 // ============================================================================
 // Due Date Computation
@@ -66,32 +66,29 @@ export async function onStepActivated(
       .set({ dueAt })
       .where(eq(stepExecutions.id, stepExecutionId));
 
-    // Get notification settings from flow definition
-    const settings: FlowNotificationSettings =
-      (flowDefinition?.settings as { notifications?: FlowNotificationSettings } | undefined)?.notifications
-      || defaultFlowNotificationSettings();
+    // Get notification settings from flow definition (supports both old and new format)
+    const rawSettings = (flowDefinition?.settings as { notifications?: Record<string, unknown> } | undefined)?.notifications;
+    const settings: FlowNotificationSettings = rawSettings
+      ? migrateNotificationSettings(rawSettings)
+      : defaultFlowNotificationSettings();
 
-    // Schedule reminder (before due)
-    if (settings.defaultReminder.enabled) {
-      const reminderMs = dueUnitToMs(
-        settings.defaultReminder.firstReminderBefore.value,
-        settings.defaultReminder.firstReminderBefore.unit
-      );
+    // Schedule reminder (before due) — uses assignee action alerts
+    if (settings.assignee.actionAlerts.dueDateApproaching) {
+      const reminderMs = dueUnitToMs(settings.assignee.actionAlerts.dueDateApproachingDays, 'DAYS');
       const reminderAt = new Date(dueAt.getTime() - reminderMs);
       if (reminderAt > now) {
         await scheduleReminder(stepExecutionId, reminderAt);
       }
     }
 
-    // Schedule overdue check (at due date)
-    await scheduleOverdueCheck(stepExecutionId, dueAt);
+    // Schedule overdue check (at due date) — uses assignee actionDue flag
+    if (settings.assignee.actionAlerts.actionDue) {
+      await scheduleOverdueCheck(stepExecutionId, dueAt);
+    }
 
-    // Schedule escalation (after due)
-    if (settings.escalation.enabled) {
-      const escalationMs = dueUnitToMs(
-        settings.escalation.escalateAfter.value,
-        settings.escalation.escalateAfter.unit
-      );
+    // Schedule escalation (after due) — uses coordinator escalation alerts
+    if (settings.coordinator.escalationAlerts.assigneeNotStartedDays !== null) {
+      const escalationMs = dueUnitToMs(settings.coordinator.escalationAlerts.assigneeNotStartedDays, 'DAYS');
       const escalationAt = new Date(dueAt.getTime() + escalationMs);
       await scheduleEscalation(stepExecutionId, escalationAt);
     }

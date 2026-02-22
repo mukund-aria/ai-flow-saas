@@ -262,6 +262,29 @@ export async function sendFlowStalled(params: {
   `);
 }
 
+export async function sendChatNotification(params: {
+  to: string;
+  userName: string;
+  senderName: string;
+  flowName: string;
+  messagePreview: string;
+}) {
+  await sendEmail(params.to, `New message from ${params.senderName} in ${params.flowName}`, `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 0;">
+      <h2 style="color: #111; margin-bottom: 16px;">New Message</h2>
+      <p style="color: #555; line-height: 1.6;">
+        Hi ${params.userName}, ${params.senderName} sent a message in <strong>${params.flowName}</strong>:
+      </p>
+      <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin: 16px 0; border-left: 3px solid #7c3aed;">
+        <p style="color: #333; margin: 0; line-height: 1.5;">${params.messagePreview}</p>
+      </div>
+      <a href="${frontendUrl}/flows" style="display: inline-block; margin-top: 12px; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+        View Conversation
+      </a>
+    </div>
+  `);
+}
+
 export async function sendDailyDigest(params: {
   to: string;
   userName: string;

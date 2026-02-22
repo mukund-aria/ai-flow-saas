@@ -91,25 +91,51 @@ export interface AssigneeExperienceConfig {
 
 export type DueUnit = 'HOURS' | 'DAYS' | 'WEEKS';
 
+export type DeliveryChannel = 'AUTO' | 'EMAIL_OR_SMS' | 'EMAIL_AND_SMS';
+
 export interface FlowNotificationSettings {
-  defaultReminder: {
-    enabled: boolean;
-    firstReminderBefore: { value: number; unit: DueUnit };
-    repeatAfterDue: boolean;
-    repeatInterval: { value: number; unit: DueUnit };
-    maxReminders: number;
+  mode: 'default' | 'custom';
+
+  assignee: {
+    actionAlerts: {
+      actionAssigned: boolean;
+      dueDateApproaching: boolean;
+      dueDateApproachingDays: number;
+      actionDue: boolean;
+      actionOverdue: boolean;
+      actionOverdueRepeatDays: number;
+      actionOverdueMaxTimes: number;
+      delivery: DeliveryChannel;
+    };
+    flowCompletion: {
+      flowCompleted: boolean;
+      delivery: DeliveryChannel;
+    };
   };
-  escalation: {
-    enabled: boolean;
-    escalateAfter: { value: number; unit: DueUnit };
-    escalateTo: 'COORDINATOR' | 'CUSTOM_EMAIL';
-    customEmail?: string;
-  };
-  coordinatorNotifications: {
-    stepCompleted: boolean;
-    stepOverdue: boolean;
-    flowCompleted: boolean;
-    flowStalled: boolean;
+
+  coordinator: {
+    actionAlerts: {
+      actionCompleted: boolean;
+      delivery: DeliveryChannel;
+    };
+    flowAlerts: {
+      flowStarted: boolean;
+      flowOverdue: boolean;
+      flowOverdueRepeatDays: number;
+      flowOverdueMaxTimes: number;
+      flowCompleted: boolean;
+      delivery: DeliveryChannel;
+    };
+    escalationAlerts: {
+      noActivityDays: number | null;
+      assigneeNotStartedDays: number | null;
+      automationFailure: boolean;
+      delivery: DeliveryChannel;
+    };
+    chatAlerts: {
+      newMessage: boolean;
+      delivery: DeliveryChannel;
+    };
     dailyDigest: boolean;
   };
 }

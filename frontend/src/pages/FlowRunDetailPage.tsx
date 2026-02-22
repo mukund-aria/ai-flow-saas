@@ -23,12 +23,15 @@ import {
   Users,
   Settings,
   Calendar,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIcon } from '@/components/workflow/StepIcon';
 import { getFlow, cancelFlow, type Flow } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useOnboardingStore } from '@/stores/onboardingStore';
+import { FlowRunChatPanel } from '@/components/flow-chat/FlowRunChatPanel';
+import { useFlowRunChatStore } from '@/stores/flowRunChatStore';
 import type { StepType } from '@/types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
@@ -636,15 +639,26 @@ export function FlowRunDetailPage() {
           <ArrowLeft className="w-4 h-4" />
           Back to Flows
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowSettingsSidebar(!showSettingsSidebar)}
-          className="gap-2 text-gray-600"
-        >
-          <Settings className="w-4 h-4" />
-          Settings
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => useFlowRunChatStore.getState().toggle()}
+            className="gap-2 text-gray-600"
+          >
+            <MessageSquare className="w-4 h-4" />
+            Chat
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSettingsSidebar(!showSettingsSidebar)}
+            className="gap-2 text-gray-600"
+          >
+            <Settings className="w-4 h-4" />
+            Settings
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-6">
@@ -931,6 +945,9 @@ export function FlowRunDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Chat Panel */}
+      {id && <FlowRunChatPanel mode="coordinator" flowRunId={id} />}
     </div>
   );
 }
