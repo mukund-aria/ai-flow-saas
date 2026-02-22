@@ -14,7 +14,7 @@ type SettingsTab = 'general' | 'permissions' | 'assignee' | 'notifications';
 const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
   { id: 'general', label: 'General', icon: Settings },
   { id: 'permissions', label: 'Permissions', icon: Shield },
-  { id: 'assignee', label: 'Assignee Experience', icon: Users },
+  { id: 'assignee', label: 'Assignee', icon: Users },
   { id: 'notifications', label: 'Notifications', icon: Bell },
 ];
 

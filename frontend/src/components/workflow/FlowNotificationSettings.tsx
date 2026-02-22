@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Bell, ChevronDown, ChevronRight, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type { DeliveryChannel, FlowNotificationSettings } from '@/types';
 
@@ -117,7 +116,6 @@ function GroupHeader({ title }: { title: string }) {
 }
 
 export function FlowNotificationSettingsPanel() {
-  const [isExpanded, setIsExpanded] = useState(false);
   const workflow = useWorkflowStore((s) => s.workflow);
   const updateSettings = useWorkflowStore((s) => s.updateNotificationSettings);
 
@@ -131,22 +129,7 @@ export function FlowNotificationSettingsPanel() {
   const isCustom = settings.mode === 'custom';
 
   return (
-    <div className="border border-gray-200 rounded-xl bg-white overflow-hidden">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-3 w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-      >
-        <Bell className="w-4 h-4 text-violet-500" />
-        <span className="flex-1 text-sm font-medium text-gray-900">Notifications & Reminders</span>
-        {isExpanded ? (
-          <ChevronDown className="w-4 h-4 text-gray-400" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-        )}
-      </button>
-
-      {isExpanded && (
-        <div className="px-4 pb-4 space-y-4">
+    <div className="space-y-4">
           {/* Mode Toggle */}
           <div className="flex items-center gap-3">
             <button
@@ -485,8 +468,6 @@ export function FlowNotificationSettingsPanel() {
               </InfoCallout>
             </div>
           )}
-        </div>
-      )}
     </div>
   );
 }
