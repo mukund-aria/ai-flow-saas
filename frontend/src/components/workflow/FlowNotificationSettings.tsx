@@ -1,4 +1,4 @@
-import { Info, RotateCcw, Hash, MessageSquare } from 'lucide-react';
+import { Info, RotateCcw, Hash, MessageSquare, Check } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type { DeliveryChannel, FlowNotificationSettings, SlackIntegrationSettings, ChannelIntegrations, SlackChannelMode, ChannelVisibility, ChannelInviteGroup } from '@/types';
 
@@ -398,23 +398,25 @@ export function FlowNotificationSettingsPanel() {
             <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
               <button
                 onClick={() => update({ ...settings, mode: 'default' })}
-                className={`px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
                   !isCustom
                     ? 'bg-violet-600 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
+                {!isCustom && <Check className="w-3.5 h-3.5" />}
                 Default
               </button>
               <button
                 onClick={() => update({ ...settings, mode: 'custom' })}
-                className={`px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md font-medium transition-colors ${
                   isCustom
                     ? 'bg-violet-600 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Customize
+                {isCustom && <Check className="w-3.5 h-3.5" />}
+                Custom
               </button>
             </div>
             {isCustom && (
