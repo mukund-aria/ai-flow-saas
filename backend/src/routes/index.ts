@@ -8,6 +8,7 @@ import { Router } from 'express';
 import chatRouter from './chat.js';
 import sessionsRouter from './sessions.js';
 import uploadRouter from './upload.js';
+import pdfUploadRouter from './pdf-upload.js';
 import flowsRouter from './flows.js';
 import runsRouter from './runs.js';
 import contactsRouter from './contacts.js';
@@ -53,5 +54,8 @@ router.use('/notifications', notificationsRouter);
 
 // Messages API (in-flow chat conversations)
 router.use('/flows', messagesRouter);
+
+// PDF upload API
+router.use('/pdf', pdfUploadRouter);
 
 export default router;

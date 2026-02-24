@@ -61,6 +61,10 @@ const STEP_TYPE_ICONS: Record<string, React.ElementType> = {
   APPROVAL: ThumbsUp,
   ACKNOWLEDGEMENT: Eye,
   ESIGN: PenTool,
+  DECISION: ArrowRight,
+  PDF_FORM: FileText,
+  CUSTOM_ACTION: CheckSquare,
+  WEB_APP: LayoutGrid,
 };
 
 const STEP_TYPE_COLORS: Record<string, string> = {
@@ -71,6 +75,10 @@ const STEP_TYPE_COLORS: Record<string, string> = {
   APPROVAL: 'bg-amber-100 text-amber-600',
   ACKNOWLEDGEMENT: 'bg-pink-100 text-pink-600',
   ESIGN: 'bg-violet-100 text-violet-600',
+  DECISION: 'bg-orange-100 text-orange-600',
+  PDF_FORM: 'bg-teal-100 text-teal-600',
+  CUSTOM_ACTION: 'bg-indigo-100 text-indigo-600',
+  WEB_APP: 'bg-cyan-100 text-cyan-600',
 };
 
 const COMPLEXITY_COLORS: Record<string, string> = {
@@ -98,25 +106,45 @@ function galleryTemplateToDefinition(template: GalleryTemplate) {
     resolutionType: 'CONTACT_TBD' as const,
   }));
 
-  // Create steps
-  const steps = template.steps.map((step, i) => ({
-    stepId: `${generateStepId()}-${i}`,
-    type: step.type,
-    order: i,
-    config: {
+  // Create steps with sample data from gallery template
+  const steps = template.steps.map((step, i) => {
+    const config: Record<string, unknown> = {
       name: step.name,
       assignee: step.assigneeRole,
-      ...(step.type === 'FORM' ? { formFields: [] } : {}),
-      ...(step.type === 'QUESTIONNAIRE' ? { questionnaire: { questions: [] } } : {}),
-      ...(step.type === 'ESIGN' ? { esign: { signingOrder: 'SEQUENTIAL' } } : {}),
-      ...(step.type === 'FILE_REQUEST' ? { fileRequest: { maxFiles: 5 } } : {}),
-    },
-  }));
+      ...(step.sampleDescription ? { description: step.sampleDescription } : {}),
+    };
+
+    if (step.type === 'FORM') {
+      config.formFields = step.sampleFormFields || [];
+    } else if (step.type === 'QUESTIONNAIRE') {
+      config.questionnaire = { questions: [] };
+    } else if (step.type === 'ESIGN') {
+      config.esign = {
+        signingOrder: 'SEQUENTIAL',
+        ...(step.sampleDocumentRef ? { documentName: step.sampleDocumentRef } : {}),
+      };
+    } else if (step.type === 'PDF_FORM') {
+      config.pdfForm = {
+        fields: [],
+        ...(step.sampleDocumentRef ? { documentDescription: step.sampleDocumentRef } : {}),
+      };
+    } else if (step.type === 'FILE_REQUEST') {
+      config.fileRequest = { maxFiles: 5 };
+    }
+
+    return {
+      stepId: `${generateStepId()}-${i}`,
+      type: step.type,
+      order: i,
+      config,
+    };
+  });
 
   return {
     flowId: `gallery-${template.id}`,
     name: template.name,
     description: template.description,
+    setupInstructions: template.setupInstructions,
     steps,
     milestones: [],
     assigneePlaceholders: placeholders,
@@ -149,8 +177,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
       const q = searchQuery.toLowerCase();
       templates = templates.filter(t =>
         t.name.toLowerCase().includes(q) ||
-        t.description.toLowerCase().includes(q) ||
-        t.tags.some(tag => tag.toLowerCase().includes(q))
+        t.description.toLowerCase().includes(q)
       );
     }
 
@@ -163,7 +190,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
     const source = searchQuery.trim()
       ? GALLERY_TEMPLATES.filter(t => {
           const q = searchQuery.toLowerCase();
-          return t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q) || t.tags.some(tag => tag.toLowerCase().includes(q));
+          return t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q);
         })
       : GALLERY_TEMPLATES;
 
@@ -370,15 +397,18 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                     <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ring-1 ${COMPLEXITY_COLORS[selectedTemplate.complexity] || ''}`}>
                       {selectedTemplate.complexity}
                     </span>
-                    {selectedTemplate.tags.slice(0, 2).map(tag => (
-                      <span key={tag} className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-                        {tag}
-                      </span>
-                    ))}
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">{selectedTemplate.name}</h3>
                   <p className="text-sm text-gray-600 leading-relaxed">{selectedTemplate.description}</p>
                 </div>
+
+                {/* Setup Instructions */}
+                {selectedTemplate.setupInstructions && (
+                  <div className="mb-5 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">Setup Instructions</p>
+                    <p className="text-sm text-amber-800 leading-relaxed">{selectedTemplate.setupInstructions}</p>
+                  </div>
+                )}
 
                 {/* Trigger */}
                 {selectedTemplate.trigger && (

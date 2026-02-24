@@ -36,6 +36,7 @@ export interface TaskContext {
   questionnaire?: any;
   esign?: any;
   fileRequest?: any;
+  pdfForm?: any;
   outcomes?: any[];
   options?: any[];
   expired: boolean;
@@ -123,6 +124,7 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
     questionnaire: step?.config?.questionnaire,
     esign: step?.config?.esign,
     fileRequest: step?.config?.fileRequest,
+    pdfForm: step?.config?.pdfForm,
     outcomes: step?.config?.outcomes,
     options: step?.config?.options,
     expired: new Date() > link.expiresAt,

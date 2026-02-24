@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormFieldsBuilder } from './FormFieldsBuilder';
+import { PDFFormConfigEditor } from './PDFFormConfigEditor';
 import { StepReminderOverride } from './StepReminderOverride';
 import { DDRTextInput } from './DDRTextInput';
 import { Plus, X, GripVertical, Sparkles } from 'lucide-react';
@@ -8,6 +9,7 @@ import { useWorkflowStore } from '@/stores/workflowStore';
 import type {
   Step, StepConfig, AssigneePlaceholder, FormField, BranchPath, DecisionOutcome,
   QuestionnaireConfig, QuestionnaireQuestion, ESignConfig, FileRequestConfig,
+  PDFFormConfig,
   AIAutomationConfig, AIInputField, AIOutputField, AIActionType, AIFieldType,
   SystemEmailConfig, SystemWebhookConfig, SystemChatMessageConfig,
   SystemUpdateWorkspaceConfig, BusinessRuleConfig, BusinessRuleInput,
@@ -1309,6 +1311,12 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
     step.config.systemUpdateWorkspace || { updates: {} }
   );
 
+  // PDF Form config
+  const isPDFFormStep = step.type === 'PDF_FORM';
+  const [pdfFormConfig, setPdfFormConfig] = useState<PDFFormConfig>(
+    step.config.pdfForm || { fields: [] }
+  );
+
   // Business Rule config
   const isBusinessRule = step.type === 'BUSINESS_RULE';
   const [businessRuleConfig, setBusinessRuleConfig] = useState<BusinessRuleConfig>(
@@ -1327,7 +1335,7 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
   const hasAssignee = !['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO', 'GOTO_DESTINATION', 'TERMINATE', ...automationTypes].includes(step.type);
 
   // Steps that support due dates
-  const hasDueDate = ['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION', 'ACKNOWLEDGEMENT', 'ESIGN'].includes(step.type);
+  const hasDueDate = ['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION', 'ACKNOWLEDGEMENT', 'ESIGN', 'PDF_FORM'].includes(step.type);
 
   const handleSave = () => {
     const updates: Partial<StepConfig> = {
@@ -1385,6 +1393,10 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
 
     if (isSystemUpdateWorkspace) {
       updates.systemUpdateWorkspace = systemUpdateWorkspaceConfig;
+    }
+
+    if (isPDFFormStep) {
+      updates.pdfForm = pdfFormConfig;
     }
 
     if (isBusinessRule) {
@@ -1540,6 +1552,14 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
       {isFileRequestStep && (
         <div className="mb-4 pt-3 border-t border-gray-100">
           <FileRequestConfigEditor config={fileRequestConfig} onChange={setFileRequestConfig} />
+        </div>
+      )}
+
+      {/* PDF Form Config */}
+      {isPDFFormStep && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <label className="text-xs font-semibold text-gray-600 block mb-3">PDF Form Configuration</label>
+          <PDFFormConfigEditor config={pdfFormConfig} onChange={setPdfFormConfig} />
         </div>
       )}
 

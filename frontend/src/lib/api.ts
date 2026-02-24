@@ -551,6 +551,42 @@ export async function toggleContactStatus(id: string, status: 'ACTIVE' | 'INACTI
 }
 
 // ============================================================================
+// PDF Upload API
+// ============================================================================
+
+export interface PDFUploadResult {
+  documentUrl: string;
+  fileName: string;
+  fileSize: number;
+  pageCount: number;
+  fields: Array<{
+    fieldId: string;
+    pdfFieldName: string;
+    label: string;
+    fieldType: 'text' | 'checkbox' | 'dropdown' | 'radio' | 'signature';
+    required: boolean;
+    options?: string[];
+  }>;
+}
+
+/**
+ * Upload a PDF and detect its fillable form fields
+ */
+export async function uploadPDF(file: File): Promise<PDFUploadResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_BASE}/pdf/upload`, {
+    ...fetchOpts,
+    method: 'POST',
+    body: formData,
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to upload PDF');
+  return data.data;
+}
+
+// ============================================================================
 // Stream Event Types
 // ============================================================================
 

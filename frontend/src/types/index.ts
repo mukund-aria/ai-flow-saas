@@ -416,9 +416,11 @@ export interface PDFFormField {
   fieldId: string;
   pdfFieldName: string;
   label: string;
+  fieldType?: 'text' | 'checkbox' | 'dropdown' | 'radio' | 'signature';
   required?: boolean;
   readOnly?: boolean;
   defaultValue?: string;
+  options?: string[];
   dataRef?: string; // Dynamic data reference for pre-population
 }
 

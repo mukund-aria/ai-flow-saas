@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   XCircle,
   Users,
+  Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIcon } from '@/components/workflow/StepIcon';
@@ -146,11 +147,13 @@ export function TemplateDetailPage() {
     | {
         steps?: Step[];
         assigneePlaceholders?: AssigneePlaceholder[];
+        setupInstructions?: string;
       }
     | undefined;
   const steps: Step[] = definition?.steps || [];
   const assigneePlaceholders: AssigneePlaceholder[] =
     definition?.assigneePlaceholders || [];
+  const setupInstructions: string | undefined = definition?.setupInstructions;
 
   // Fetch template and runs
   const fetchData = useCallback(async () => {
@@ -337,6 +340,17 @@ export function TemplateDetailPage() {
           </Button>
         </div>
       </div>
+
+      {/* Setup Instructions Banner */}
+      {setupInstructions && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+          <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Setup Instructions</p>
+            <p className="text-sm text-amber-700 mt-0.5 leading-relaxed">{setupInstructions}</p>
+          </div>
+        </div>
+      )}
 
       {/* Two-column layout for steps and roles */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

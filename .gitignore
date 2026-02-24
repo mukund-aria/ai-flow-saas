@@ -77,6 +77,10 @@ backend/data/*.sqlite
 # Drizzle generated migrations (generated at build time)
 backend/drizzle/
 
+# Uploaded files (keep .gitkeep)
+backend/uploads/**
+!backend/uploads/.gitkeep
+
 # Misc
 *.bak
 *.tmp
