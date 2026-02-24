@@ -1,0 +1,137 @@
+# AI_EXTRACT Step Type Definition
+stepType: AI_EXTRACT
+category: AUTOMATION
+displayName: "AI Extract"
+description: "Extract structured data from documents, forms, or unstructured text using AI"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What data is being extracted"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: inputs
+      type: inputRef[]
+      required: true
+      constraints:
+        min: 1
+      description: "Source documents or text to extract data from"
+
+    - name: extractionSchema
+      type: extractionField[]
+      required: true
+      constraints:
+        min: 1
+      description: "Fields to extract with their expected types"
+
+    - name: prompt
+      type: string
+      required: false
+      description: "Optional additional instructions for extraction"
+
+    - name: knowledge
+      type: knowledgeConfig
+      required: false
+      description: "Optional knowledge sources to improve extraction accuracy"
+
+    - name: options.confidenceThreshold
+      type: number
+      required: false
+      default: 0.8
+      description: "Minimum confidence score (0-1) to accept extracted values"
+
+    - name: options.onLowConfidence
+      type: enum
+      required: false
+      default: FLAG
+      values: [FLAG, SKIP, ESCALATE]
+      description: "What to do when extraction confidence is below threshold"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+# Extraction field structure
+extractionFieldSchema:
+  fields:
+    - name: fieldName
+      type: string
+      required: true
+      description: "Name for the extracted field (e.g., 'client_name', 'invoice_total')"
+    - name: fieldType
+      type: enum
+      required: true
+      values: [TEXT, NUMBER, DATE, CURRENCY, EMAIL, PHONE, ADDRESS, BOOLEAN]
+      description: "Expected data type of the extracted value"
+    - name: description
+      type: string
+      required: false
+      description: "Hint about where/what this field is (e.g., 'Total amount at bottom of invoice')"
+    - name: required
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "AI extraction runs automatically and produces structured output"
+
+outputs:
+  - name: "ai.extracted.*"
+    type: dynamic
+    description: "Extracted field values keyed by fieldName (e.g., ai.extracted.client_name)"
+  - name: "ai.confidence.*"
+    type: number
+    description: "Confidence scores for each extracted field (0-1)"
+  - name: "ai.flagged"
+    type: string[]
+    description: "List of fields that were flagged due to low confidence"
+
+validationRules:
+  - rule: "inputs.length >= 1"
+    message: "AI extract requires at least one input source"
+  - rule: "extractionSchema.length >= 1"
+    message: "AI extract must define at least one field to extract"
+
+aiGuidance:
+  whenToUse: |
+    Use AI_EXTRACT when structured data needs to be pulled from unstructured sources.
+    Examples: extracting client details from uploaded documents, pulling invoice line
+    items, reading form data from scanned PDFs, parsing email content for key fields.
+
+  whenNotToUse: |
+    - If data is already structured (form submission) -> reference form outputs directly
+    - If summarizing content -> use AI_SUMMARIZE
+    - If transforming/rewriting content -> use AI_WRITE or AI_CUSTOM_PROMPT
+    - If just collecting data from users -> use FORM
+
+  seQuestions:
+    - "What data needs to be extracted (names, dates, amounts, etc.)?"
+    - "From what type of document or content (PDF, form response, email)?"
+    - "Should the extracted data be structured (e.g., key-value pairs, table)?"
+    - "What should happen if extraction confidence is low?"
+
+  defaults:
+    - "Coordinator-only visibility"
+    - "Confidence threshold of 0.8"
+    - "Flag low-confidence extractions for review"
+    - "All defined fields are required unless marked optional"
+
+  examples:
+    - trigger: "extract information from the document"
+      mapsTo: AI_EXTRACT
+    - trigger: "pull the client details from"
+      mapsTo: AI_EXTRACT
+    - trigger: "read the invoice data"
+      mapsTo: AI_EXTRACT
+    - trigger: "parse the uploaded file for"
+      mapsTo: AI_EXTRACT

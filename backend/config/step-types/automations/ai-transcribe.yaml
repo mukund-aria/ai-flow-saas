@@ -1,0 +1,122 @@
+# AI_TRANSCRIBE Step Type Definition
+stepType: AI_TRANSCRIBE
+category: AUTOMATION
+displayName: "AI Transcribe"
+description: "Transcribe audio or video content to text using AI"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What is being transcribed"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: inputs
+      type: inputRef[]
+      required: true
+      constraints:
+        min: 1
+      description: "Audio/video file references or URLs to transcribe"
+
+    - name: sourceType
+      type: enum
+      required: false
+      default: FILE
+      values: [FILE, URL]
+      description: "Whether the source is an uploaded file or a URL"
+
+    - name: sourceLanguage
+      type: string
+      required: false
+      default: "auto"
+      description: "Language of the audio/video content (ISO 639-1 code, or 'auto' for detection)"
+
+    - name: options.includeTimestamps
+      type: boolean
+      required: false
+      default: false
+      description: "Whether to include timestamps in the transcription"
+
+    - name: options.speakerIdentification
+      type: boolean
+      required: false
+      default: false
+      description: "Whether to identify and label different speakers"
+
+    - name: options.maxSpeakers
+      type: number
+      required: false
+      description: "Maximum number of speakers to identify (when speakerIdentification is true)"
+
+    - name: prompt
+      type: string
+      required: false
+      description: "Optional context hints (e.g., domain-specific vocabulary, speaker names)"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "AI transcription runs automatically and produces text output"
+
+outputs:
+  - name: "ai.transcript"
+    type: text
+    description: "The full transcription text"
+  - name: "ai.detectedLanguage"
+    type: string
+    description: "Detected language of the audio/video"
+  - name: "ai.durationSeconds"
+    type: number
+    description: "Duration of the audio/video in seconds"
+  - name: "ai.speakers"
+    type: string[]
+    description: "List of identified speakers (when speakerIdentification is enabled)"
+
+validationRules:
+  - rule: "inputs.length >= 1"
+    message: "AI transcribe requires at least one audio/video source"
+
+aiGuidance:
+  whenToUse: |
+    Use AI_TRANSCRIBE when audio or video content needs to be converted to text.
+    Examples: transcribing client call recordings, meeting recordings, voicemail
+    messages, video depositions, interview recordings, training videos.
+
+  whenNotToUse: |
+    - If the content is already text -> use AI_SUMMARIZE or AI_EXTRACT
+    - If translating text -> use AI_TRANSLATE
+    - If extracting data from documents -> use AI_EXTRACT
+
+  seQuestions:
+    - "What is the source of the audio/video content (uploaded file, URL)?"
+    - "What language is the content in?"
+    - "Should timestamps be included in the transcription?"
+    - "Is speaker identification needed?"
+
+  defaults:
+    - "Coordinator-only visibility"
+    - "Auto-detect source language"
+    - "No timestamps unless requested"
+    - "No speaker identification unless requested"
+    - "File source type unless URL specified"
+
+  examples:
+    - trigger: "transcribe the recording"
+      mapsTo: AI_TRANSCRIBE
+    - trigger: "convert the audio to text"
+      mapsTo: AI_TRANSCRIBE
+    - trigger: "transcribe the meeting"
+      mapsTo: AI_TRANSCRIBE
+    - trigger: "get text from the video"
+      mapsTo: AI_TRANSCRIBE

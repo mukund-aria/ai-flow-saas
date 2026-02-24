@@ -1,0 +1,141 @@
+# SUB_FLOW Step Type Definition
+stepType: SUB_FLOW
+category: CONTROL
+displayName: "Sub Flow"
+description: "Trigger another flow as a child process, optionally passing data and waiting for completion"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: false
+      description: "Optional title describing the sub-flow invocation"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context about why this sub-flow is triggered"
+
+    - name: flowRef
+      type: flowReference
+      required: true
+      description: "Reference to the flow to invoke as a sub-flow"
+
+    - name: inputMappings
+      type: inputMapping[]
+      required: false
+      description: "Data to pass from the parent flow into the sub-flow's kickoff fields"
+
+    - name: outputMappings
+      type: outputMapping[]
+      required: false
+      description: "Data to capture from the sub-flow back into the parent flow"
+
+    - name: waitForCompletion
+      type: boolean
+      required: false
+      default: true
+      description: "Whether the parent flow should wait for the sub-flow to complete"
+
+    - name: timeoutDays
+      type: number
+      required: false
+      description: "Maximum days to wait for sub-flow completion before timing out"
+
+    - name: onTimeout
+      type: enum
+      required: false
+      default: CONTINUE
+      values: [CONTINUE, FAIL, CANCEL_SUB_FLOW]
+      description: "What happens if the sub-flow times out"
+
+# Input mapping structure
+inputMappingSchema:
+  fields:
+    - name: parentRef
+      type: string
+      required: true
+      description: "DDR reference in the parent flow (e.g., '{Kickoff / Client Name}')"
+    - name: subFlowField
+      type: string
+      required: true
+      description: "Kickoff field name in the sub-flow"
+
+# Output mapping structure
+outputMappingSchema:
+  fields:
+    - name: subFlowOutputRef
+      type: string
+      required: true
+      description: "Output reference from the sub-flow"
+    - name: parentOutputKey
+      type: string
+      required: true
+      description: "Key to store the output in the parent flow"
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "Sub-flow step completes when the child flow finishes (if waitForCompletion is true) or immediately after launch"
+
+outputs:
+  - name: "subFlow.status"
+    type: enum
+    values: [COMPLETED, CANCELLED, TIMED_OUT, IN_PROGRESS]
+    description: "Status of the sub-flow execution"
+  - name: "subFlow.runId"
+    type: string
+    description: "The run ID of the launched sub-flow"
+  - name: "subFlow.outputs.*"
+    type: dynamic
+    description: "Mapped outputs from the sub-flow (based on outputMappings)"
+
+specialRules:
+  - "Sub-flows cannot reference themselves (no recursive flows)"
+  - "Maximum sub-flow depth is 3 levels (sub-flow calling a sub-flow calling a sub-flow)"
+  - "The referenced flow must exist and be in ACTIVE status"
+  - "Input mappings must match the sub-flow's kickoff fields"
+  - "Sub-flow runs inherit the parent's organization context"
+
+validationRules:
+  - rule: "flowRef is not empty"
+    message: "Sub-flow step requires a reference to the flow to invoke"
+  - rule: "no circular references"
+    message: "A flow cannot invoke itself as a sub-flow (directly or indirectly)"
+
+aiGuidance:
+  whenToUse: |
+    Use SUB_FLOW when a well-defined subprocess should be delegated to another flow.
+    Examples: triggering an approval workflow from an onboarding flow, running a
+    compliance check flow as part of a deal process, reusing a document collection
+    flow across multiple parent flows.
+
+  whenNotToUse: |
+    - If the steps belong in the current flow -> keep them inline
+    - If you just need parallel work -> use PARALLEL_BRANCH
+    - If you need a simple branch -> use SINGLE_CHOICE_BRANCH
+    - If the sub-process is a one-off -> keep it in the main flow
+
+  seQuestions:
+    - "Which existing flow should be triggered as a sub-flow?"
+    - "What data from the current flow needs to be passed to the sub-flow?"
+    - "Should the parent flow wait for the sub-flow to complete before continuing?"
+    - "Do you need any data back from the sub-flow?"
+    - "What should happen if the sub-flow takes too long?"
+
+  defaults:
+    - "Wait for sub-flow completion before continuing"
+    - "No timeout unless specified"
+    - "Coordinator-only visibility"
+    - "On timeout, continue the parent flow"
+
+  examples:
+    - trigger: "trigger the compliance check flow"
+      mapsTo: SUB_FLOW
+    - trigger: "run the document collection process"
+      mapsTo: SUB_FLOW
+    - trigger: "kick off a separate approval flow"
+      mapsTo: SUB_FLOW
+    - trigger: "delegate to another flow"
+      mapsTo: SUB_FLOW

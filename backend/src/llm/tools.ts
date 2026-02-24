@@ -34,12 +34,24 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                   type: {
                     type: 'string',
                     enum: [
+                      // Human Actions
                       'FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL',
                       'ACKNOWLEDGEMENT', 'ESIGN', 'DECISION', 'CUSTOM_ACTION', 'WEB_APP',
+                      'PDF_FORM',
+                      // Controls
                       'SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH',
                       'GOTO', 'GOTO_DESTINATION', 'TERMINATE', 'WAIT',
-                      'AI_AUTOMATION', 'SYSTEM_WEBHOOK', 'SYSTEM_EMAIL',
-                      'SYSTEM_CHAT_MESSAGE', 'BUSINESS_RULE'
+                      'SUB_FLOW',
+                      // AI Automations
+                      'AI_CUSTOM_PROMPT', 'AI_EXTRACT', 'AI_SUMMARIZE',
+                      'AI_TRANSCRIBE', 'AI_TRANSLATE', 'AI_WRITE',
+                      // System Automations
+                      'SYSTEM_WEBHOOK', 'SYSTEM_EMAIL',
+                      'SYSTEM_CHAT_MESSAGE', 'BUSINESS_RULE',
+                      // Integration Automations
+                      'INTEGRATION_CRM', 'INTEGRATION_PAYMENT', 'INTEGRATION_STORAGE',
+                      'INTEGRATION_CALENDAR', 'INTEGRATION_MESSAGING',
+                      'INTEGRATION_PROJECT_MGMT', 'INTEGRATION_CUSTOM_API'
                     ]
                   },
                   config: {

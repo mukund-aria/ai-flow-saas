@@ -1,0 +1,119 @@
+# AI_SUMMARIZE Step Type Definition
+stepType: AI_SUMMARIZE
+category: AUTOMATION
+displayName: "AI Summarize"
+description: "Summarize documents, form responses, conversations, or other content using AI"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What is being summarized"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: inputs
+      type: inputRef[]
+      required: true
+      constraints:
+        min: 1
+      description: "Content to summarize (documents, form outputs, text)"
+
+    - name: summaryFormat
+      type: enum
+      required: false
+      default: PARAGRAPH
+      values: [PARAGRAPH, BULLET_POINTS, EXECUTIVE_SUMMARY, ACTION_ITEMS, KEY_FINDINGS]
+      description: "Format of the generated summary"
+
+    - name: maxLength
+      type: enum
+      required: false
+      default: MEDIUM
+      values: [BRIEF, MEDIUM, DETAILED]
+      description: "Approximate length of the summary"
+
+    - name: focusAreas
+      type: string[]
+      required: false
+      description: "Specific aspects to focus on in the summary"
+
+    - name: prompt
+      type: string
+      required: false
+      description: "Optional additional instructions for summarization"
+
+    - name: knowledge
+      type: knowledgeConfig
+      required: false
+      description: "Optional knowledge sources for context"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "AI summarization runs automatically and produces a summary"
+
+outputs:
+  - name: "ai.summary"
+    type: text
+    description: "The generated summary"
+  - name: "ai.summaryFormat"
+    type: string
+    description: "The format used for the summary"
+  - name: "ai.inputWordCount"
+    type: number
+    description: "Word count of the input content"
+  - name: "ai.summaryWordCount"
+    type: number
+    description: "Word count of the generated summary"
+
+validationRules:
+  - rule: "inputs.length >= 1"
+    message: "AI summarize requires at least one input source"
+
+aiGuidance:
+  whenToUse: |
+    Use AI_SUMMARIZE when content needs to be condensed into a shorter form.
+    Examples: summarizing meeting notes, creating executive summaries of reports,
+    condensing form responses for manager review, extracting action items from
+    conversations, distilling long documents into key points.
+
+  whenNotToUse: |
+    - If extracting specific data fields -> use AI_EXTRACT
+    - If writing new content from scratch -> use AI_WRITE
+    - If translating content -> use AI_TRANSLATE
+    - If the summary needs heavy analysis/recommendations -> use AI_CUSTOM_PROMPT
+
+  seQuestions:
+    - "What content needs to be summarized (document, form responses, conversation)?"
+    - "How long should the summary be (brief, detailed, bullet points)?"
+    - "What format should the summary follow (executive summary, action items, etc.)?"
+    - "Are there specific aspects to focus on or ignore?"
+
+  defaults:
+    - "Coordinator-only visibility"
+    - "Paragraph format unless specified"
+    - "Medium length unless specified"
+    - "No focus areas (summarize all content)"
+
+  examples:
+    - trigger: "summarize the responses"
+      mapsTo: AI_SUMMARIZE
+    - trigger: "create a summary of"
+      mapsTo: AI_SUMMARIZE
+    - trigger: "condense the document"
+      mapsTo: AI_SUMMARIZE
+    - trigger: "extract key points from"
+      mapsTo: AI_SUMMARIZE
+    - trigger: "create action items from"
+      mapsTo: AI_SUMMARIZE

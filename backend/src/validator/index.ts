@@ -70,6 +70,7 @@ export function validateWorkflow(
   validateStepTypes(flow, addIssue, options.mode);
   validateMainPathSteps(flow, addIssue);
   validateBranching(flow, addIssue);
+  validateBranchConditions(flow, addIssue);
   validateDecisions(flow, addIssue);
   validateGotoDestinations(flow, addIssue);
   validateTerminateSteps(flow, addIssue);
@@ -364,6 +365,120 @@ function validateBranching(flow: Flow, addIssue: IssueAdder): void {
       validateBranchStep(step, `steps[${i}]`, 1);
     }
   }
+}
+
+/**
+ * Valid condition types for branch paths
+ */
+const VALID_CONDITION_TYPES = ['EQUALS', 'NOT_EQUALS', 'CONTAINS', 'NOT_CONTAINS', 'NOT_EMPTY', 'ELSE'];
+const VALID_CONDITION_LOGIC = ['ALL', 'ANY'];
+const MAX_CONDITIONS_PER_PATH = 10;
+
+/**
+ * Validate branch path conditions (condition types, multiple conditions, conditionLogic)
+ */
+function validateBranchConditions(flow: Flow, addIssue: IssueAdder): void {
+  function validatePathConditions(
+    branchPath: { pathId: string; condition?: { type: string }; conditions?: Array<{ type: string }>; conditionLogic?: string; steps: Step[] },
+    stepPath: string,
+    pathIndex: number
+  ): void {
+    const pathPath = `${stepPath}.paths[${pathIndex}]`;
+
+    // Validate single condition type
+    if (branchPath.condition) {
+      if (!VALID_CONDITION_TYPES.includes(branchPath.condition.type)) {
+        addIssue({
+          path: `${pathPath}.condition.type`,
+          rule: 'INVALID_CONDITION_TYPE',
+          message: `Invalid condition type: ${branchPath.condition.type}. Valid types: ${VALID_CONDITION_TYPES.join(', ')}`,
+          severity: 'error',
+        });
+      }
+    }
+
+    // Validate multiple conditions
+    if (branchPath.conditions && Array.isArray(branchPath.conditions)) {
+      if (branchPath.conditions.length > MAX_CONDITIONS_PER_PATH) {
+        addIssue({
+          path: `${pathPath}.conditions`,
+          rule: 'MAX_CONDITIONS_PER_PATH',
+          message: `Path has ${branchPath.conditions.length} conditions, maximum is ${MAX_CONDITIONS_PER_PATH}`,
+          severity: 'error',
+        });
+      }
+
+      for (let ci = 0; ci < branchPath.conditions.length; ci++) {
+        const cond = branchPath.conditions[ci];
+        if (!VALID_CONDITION_TYPES.includes(cond.type)) {
+          addIssue({
+            path: `${pathPath}.conditions[${ci}].type`,
+            rule: 'INVALID_CONDITION_TYPE',
+            message: `Invalid condition type: ${cond.type}. Valid types: ${VALID_CONDITION_TYPES.join(', ')}`,
+            severity: 'error',
+          });
+        }
+      }
+
+      // conditionLogic is required when multiple conditions are present
+      if (branchPath.conditions.length > 1) {
+        if (!branchPath.conditionLogic) {
+          addIssue({
+            path: `${pathPath}.conditionLogic`,
+            rule: 'REQUIRED_FIELD',
+            message: `conditionLogic is required when multiple conditions are specified (use 'ALL' or 'ANY')`,
+            severity: 'error',
+          });
+        } else if (!VALID_CONDITION_LOGIC.includes(branchPath.conditionLogic)) {
+          addIssue({
+            path: `${pathPath}.conditionLogic`,
+            rule: 'INVALID_CONDITION_LOGIC',
+            message: `Invalid conditionLogic: ${branchPath.conditionLogic}. Valid values: ${VALID_CONDITION_LOGIC.join(', ')}`,
+            severity: 'error',
+          });
+        }
+      }
+    }
+
+    // Validate conditionLogic value if present
+    if (branchPath.conditionLogic && !VALID_CONDITION_LOGIC.includes(branchPath.conditionLogic)) {
+      addIssue({
+        path: `${pathPath}.conditionLogic`,
+        rule: 'INVALID_CONDITION_LOGIC',
+        message: `Invalid conditionLogic: ${branchPath.conditionLogic}. Valid values: ${VALID_CONDITION_LOGIC.join(', ')}`,
+        severity: 'error',
+      });
+    }
+  }
+
+  function findBranchSteps(steps: Step[], basePath: string): void {
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      const stepPath = `${basePath}[${i}]`;
+
+      if (isBranchStep(step)) {
+        for (let pi = 0; pi < step.paths.length; pi++) {
+          const branchPath = step.paths[pi] as unknown as {
+            pathId: string;
+            condition?: { type: string };
+            conditions?: Array<{ type: string }>;
+            conditionLogic?: string;
+            steps: Step[];
+          };
+          validatePathConditions(branchPath, stepPath, pi);
+
+          // Recurse into nested steps
+          findBranchSteps(branchPath.steps, `${stepPath}.paths[${pi}].steps`);
+        }
+      } else if (isDecisionStep(step)) {
+        for (const outcome of step.outcomes) {
+          findBranchSteps(outcome.steps, `${stepPath}.outcomes[${outcome.outcomeId}].steps`);
+        }
+      }
+    }
+  }
+
+  findBranchSteps(flow.steps, 'steps');
 }
 
 /**

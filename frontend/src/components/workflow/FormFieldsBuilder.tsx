@@ -10,7 +10,10 @@ interface FormFieldsBuilderProps {
 }
 
 const hasOptions = (type: FormFieldType) =>
-  ['SINGLE_SELECT', 'MULTI_SELECT', 'DROPDOWN'].includes(type);
+  ['SINGLE_SELECT', 'MULTI_SELECT', 'DROPDOWN', 'DYNAMIC_DROPDOWN'].includes(type);
+
+const isLayoutField = (type: FormFieldType) =>
+  ['HEADING', 'PARAGRAPH', 'IMAGE', 'PAGE_BREAK', 'LINE_SEPARATOR'].includes(type);
 
 function generateFieldId(): string {
   return `field-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -213,8 +216,63 @@ function FieldEditor({
             />
           </div>
 
+          {/* Layout field previews */}
+          {field.type === 'IMAGE' && (
+            <div className="border border-dashed border-gray-300 rounded-lg p-4 text-center">
+              <div className="text-gray-400 text-xs">Image element — displays a static image in the form</div>
+              <div className="mt-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Image URL</label>
+                <input
+                  type="text"
+                  value={field.placeholder || ''}
+                  onChange={(e) => onUpdate({ placeholder: e.target.value || undefined })}
+                  placeholder="https://example.com/image.png"
+                  className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          )}
+
+          {field.type === 'PAGE_BREAK' && (
+            <div className="flex items-center gap-3 py-2">
+              <div className="flex-1 border-t-2 border-dashed border-gray-300" />
+              <span className="text-xs text-gray-400 font-medium">PAGE BREAK</span>
+              <div className="flex-1 border-t-2 border-dashed border-gray-300" />
+            </div>
+          )}
+
+          {field.type === 'LINE_SEPARATOR' && (
+            <div className="flex items-center gap-3 py-2">
+              <div className="flex-1 border-t border-gray-300" />
+              <span className="text-xs text-gray-400 font-medium">SEPARATOR</span>
+              <div className="flex-1 border-t border-gray-300" />
+            </div>
+          )}
+
+          {field.type === 'SIGNATURE' && (
+            <div className="border border-dashed border-gray-300 rounded-lg p-3 bg-gray-50">
+              <div className="text-xs text-gray-500 font-medium">Signature capture area</div>
+              <div className="h-12 border-b border-gray-300 mt-2" />
+              <div className="text-xs text-gray-400 mt-1 text-center">Sign above</div>
+            </div>
+          )}
+
+          {field.type === 'DYNAMIC_DROPDOWN' && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Data Source</label>
+              <input
+                type="text"
+                value={field.helpText || ''}
+                onChange={(e) => onUpdate({ helpText: e.target.value || undefined })}
+                placeholder="Reference a prior step output for dynamic options..."
+                className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              />
+              <p className="text-xs text-gray-400 mt-1">Options will be populated from a prior step's output data</p>
+            </div>
+          )}
+
           {/* Required toggle (not for layout fields) */}
-          {!['HEADING', 'PARAGRAPH'].includes(field.type) && (
+          {!isLayoutField(field.type) && (
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"

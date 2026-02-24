@@ -1,0 +1,126 @@
+# PDF_FORM Step Type Definition
+stepType: PDF_FORM
+category: HUMAN_ACTION
+displayName: "PDF Form"
+description: "Fill a PDF template with flow data and optionally collect signatures or manual entries"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "PDF form step title displayed to assignees"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional instructions for filling the PDF form"
+
+    - name: assignees
+      type: assignee[]
+      required: true
+      constraints:
+        min: 1
+      description: "Who should fill out or review the PDF form"
+
+    - name: due
+      type: relativeDue
+      required: false
+      description: "When the PDF form should be completed"
+
+    - name: pdfTemplate
+      type: fileRef
+      required: true
+      description: "Reference to the PDF template file to fill"
+
+    - name: fieldMappings
+      type: fieldMapping[]
+      required: false
+      description: "Mappings from flow data (DDR references) to PDF form fields"
+
+    - name: manualFields
+      type: string[]
+      required: false
+      description: "PDF fields that assignees fill in manually (not auto-populated)"
+
+    - name: options.requireReview
+      type: boolean
+      required: false
+      default: false
+      description: "Whether a reviewer must approve the filled PDF before proceeding"
+
+    - name: options.allowDownload
+      type: boolean
+      required: false
+      default: true
+      description: "Whether assignees can download the filled PDF"
+
+    - name: options.visibleToAllAssignees
+      type: boolean
+      required: false
+      default: false
+
+# Field mapping structure
+fieldMappingSchema:
+  fields:
+    - name: pdfFieldName
+      type: string
+      required: true
+      description: "Name of the field in the PDF template"
+    - name: sourceRef
+      type: string
+      required: true
+      description: "DDR reference to flow data (e.g., '{Kickoff / Client Name}')"
+
+completion:
+  multipleAssignees: true
+  completionMode: ANY_ONE
+  sequentialSupported: true
+  description: "Assignee reviews auto-populated fields, fills manual fields, and submits the completed PDF"
+
+outputs:
+  - name: "pdfForm.filledPdf"
+    type: file
+    description: "The completed PDF document"
+  - name: "pdfForm.fields.*"
+    type: dynamic
+    description: "Individual field values from the filled PDF"
+
+validationRules:
+  - rule: "pdfTemplate is provided"
+    message: "PDF form requires a PDF template file"
+  - rule: "assignees.length >= 1"
+    message: "PDF form requires at least one assignee"
+
+aiGuidance:
+  whenToUse: |
+    Use PDF_FORM when a pre-existing PDF template needs to be filled with flow data.
+    Examples: tax forms, compliance documents, government forms, contracts with fill-in fields,
+    insurance claim forms, onboarding paperwork.
+
+  whenNotToUse: |
+    - If collecting freeform data without a PDF template -> use FORM
+    - If the document just needs to be signed -> use ESIGN
+    - If just viewing/acknowledging a PDF -> use ACKNOWLEDGEMENT
+
+  seQuestions:
+    - "Do you have the PDF template that needs to be filled?"
+    - "Which fields should be auto-populated from earlier steps?"
+    - "Are there fields the assignee needs to fill in manually?"
+    - "Should someone review the filled PDF before it proceeds?"
+
+  defaults:
+    - "Auto-populate all mappable fields from flow data"
+    - "Allow download of completed PDF"
+    - "No review gate unless explicitly requested"
+    - "Visible only to assignee unless specified otherwise"
+
+  examples:
+    - trigger: "fill out the tax form"
+      mapsTo: PDF_FORM
+    - trigger: "populate the PDF with client data"
+      mapsTo: PDF_FORM
+    - trigger: "complete the government form"
+      mapsTo: PDF_FORM
+    - trigger: "fill in the insurance claim"
+      mapsTo: PDF_FORM

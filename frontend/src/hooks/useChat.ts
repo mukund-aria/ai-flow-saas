@@ -552,7 +552,7 @@ export function useChat() {
       }
       if (selections.aiAutomation) {
         const value = typeof selections.aiAutomation === 'string' ? selections.aiAutomation : 'yes';
-        enhancementParts.push(`• **Add AI automation:** ${value}`);
+        enhancementParts.push(`• **Add AI automation:** ${value} (available AI types: AI_EXTRACT for data extraction, AI_SUMMARIZE for summaries, AI_TRANSLATE for translations, AI_TRANSCRIBE for transcription, AI_WRITE for content generation, AI_CUSTOM_PROMPT for custom tasks)`);
       }
       if (selections.integrations) {
         const value = typeof selections.integrations === 'string' ? selections.integrations : 'yes';
@@ -603,7 +603,7 @@ export function useChat() {
 
         // Add a simple guidance message
         addAssistantMessage(
-          `No problem! You can always ask me to add milestones, AI automation, integrations, or update permissions later.\n\nJust tell me what you'd like to change!`,
+          `No problem! You can always ask me to add milestones, AI automation (extraction, summarization, translation, and more), integrations, or update permissions later.\n\nJust tell me what you'd like to change!`,
           'create'
         );
       }

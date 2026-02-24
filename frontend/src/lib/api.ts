@@ -481,10 +481,24 @@ export interface Contact {
   id: string;
   name: string;
   email: string;
-  type: 'ADMIN' | 'ASSIGNEE';
+  type: 'ADMIN' | 'MEMBER' | 'ASSIGNEE';
   status: 'ACTIVE' | 'INACTIVE';
   createdAt?: string;
   updatedAt?: string;
+}
+
+/**
+ * Get an action token for a coordinator to act on a step
+ */
+export async function getStepActToken(runId: string, stepId: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/flows/${runId}/steps/${stepId}/act-token`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to get action token');
+  return data.data.token;
 }
 
 export async function listContacts(): Promise<Contact[]> {

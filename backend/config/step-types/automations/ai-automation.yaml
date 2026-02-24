@@ -1,8 +1,32 @@
 # AI_AUTOMATION Step Type Definition
+#
+# ============================================================================
+# DEPRECATED: This generic AI_AUTOMATION type has been replaced by 6
+# specialized AI step types. Use the appropriate specialized type instead:
+#
+#   - AI_CUSTOM_PROMPT  -> Custom AI tasks (analysis, classification, etc.)
+#   - AI_EXTRACT        -> Extract structured data from documents/text
+#   - AI_SUMMARIZE      -> Summarize documents, conversations, responses
+#   - AI_TRANSCRIBE     -> Transcribe audio/video to text
+#   - AI_TRANSLATE      -> Translate content between languages
+#   - AI_WRITE          -> Generate written content (emails, reports, letters)
+#
+# See the individual YAML files in this directory for full definitions.
+# This file is kept for backward compatibility with existing flows.
+# ============================================================================
+
 stepType: AI_AUTOMATION
 category: AUTOMATION
-displayName: "AI Automation"
-description: "Automated AI task that processes inputs and produces outputs"
+displayName: "AI Automation (Legacy)"
+description: "DEPRECATED - Use specialized AI types instead: AI_CUSTOM_PROMPT, AI_EXTRACT, AI_SUMMARIZE, AI_TRANSCRIBE, AI_TRANSLATE, AI_WRITE"
+deprecated: true
+replacedBy:
+  - AI_CUSTOM_PROMPT
+  - AI_EXTRACT
+  - AI_SUMMARIZE
+  - AI_TRANSCRIBE
+  - AI_TRANSLATE
+  - AI_WRITE
 
 schema:
   fields:
@@ -97,37 +121,23 @@ validationRules:
 
 aiGuidance:
   whenToUse: |
-    Use AI_AUTOMATION when AI should perform a task automatically.
-    Examples: data extraction, summarization, classification, preparation.
-    The AI acts independently and produces outputs for later steps.
+    DEPRECATED: Do not use AI_AUTOMATION for new flows. Instead, choose the
+    most specific AI type:
+    - Extracting data -> AI_EXTRACT
+    - Summarizing -> AI_SUMMARIZE
+    - Translating -> AI_TRANSLATE
+    - Transcribing -> AI_TRANSCRIBE
+    - Writing content -> AI_WRITE
+    - Custom/other -> AI_CUSTOM_PROMPT
 
   whenNotToUse: |
-    - If human review is needed → use appropriate action with AI assistance
-    - If just sending data → use SYSTEM_WEBHOOK
+    - Do not use this type for new flows
+    - Migrate existing flows to specialized types when possible
 
-  seQuestions:
-    - "What should the AI do with this data?"
-    - "What inputs does the AI need?"
-    - "What should the AI output?"
-    - "Should we escalate to a human if AI cannot complete the task?"
-
-  defaults:
-    - "Coordinator-only visibility"
-    - "Use default Moxo AI model"
-
-  proactiveOpportunities:
-    - "Data extraction from uploaded documents"
-    - "Summarizing form responses"
-    - "Pre-filling forms based on prior data"
-    - "Reviewing submissions for completeness"
-    - "Drafting communications"
-
-  examples:
-    - trigger: "extract information from"
-      mapsTo: AI_AUTOMATION
-    - trigger: "summarize the"
-      mapsTo: AI_AUTOMATION
-    - trigger: "AI should"
-      mapsTo: AI_AUTOMATION
-    - trigger: "automatically analyze"
-      mapsTo: AI_AUTOMATION
+  migrationGuide:
+    AI_EXTRACT: "If prompt mentions 'extract', 'pull out', 'parse', or 'read from'"
+    AI_SUMMARIZE: "If prompt mentions 'summarize', 'condense', 'key points', or 'brief'"
+    AI_TRANSLATE: "If prompt mentions 'translate', 'convert to [language]', or 'localize'"
+    AI_TRANSCRIBE: "If inputs are audio/video files or URLs"
+    AI_WRITE: "If prompt mentions 'write', 'draft', 'compose', 'generate [content type]'"
+    AI_CUSTOM_PROMPT: "For everything else (classify, analyze, validate, score, etc.)"

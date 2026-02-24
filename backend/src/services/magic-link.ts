@@ -5,7 +5,7 @@
  */
 
 import { db } from '../db/client.js';
-import { magicLinks, stepExecutions, flowRuns, flows, contacts } from '../db/schema.js';
+import { magicLinks, stepExecutions, flowRuns, flows, contacts, users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
 export async function createMagicLink(stepExecutionId: string, expiresInHours = 168): Promise<string> {
@@ -36,6 +36,8 @@ export interface TaskContext {
   questionnaire?: any;
   esign?: any;
   fileRequest?: any;
+  outcomes?: any[];
+  options?: any[];
   expired: boolean;
   completed: boolean;
 }
@@ -61,8 +63,8 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
 
   if (!run) return null;
 
-  // Get contact info
-  let contactName = 'Assignee';
+  // Get assignee info (contact or user)
+  let contactName = 'Participant';
   let contactEmail = '';
   if (stepExec.assignedToContactId) {
     const contact = await db.query.contacts.findFirst({
@@ -71,6 +73,14 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
     if (contact) {
       contactName = contact.name;
       contactEmail = contact.email;
+    }
+  } else if (stepExec.assignedToUserId) {
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, stepExec.assignedToUserId),
+    });
+    if (user) {
+      contactName = user.name;
+      contactEmail = user.email;
     }
   }
 
@@ -113,6 +123,8 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
     questionnaire: step?.config?.questionnaire,
     esign: step?.config?.esign,
     fileRequest: step?.config?.fileRequest,
+    outcomes: step?.config?.outcomes,
+    options: step?.config?.options,
     expired: new Date() > link.expiresAt,
     completed: !!link.usedAt || stepExec.status === 'COMPLETED',
   };

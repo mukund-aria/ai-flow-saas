@@ -3,8 +3,55 @@
 #
 # Version history tracked in git
 
-version: "1.0"
-lastUpdated: "2025-01-23"
+version: "1.1"
+lastUpdated: "2026-02-23"
+
+# Step type classifications
+stepTypes:
+  humanActions:
+    - FORM
+    - QUESTIONNAIRE
+    - FILE_REQUEST
+    - TODO
+    - APPROVAL
+    - ACKNOWLEDGEMENT
+    - ESIGN
+    - DECISION
+    - CUSTOM_ACTION
+    - WEB_APP
+    - PDF_FORM
+
+  controls:
+    - SINGLE_CHOICE_BRANCH
+    - MULTI_CHOICE_BRANCH
+    - PARALLEL_BRANCH
+    - GOTO
+    - GOTO_DESTINATION
+    - TERMINATE
+    - WAIT
+    - SUB_FLOW
+
+  automations:
+    ai:
+      - AI_CUSTOM_PROMPT
+      - AI_EXTRACT
+      - AI_SUMMARIZE
+      - AI_TRANSCRIBE
+      - AI_TRANSLATE
+      - AI_WRITE
+    system:
+      - SYSTEM_WEBHOOK
+      - SYSTEM_EMAIL
+      - SYSTEM_CHAT_MESSAGE
+      - BUSINESS_RULE
+    integrations:
+      - INTEGRATION_CRM
+      - INTEGRATION_PAYMENT
+      - INTEGRATION_STORAGE
+      - INTEGRATION_CALENDAR
+      - INTEGRATION_MESSAGING
+      - INTEGRATION_PROJECT_MGMT
+      - INTEGRATION_CUSTOM_API
 
 branching:
   # Maximum number of parallel paths in a PARALLEL_BRANCH
@@ -12,6 +59,17 @@ branching:
 
   # Maximum number of outcomes in a DECISION step
   maxDecisionOutcomes: 3
+
+  # Maximum number of conditional paths in a SINGLE_CHOICE_BRANCH
+  singleChoiceBranchMaxPaths: 3
+
+  # Maximum number of rules per path in a SINGLE_CHOICE_BRANCH
+  singleChoiceBranchMaxRulesPerPath: 10
+
+  # Supported condition logic for SINGLE_CHOICE_BRANCH rules
+  singleChoiceBranchConditionLogic:
+    - ALL
+    - ANY
 
   # Maximum nesting depth for branches (branch inside branch)
   maxNestingDepth: 2
@@ -56,7 +114,10 @@ variables:
 
 features:
   # Subflow support (nested flows calling other flows)
-  subflowSupported: false
+  subflowSupported: true
+
+  # PDF Form support (fill PDF templates with flow data)
+  pdfFormSupported: true
 
 # Multi-assignee completion modes
 completionModes:

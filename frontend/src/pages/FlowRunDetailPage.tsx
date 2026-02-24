@@ -24,10 +24,11 @@ import {
   Settings,
   Calendar,
   MessageSquare,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIcon } from '@/components/workflow/StepIcon';
-import { getFlow, cancelFlow, type Flow } from '@/lib/api';
+import { getFlow, cancelFlow, getStepActToken, type Flow } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { FlowRunChatPanel } from '@/components/flow-chat/FlowRunChatPanel';
@@ -243,6 +244,7 @@ export function FlowRunDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [actingOnStep, setActingOnStep] = useState<string | null>(null);
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [collapsedMilestones, setCollapsedMilestones] = useState<Set<string>>(new Set());
   const [showSettingsSidebar, setShowSettingsSidebar] = useState(false);
@@ -389,6 +391,20 @@ export function FlowRunDetailPage() {
       console.error('Failed to send reminder:', err);
     } finally {
       setSendingReminder(null);
+    }
+  };
+
+  // Handle coordinator acting on a step - opens task view in new tab
+  const handleActOnStep = async (step: FlowRunStep) => {
+    if (!run) return;
+    setActingOnStep(step.id);
+    try {
+      const token = await getStepActToken(run.id, step.stepId);
+      window.open(`/task/${token}`, '_blank');
+    } catch (err) {
+      console.error('Failed to get action token:', err);
+    } finally {
+      setActingOnStep(null);
     }
   };
 
@@ -555,6 +571,24 @@ export function FlowRunDetailPage() {
 
         {/* Actions & Timestamp */}
         <div className="flex items-center gap-2">
+          {/* Act button - coordinator can open the action-taking view */}
+          {(step.status === 'IN_PROGRESS' || step.status === 'WAITING_FOR_ASSIGNEE') && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => handleActOnStep(step)}
+              disabled={actingOnStep === step.id}
+              className="gap-1.5 text-xs h-7 bg-violet-600 hover:bg-violet-700"
+            >
+              {actingOnStep === step.id ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <ExternalLink className="w-3 h-3" />
+              )}
+              Act
+            </Button>
+          )}
+
           {/* Send Reminder button - only for active steps with assignees */}
           {(step.status === 'IN_PROGRESS' || step.status === 'WAITING_FOR_ASSIGNEE') && step.assignee && (
             <Button

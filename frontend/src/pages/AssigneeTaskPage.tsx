@@ -31,6 +31,8 @@ import {
   X,
   File as FileIcon,
   MessageSquare,
+  MousePointerClick,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FlowRunChatPanel } from '@/components/flow-chat/FlowRunChatPanel';
@@ -95,6 +97,12 @@ function getStepTypeIcon(stepType: string) {
       return <PenTool className={iconClass} />;
     case 'DECISION':
       return <HelpCircle className={iconClass} />;
+    case 'PDF_FORM':
+      return <FileCheck className={iconClass} />;
+    case 'CUSTOM_ACTION':
+      return <MousePointerClick className={iconClass} />;
+    case 'WEB_APP':
+      return <ExternalLink className={iconClass} />;
     default:
       return <FileText className={iconClass} />;
   }
@@ -110,6 +118,9 @@ function getStepTypeLabel(stepType: string): string {
     case 'ACKNOWLEDGEMENT': return 'Acknowledgement';
     case 'ESIGN': return 'E-Sign';
     case 'DECISION': return 'Decision';
+    case 'PDF_FORM': return 'PDF Form';
+    case 'CUSTOM_ACTION': return 'Custom Action';
+    case 'WEB_APP': return 'Web App';
     default: return 'Task';
   }
 }
@@ -390,6 +401,29 @@ export function AssigneeTaskPage() {
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                           ))}
                         </select>
+                      ) : field.type === 'MULTI_SELECT' ? (
+                        <div className="space-y-2">
+                          {(field.options || []).map(opt => {
+                            const currentValues = (formData[field.fieldId] || '').split(',').filter(Boolean);
+                            const isChecked = currentValues.includes(opt.value);
+                            return (
+                              <label key={opt.value} className="flex items-center gap-2.5 py-2 px-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    const updated = isChecked
+                                      ? currentValues.filter(v => v !== opt.value)
+                                      : [...currentValues, opt.value];
+                                    setFormData(prev => ({ ...prev, [field.fieldId]: updated.join(',') }));
+                                  }}
+                                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">{opt.label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
                       ) : (
                         <input
                           type={field.type === 'EMAIL' ? 'email' : field.type === 'PHONE' ? 'tel' : field.type === 'NUMBER' || field.type === 'CURRENCY' ? 'number' : field.type === 'DATE' ? 'date' : 'text'}
@@ -673,6 +707,71 @@ export function AssigneeTaskPage() {
                     {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                     <PenTool className="w-4 h-4" />
                     Sign Document
+                  </Button>
+                </div>
+
+              /* ==================== PDF FORM ==================== */
+              ) : task.stepType === 'PDF_FORM' ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <FileCheck className="w-8 h-8 text-blue-500 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">PDF Form</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Complete the fillable fields in the PDF below</p>
+                    </div>
+                  </div>
+                  <div className="border border-gray-200 rounded-lg p-8 text-center bg-gray-50">
+                    <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">PDF viewer will render here</p>
+                    <p className="text-xs text-gray-400 mt-1">Fill in all required fields to continue</p>
+                  </div>
+                  <Button
+                    onClick={() => handleSubmit({ pdfCompleted: true })}
+                    disabled={isSubmitting}
+                    className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base"
+                  >
+                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    Submit PDF
+                  </Button>
+                </div>
+
+              /* ==================== CUSTOM ACTION ==================== */
+              ) : task.stepType === 'CUSTOM_ACTION' && task.options?.length ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600 text-center mb-4">Choose an option:</p>
+                  <div className="space-y-2">
+                    {task.options.map((option, i) => (
+                      <Button
+                        key={option.optionId}
+                        onClick={() => handleSubmit({ selectedOption: option.label, optionId: option.optionId })}
+                        disabled={isSubmitting}
+                        variant={i === 0 ? 'default' : 'outline'}
+                        className={`w-full h-11 text-base ${i === 0 ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                      >
+                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+              /* ==================== WEB APP ==================== */
+              ) : task.stepType === 'WEB_APP' ? (
+                <div className="space-y-4">
+                  <div className="border border-gray-200 rounded-lg p-6 text-center">
+                    <ExternalLink className="w-8 h-8 text-blue-500 mx-auto mb-3" />
+                    <p className="text-sm text-gray-600 mb-4">Complete this step in the external application</p>
+                    <a href="#" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                      Open Application <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                  <Button
+                    onClick={() => handleSubmit({ completed: true })}
+                    disabled={isSubmitting}
+                    className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base"
+                  >
+                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    Mark Complete
                   </Button>
                 </div>
 

@@ -107,10 +107,10 @@ router.post(
     }
 
     // Validate type
-    if (!['ADMIN', 'ASSIGNEE'].includes(type)) {
+    if (!['ADMIN', 'MEMBER', 'ASSIGNEE'].includes(type)) {
       res.status(400).json({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Type must be ADMIN or ASSIGNEE' },
+        error: { code: 'VALIDATION_ERROR', message: 'Type must be ADMIN, MEMBER, or ASSIGNEE' },
       });
       return;
     }
@@ -227,10 +227,10 @@ router.put(
     }
 
     // Validate type if provided
-    if (type && !['ADMIN', 'ASSIGNEE'].includes(type)) {
+    if (type && !['ADMIN', 'MEMBER', 'ASSIGNEE'].includes(type)) {
       res.status(400).json({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Type must be ADMIN or ASSIGNEE' },
+        error: { code: 'VALIDATION_ERROR', message: 'Type must be ADMIN, MEMBER, or ASSIGNEE' },
       });
       return;
     }

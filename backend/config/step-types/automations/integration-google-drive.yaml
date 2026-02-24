@@ -1,0 +1,146 @@
+# INTEGRATION_GOOGLE_DRIVE Step Type Definition
+stepType: INTEGRATION_GOOGLE_DRIVE
+category: AUTOMATION
+displayName: "Google Drive"
+description: "Create folders, find folders, or upload files in Google Drive"
+
+schema:
+  events:
+    - name: CREATE_FOLDER
+      label: "Create Folder"
+      description: "Create a new folder in Google Drive"
+    - name: FIND_FOLDER
+      label: "Find Folder"
+      description: "Search for an existing folder in Google Drive"
+    - name: UPLOAD_FILE
+      label: "Upload File"
+      description: "Upload a file to a Google Drive folder"
+
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Description of the Google Drive action"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: event
+      type: enum
+      required: true
+      values: [CREATE_FOLDER, FIND_FOLDER, UPLOAD_FILE]
+      description: "Google Drive action to perform"
+
+    - name: connectionId
+      type: connectionRef
+      required: true
+      provider: GOOGLE_DRIVE
+      description: "Google Drive OAuth connection to use"
+
+    # Fields for CREATE_FOLDER
+    - name: folderName
+      type: string
+      required: false
+      appliesTo: [CREATE_FOLDER]
+      description: "Name of the folder to create (supports DDR)"
+
+    - name: parentFolder
+      type: dynamicSelect
+      required: false
+      source: "googleDrive.folders"
+      appliesTo: [CREATE_FOLDER, UPLOAD_FILE]
+      description: "Parent folder (defaults to root if not specified)"
+
+    # Fields for FIND_FOLDER
+    - name: searchQuery
+      type: string
+      required: false
+      appliesTo: [FIND_FOLDER]
+      description: "Folder name or pattern to search for (supports DDR)"
+
+    # Fields for UPLOAD_FILE
+    - name: file
+      type: fileRef
+      required: false
+      appliesTo: [UPLOAD_FILE]
+      description: "File to upload (supports DDR from prior FILE_REQUEST steps)"
+
+    - name: fileName
+      type: string
+      required: false
+      appliesTo: [UPLOAD_FILE]
+      description: "Override the file name in Drive (supports DDR)"
+
+    - name: inputs
+      type: inputRef[]
+      required: false
+      description: "References to data from prior steps"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "Completes when the Google Drive API returns success"
+
+outputs:
+  - name: "folderId"
+    type: string
+    description: "ID of the created or found Google Drive folder"
+  - name: "fileId"
+    type: string
+    description: "ID of the uploaded file in Google Drive"
+  - name: "fileUrl"
+    type: string
+    description: "Shareable URL of the uploaded file or created folder"
+
+validationRules:
+  - rule: "event is not empty"
+    message: "A Google Drive event must be selected"
+  - rule: "folderName is set when event is CREATE_FOLDER"
+    message: "Folder name is required to create a folder"
+  - rule: "searchQuery is set when event is FIND_FOLDER"
+    message: "Search query is required to find a folder"
+  - rule: "file is set when event is UPLOAD_FILE"
+    message: "A file is required for upload"
+
+aiGuidance:
+  whenToUse: |
+    Use INTEGRATION_GOOGLE_DRIVE to manage files and folders in Google Drive.
+    Examples: create client project folders, upload signed documents, organize
+    collected files, find existing folders to store outputs.
+
+  whenNotToUse: |
+    - Managing files in Dropbox -> use INTEGRATION_DROPBOX
+    - Working with Google Sheets specifically -> use INTEGRATION_GOOGLE_SHEETS
+    - Requesting files from assignees -> use FILE_REQUEST step
+    - Sending files via email -> use SYSTEM_EMAIL or INTEGRATION_GMAIL
+
+  seQuestions:
+    - "What action should be performed in Google Drive (create folder, find folder, upload file)?"
+    - "Which file from the flow should be uploaded?"
+    - "Where in Google Drive should the file or folder go?"
+    - "If finding a folder, what name or pattern should we search for?"
+
+  defaults:
+    - "CREATE_FOLDER event"
+    - "Root folder as parent"
+    - "Coordinator-only visibility"
+
+  examples:
+    - trigger: "upload to Google Drive"
+      mapsTo: INTEGRATION_GOOGLE_DRIVE
+    - trigger: "save to Drive"
+      mapsTo: INTEGRATION_GOOGLE_DRIVE
+    - trigger: "create Drive folder"
+      mapsTo: INTEGRATION_GOOGLE_DRIVE
+    - trigger: "find folder in Drive"
+      mapsTo: INTEGRATION_GOOGLE_DRIVE
+    - trigger: "organize in Google Drive"
+      mapsTo: INTEGRATION_GOOGLE_DRIVE

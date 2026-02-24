@@ -1,37 +1,73 @@
 /**
  * Email Service
  *
- * Sends transactional emails via Resend.
- * Falls back to console logging when RESEND_API_KEY is not set.
+ * Sends transactional emails via SMTP (Gmail) or Resend.
+ * Priority: SMTP > Resend > console logging (dev mode).
  */
 
 import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
+// --- SMTP (Gmail) transport --- prioritized when configured
+const smtpTransport = process.env.SMTP_HOST
+  ? nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    })
+  : null;
+
+const smtpFrom = process.env.SMTP_FROM || process.env.SMTP_USER || '';
+
+// --- Resend transport --- fallback when SMTP not configured
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-const fromEmail = process.env.RESEND_FROM_EMAIL || 'AI Flow <noreply@aiflow.app>';
+const resendFrom = process.env.RESEND_FROM_EMAIL || 'AI Flow <noreply@aiflow.app>';
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 async function sendEmail(to: string, subject: string, html: string) {
-  if (!resend) {
-    console.log(`[Email] (dev mode) To: ${to}, Subject: ${subject}`);
-    console.log(`[Email] HTML preview: ${html.substring(0, 200)}...`);
-    return;
+  // Priority 1: SMTP (Gmail) — can send to any address
+  if (smtpTransport) {
+    try {
+      await smtpTransport.sendMail({
+        from: smtpFrom,
+        to,
+        subject,
+        html,
+      });
+      console.log(`[Email] Sent via SMTP to ${to}: ${subject}`);
+      return;
+    } catch (err) {
+      console.error(`[Email] SMTP failed for ${to}, trying Resend fallback:`, err);
+      // Fall through to Resend
+    }
   }
 
-  try {
-    await resend.emails.send({
-      from: fromEmail,
-      to,
-      subject,
-      html,
-    });
-    console.log(`[Email] Sent to ${to}: ${subject}`);
-  } catch (err) {
-    console.error(`[Email] Failed to send to ${to}:`, err);
+  // Priority 2: Resend
+  if (resend) {
+    try {
+      await resend.emails.send({
+        from: resendFrom,
+        to,
+        subject,
+        html,
+      });
+      console.log(`[Email] Sent via Resend to ${to}: ${subject}`);
+      return;
+    } catch (err) {
+      console.error(`[Email] Resend failed for ${to}:`, err);
+    }
   }
+
+  // Priority 3: Console logging (dev mode)
+  console.log(`[Email] (dev mode) To: ${to}, Subject: ${subject}`);
+  console.log(`[Email] HTML preview: ${html.substring(0, 200)}...`);
 }
 
 // ============================================================================

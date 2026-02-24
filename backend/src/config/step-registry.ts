@@ -9,6 +9,73 @@ import { getStepTypes, type StepTypeConfig } from './loader.js';
 import type { StepType } from '../models/steps.js';
 
 // ============================================================================
+// Built-in Integration Types
+// ============================================================================
+
+/**
+ * Integration step types that are registered programmatically.
+ * These are recognized even before individual YAML config files are created.
+ */
+const BUILTIN_INTEGRATION_TYPES: StepTypeConfig[] = [
+  {
+    stepType: 'INTEGRATION_AIRTABLE',
+    category: 'AUTOMATION',
+    displayName: 'Airtable',
+    description: 'Create or update records in Airtable bases',
+    schema: { fields: [] },
+    completion: { autoCompletes: true, noAssignee: true },
+  },
+  {
+    stepType: 'INTEGRATION_CLICKUP',
+    category: 'AUTOMATION',
+    displayName: 'ClickUp',
+    description: 'Create tasks or update statuses in ClickUp',
+    schema: { fields: [] },
+    completion: { autoCompletes: true, noAssignee: true },
+  },
+  {
+    stepType: 'INTEGRATION_DROPBOX',
+    category: 'AUTOMATION',
+    displayName: 'Dropbox',
+    description: 'Upload files or create folders in Dropbox',
+    schema: { fields: [] },
+    completion: { autoCompletes: true, noAssignee: true },
+  },
+  {
+    stepType: 'INTEGRATION_GMAIL',
+    category: 'AUTOMATION',
+    displayName: 'Gmail',
+    description: 'Send emails via Gmail with dynamic content',
+    schema: { fields: [] },
+    completion: { autoCompletes: true, noAssignee: true },
+  },
+  {
+    stepType: 'INTEGRATION_GOOGLE_DRIVE',
+    category: 'AUTOMATION',
+    displayName: 'Google Drive',
+    description: 'Upload files or manage folders in Google Drive',
+    schema: { fields: [] },
+    completion: { autoCompletes: true, noAssignee: true },
+  },
+  {
+    stepType: 'INTEGRATION_GOOGLE_SHEETS',
+    category: 'AUTOMATION',
+    displayName: 'Google Sheets',
+    description: 'Add rows or update cells in Google Sheets',
+    schema: { fields: [] },
+    completion: { autoCompletes: true, noAssignee: true },
+  },
+  {
+    stepType: 'INTEGRATION_WRIKE',
+    category: 'AUTOMATION',
+    displayName: 'Wrike',
+    description: 'Create or update tasks in Wrike projects',
+    schema: { fields: [] },
+    completion: { autoCompletes: true, noAssignee: true },
+  },
+];
+
+// ============================================================================
 // Registry
 // ============================================================================
 
@@ -17,11 +84,19 @@ class StepRegistry {
   private initialized = false;
 
   /**
-   * Initialize the registry from config files
+   * Initialize the registry from config files and built-in definitions.
+   * Built-in integration types are registered first, then YAML configs
+   * override them if present (YAML takes precedence).
    */
   initialize(): void {
     if (this.initialized) return;
 
+    // Register built-in integration types first
+    for (const config of BUILTIN_INTEGRATION_TYPES) {
+      this.registry.set(config.stepType, config);
+    }
+
+    // Load from YAML config files (overrides built-ins if present)
     const stepTypes = getStepTypes();
     for (const config of stepTypes) {
       this.registry.set(config.stepType, config);

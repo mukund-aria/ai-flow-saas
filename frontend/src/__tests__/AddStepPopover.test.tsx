@@ -57,7 +57,7 @@ describe('AddStepPopover', () => {
     }
 
     // Automations group types
-    const automationTypes: StepType[] = ['SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'AI_AUTOMATION'];
+    const automationTypes: StepType[] = ['SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'AI_CUSTOM_PROMPT'];
     for (const type of automationTypes) {
       expect(screen.getByText(STEP_TYPE_META[type].label)).toBeInTheDocument();
     }

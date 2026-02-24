@@ -50,11 +50,11 @@ const PHASE2_OPTIONS: Phase2Option[] = [
   {
     id: 'aiAutomation',
     label: 'Add AI automation',
-    description: 'Let AI handle data extraction, document review, or other tasks',
+    description: 'Extract data, summarize docs, translate, transcribe, write content, or run custom AI tasks',
     icon: <Sparkles className="w-4 h-4" />,
     hasDetails: true,
-    detailsLabel: 'What would you like AI to help with?',
-    detailsPlaceholder: 'e.g., "Extract data from uploaded documents", "Summarize client responses"',
+    detailsLabel: 'What would you like AI to help with? (Available: Extract, Summarize, Translate, Transcribe, Write, Custom Prompt)',
+    detailsPlaceholder: 'e.g., "Extract data from uploaded invoices", "Summarize client responses", "Translate documents to Spanish", "Transcribe meeting recordings"',
     detailsMultiline: true,
   },
   {

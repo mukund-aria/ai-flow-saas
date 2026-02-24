@@ -1,0 +1,131 @@
+# AI_TRANSLATE Step Type Definition
+stepType: AI_TRANSLATE
+category: AUTOMATION
+displayName: "AI Translate"
+description: "Translate text or document content between languages using AI"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What is being translated"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: inputs
+      type: inputRef[]
+      required: true
+      constraints:
+        min: 1
+      description: "Text or document content to translate"
+
+    - name: sourceLanguage
+      type: string
+      required: false
+      default: "auto"
+      description: "Source language (ISO 639-1 code, or 'auto' for detection)"
+
+    - name: targetLanguage
+      type: string
+      required: true
+      description: "Target language (ISO 639-1 code, e.g., 'es', 'fr', 'de', 'ja', 'zh')"
+
+    - name: options.preserveFormatting
+      type: boolean
+      required: false
+      default: true
+      description: "Whether to preserve the original formatting (paragraphs, lists, etc.)"
+
+    - name: options.domain
+      type: enum
+      required: false
+      default: GENERAL
+      values: [GENERAL, LEGAL, MEDICAL, TECHNICAL, FINANCIAL, MARKETING]
+      description: "Domain context for terminology accuracy"
+
+    - name: options.formalityLevel
+      type: enum
+      required: false
+      default: DEFAULT
+      values: [DEFAULT, FORMAL, INFORMAL]
+      description: "Level of formality in the translation"
+
+    - name: prompt
+      type: string
+      required: false
+      description: "Optional additional translation instructions or glossary terms"
+
+    - name: knowledge
+      type: knowledgeConfig
+      required: false
+      description: "Optional knowledge sources (glossaries, style guides)"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "AI translation runs automatically and produces translated content"
+
+outputs:
+  - name: "ai.translatedText"
+    type: text
+    description: "The translated content"
+  - name: "ai.sourceLanguage"
+    type: string
+    description: "Detected or specified source language"
+  - name: "ai.targetLanguage"
+    type: string
+    description: "Target language used"
+  - name: "ai.wordCount"
+    type: number
+    description: "Word count of the translated content"
+
+validationRules:
+  - rule: "inputs.length >= 1"
+    message: "AI translate requires at least one input source"
+  - rule: "targetLanguage is not empty"
+    message: "AI translate requires a target language"
+
+aiGuidance:
+  whenToUse: |
+    Use AI_TRANSLATE when content needs to be translated from one language to another.
+    Examples: translating client documents, localizing communications, translating
+    form responses for international teams, converting contracts to another language.
+
+  whenNotToUse: |
+    - If rewriting content in the same language -> use AI_WRITE
+    - If transcribing audio -> use AI_TRANSCRIBE
+    - If summarizing content -> use AI_SUMMARIZE
+    - If just transforming data format -> use AI_CUSTOM_PROMPT
+
+  seQuestions:
+    - "What is the target language for translation?"
+    - "What is the source content (text from a prior step, uploaded document)?"
+    - "Should the translation preserve formatting or be plain text?"
+    - "Is there domain-specific terminology to handle (legal, medical, technical)?"
+
+  defaults:
+    - "Coordinator-only visibility"
+    - "Auto-detect source language"
+    - "Preserve formatting"
+    - "General domain unless specified"
+    - "Default formality level"
+
+  examples:
+    - trigger: "translate to Spanish"
+      mapsTo: AI_TRANSLATE
+    - trigger: "convert the document to French"
+      mapsTo: AI_TRANSLATE
+    - trigger: "translate the client's response"
+      mapsTo: AI_TRANSLATE
+    - trigger: "localize the content"
+      mapsTo: AI_TRANSLATE

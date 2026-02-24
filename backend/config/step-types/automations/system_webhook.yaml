@@ -78,7 +78,7 @@ aiGuidance:
 
   whenNotToUse: |
     - Sending notifications to people → use SYSTEM_EMAIL or SYSTEM_CHAT_MESSAGE
-    - AI processing → use AI_AUTOMATION
+    - AI processing → use AI_CUSTOM_PROMPT, AI_EXTRACT, AI_SUMMARIZE, AI_TRANSCRIBE, AI_TRANSLATE, or AI_WRITE
 
   seQuestions:
     - "What system should we send data to?"

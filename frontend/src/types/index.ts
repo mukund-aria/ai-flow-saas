@@ -41,8 +41,26 @@ export interface KickoffConfig {
   kickoffFormEnabled?: boolean;
   kickoffFormFields?: FormField[];
   startLinkEnabled?: boolean;
+  startLink?: StartLinkConfig;
   flowVariables: FlowVariable[];
   notes?: string[];
+}
+
+export interface StartLinkConfig {
+  enabled: boolean;
+  url?: string;
+  embedHtml?: string;
+  qrCodeUrl?: string;
+  initPage?: {
+    title: string;
+    subtitle?: string;
+    buttonLabel: string;
+  };
+  completedPage?: {
+    imageUrl?: string;
+    title: string;
+    subtitle?: string;
+  };
 }
 
 export interface FlowVariable {
@@ -235,6 +253,7 @@ export type StepType =
   | 'DECISION'
   | 'CUSTOM_ACTION'
   | 'WEB_APP'
+  | 'PDF_FORM'
   | 'SINGLE_CHOICE_BRANCH'
   | 'MULTI_CHOICE_BRANCH'
   | 'PARALLEL_BRANCH'
@@ -242,12 +261,25 @@ export type StepType =
   | 'GOTO_DESTINATION'
   | 'TERMINATE'
   | 'WAIT'
-  | 'AI_AUTOMATION'
+  | 'SUB_FLOW'
+  | 'AI_CUSTOM_PROMPT'
+  | 'AI_EXTRACT'
+  | 'AI_SUMMARIZE'
+  | 'AI_TRANSCRIBE'
+  | 'AI_TRANSLATE'
+  | 'AI_WRITE'
   | 'SYSTEM_WEBHOOK'
   | 'SYSTEM_EMAIL'
   | 'SYSTEM_CHAT_MESSAGE'
   | 'SYSTEM_UPDATE_WORKSPACE'
-  | 'BUSINESS_RULE';
+  | 'BUSINESS_RULE'
+  | 'INTEGRATION_AIRTABLE'
+  | 'INTEGRATION_CLICKUP'
+  | 'INTEGRATION_DROPBOX'
+  | 'INTEGRATION_GMAIL'
+  | 'INTEGRATION_GOOGLE_DRIVE'
+  | 'INTEGRATION_GOOGLE_SHEETS'
+  | 'INTEGRATION_WRIKE';
 
 export interface StepConfig {
   name: string;
@@ -274,6 +306,12 @@ export interface StepConfig {
   systemChatMessage?: SystemChatMessageConfig;
   systemUpdateWorkspace?: SystemUpdateWorkspaceConfig;
   businessRule?: BusinessRuleConfig;
+  // PDF Form config
+  pdfForm?: PDFFormConfig;
+  // Sub Flow config
+  subFlow?: SubFlowConfig;
+  // Integration config
+  integration?: IntegrationConfig;
 }
 
 export interface QuestionnaireConfig {
@@ -304,7 +342,7 @@ export interface FileRequestConfig {
 // Automation Step Configs
 // ============================================================================
 
-export type AIActionType = 'CUSTOM_PROMPT' | 'EXTRACT' | 'SUMMARIZE' | 'CLASSIFY' | 'GENERATE';
+export type AIActionType = 'CUSTOM_PROMPT' | 'EXTRACT' | 'SUMMARIZE' | 'TRANSCRIBE' | 'TRANSLATE' | 'WRITE';
 
 export type AIFieldType = 'TEXT' | 'NUMBER' | 'BOOLEAN' | 'EMAIL' | 'PHONE' | 'URL' | 'DATE' | 'FILE';
 
@@ -369,6 +407,45 @@ export interface BusinessRuleConfig {
   outputs: AIOutputField[];
 }
 
+export interface PDFFormConfig {
+  documentUrl?: string;
+  fields: PDFFormField[];
+}
+
+export interface PDFFormField {
+  fieldId: string;
+  pdfFieldName: string;
+  label: string;
+  required?: boolean;
+  readOnly?: boolean;
+  defaultValue?: string;
+  dataRef?: string; // Dynamic data reference for pre-population
+}
+
+export interface SubFlowConfig {
+  flowTemplateId: string;
+  assigneeMappings: Array<{
+    parentRoleId: string;
+    childRoleId: string;
+  }>;
+  variableMappings: Array<{
+    parentKey: string;
+    childKey: string;
+  }>;
+}
+
+export interface IntegrationConfig {
+  provider: 'AIRTABLE' | 'CLICKUP' | 'DROPBOX' | 'GMAIL' | 'GOOGLE_DRIVE' | 'GOOGLE_SHEETS' | 'WRIKE';
+  event: string;
+  accountId?: string;
+  fieldMappings: Array<{
+    targetField: string;
+    value: string;
+    isDynamic: boolean;
+  }>;
+  config: Record<string, unknown>;
+}
+
 export interface StepOption {
   optionId: string;
   label: string;
@@ -407,7 +484,12 @@ export type FormFieldType =
   | 'NAME'
   | 'ADDRESS'
   | 'HEADING'
-  | 'PARAGRAPH';
+  | 'PARAGRAPH'
+  | 'SIGNATURE'
+  | 'DYNAMIC_DROPDOWN'
+  | 'IMAGE'
+  | 'PAGE_BREAK'
+  | 'LINE_SEPARATOR';
 
 export const FORM_FIELD_TYPES: { value: FormFieldType; label: string; category: string }[] = [
   { value: 'TEXT_SINGLE_LINE', label: 'Short Text', category: 'basic' },
@@ -416,6 +498,7 @@ export const FORM_FIELD_TYPES: { value: FormFieldType; label: string; category: 
   { value: 'MULTI_SELECT', label: 'Multi Select', category: 'basic' },
   { value: 'DROPDOWN', label: 'Dropdown', category: 'basic' },
   { value: 'FILE_UPLOAD', label: 'File Upload', category: 'basic' },
+  { value: 'DYNAMIC_DROPDOWN', label: 'Dynamic Dropdown', category: 'basic' },
   { value: 'DATE', label: 'Date', category: 'predefined' },
   { value: 'NUMBER', label: 'Number', category: 'predefined' },
   { value: 'EMAIL', label: 'Email', category: 'predefined' },
@@ -423,8 +506,12 @@ export const FORM_FIELD_TYPES: { value: FormFieldType; label: string; category: 
   { value: 'CURRENCY', label: 'Currency', category: 'predefined' },
   { value: 'NAME', label: 'Full Name', category: 'predefined' },
   { value: 'ADDRESS', label: 'Address', category: 'predefined' },
+  { value: 'SIGNATURE', label: 'Signature', category: 'predefined' },
   { value: 'HEADING', label: 'Heading', category: 'layout' },
   { value: 'PARAGRAPH', label: 'Paragraph', category: 'layout' },
+  { value: 'IMAGE', label: 'Image', category: 'layout' },
+  { value: 'PAGE_BREAK', label: 'Page Break', category: 'layout' },
+  { value: 'LINE_SEPARATOR', label: 'Line Separator', category: 'layout' },
 ];
 
 export interface FormField {
@@ -701,6 +788,7 @@ export const STEP_TYPE_META: Record<StepType, { label: string; color: string; ca
   DECISION: { label: 'Decision', color: '#8b5cf6', category: 'human' },
   CUSTOM_ACTION: { label: 'Custom Action', color: '#6b7280', category: 'human' },
   WEB_APP: { label: 'Web App', color: '#6b7280', category: 'human' },
+  PDF_FORM: { label: 'PDF Form', color: '#22c55e', category: 'human' },
 
   // Control Flow
   SINGLE_CHOICE_BRANCH: { label: 'Single Choice', color: '#f59e0b', category: 'control' },
@@ -710,14 +798,27 @@ export const STEP_TYPE_META: Record<StepType, { label: string; color: string; ca
   GOTO_DESTINATION: { label: 'Destination', color: '#6b7280', category: 'control' },
   TERMINATE: { label: 'Terminate', color: '#ef4444', category: 'control' },
   WAIT: { label: 'Wait', color: '#6b7280', category: 'control' },
+  SUB_FLOW: { label: 'Sub Flow', color: '#f59e0b', category: 'control' },
 
   // Automations
-  AI_AUTOMATION: { label: 'AI Automation', color: '#8b5cf6', category: 'automation' },
+  AI_CUSTOM_PROMPT: { label: 'AI Custom Prompt', color: '#8b5cf6', category: 'automation' },
+  AI_EXTRACT: { label: 'AI Extract', color: '#8b5cf6', category: 'automation' },
+  AI_SUMMARIZE: { label: 'AI Summarize', color: '#8b5cf6', category: 'automation' },
+  AI_TRANSCRIBE: { label: 'AI Transcribe', color: '#8b5cf6', category: 'automation' },
+  AI_TRANSLATE: { label: 'AI Translate', color: '#8b5cf6', category: 'automation' },
+  AI_WRITE: { label: 'AI Write', color: '#8b5cf6', category: 'automation' },
   SYSTEM_WEBHOOK: { label: 'Webhook', color: '#6b7280', category: 'automation' },
   SYSTEM_EMAIL: { label: 'Email', color: '#6b7280', category: 'automation' },
   SYSTEM_CHAT_MESSAGE: { label: 'Chat Message', color: '#6b7280', category: 'automation' },
   SYSTEM_UPDATE_WORKSPACE: { label: 'Update Workspace', color: '#6b7280', category: 'automation' },
   BUSINESS_RULE: { label: 'Business Rule', color: '#6b7280', category: 'automation' },
+  INTEGRATION_AIRTABLE: { label: 'Airtable', color: '#18BFFF', category: 'automation' },
+  INTEGRATION_CLICKUP: { label: 'ClickUp', color: '#7B68EE', category: 'automation' },
+  INTEGRATION_DROPBOX: { label: 'Dropbox', color: '#0061FF', category: 'automation' },
+  INTEGRATION_GMAIL: { label: 'Gmail', color: '#EA4335', category: 'automation' },
+  INTEGRATION_GOOGLE_DRIVE: { label: 'Google Drive', color: '#4285F4', category: 'automation' },
+  INTEGRATION_GOOGLE_SHEETS: { label: 'Google Sheets', color: '#34A853', category: 'automation' },
+  INTEGRATION_WRIKE: { label: 'Wrike', color: '#08CF65', category: 'automation' },
 };
 
 // ============================================================================

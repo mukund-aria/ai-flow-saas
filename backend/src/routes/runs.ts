@@ -682,6 +682,81 @@ router.post(
 );
 
 // ============================================================================
+// POST /api/flows/:id/steps/:stepId/act-token - Get action token for coordinator
+// ============================================================================
+
+router.post(
+  '/:id/steps/:stepId/act-token',
+  asyncHandler(async (req, res) => {
+    const runId = req.params.id as string;
+    const stepId = req.params.stepId as string;
+
+    // Get step execution
+    const stepExec = await db.query.stepExecutions.findFirst({
+      where: and(
+        eq(stepExecutions.flowRunId, runId),
+        eq(stepExecutions.stepId, stepId)
+      ),
+    });
+
+    if (!stepExec) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Step execution not found' },
+      });
+      return;
+    }
+
+    if (stepExec.status !== 'IN_PROGRESS' && stepExec.status !== 'WAITING_FOR_ASSIGNEE') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Can only act on active steps' },
+      });
+      return;
+    }
+
+    // Check if there's already a magic link for this step
+    const existingLink = await db.query.magicLinks.findFirst({
+      where: eq(magicLinks.stepExecutionId, stepExec.id),
+    });
+
+    if (existingLink && !existingLink.usedAt && new Date() < existingLink.expiresAt) {
+      // Existing valid link - return it
+      res.json({
+        success: true,
+        data: { token: existingLink.token },
+      });
+      return;
+    }
+
+    if (existingLink) {
+      // Existing link is used or expired - refresh it
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 168); // 7 days
+      const newToken = crypto.randomUUID();
+      await db.update(magicLinks)
+        .set({ token: newToken, expiresAt, usedAt: null })
+        .where(eq(magicLinks.id, existingLink.id));
+
+      res.json({
+        success: true,
+        data: { token: newToken },
+      });
+      return;
+    }
+
+    // Create a new magic link for the coordinator to act on this step
+    const { createMagicLink } = await import('../services/magic-link.js');
+    const token = await createMagicLink(stepExec.id);
+
+    res.json({
+      success: true,
+      data: { token },
+    });
+  })
+);
+
+// ============================================================================
 // POST /api/flows/:id/steps/:stepId/remind - Send reminder for a step
 // ============================================================================
 

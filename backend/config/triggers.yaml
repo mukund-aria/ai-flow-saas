@@ -1,0 +1,89 @@
+# Flow Trigger Configuration
+# Defines how flows can be started — manual, scheduled, webhook, link, or third-party app events
+
+version: "1.0"
+description: "Flow trigger configuration — defines how flows can be started"
+
+triggerTypes:
+  # Moxo triggers
+  MANUAL_EXECUTE:
+    displayName: "Manual Execute"
+    description: "Start flow manually from the Flows page"
+
+  KICKOFF_FORM:
+    displayName: "Kickoff Form"
+    description: "Start flow by submitting a kickoff form"
+    limit: 1
+
+  SCHEDULE:
+    displayName: "On Schedule"
+    description: "Start flow on a defined schedule"
+    options:
+      frequency: [ONE_TIME, RECURRING]
+
+  WEBHOOK:
+    displayName: "Receive a Webhook"
+    description: "Start flow when external system sends webhook request"
+    limit: 1
+
+  START_LINK:
+    displayName: "Start Link"
+    description: "Public URL that starts a new flow when visited"
+    options:
+      accessMethods: [DIRECT_LINK, EMBEDDED_HTML, QR_CODE]
+
+  # 3rd Party App Triggers
+  INTEGRATION:
+    displayName: "Third-Party App"
+    description: "Start flow from external application events"
+    providers:
+      AIRTABLE:
+        displayName: "Airtable"
+        events:
+          - { event: NEW_RECORD, label: "New Record" }
+          - { event: NEW_OR_UPDATE_RECORD, label: "New or Updated Record" }
+        auth: OAUTH
+
+      ASANA:
+        displayName: "Asana"
+        events:
+          - { event: NEW_TASK, label: "New Task" }
+          - { event: UPDATE_TASK, label: "Updated Task" }
+        auth: OAUTH
+
+      GMAIL:
+        displayName: "Gmail"
+        events:
+          - { event: NEW_EMAIL, label: "New Email" }
+        auth: OAUTH
+
+      GOOGLE_FORMS:
+        displayName: "Google Forms"
+        events:
+          - { event: NEW_SUBMISSION, label: "New Form Submission" }
+        auth: OAUTH
+
+      GOOGLE_SHEETS:
+        displayName: "Google Sheets"
+        events:
+          - { event: NEW_ROW, label: "New Spreadsheet Row" }
+        auth: OAUTH
+
+      HUBSPOT:
+        displayName: "HubSpot"
+        events:
+          - { event: UPDATED_DEAL_STAGE, label: "Updated Deal Stage" }
+        auth: OAUTH
+
+      SALESFORCE:
+        displayName: "Salesforce"
+        events:
+          - { event: UPDATED_FIELD, label: "Updated Field on Record" }
+        auth: OAUTH
+
+      SMARTSUITE:
+        displayName: "SmartSuite"
+        events:
+          - { event: CREATE_RECORD, label: "Create Record" }
+          - { event: UPDATE_RECORD, label: "Update Record" }
+        auth: OAUTH

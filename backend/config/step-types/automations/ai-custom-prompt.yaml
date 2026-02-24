@@ -1,0 +1,109 @@
+# AI_CUSTOM_PROMPT Step Type Definition
+stepType: AI_CUSTOM_PROMPT
+category: AUTOMATION
+displayName: "AI Custom Prompt"
+description: "Run a custom AI prompt to analyze, transform, or generate content with free-form instructions"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What the AI custom prompt does"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: inputs
+      type: inputRef[]
+      required: false
+      description: "References to prior outputs, variables, or files to use as input"
+
+    - name: prompt
+      type: string
+      required: true
+      description: "Free-form instructions for the AI describing exactly what to do"
+
+    - name: knowledge
+      type: knowledgeConfig
+      required: false
+      description: "Optional knowledge sources to reference"
+
+    - name: outputFormat
+      type: enum
+      required: false
+      default: TEXT
+      values: [TEXT, JSON, FILE]
+      description: "Expected output format"
+
+    - name: outputs
+      type: outputDef[]
+      required: true
+      constraints:
+        min: 1
+      description: "What the AI produces"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+      description: "AI automations are coordinator-only by default"
+
+# Inherits inputRefSchema, outputDefSchema, knowledgeConfigSchema from ai-automation.yaml
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "AI custom prompt runs automatically and completes on its own"
+
+outputs:
+  - name: "ai.*"
+    type: dynamic
+    description: "Outputs defined by the step (e.g., ai.result, ai.analysis)"
+
+validationRules:
+  - rule: "prompt is not empty"
+    message: "AI custom prompt requires instructions"
+  - rule: "outputs.length >= 1"
+    message: "AI custom prompt must define at least one output"
+
+aiGuidance:
+  whenToUse: |
+    Use AI_CUSTOM_PROMPT for any AI task that doesn't fit the specialized types
+    (extract, summarize, translate, transcribe, write). This is the most flexible
+    AI step type - use it for classification, analysis, transformation, decision
+    support, data validation, or any custom AI logic.
+
+  whenNotToUse: |
+    - Extracting structured data from documents -> use AI_EXTRACT
+    - Summarizing content -> use AI_SUMMARIZE
+    - Translating between languages -> use AI_TRANSLATE
+    - Transcribing audio/video -> use AI_TRANSCRIBE
+    - Writing/generating content -> use AI_WRITE
+    - If human review is needed -> use appropriate action with AI assistance
+
+  seQuestions:
+    - "What should the AI analyze, transform, or generate?"
+    - "What inputs (prior step outputs, files, etc.) should the AI use?"
+    - "What format should the AI output be in (text, JSON, file)?"
+    - "Are there specific instructions or constraints for the AI?"
+
+  defaults:
+    - "Coordinator-only visibility"
+    - "Use default Moxo AI model"
+    - "Text output format unless specified"
+
+  examples:
+    - trigger: "AI should classify"
+      mapsTo: AI_CUSTOM_PROMPT
+    - trigger: "analyze and recommend"
+      mapsTo: AI_CUSTOM_PROMPT
+    - trigger: "validate the data"
+      mapsTo: AI_CUSTOM_PROMPT
+    - trigger: "score the application"
+      mapsTo: AI_CUSTOM_PROMPT
+    - trigger: "AI should decide"
+      mapsTo: AI_CUSTOM_PROMPT

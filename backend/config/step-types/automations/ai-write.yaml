@@ -1,0 +1,140 @@
+# AI_WRITE Step Type Definition
+stepType: AI_WRITE
+category: AUTOMATION
+displayName: "AI Write"
+description: "Generate written content such as emails, reports, letters, or documents using AI"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "What content is being generated"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: inputs
+      type: inputRef[]
+      required: false
+      description: "Data from prior steps to incorporate into the written content"
+
+    - name: contentType
+      type: enum
+      required: false
+      default: GENERAL
+      values: [EMAIL, LETTER, REPORT, SUMMARY_REPORT, MEMO, PROPOSAL, NOTIFICATION, GENERAL]
+      description: "Type of content to generate"
+
+    - name: tone
+      type: enum
+      required: false
+      default: PROFESSIONAL
+      values: [PROFESSIONAL, FORMAL, FRIENDLY, CASUAL, TECHNICAL, EMPATHETIC]
+      description: "Tone of the written content"
+
+    - name: audience
+      type: string
+      required: false
+      description: "Who the content is written for (e.g., 'client', 'executive team', 'technical staff')"
+
+    - name: maxLength
+      type: enum
+      required: false
+      default: MEDIUM
+      values: [SHORT, MEDIUM, LONG]
+      description: "Approximate length of the content"
+
+    - name: prompt
+      type: string
+      required: true
+      description: "Instructions for what to write, key points to include, and any specific requirements"
+
+    - name: template
+      type: string
+      required: false
+      description: "Optional template or structure to follow"
+
+    - name: knowledge
+      type: knowledgeConfig
+      required: false
+      description: "Optional knowledge sources for reference"
+
+    - name: outputs
+      type: outputDef[]
+      required: true
+      constraints:
+        min: 1
+      description: "What the AI produces"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "AI writing runs automatically and produces the requested content"
+
+outputs:
+  - name: "ai.content"
+    type: text
+    description: "The generated written content"
+  - name: "ai.contentType"
+    type: string
+    description: "The type of content that was generated"
+  - name: "ai.wordCount"
+    type: number
+    description: "Word count of the generated content"
+  - name: "ai.subject"
+    type: string
+    description: "Generated subject line (for emails, memos)"
+
+validationRules:
+  - rule: "prompt is not empty"
+    message: "AI write requires writing instructions"
+  - rule: "outputs.length >= 1"
+    message: "AI write must define at least one output"
+
+aiGuidance:
+  whenToUse: |
+    Use AI_WRITE when new written content needs to be generated from scratch or
+    based on data from prior steps. Examples: drafting client welcome emails,
+    generating onboarding reports, writing follow-up letters, creating status
+    update notifications, composing proposals based on collected data.
+
+  whenNotToUse: |
+    - If summarizing existing content -> use AI_SUMMARIZE
+    - If translating content -> use AI_TRANSLATE
+    - If extracting data -> use AI_EXTRACT
+    - If analyzing/classifying data -> use AI_CUSTOM_PROMPT
+    - If sending a system email with known content -> use SYSTEM_EMAIL
+
+  seQuestions:
+    - "What type of content should the AI write (email, report, letter, summary)?"
+    - "What tone and style should be used (formal, casual, technical)?"
+    - "Who is the target audience?"
+    - "What approximate length is expected?"
+    - "What data from prior steps should be incorporated?"
+
+  defaults:
+    - "Coordinator-only visibility"
+    - "Professional tone unless specified"
+    - "Medium length unless specified"
+    - "General content type unless specified"
+
+  examples:
+    - trigger: "draft an email to"
+      mapsTo: AI_WRITE
+    - trigger: "write a report about"
+      mapsTo: AI_WRITE
+    - trigger: "compose a letter"
+      mapsTo: AI_WRITE
+    - trigger: "generate the welcome message"
+      mapsTo: AI_WRITE
+    - trigger: "prepare a proposal"
+      mapsTo: AI_WRITE

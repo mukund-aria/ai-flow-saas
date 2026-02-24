@@ -1,0 +1,130 @@
+# INTEGRATION_AIRTABLE Step Type Definition
+stepType: INTEGRATION_AIRTABLE
+category: AUTOMATION
+displayName: "Airtable"
+description: "Create or update records in Airtable"
+
+schema:
+  events:
+    - name: CREATE_RECORD
+      label: "Create Record"
+      description: "Create a new record in an Airtable table"
+    - name: UPDATE_RECORD
+      label: "Update Record"
+      description: "Update an existing record in an Airtable table"
+
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Description of the Airtable action"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: event
+      type: enum
+      required: true
+      values: [CREATE_RECORD, UPDATE_RECORD]
+      description: "Airtable action to perform"
+
+    - name: connectionId
+      type: connectionRef
+      required: true
+      provider: AIRTABLE
+      description: "Airtable OAuth connection to use"
+
+    - name: base
+      type: dynamicSelect
+      required: true
+      source: "airtable.bases"
+      description: "Airtable base to use"
+
+    - name: table
+      type: dynamicSelect
+      required: true
+      source: "airtable.tables"
+      dependsOn: [base]
+      description: "Table within the selected base"
+
+    - name: fieldMappings
+      type: fieldMapping[]
+      required: true
+      source: "airtable.tableFields"
+      dependsOn: [base, table]
+      description: "Map flow data to Airtable table columns (auto-pulled from table schema)"
+
+    - name: recordId
+      type: string
+      required: false
+      appliesTo: [UPDATE_RECORD]
+      description: "Record ID to update (supports DDR)"
+
+    - name: inputs
+      type: inputRef[]
+      required: false
+      description: "References to data from prior steps for field mappings"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "Completes when the Airtable API returns success"
+
+outputs:
+  - name: "recordId"
+    type: string
+    description: "ID of the created or updated Airtable record"
+
+validationRules:
+  - rule: "event is not empty"
+    message: "An Airtable event must be selected"
+  - rule: "base is not empty"
+    message: "An Airtable base must be selected"
+  - rule: "table is not empty"
+    message: "An Airtable table must be selected"
+  - rule: "fieldMappings.length >= 1"
+    message: "At least one field mapping is required"
+  - rule: "recordId is set when event is UPDATE_RECORD"
+    message: "Record ID is required for updating records"
+
+aiGuidance:
+  whenToUse: |
+    Use INTEGRATION_AIRTABLE to create or update records in Airtable.
+    Examples: log form submissions to a tracking table, update project status,
+    sync contact information, create inventory entries.
+
+  whenNotToUse: |
+    - Triggering a flow from Airtable changes -> use AIRTABLE trigger instead
+    - Storing data only within the flow -> use variables or BUSINESS_RULE
+    - Sending notifications -> use SYSTEM_EMAIL or INTEGRATION_GMAIL
+
+  seQuestions:
+    - "Which Airtable base and table should we write to?"
+    - "What data from this flow should map to which Airtable columns?"
+    - "Are we creating a new record or updating an existing one?"
+    - "If updating, how do we identify the record (record ID from a prior step)?"
+
+  defaults:
+    - "CREATE_RECORD event"
+    - "Coordinator-only visibility"
+    - "Field mappings auto-pulled from table schema"
+
+  examples:
+    - trigger: "add to Airtable"
+      mapsTo: INTEGRATION_AIRTABLE
+    - trigger: "create Airtable record"
+      mapsTo: INTEGRATION_AIRTABLE
+    - trigger: "update Airtable"
+      mapsTo: INTEGRATION_AIRTABLE
+    - trigger: "log to Airtable"
+      mapsTo: INTEGRATION_AIRTABLE
+    - trigger: "sync to Airtable"
+      mapsTo: INTEGRATION_AIRTABLE

@@ -78,11 +78,11 @@ describe('StepConfigPanel', () => {
     fireEvent.click(screen.getByText('Save'));
 
     expect(mockOnSave).toHaveBeenCalledTimes(1);
-    expect(mockOnSave).toHaveBeenCalledWith('step-1', {
+    expect(mockOnSave).toHaveBeenCalledWith('step-1', expect.objectContaining({
       name: 'Updated Name',
       description: 'Updated description',
       assignee: undefined,
-    });
+    }));
   });
 
   it('cancel button calls onCancel', () => {
@@ -134,11 +134,11 @@ describe('StepConfigPanel', () => {
 
     fireEvent.click(screen.getByText('Save'));
 
-    expect(mockOnSave).toHaveBeenCalledWith('step-1', {
+    expect(mockOnSave).toHaveBeenCalledWith('step-1', expect.objectContaining({
       name: 'Test Step',
       description: 'Test desc',
       assignee: 'Client',
-    });
+    }));
   });
 
   it('pre-fills assignee when step has one set', () => {

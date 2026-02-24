@@ -264,7 +264,11 @@ When creating workflow steps that have conditional paths (SINGLE_CHOICE_BRANCH, 
 \`\`\`
 ^ This is WRONG because Manager and Director approvals appear sequential, not as conditional paths.
 
-### CORRECT - Steps nested inside paths:
+### CORRECT - Steps nested inside paths (with conditions):
+SINGLE_CHOICE_BRANCH supports 2-3 paths. Each path can have a single \`condition\` or multiple \`conditions\` (up to 10) combined with \`conditionLogic\` (ALL or ANY).
+
+**Condition types:** EQUALS, NOT_EQUALS, CONTAINS, NOT_CONTAINS, NOT_EMPTY, ELSE
+
 \`\`\`json
 {
   "steps": [
@@ -278,6 +282,7 @@ When creating workflow steps that have conditional paths (SINGLE_CHOICE_BRANCH, 
           {
             "pathId": "path_small",
             "label": "Under $5,000",
+            "condition": { "type": "EQUALS", "left": "{Step 1 / Amount Category}", "right": "Small" },
             "steps": [
               { "stepId": "step_2a", "type": "APPROVAL", "config": { "name": "Manager Approval", "assignee": "Manager" } }
             ]
@@ -285,8 +290,21 @@ When creating workflow steps that have conditional paths (SINGLE_CHOICE_BRANCH, 
           {
             "pathId": "path_large",
             "label": "$5,000 or more",
+            "conditions": [
+              { "type": "NOT_EQUALS", "left": "{Step 1 / Amount Category}", "right": "Small" },
+              { "type": "NOT_EMPTY", "value": "{Step 1 / Director}" }
+            ],
+            "conditionLogic": "ALL",
             "steps": [
               { "stepId": "step_2b", "type": "APPROVAL", "config": { "name": "Director Approval", "assignee": "Director" } }
+            ]
+          },
+          {
+            "pathId": "path_default",
+            "label": "Other",
+            "condition": { "type": "ELSE" },
+            "steps": [
+              { "stepId": "step_2c", "type": "TODO", "config": { "name": "Manual Review", "assignee": "Finance" } }
             ]
           }
         ]
@@ -296,7 +314,27 @@ When creating workflow steps that have conditional paths (SINGLE_CHOICE_BRANCH, 
   ]
 }
 \`\`\`
-^ This is CORRECT: Manager Approval is INSIDE path_small, Director Approval is INSIDE path_large.
+^ This is CORRECT: Manager Approval is INSIDE path_small, Director Approval is INSIDE path_large, Manual Review is INSIDE path_default.
+
+### Step Types Available
+
+**Human Actions:** FORM, QUESTIONNAIRE, FILE_REQUEST, TODO, APPROVAL, ACKNOWLEDGEMENT, ESIGN, DECISION, CUSTOM_ACTION, WEB_APP, PDF_FORM
+- PDF_FORM: Fillable PDF that assignees complete with mapped fields (useful for tax forms, government docs, standardized templates)
+
+**Controls:** SINGLE_CHOICE_BRANCH, MULTI_CHOICE_BRANCH, PARALLEL_BRANCH, GOTO, GOTO_DESTINATION, TERMINATE, WAIT, SUB_FLOW
+- SUB_FLOW: Launches a child flow from a template, mapping parent roles and variables to the child
+
+**AI Automations (6 specialized types, replacing the old generic AI_AUTOMATION):**
+- AI_CUSTOM_PROMPT: Custom AI analysis, classification, scoring, etc.
+- AI_EXTRACT: Extract structured data from documents or text
+- AI_SUMMARIZE: Summarize documents, conversations, or responses
+- AI_TRANSCRIBE: Transcribe audio/video content to text
+- AI_TRANSLATE: Translate content between languages
+- AI_WRITE: Generate written content (emails, reports, letters, proposals)
+
+**System Automations:** SYSTEM_WEBHOOK, SYSTEM_EMAIL, SYSTEM_CHAT_MESSAGE, SYSTEM_UPDATE_WORKSPACE, BUSINESS_RULE
+
+**Integration Automations:** INTEGRATION_AIRTABLE, INTEGRATION_CLICKUP, INTEGRATION_DROPBOX, INTEGRATION_GMAIL, INTEGRATION_GOOGLE_DRIVE, INTEGRATION_GOOGLE_SHEETS, INTEGRATION_WRIKE
 
 ### For DECISION steps, use "outcomes" instead of "paths":
 \`\`\`json
@@ -605,7 +643,7 @@ ${behaviors.askingPolicy.proactiveSuggestionsAfterCreate.map(s => {
 
 Include these suggestions in your response after presenting the workflow, e.g.:
 "I've created your workflow! A few things to consider before launching:
-- **AI Automation:** I noticed the document review step could benefit from AI assistance...
+- **AI Automation:** I noticed the document review step could benefit from AI assistance (e.g., AI_EXTRACT to pull data from uploaded docs, AI_SUMMARIZE to condense responses)...
 - **Flow Naming:** I'd suggest naming runs '{Client Name} - Onboarding' so they're easy to find...
 - **Permissions:** Before we launch, let's set up who can start, coordinate, and edit this flow..."` : ''}
 

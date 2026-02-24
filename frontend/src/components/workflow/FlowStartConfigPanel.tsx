@@ -1,4 +1,5 @@
-import { X, UserCircle, FileText, Link, Webhook, Clock, Puzzle, Plus, Trash2, Variable } from 'lucide-react';
+import { useState } from 'react';
+import { X, UserCircle, FileText, Link, Webhook, Clock, Puzzle, Plus, Trash2, Variable, Copy, QrCode, Code, ExternalLink } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { FormFieldsBuilder } from './FormFieldsBuilder';
 import type { StartMode, KickoffConfig, FlowVariable, FormField } from '@/types';
@@ -40,24 +41,18 @@ const START_MODE_OPTIONS: StartModeOption[] = [
     label: 'Webhook',
     description: 'Trigger via external API call',
     icon: <Webhook className="w-4 h-4" />,
-    disabled: true,
-    comingSoon: true,
   },
   {
     mode: 'SCHEDULE',
     label: 'Schedule',
     description: 'Run on a recurring schedule',
     icon: <Clock className="w-4 h-4" />,
-    disabled: true,
-    comingSoon: true,
   },
   {
     mode: 'INTEGRATION',
     label: 'Integration',
     description: 'Triggered by an external integration',
     icon: <Puzzle className="w-4 h-4" />,
-    disabled: true,
-    comingSoon: true,
   },
 ];
 
@@ -77,6 +72,31 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
   const kickoffFormEnabled = kickoff.kickoffFormEnabled ?? false;
   const kickoffFormFields = kickoff.kickoffFormFields ?? [];
   const flowVariables = kickoff.flowVariables ?? [];
+
+  // Start Link config state
+  const flowId = workflow?.flowId || 'new';
+  const startLinkUrl = `https://app.aiflow.com/start/${flowId}`;
+  const embedSnippet = `<iframe src="${startLinkUrl}" width="100%" height="600" frameborder="0" style="border:none;border-radius:8px;"></iframe>`;
+
+  const [startLinkConfig, setStartLinkConfig] = useState({
+    initTitle: workflow?.name || '',
+    initSubtitle: '',
+    buttonLabel: 'Start',
+    completionTitle: 'Thank you!',
+    completionSubtitle: '',
+  });
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopy = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleStartLinkConfigChange = (key: string, value: string) => {
+    setStartLinkConfig(prev => ({ ...prev, [key]: value }));
+    updateKickoffConfig({ startLinkConfig: { ...startLinkConfig, [key]: value } } as Partial<KickoffConfig>);
+  };
 
   // -----------------------------------------------------------
   // Handlers
@@ -238,6 +258,179 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                     onChange={handleFormFieldsChange}
                   />
                 )}
+              </div>
+            </section>
+          )}
+
+          {/* ============================================================ */}
+          {/* Start Link Configuration (when mode is START_LINK)           */}
+          {/* ============================================================ */}
+          {selectedMode === 'START_LINK' && (
+            <section>
+              <div className="border-t border-gray-100 pt-5 space-y-5">
+                {/* Start Link URL */}
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                    Start Link URL
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={startLinkUrl}
+                      className="flex-1 px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-600 truncate"
+                    />
+                    <button
+                      onClick={() => handleCopy(startLinkUrl, 'url')}
+                      className="p-1.5 border border-gray-200 rounded-md hover:bg-gray-50 text-gray-500 hover:text-violet-600 transition-colors shrink-0"
+                      title="Copy URL"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {copiedField === 'url' && (
+                    <p className="text-xs text-green-600 mt-1">Copied!</p>
+                  )}
+                </div>
+
+                {/* Access Methods */}
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                    Access Methods
+                  </h3>
+                  <div className="space-y-2">
+                    {/* Direct Link */}
+                    <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-violet-200 hover:bg-violet-50/30 transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
+                        <ExternalLink className="w-4 h-4 text-violet-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">Direct Link</p>
+                        <p className="text-xs text-gray-500 truncate">{startLinkUrl}</p>
+                      </div>
+                      <button
+                        onClick={() => handleCopy(startLinkUrl, 'direct')}
+                        className="p-1.5 border border-gray-200 rounded-md hover:bg-white text-gray-400 hover:text-violet-600 transition-colors shrink-0"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    {copiedField === 'direct' && (
+                      <p className="text-xs text-green-600 -mt-1 ml-11">Copied!</p>
+                    )}
+
+                    {/* Embed HTML */}
+                    <div className="border border-gray-200 rounded-lg hover:border-violet-200 transition-colors">
+                      <div className="flex items-center gap-3 p-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                          <Code className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900">Embed HTML</p>
+                          <p className="text-xs text-gray-500">Embed in your website or app</p>
+                        </div>
+                        <button
+                          onClick={() => handleCopy(embedSnippet, 'embed')}
+                          className="p-1.5 border border-gray-200 rounded-md hover:bg-white text-gray-400 hover:text-blue-600 transition-colors shrink-0"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="px-3 pb-3">
+                        <pre className="p-2 bg-gray-50 rounded-md text-[11px] text-gray-600 overflow-x-auto whitespace-pre-wrap break-all font-mono">
+                          {embedSnippet}
+                        </pre>
+                        {copiedField === 'embed' && (
+                          <p className="text-xs text-green-600 mt-1">Copied!</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* QR Code */}
+                    <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-violet-200 hover:bg-violet-50/30 transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+                        <QrCode className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">QR Code</p>
+                        <p className="text-xs text-gray-500">Scan to open start link</p>
+                      </div>
+                    </div>
+                    <div className="border border-gray-200 rounded-lg p-4 flex items-center justify-center bg-gray-50">
+                      <div className="w-28 h-28 bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                        <QrCode className="w-12 h-12 text-gray-300" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Initialization Page Settings */}
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                    Initialization Page
+                  </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Title</label>
+                      <input
+                        type="text"
+                        value={startLinkConfig.initTitle}
+                        onChange={(e) => handleStartLinkConfigChange('initTitle', e.target.value)}
+                        placeholder={workflow?.name || 'Flow name'}
+                        className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Subtitle</label>
+                      <input
+                        type="text"
+                        value={startLinkConfig.initSubtitle}
+                        onChange={(e) => handleStartLinkConfigChange('initSubtitle', e.target.value)}
+                        placeholder="Optional description..."
+                        className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Button Label</label>
+                      <input
+                        type="text"
+                        value={startLinkConfig.buttonLabel}
+                        onChange={(e) => handleStartLinkConfigChange('buttonLabel', e.target.value)}
+                        placeholder="Start"
+                        className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Completion Page Settings */}
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                    Completion Page
+                  </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Title</label>
+                      <input
+                        type="text"
+                        value={startLinkConfig.completionTitle}
+                        onChange={(e) => handleStartLinkConfigChange('completionTitle', e.target.value)}
+                        placeholder="Thank you!"
+                        className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Subtitle</label>
+                      <input
+                        type="text"
+                        value={startLinkConfig.completionSubtitle}
+                        onChange={(e) => handleStartLinkConfigChange('completionSubtitle', e.target.value)}
+                        placeholder="Optional message..."
+                        className="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </section>
           )}

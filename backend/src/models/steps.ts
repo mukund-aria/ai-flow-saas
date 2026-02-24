@@ -32,7 +32,8 @@ export type HumanActionType =
   | 'ESIGN'
   | 'DECISION'
   | 'CUSTOM_ACTION'
-  | 'WEB_APP';
+  | 'WEB_APP'
+  | 'PDF_FORM';
 
 export type ControlType =
   | 'SINGLE_CHOICE_BRANCH'
@@ -41,15 +42,28 @@ export type ControlType =
   | 'GOTO'
   | 'GOTO_DESTINATION'
   | 'TERMINATE'
-  | 'WAIT';
+  | 'WAIT'
+  | 'SUB_FLOW';
 
 export type AutomationType =
-  | 'AI_AUTOMATION'
+  | 'AI_CUSTOM_PROMPT'
+  | 'AI_EXTRACT'
+  | 'AI_SUMMARIZE'
+  | 'AI_TRANSCRIBE'
+  | 'AI_TRANSLATE'
+  | 'AI_WRITE'
   | 'SYSTEM_WEBHOOK'
   | 'SYSTEM_EMAIL'
   | 'SYSTEM_CHAT_MESSAGE'
   | 'SYSTEM_UPDATE_WORKSPACE'
-  | 'BUSINESS_RULE';
+  | 'BUSINESS_RULE'
+  | 'INTEGRATION_AIRTABLE'
+  | 'INTEGRATION_CLICKUP'
+  | 'INTEGRATION_DROPBOX'
+  | 'INTEGRATION_GMAIL'
+  | 'INTEGRATION_GOOGLE_DRIVE'
+  | 'INTEGRATION_GOOGLE_SHEETS'
+  | 'INTEGRATION_WRIKE';
 
 export type StepType = HumanActionType | ControlType | AutomationType;
 
@@ -233,6 +247,30 @@ export interface WebAppStep extends BaseStep {
   };
 }
 
+// --- PDF_FORM ---
+export interface PdfFormField {
+  fieldId: string;
+  pdfFieldName: string;
+  label: string;
+  required?: boolean;
+  readOnly?: boolean;
+  defaultValue?: string;
+  dataRef?: string;
+}
+
+export interface PdfFormStep extends BaseStep {
+  type: 'PDF_FORM';
+  assignees: AssigneeOrAssignees;
+  due?: RelativeDue;
+  reminderOverride?: StepReminderOverride;
+  options?: StepOptions;
+  pdfForm: {
+    documentRef: string;
+    fields: PdfFormField[];
+  };
+  outputs?: StepOutput[];
+}
+
 // ============================================================================
 // Control Steps
 // ============================================================================
@@ -244,8 +282,20 @@ export interface EqualsCondition {
   right: string;
 }
 
+export interface NotEqualsCondition {
+  type: 'NOT_EQUALS';
+  left: string;
+  right: string;
+}
+
 export interface ContainsCondition {
   type: 'CONTAINS';
+  left: string;
+  right: string;
+}
+
+export interface NotContainsCondition {
+  type: 'NOT_CONTAINS';
   left: string;
   right: string;
 }
@@ -261,7 +311,9 @@ export interface ElseCondition {
 
 export type BranchCondition =
   | EqualsCondition
+  | NotEqualsCondition
   | ContainsCondition
+  | NotContainsCondition
   | NotEmptyCondition
   | ElseCondition;
 
@@ -270,13 +322,15 @@ export interface BranchPath {
   pathId: string;
   label: string;
   condition?: BranchCondition;
+  conditions?: BranchCondition[];  // Multiple conditions per branch (up to 10)
+  conditionLogic?: 'ALL' | 'ANY';  // How to combine multiple conditions
   steps: Step[];
 }
 
 // --- SINGLE_CHOICE_BRANCH ---
 export interface SingleChoiceBranchStep extends BaseStep {
   type: 'SINGLE_CHOICE_BRANCH';
-  paths: [BranchPath, BranchPath];  // Exactly 2: if and else
+  paths: BranchPath[];  // 2-3 paths
 }
 
 // --- MULTI_CHOICE_BRANCH ---
@@ -315,27 +369,84 @@ export interface TerminateStep extends BaseStep {
 export interface WaitStep extends BaseStep {
   type: 'WAIT';
   waitFor: {
-    type: 'EXTERNAL_APP_EVENT';
-    app: string;
-    event: string;
+    type: 'EXTERNAL_APP_EVENT' | 'SUB_FLOW_COMPLETION' | 'DURATION' | 'DATE';
+    app?: string;
+    event?: string;
+    subFlowStepId?: string;
+    outputVariables?: Array<{ key: string; ref: string }>;
+    duration?: { value: number; unit: 'MINUTES' | 'HOURS' | 'DAYS' };
+    date?: string;
   };
+}
+
+// --- SUB_FLOW ---
+export interface SubFlowStep extends BaseStep {
+  type: 'SUB_FLOW';
+  flowTemplateId: string;
+  assigneeMappings?: Array<{
+    parentRoleId: string;
+    childRoleId: string;
+  }>;
+  variableMappings?: Array<{
+    parentKey: string;
+    childKey: string;
+  }>;
 }
 
 // ============================================================================
 // Automation Steps
 // ============================================================================
 
-// --- AI_AUTOMATION ---
-export interface AiAutomationStep extends BaseStep {
-  type: 'AI_AUTOMATION';
+// --- Shared AI Automation Base ---
+export interface BaseAiStep extends BaseStep {
   visibility?: VisibilityConfig;
   inputs?: InputRef[];
-  prompt: string;
+  prompt?: string;
   knowledge?: {
     sources: string[];
     mode: 'REQUIRED' | 'OPTIONAL';
   };
   outputs: StepOutput[];
+}
+
+// --- AI_CUSTOM_PROMPT ---
+export interface AiCustomPromptStep extends BaseAiStep {
+  type: 'AI_CUSTOM_PROMPT';
+  prompt: string;
+}
+
+// --- AI_EXTRACT ---
+export interface AiExtractStep extends BaseAiStep {
+  type: 'AI_EXTRACT';
+}
+
+// --- AI_SUMMARIZE ---
+export interface AiSummarizeStep extends BaseAiStep {
+  type: 'AI_SUMMARIZE';
+}
+
+// --- AI_TRANSCRIBE ---
+export interface AiTranscribeStep extends BaseAiStep {
+  type: 'AI_TRANSCRIBE';
+  sourceUrl?: string;
+}
+
+// --- AI_TRANSLATE ---
+export interface AiTranslateStep extends BaseAiStep {
+  type: 'AI_TRANSLATE';
+  targetLanguage?: string;
+}
+
+// --- AI_WRITE ---
+export interface AiWriteStep extends BaseAiStep {
+  type: 'AI_WRITE';
+  contentParams?: {
+    tone?: string;
+    audience?: string;
+    format?: string;
+    goals?: string;
+    length?: string;
+  };
 }
 
 // --- SYSTEM_WEBHOOK ---
@@ -386,6 +497,24 @@ export interface BusinessRuleStep extends BaseStep {
   outputs: StepOutput[];
 }
 
+// --- INTEGRATION ---
+export interface IntegrationStep extends BaseStep {
+  type: 'INTEGRATION_AIRTABLE' | 'INTEGRATION_CLICKUP' | 'INTEGRATION_DROPBOX' | 'INTEGRATION_GMAIL' | 'INTEGRATION_GOOGLE_DRIVE' | 'INTEGRATION_GOOGLE_SHEETS' | 'INTEGRATION_WRIKE';
+  visibility?: VisibilityConfig;
+  integration: {
+    provider: string;
+    event: string;
+    accountId?: string;
+    fieldMappings: Array<{
+      targetField: string;
+      value: string;
+      isDynamic: boolean;
+    }>;
+    config: Record<string, unknown>;
+  };
+  outputs?: StepOutput[];
+}
+
 // ============================================================================
 // Unknown Step (for backwards compatibility)
 // ============================================================================
@@ -411,6 +540,7 @@ export type Step =
   | DecisionStep
   | CustomActionStep
   | WebAppStep
+  | PdfFormStep
   // Controls
   | SingleChoiceBranchStep
   | MultiChoiceBranchStep
@@ -419,13 +549,20 @@ export type Step =
   | GotoDestinationStep
   | TerminateStep
   | WaitStep
+  | SubFlowStep
   // Automations
-  | AiAutomationStep
+  | AiCustomPromptStep
+  | AiExtractStep
+  | AiSummarizeStep
+  | AiTranscribeStep
+  | AiTranslateStep
+  | AiWriteStep
   | SystemWebhookStep
   | SystemEmailStep
   | SystemChatMessageStep
   | SystemUpdateWorkspaceStep
   | BusinessRuleStep
+  | IntegrationStep
   // Unknown
   | UnknownStep;
 
@@ -437,7 +574,7 @@ export function isHumanActionStep(step: Step): boolean {
   const humanActions: StepType[] = [
     'FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO',
     'APPROVAL', 'ACKNOWLEDGEMENT', 'ESIGN', 'DECISION',
-    'CUSTOM_ACTION', 'WEB_APP',
+    'CUSTOM_ACTION', 'WEB_APP', 'PDF_FORM',
   ];
   return humanActions.includes(step.type);
 }
@@ -445,15 +582,20 @@ export function isHumanActionStep(step: Step): boolean {
 export function isControlStep(step: Step): boolean {
   const controls: StepType[] = [
     'SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH',
-    'GOTO', 'GOTO_DESTINATION', 'TERMINATE', 'WAIT',
+    'GOTO', 'GOTO_DESTINATION', 'TERMINATE', 'WAIT', 'SUB_FLOW',
   ];
   return controls.includes(step.type);
 }
 
 export function isAutomationStep(step: Step): boolean {
   const automations: StepType[] = [
-    'AI_AUTOMATION', 'SYSTEM_WEBHOOK', 'SYSTEM_EMAIL',
+    'AI_CUSTOM_PROMPT', 'AI_EXTRACT', 'AI_SUMMARIZE',
+    'AI_TRANSCRIBE', 'AI_TRANSLATE', 'AI_WRITE',
+    'SYSTEM_WEBHOOK', 'SYSTEM_EMAIL',
     'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE',
+    'INTEGRATION_AIRTABLE', 'INTEGRATION_CLICKUP', 'INTEGRATION_DROPBOX',
+    'INTEGRATION_GMAIL', 'INTEGRATION_GOOGLE_DRIVE', 'INTEGRATION_GOOGLE_SHEETS',
+    'INTEGRATION_WRIKE',
   ];
   return automations.includes(step.type);
 }

@@ -499,8 +499,9 @@ const AI_ACTION_TYPES: { value: AIActionType; label: string; icon: string }[] = 
   { value: 'CUSTOM_PROMPT', label: 'Custom prompt', icon: '✦' },
   { value: 'EXTRACT', label: 'Extract', icon: '⇥' },
   { value: 'SUMMARIZE', label: 'Summarize', icon: '≡' },
-  { value: 'CLASSIFY', label: 'Classify', icon: '◫' },
-  { value: 'GENERATE', label: 'Generate', icon: '⚡' },
+  { value: 'TRANSCRIBE', label: 'Transcribe', icon: '🎤' },
+  { value: 'TRANSLATE', label: 'Translate', icon: '🌐' },
+  { value: 'WRITE', label: 'Write', icon: '✍' },
 ];
 
 const AI_FIELD_TYPES: { value: AIFieldType; label: string }[] = [
@@ -1279,7 +1280,7 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
   );
 
   // AI Automation config
-  const isAIAutomation = step.type === 'AI_AUTOMATION';
+  const isAIAutomation = ['AI_CUSTOM_PROMPT', 'AI_EXTRACT', 'AI_SUMMARIZE', 'AI_TRANSCRIBE', 'AI_TRANSLATE', 'AI_WRITE'].includes(step.type);
   const [aiAutomationConfig, setAiAutomationConfig] = useState<AIAutomationConfig>(
     step.config.aiAutomation || { actionType: 'CUSTOM_PROMPT', inputFields: [], knowledgeSources: [], prompt: '', outputFields: [] }
   );
@@ -1320,7 +1321,7 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
   );
 
   // Automation step types don't have assignees
-  const automationTypes = ['AI_AUTOMATION', 'SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE'];
+  const automationTypes = ['AI_CUSTOM_PROMPT', 'AI_EXTRACT', 'AI_SUMMARIZE', 'AI_TRANSCRIBE', 'AI_TRANSLATE', 'AI_WRITE', 'SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE', 'INTEGRATION_AIRTABLE', 'INTEGRATION_CLICKUP', 'INTEGRATION_DROPBOX', 'INTEGRATION_GMAIL', 'INTEGRATION_GOOGLE_DRIVE', 'INTEGRATION_GOOGLE_SHEETS', 'INTEGRATION_WRIKE'];
 
   // Steps that support assignee selection
   const hasAssignee = !['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO', 'GOTO_DESTINATION', 'TERMINATE', ...automationTypes].includes(step.type);

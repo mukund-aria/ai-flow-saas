@@ -117,17 +117,38 @@ function SortableHeader({ label, field, sortConfig, onSort }: SortableHeaderProp
   );
 }
 
+// Contact type definitions with descriptions (matching Moxo)
+const CONTACT_TYPES = {
+  ASSIGNEE: {
+    label: 'Assignee',
+    description: 'Can only complete actions assigned to them',
+    color: 'bg-slate-100 text-slate-600 ring-1 ring-slate-500/20',
+  },
+  MEMBER: {
+    label: 'Member',
+    description: 'Can design, create, and coordinate flows',
+    color: 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20',
+  },
+  ADMIN: {
+    label: 'Admin',
+    description: 'Has full organization-level access',
+    color: 'bg-violet-50 text-violet-700 ring-1 ring-violet-600/20',
+  },
+} as const;
+
+type ContactTypeKey = keyof typeof CONTACT_TYPES;
+
 // Add Contact Dialog
 interface AddContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (contact: { name: string; email: string; type: 'ADMIN' | 'ASSIGNEE' }) => Promise<void>;
+  onSubmit: (contact: { name: string; email: string; type: ContactTypeKey }) => Promise<void>;
 }
 
 function AddContactDialog({ open, onOpenChange, onSubmit }: AddContactDialogProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [type, setType] = useState<'ADMIN' | 'ASSIGNEE'>('ASSIGNEE');
+  const [type, setType] = useState<ContactTypeKey>('ASSIGNEE');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -169,9 +190,9 @@ function AddContactDialog({ open, onOpenChange, onSubmit }: AddContactDialogProp
         </button>
 
         {/* Header */}
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Add Contact</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">New Contact</h2>
         <p className="text-sm text-gray-500 mb-6">
-          Add a new contact to your organization
+          Add a new user to your organization
         </p>
 
         {submitError && (
@@ -181,22 +202,6 @@ function AddContactDialog({ open, onOpenChange, onSubmit }: AddContactDialogProp
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
-          <div>
-            <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-1">
-              Name
-            </label>
-            <input
-              id="contact-name"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Sarah Chen"
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow"
-            />
-          </div>
-
           {/* Email */}
           <div>
             <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -213,23 +218,52 @@ function AddContactDialog({ open, onOpenChange, onSubmit }: AddContactDialogProp
             />
           </div>
 
-          {/* Type */}
+          {/* Type - Card selection like Moxo */}
           <div>
-            <label htmlFor="contact-type" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Type
             </label>
-            <div className="relative">
-              <select
-                id="contact-type"
-                value={type}
-                onChange={(e) => setType(e.target.value as 'ADMIN' | 'ASSIGNEE')}
-                className="w-full appearance-none px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent cursor-pointer"
-              >
-                <option value="ASSIGNEE">Assignee</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <div className="space-y-2">
+              {(Object.entries(CONTACT_TYPES) as [ContactTypeKey, typeof CONTACT_TYPES[ContactTypeKey]][]).map(([key, info]) => (
+                <label
+                  key={key}
+                  className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    type === key
+                      ? 'border-violet-500 bg-violet-50/50 ring-1 ring-violet-500'
+                      : 'border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="contact-type"
+                    value={key}
+                    checked={type === key}
+                    onChange={() => setType(key)}
+                    className="mt-0.5 w-4 h-4 text-violet-600 border-gray-300 focus:ring-violet-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-900">{info.label}</span>
+                    <p className="text-xs text-gray-500 mt-0.5">{info.description}</p>
+                  </div>
+                </label>
+              ))}
             </div>
+          </div>
+
+          {/* Full Name */}
+          <div>
+            <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-1">
+              Full Name
+            </label>
+            <input
+              id="contact-name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Sarah Chen"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow"
+            />
           </div>
 
           {/* Actions */}
@@ -301,7 +335,7 @@ export function ContactsPage() {
   };
 
   // Handle add contact
-  const handleAddContact = async (contact: { name: string; email: string; type: 'ADMIN' | 'ASSIGNEE' }) => {
+  const handleAddContact = async (contact: { name: string; email: string; type: ContactTypeKey }) => {
     const newContact = await createContact(contact);
     setContacts((prev) => [...prev, newContact]);
   };
@@ -518,12 +552,10 @@ export function ContactsPage() {
                   <td className="px-6 py-4">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${
-                        contact.type === 'ADMIN'
-                          ? 'bg-violet-50 text-violet-700 ring-1 ring-violet-600/20'
-                          : 'bg-slate-100 text-slate-600 ring-1 ring-slate-500/20'
+                        CONTACT_TYPES[contact.type as ContactTypeKey]?.color || 'bg-slate-100 text-slate-600 ring-1 ring-slate-500/20'
                       }`}
                     >
-                      {contact.type === 'ADMIN' ? 'Admin' : 'Assignee'}
+                      {CONTACT_TYPES[contact.type as ContactTypeKey]?.label || contact.type}
                     </span>
                   </td>
 

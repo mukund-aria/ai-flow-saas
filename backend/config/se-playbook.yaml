@@ -117,8 +117,9 @@ consultationStages:
         - "How long should we wait maximum?"
         - "What happens if the wait times out?"
       SINGLE_CHOICE_BRANCH:
-        - "What are the possible paths (up to 3)?"
-        - "What criteria determines which path to take?"
+        - "What are the possible conditional paths (up to 3, including else/default)?"
+        - "What criteria or rules determine which path to take?"
+        - "Should conditions use ALL (every rule must match) or ANY (at least one rule matches) logic?"
       PARALLEL_BRANCH:
         - "What tasks should happen simultaneously?"
         - "Do all branches need to complete, or just one?"
@@ -131,10 +132,47 @@ consultationStages:
         - "What system should receive the webhook?"
         - "What data should be sent?"
         - "Should we wait for a response?"
-      AI_AUTOMATION:
-        - "What should the AI analyze or generate?"
-        - "What data should the AI use as input?"
-        - "Where should the AI output be stored or used?"
+      PDF_FORM:
+        - "Do you have the PDF template that needs to be filled?"
+        - "What fields in the PDF should be populated with flow data?"
+        - "Should the filled PDF be sent to someone for review or signature?"
+      # Control Steps (continued)
+      SUB_FLOW:
+        - "Which existing flow should be triggered as a sub-flow?"
+        - "What data should be passed into the sub-flow?"
+        - "Should the parent flow wait for the sub-flow to complete?"
+      # AI Automation Steps (specialized)
+      AI_CUSTOM_PROMPT:
+        - "What should the AI analyze, transform, or generate?"
+        - "What inputs (prior step outputs, files, etc.) should the AI use?"
+        - "What format should the AI output be in (text, JSON, file)?"
+        - "Are there specific instructions or constraints for the AI?"
+      AI_EXTRACT:
+        - "What data needs to be extracted (names, dates, amounts, etc.)?"
+        - "From what type of document or content (PDF, form response, email)?"
+        - "Should the extracted data be structured (e.g., key-value pairs, table)?"
+        - "What should happen if extraction confidence is low?"
+      AI_SUMMARIZE:
+        - "What content needs to be summarized (document, form responses, conversation)?"
+        - "How long should the summary be (brief, detailed, bullet points)?"
+        - "What format should the summary follow (executive summary, action items, etc.)?"
+        - "Are there specific aspects to focus on or ignore?"
+      AI_TRANSCRIBE:
+        - "What is the source of the audio/video content (uploaded file, URL)?"
+        - "What language is the content in?"
+        - "Should timestamps be included in the transcription?"
+        - "Is speaker identification needed?"
+      AI_TRANSLATE:
+        - "What is the target language for translation?"
+        - "What is the source content (text from a prior step, uploaded document)?"
+        - "Should the translation preserve formatting or be plain text?"
+        - "Is there domain-specific terminology to handle (legal, medical, technical)?"
+      AI_WRITE:
+        - "What type of content should the AI write (email, report, letter, summary)?"
+        - "What tone and style should be used (formal, casual, technical)?"
+        - "Who is the target audience?"
+        - "What approximate length is expected?"
+        - "What data from prior steps should be incorporated?"
       BUSINESS_RULE:
         - "What conditions should be evaluated?"
         - "What action should happen when conditions are met?"
@@ -154,16 +192,27 @@ consultationStages:
     order: 5
     keyQuestion: "Are there any tasks that AI could automate to reduce manual work?"
     secondaryQuestions:
-      - "What instructions should the AI follow?"
-      - "What data should the AI use?"
-      - "What should the AI output?"
+      - "What type of AI task is this? (extract data, summarize, translate, transcribe, write content, or custom prompt)"
+      - "What data should the AI use as input?"
+      - "What should the AI output and where should it go?"
+    availableTypes:
+      AI_EXTRACT: "Extract structured data from documents, forms, or text"
+      AI_SUMMARIZE: "Summarize documents, conversations, or form responses"
+      AI_TRANSLATE: "Translate content between languages"
+      AI_TRANSCRIBE: "Transcribe audio/video content to text"
+      AI_WRITE: "Generate written content (emails, reports, letters)"
+      AI_CUSTOM_PROMPT: "Custom AI task with free-form instructions"
     proactiveReview:
-      - "Look for data extraction opportunities"
-      - "Look for summarization opportunities"
-      - "Look for AI prepare/review/advise opportunities"
+      - "Look for data extraction opportunities → suggest AI_EXTRACT"
+      - "Look for summarization opportunities → suggest AI_SUMMARIZE"
+      - "Look for content generation needs → suggest AI_WRITE"
+      - "Look for translation needs → suggest AI_TRANSLATE"
+      - "Look for transcription needs → suggest AI_TRANSCRIBE"
+      - "For anything else AI-related → suggest AI_CUSTOM_PROMPT"
     defaults:
       - "Use default Moxo AI model"
-    explanation: "AI can automate tasks like data extraction, form preparation, and document review."
+      - "Choose the most specific AI type for the task (prefer AI_EXTRACT over AI_CUSTOM_PROMPT for extraction)"
+    explanation: "AI can automate tasks like data extraction, summarization, translation, transcription, content writing, and custom analysis. Choose the most specific type for best results."
 
   - stage: integrations
     order: 6
@@ -302,4 +351,4 @@ behaviors:
   # When user asks for unsupported feature
   whenUnsupported:
     action: "Politely explain, suggest workaround"
-    example: "Subflows aren't supported yet, but we can use milestones and branches to organize your process."
+    example: "That specific feature isn't available yet, but we can use existing step types to achieve a similar result."
