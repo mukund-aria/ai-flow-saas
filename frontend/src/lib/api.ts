@@ -570,6 +570,16 @@ export interface PDFUploadResult {
 }
 
 /**
+ * Get or generate a sample fillable PDF for template gallery imports
+ */
+export async function getSamplePDF(): Promise<PDFUploadResult> {
+  const res = await fetch(`${API_BASE}/pdf/sample`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to get sample PDF');
+  return data.data;
+}
+
+/**
  * Upload a PDF and detect its fillable form fields
  */
 export async function uploadPDF(file: File): Promise<PDFUploadResult> {

@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import multer from 'multer';
-import { savePDFAndDetectFields } from '../services/pdf.js';
+import { savePDFAndDetectFields, ensureSamplePDF } from '../services/pdf.js';
 
 const router = Router();
 
@@ -44,6 +44,19 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     res.status(500).json({
       success: false,
       error: { code: 'UPLOAD_FAILED', message: err.message || 'Failed to process PDF' },
+    });
+  }
+});
+
+router.get('/sample', async (_req, res) => {
+  try {
+    const result = await ensureSamplePDF();
+    res.json({ success: true, data: result });
+  } catch (err: any) {
+    console.error('[PDF Sample] Error:', err);
+    res.status(500).json({
+      success: false,
+      error: { code: 'SAMPLE_FAILED', message: err.message || 'Failed to generate sample PDF' },
     });
   }
 });

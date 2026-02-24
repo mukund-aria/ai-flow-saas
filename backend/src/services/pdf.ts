@@ -123,3 +123,71 @@ export async function savePDFAndDetectFields(
     fields,
   };
 }
+
+const SAMPLE_PDF_NAME = 'sample-fillable-form.pdf';
+
+const SAMPLE_FIELDS: { name: string; label: string; type: 'text' | 'checkbox' }[] = [
+  { name: 'full_name', label: 'Full Name', type: 'text' },
+  { name: 'email', label: 'Email Address', type: 'text' },
+  { name: 'date', label: 'Date', type: 'text' },
+  { name: 'phone', label: 'Phone Number', type: 'text' },
+  { name: 'address', label: 'Address', type: 'text' },
+  { name: 'tax_id', label: 'Tax ID / SSN', type: 'text' },
+  { name: 'signature', label: 'Signature', type: 'text' },
+  { name: 'agree_terms', label: 'I agree to the terms', type: 'checkbox' },
+];
+
+/**
+ * Ensure a sample fillable PDF exists on disk. Generates it with pdf-lib if missing.
+ * Returns the document URL and detected fields, suitable for populating PDF_FORM steps.
+ */
+export async function ensureSamplePDF(): Promise<PDFUploadResult> {
+  await fs.mkdir(UPLOADS_DIR, { recursive: true });
+
+  const filePath = path.join(UPLOADS_DIR, SAMPLE_PDF_NAME);
+  const documentUrl = `/uploads/pdfs/${SAMPLE_PDF_NAME}`;
+
+  try {
+    await fs.access(filePath);
+  } catch {
+    // File doesn't exist — generate it
+    const pdfDoc = await PDFDocument.create();
+    const form = pdfDoc.getForm();
+    const page = pdfDoc.addPage([612, 792]); // US Letter
+
+    let y = 720;
+    for (const f of SAMPLE_FIELDS) {
+      if (f.type === 'text') {
+        const field = form.createTextField(f.name);
+        field.addToPage(page, { x: 50, y, width: 250, height: 20 });
+        y -= 40;
+      } else {
+        const field = form.createCheckBox(f.name);
+        field.addToPage(page, { x: 50, y, width: 15, height: 15 });
+        y -= 40;
+      }
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    await fs.writeFile(filePath, pdfBytes);
+  }
+
+  // Read back to get accurate size
+  const stat = await fs.stat(filePath);
+
+  const fields: DetectedField[] = SAMPLE_FIELDS.map((f, i) => ({
+    fieldId: `pdf-field-${i}`,
+    pdfFieldName: f.name,
+    label: f.label,
+    fieldType: f.type === 'checkbox' ? 'checkbox' : 'text',
+    required: false,
+  }));
+
+  return {
+    documentUrl,
+    fileName: SAMPLE_PDF_NAME,
+    fileSize: stat.size,
+    pageCount: 1,
+    fields,
+  };
+}

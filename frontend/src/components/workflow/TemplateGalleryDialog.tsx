@@ -35,7 +35,7 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createTemplate } from '@/lib/api';
+import { createTemplate, getSamplePDF, type PDFUploadResult } from '@/lib/api';
 import { TEMPLATE_CATEGORIES, GALLERY_TEMPLATES, type GalleryTemplate } from '@/data/template-gallery';
 
 // Icon map from string to component
@@ -98,7 +98,7 @@ function generatePlaceholderId(): string {
 /**
  * Convert a gallery template into a workflow definition for createTemplate API
  */
-function galleryTemplateToDefinition(template: GalleryTemplate) {
+function galleryTemplateToDefinition(template: GalleryTemplate, samplePDF?: PDFUploadResult) {
   // Create assignee placeholders from roles
   const placeholders = template.roles.map((roleName, i) => ({
     placeholderId: `${generatePlaceholderId()}-${i}`,
@@ -125,7 +125,8 @@ function galleryTemplateToDefinition(template: GalleryTemplate) {
       };
     } else if (step.type === 'PDF_FORM') {
       config.pdfForm = {
-        fields: [],
+        fields: samplePDF ? samplePDF.fields : [],
+        ...(samplePDF ? { documentUrl: samplePDF.documentUrl } : {}),
         ...(step.sampleDocumentRef ? { documentDescription: step.sampleDocumentRef } : {}),
       };
     } else if (step.type === 'FILE_REQUEST') {
@@ -203,7 +204,17 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
   const handleImport = async (template: GalleryTemplate) => {
     setIsImporting(true);
     try {
-      const definition = galleryTemplateToDefinition(template);
+      // Fetch sample PDF if any steps are PDF_FORM type
+      let samplePDF: PDFUploadResult | undefined;
+      if (template.steps.some(s => s.type === 'PDF_FORM')) {
+        try {
+          samplePDF = await getSamplePDF();
+        } catch (err) {
+          console.warn('Failed to fetch sample PDF, PDF_FORM steps will have no document:', err);
+        }
+      }
+
+      const definition = galleryTemplateToDefinition(template, samplePDF);
       const created = await createTemplate({
         name: template.name,
         description: template.description,
