@@ -28,6 +28,11 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Handoff & Discovery',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Sales-to-delivery handoff',
         type: 'FORM',
         assigneeRole: 'Implementation Lead',
@@ -66,6 +71,11 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'Planning & Approval',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Project plan creation',
         type: 'TODO',
         assigneeRole: 'Implementation Lead',
@@ -76,6 +86,11 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
         type: 'APPROVAL',
         assigneeRole: 'Client Sponsor',
         sampleDescription: 'Review the proposed project plan including milestones, timelines, and resource commitments. Approve to proceed or request changes.',
+      },
+      {
+        name: 'Provisioning & Launch',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Environment provisioning',
@@ -186,6 +201,11 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Readiness Assessment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Go-live readiness assessment',
         type: 'FORM',
         assigneeRole: 'Implementation Lead',
@@ -210,6 +230,11 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
         sampleDescription: 'Certify that all technical prerequisites for go-live have been met including infrastructure, integrations, and performance benchmarks.',
       },
       {
+        name: 'Go/No-Go Decision',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Go/No-Go decision',
         type: 'DECISION',
         assigneeRole: 'Implementation Lead',
@@ -220,6 +245,11 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
         type: 'APPROVAL',
         assigneeRole: 'Client Sponsor',
         sampleDescription: 'Authorize the production cutover to proceed. This is the final client approval before go-live execution.',
+      },
+      {
+        name: 'Cutover & Verification',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Production cutover execution',
@@ -239,6 +269,11 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f4', label: 'Reporting / Analytics Flow', type: 'DROPDOWN', required: true, options: [{ label: 'Pass', value: 'pass' }, { label: 'Fail', value: 'fail' }] },
           { fieldId: 'f5', label: 'Additional Notes', type: 'TEXT_MULTI_LINE' },
         ],
+      },
+      {
+        name: 'Hypercare Transition',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Go-live acknowledgement',
@@ -432,6 +467,11 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Engagement & Intake',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Engagement letter',
         type: 'ESIGN',
         assigneeRole: 'Client/Taxpayer',
@@ -449,6 +489,11 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f3', label: 'Income Sources', type: 'TEXT_MULTI_LINE', required: true },
           { fieldId: 'f4', label: 'Deductions & Credits to Claim', type: 'TEXT_MULTI_LINE' },
         ],
+      },
+      {
+        name: 'Document Collection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Income documents upload',
@@ -479,6 +524,11 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'Preparation & Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Preparer review',
         type: 'TODO',
         assigneeRole: 'Tax Preparer',
@@ -489,6 +539,11 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
         type: 'TODO',
         assigneeRole: 'Tax Reviewer',
         sampleDescription: 'Perform quality review of the prepared tax return. Verify calculations, check for missed deductions, and ensure compliance with current tax law.',
+      },
+      {
+        name: 'Delivery & Filing',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Draft return delivery',

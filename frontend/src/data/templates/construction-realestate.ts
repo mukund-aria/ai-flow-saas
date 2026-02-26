@@ -29,6 +29,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Subcontractor Submission',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Company profile & capabilities',
         type: 'FORM',
         assigneeRole: 'Subcontractor',
@@ -87,6 +92,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'Review & Disposition',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Insurance review',
         type: 'TODO',
         assigneeRole: 'Insurance Coordinator',
@@ -99,6 +109,13 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Safety Lead',
         sampleDescription:
           'Review the safety program documentation, EMR history, and OSHA logs. Confirm the subcontractor meets minimum safety standards for the project.',
+      },
+      {
+        name: 'Qualification disposition',
+        type: 'DECISION',
+        assigneeRole: 'Project Manager',
+        sampleDescription:
+          'Render qualification decision: approve the subcontractor for the approved trades list, conditionally approve pending additional documentation, or disqualify.',
       },
       {
         name: 'Qualification decision',
@@ -146,6 +163,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Application & Documentation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Payment application',
         type: 'FORM',
         assigneeRole: 'Subcontractor',
@@ -174,6 +196,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         sampleDescription:
           'Sign the conditional lien waiver for the current billing period. This waiver is effective only upon receipt of payment.',
         sampleDocumentRef: 'conditional-lien-waiver-progress',
+      },
+      {
+        name: 'Review & Payment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Field verification & pay app review',
@@ -236,6 +263,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Final Application & Punch List',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Final payment application',
         type: 'FORM',
         assigneeRole: 'Subcontractor',
@@ -263,6 +295,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
           'Verify that all punch list items have been satisfactorily completed. Document verification with photos.',
       },
       {
+        name: 'Closeout & Approval',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Closeout documents & sub-tier waivers',
         type: 'FILE_REQUEST',
         assigneeRole: 'Subcontractor',
@@ -283,6 +320,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Owner Representative',
         sampleDescription:
           'Approve the final payment including retention release after reviewing all closeout documentation and lien waivers.',
+      },
+      {
+        name: 'Final Payment & Release',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Final payment processing',
@@ -334,6 +376,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Submission',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Submittal package upload',
         type: 'FILE_REQUEST',
         assigneeRole: 'Subcontractor',
@@ -346,6 +393,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Project Manager',
         sampleDescription:
           'Perform a preliminary review of the submittal package for completeness, correct specification references, and contract compliance before forwarding to the design team.',
+      },
+      {
+        name: 'Review Cycle',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Architect/Engineer review',
@@ -372,11 +424,23 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'A/E review disposition',
+        type: 'DECISION',
+        assigneeRole: 'Architect/Engineer',
+        sampleDescription:
+          'Architect/Engineer renders review disposition: approved, approved as noted, revise and resubmit, or rejected.',
+      },
+      {
         name: 'Owner review (if required)',
         type: 'TODO',
         assigneeRole: 'Owner Representative',
         sampleDescription:
           'Review the submittal if owner input is required (e.g., finish selections, color choices). Mark as complete if owner review is not needed for this submittal.',
+      },
+      {
+        name: 'Revision & Final Approval',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Revised submittal (if required)',
@@ -427,6 +491,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'RFI Submission',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'RFI submission',
         type: 'FORM',
         assigneeRole: 'Contractor',
@@ -452,6 +521,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Contractor',
         sampleDescription:
           'Upload any supporting photos, sketches, or marked-up drawings that help illustrate the question or field condition.',
+      },
+      {
+        name: 'Design Team Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Architect review',
@@ -512,6 +586,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Change Request',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Change order request',
         type: 'FORM',
         assigneeRole: 'Contractor',
@@ -538,6 +617,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
           'Upload the detailed cost breakdown including sub-quotes, material takeoffs, labor estimates, and site photos documenting the condition.',
       },
       {
+        name: 'Review & Negotiation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'PM review',
         type: 'TODO',
         assigneeRole: 'Project Manager',
@@ -562,6 +646,18 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f2', label: 'Counter-Proposal Amount ($)', type: 'NUMBER' },
           { fieldId: 'f3', label: 'Additional Conditions', type: 'TEXT_MULTI_LINE' },
         ],
+      },
+      {
+        name: 'Owner change order decision',
+        type: 'DECISION',
+        assigneeRole: 'Owner Representative',
+        sampleDescription:
+          'Owner renders change order decision: approve as submitted, approve with modifications, or reject with rationale.',
+      },
+      {
+        name: 'Execution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Owner approval',
@@ -613,6 +709,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Substantial Completion',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Substantial completion notification',
         type: 'FORM',
         assigneeRole: 'GC/Contractor',
@@ -650,6 +751,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
           'Acknowledge receipt of the punch list and commit to completing all items within the agreed timeframe.',
       },
       {
+        name: 'Punch List Resolution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Certificate of Occupancy & permits',
         type: 'FILE_REQUEST',
         assigneeRole: 'GC/Contractor',
@@ -675,6 +781,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Owner',
         sampleDescription:
           'Review the punch list completion report and approve that all items have been satisfactorily resolved.',
+      },
+      {
+        name: 'Closeout & Turnover',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Closeout documentation',
@@ -735,6 +846,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Contract & Escrow Opening',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Purchase agreement intake',
         type: 'FORM',
         assigneeRole: 'Buyer Agent',
@@ -763,6 +879,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
           'Open escrow and confirm receipt of the earnest money deposit. Distribute escrow instructions to all parties.',
       },
       {
+        name: 'Due Diligence',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Title report & seller disclosures',
         type: 'FILE_REQUEST',
         assigneeRole: 'Seller',
@@ -775,6 +896,13 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Buyer',
         sampleDescription:
           'Upload all inspection reports including general home inspection, pest inspection, and any specialty inspections (roof, sewer, foundation, etc.).',
+      },
+      {
+        name: 'Buyer inspection contingency',
+        type: 'DECISION',
+        assigneeRole: 'Buyer',
+        sampleDescription:
+          'Buyer decides based on inspection results: proceed as-is, request repairs/credits, or exercise contingency to terminate.',
       },
       {
         name: 'Buyer repair request / contingency removal',
@@ -791,6 +919,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
             { label: 'Cancel transaction', value: 'cancel' },
           ] },
         ],
+      },
+      {
+        name: 'Financing & Contingency Removal',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Appraisal & loan processing',
@@ -816,6 +949,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Buyer',
         sampleDescription:
           'Acknowledge removal of appraisal and loan contingencies. Note that your earnest money deposit is now at risk if you fail to close.',
+      },
+      {
+        name: 'Closing',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Title clearance & closing prep',
@@ -878,6 +1016,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Application & Screening',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Lease application',
         type: 'FORM',
         assigneeRole: 'Tenant',
@@ -915,6 +1058,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Landlord Representative',
         sampleDescription:
           'Review the tenant application, financial documentation, and credit check results. Determine whether to proceed with the lease.',
+      },
+      {
+        name: 'Negotiation & Execution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Lease negotiation',
@@ -979,6 +1127,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Notice & Pre-Inspection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Move-out notice',
         type: 'FORM',
         assigneeRole: 'Tenant',
@@ -1012,6 +1165,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
           'Acknowledge receipt of the move-out checklist including cleaning requirements, key return instructions, and utility transfer deadlines.',
       },
       {
+        name: 'Move-Out & Final Inspection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Key return acknowledgement',
         type: 'ACKNOWLEDGEMENT',
         assigneeRole: 'Tenant',
@@ -1031,6 +1189,11 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Property Manager',
         sampleDescription:
           'Upload the completed final inspection report including photos, condition notes, and any estimated repair or cleaning costs.',
+      },
+      {
+        name: 'Deposit Resolution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Deposit accounting',

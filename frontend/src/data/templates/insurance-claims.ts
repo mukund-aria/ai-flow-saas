@@ -28,6 +28,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Intake & Triage',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'First Notice of Loss (FNOL)',
         type: 'FORM',
         assigneeRole: 'Claimant',
@@ -54,6 +59,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         sampleDescription: 'Automated notification: Send claim acknowledgement to the claimant including their claim number, assigned adjuster contact information, expected next steps, and estimated timeline.',
       },
       {
+        name: 'Investigation & Documentation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Loss documentation & evidence',
         type: 'FILE_REQUEST',
         assigneeRole: 'Claimant',
@@ -70,6 +80,17 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         type: 'FILE_REQUEST',
         assigneeRole: 'Claimant',
         sampleDescription: 'Upload any additional documentation requested by the claims adjuster to complete the investigation.',
+      },
+      {
+        name: 'Decision & Settlement',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
+        name: 'Coverage & validity determination',
+        type: 'DECISION',
+        assigneeRole: 'Claims Adjuster',
+        sampleDescription: 'Determine claim coverage and validity. Route valid covered claims to settlement; deny or investigate further for questionable claims.',
       },
       {
         name: 'Claim decision',
@@ -113,6 +134,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Application & Submission',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Application intake',
         type: 'FORM',
         assigneeRole: 'Applicant',
@@ -137,6 +163,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         type: 'TODO',
         assigneeRole: 'Agent/Broker',
         sampleDescription: 'Review the completed application and supporting documents for completeness. Submit the application package to the underwriting team with your broker notes and recommendation.',
+      },
+      {
+        name: 'Underwriting Analysis',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Underwriting questions',
@@ -169,7 +200,18 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         sampleDescription: 'Review the underwriting file for applications that exceed standard authority limits or present unusual risk characteristics. Provide guidance or final decision.',
       },
       {
+        name: 'Decision & Issuance',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Underwriting decision',
+        type: 'DECISION',
+        assigneeRole: 'Underwriter',
+        sampleDescription: 'Make the underwriting decision: approve at standard rates, approve with modified terms, or decline the application.',
+      },
+      {
+        name: 'Underwriting approval',
         type: 'APPROVAL',
         assigneeRole: 'Underwriter',
         sampleDescription: 'Issue the underwriting decision including approved terms, premium, conditions, and any exclusions. Approve, modify, or decline the application.',
@@ -294,6 +336,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Reporting & Investigation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Injury report',
         type: 'FORM',
         assigneeRole: 'Injured Employee',
@@ -340,6 +387,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         sampleDescription: 'File the First Report of Injury with the state workers\' compensation board and insurance carrier within the state-mandated deadline (typically 5-10 days). Document the filing confirmation.',
       },
       {
+        name: 'Medical & Compensability',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Medical records & treatment plan',
         type: 'FILE_REQUEST',
         assigneeRole: 'Treating Physician',
@@ -350,6 +402,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         type: 'DECISION',
         assigneeRole: 'Claims Adjuster',
         sampleDescription: 'Review all investigation materials, medical documentation, and employment records. Determine claim compensability: Accept, Deny, or Investigate Further.',
+      },
+      {
+        name: 'Return to Work & Closure',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Return-to-work plan',
@@ -405,6 +462,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Renewal Initiation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Renewal notice acknowledgement',
         type: 'ACKNOWLEDGEMENT',
         assigneeRole: 'Policyholder',
@@ -430,6 +492,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         sampleDescription: 'Upload your current loss run or claims history documentation for the underwriter to review during the renewal assessment.',
       },
       {
+        name: 'Underwriting & Quoting',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Broker review',
         type: 'TODO',
         assigneeRole: 'Broker',
@@ -451,6 +518,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         type: 'TODO',
         assigneeRole: 'Account Manager',
         sampleDescription: 'Review the renewal quote terms, premium, and coverage changes. Prepare a comparison to the expiring policy and present options to the policyholder.',
+      },
+      {
+        name: 'Binding',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Quote acceptance',
@@ -496,6 +568,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Application & Documentation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Bond application',
         type: 'FORM',
         assigneeRole: 'Principal (Applicant)',
@@ -528,6 +605,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         sampleDocumentRef: 'Upload your General Indemnity Agreement (PDF, 3-6 pages).',
       },
       {
+        name: 'Underwriting',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Credit check & loss history review',
         type: 'TODO',
         assigneeRole: 'Surety Agent',
@@ -538,6 +620,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         type: 'TODO',
         assigneeRole: 'Underwriter',
         sampleDescription: 'Evaluate the three Cs of surety underwriting: Character, Capacity, and Capital. Review financials, work-in-progress schedule, credit reports, claims history, and the executed GIA.',
+      },
+      {
+        name: 'Decision & Issuance',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Bond approval & terms',
@@ -581,6 +668,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Records Collection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Audit notice acknowledgement',
         type: 'ACKNOWLEDGEMENT',
         assigneeRole: 'Policyholder',
@@ -609,6 +701,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f3', label: 'Subcontractor Usage', type: 'TEXT_MULTI_LINE' },
           { fieldId: 'f4', label: 'Changes in Operations During Policy Period', type: 'TEXT_MULTI_LINE' },
         ],
+      },
+      {
+        name: 'Audit & Findings',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Auditor review',

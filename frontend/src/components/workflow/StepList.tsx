@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Layers } from 'lucide-react';
+import { Layers, Pencil, Trash2, Check, X } from 'lucide-react';
 import { StepCard } from './StepCard';
 import { StepConnector } from './StepConnector';
 import { BranchLayout } from './BranchLayout';
@@ -97,6 +97,7 @@ interface MilestoneContainerProps {
   addPopoverIndex: number | null;
   onSetAddPopoverIndex: (index: number | null) => void;
   onAddStep: (index: number, stepType: StepType) => void;
+  onAddMilestone?: (afterIndex: number) => void;
   assigneePlaceholders: Flow['assigneePlaceholders'];
 }
 
@@ -110,8 +111,13 @@ function MilestoneContainer({
   addPopoverIndex,
   onSetAddPopoverIndex,
   onAddStep,
+  onAddMilestone,
   assigneePlaceholders,
 }: MilestoneContainerProps) {
+  const { updateMilestone, removeMilestone } = useWorkflowStore();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+
   const renderSteps = () => (
     <>
       {steps.map((step, index) => {
@@ -136,6 +142,7 @@ function MilestoneContainer({
                     open
                     onOpenChange={(open) => { if (!open) onSetAddPopoverIndex(null); }}
                     onSelect={(type) => onAddStep(globalIndex, type)}
+                    onAddMilestone={() => onAddMilestone?.(globalIndex)}
                   />
                 )}
               </div>
@@ -176,11 +183,58 @@ function MilestoneContainer({
     return <>{renderSteps()}</>;
   }
 
+  const handleStartEdit = () => {
+    setEditName(milestone.name);
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (editName.trim()) {
+      updateMilestone(milestone.milestoneId, editName.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
   return (
     <div className="relative my-2">
       <div className="flex items-center gap-2 px-4 py-2 bg-white border border-dashed border-gray-300 rounded-t-lg">
-        <Layers className="w-4 h-4 text-gray-500" />
-        <span className="text-sm font-medium text-gray-700">{milestone.name}</span>
+        <Layers className="w-4 h-4 text-gray-500 shrink-0" />
+        {isEditing ? (
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') handleCancelEdit(); }}
+              className="flex-1 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              autoFocus
+            />
+            <button onClick={handleSaveEdit} className="p-0.5 rounded hover:bg-green-50 text-green-600">
+              <Check className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={handleCancelEdit} className="p-0.5 rounded hover:bg-gray-100 text-gray-400">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <span className="text-sm font-medium text-gray-700 flex-1 min-w-0 truncate">{milestone.name}</span>
+            {editMode && (
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button onClick={handleStartEdit} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600" title="Rename milestone">
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => removeMilestone(milestone.milestoneId)} className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500" title="Delete milestone">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
       <div className="border border-t-0 border-dashed border-gray-300 rounded-b-lg px-4 py-3 bg-gray-50/30">
         {steps.length > 0 ? (
@@ -202,7 +256,7 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
   const milestones = workflow.milestones || [];
   const [addPopoverIndex, setAddPopoverIndex] = useState<number | null>(null);
   const [endPopoverOpen, setEndPopoverOpen] = useState(false);
-  const { addStep } = useWorkflowStore();
+  const { addStep, addMilestone } = useWorkflowStore();
 
   const stepGroups = groupStepsByMilestones(steps, milestones);
 
@@ -214,6 +268,13 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
 
   const handleAddStep = (index: number, stepType: StepType) => {
     addStep(index, stepType);
+    setAddPopoverIndex(null);
+    setEndPopoverOpen(false);
+  };
+
+  const handleAddMilestone = (afterIndex: number) => {
+    // afterIndex is the position in the step array; the milestone goes after the step at afterIndex - 1
+    addMilestone(afterIndex - 1);
     setAddPopoverIndex(null);
     setEndPopoverOpen(false);
   };
@@ -234,6 +295,7 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
           addPopoverIndex={addPopoverIndex}
           onSetAddPopoverIndex={setAddPopoverIndex}
           onAddStep={handleAddStep}
+          onAddMilestone={handleAddMilestone}
           assigneePlaceholders={workflow.assigneePlaceholders || []}
         />
       ))}
@@ -251,6 +313,7 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
               open
               onOpenChange={setEndPopoverOpen}
               onSelect={(type) => handleAddStep(steps.length, type)}
+              onAddMilestone={() => handleAddMilestone(steps.length)}
             />
           )}
         </div>

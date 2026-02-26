@@ -29,6 +29,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Discovery & Requirements',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Customer kickoff form',
         type: 'FORM',
         assigneeRole: 'Customer Contact',
@@ -65,6 +70,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
           'Upload your data migration files (CSV exports, database dumps, or structured data) so our team can begin the import process.',
       },
       {
+        name: 'Environment Setup',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Environment configuration',
         type: 'TODO',
         assigneeRole: 'Implementation Lead',
@@ -90,6 +100,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Implementation Lead',
         sampleDescription:
           'Conduct admin training, end-user training sessions, and facilitate user acceptance testing. Document any issues found during UAT.',
+      },
+      {
+        name: 'Go-Live',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'UAT sign-off',
@@ -143,6 +158,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Client Information Collection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Client information form',
         type: 'FORM',
         assigneeRole: 'Client',
@@ -182,6 +202,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'Due Diligence & Screening',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'AI risk scoring & sanctions screening',
         type: 'TODO',
         assigneeRole: 'KYC Analyst',
@@ -208,6 +233,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'KYC Analyst',
         sampleDescription:
           'Verify all submitted documents, cross-reference information across sources, and complete the Customer Identification Program (CIP) checklist.',
+      },
+      {
+        name: 'Account Opening',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Compliance officer approval',
@@ -262,6 +292,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Engagement Setup',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Client information form',
         type: 'FORM',
         assigneeRole: 'Client',
@@ -300,6 +335,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         sampleDocumentRef: 'engagement-letter.pdf',
       },
       {
+        name: 'Document Collection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Tax authorization forms',
         type: 'FILE_REQUEST',
         assigneeRole: 'Client',
@@ -324,6 +364,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f2', label: 'Login Email', type: 'EMAIL', required: false },
           { fieldId: 'f3', label: 'Bank Feed Setup Instructions', type: 'TEXT_MULTI_LINE', required: false },
         ],
+      },
+      {
+        name: 'Firm Setup',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Initial document review',
@@ -377,6 +422,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Intake & Conflicts',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Client intake form',
         type: 'FORM',
         assigneeRole: 'Client',
@@ -405,6 +455,18 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
           'Evaluate the matter for viability, determine the appropriate fee arrangement (hourly, contingency, flat fee), and assign staffing.',
       },
       {
+        name: 'Accept the matter?',
+        type: 'DECISION',
+        assigneeRole: 'Intake Attorney',
+        sampleDescription:
+          'Decide whether to accept or decline the matter based on conflict check results, viability assessment, and staffing availability. Route accepted matters to engagement; route declined matters to client notification.',
+      },
+      {
+        name: 'Engagement',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Engagement letter execution',
         type: 'ESIGN',
         assigneeRole: 'Client',
@@ -425,6 +487,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Client',
         sampleDescription:
           'Upload any documents related to your matter, such as contracts, correspondence, court filings, or other relevant records.',
+      },
+      {
+        name: 'Matter Setup',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Client portal & matter setup',
@@ -478,6 +545,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Submission',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Insured information form',
         type: 'FORM',
         assigneeRole: 'Broker/Applicant',
@@ -506,6 +578,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Broker/Applicant',
         sampleDescription:
           'Upload supplemental materials such as financial statements, fleet or property schedules, and safety programs as applicable.',
+      },
+      {
+        name: 'Underwriting',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'AI submission triage',
@@ -541,6 +618,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Underwriter',
         sampleDescription:
           'Upload and deliver the quote proposal document to the broker for review and presentation to the insured.',
+      },
+      {
+        name: 'Binding & Issuance',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Bind request & subjectivity clearance',
@@ -587,6 +669,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Information Collection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Client information intake',
         type: 'FORM',
         assigneeRole: 'Client Admin',
@@ -627,6 +714,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         sampleDescription:
           'Review and sign the contract to formalize our engagement.',
         sampleDocumentRef: 'client-contract.pdf',
+      },
+      {
+        name: 'Setup & Activation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Internal setup checklist',
@@ -677,6 +769,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Closure Processing',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Offboarding request confirmation',
         type: 'FORM',
         assigneeRole: 'Client Contact',
@@ -703,6 +800,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
           'Review and acknowledge the final billing summary, including any remaining charges, credits, or refunds.',
       },
       {
+        name: 'Account Wrap-Up',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Access revocation',
         type: 'TODO',
         assigneeRole: 'IT/Security',
@@ -715,6 +817,11 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Finance',
         sampleDescription:
           'Generate and send the final invoice reflecting any prorated charges, credits, or refunds owed.',
+      },
+      {
+        name: 'Exit & Feedback',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Exit survey',

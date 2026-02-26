@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { Flag } from 'lucide-react';
 import { StepIcon } from './StepIcon';
 import { STEP_TYPE_META } from '@/types';
 import type { StepType } from '@/types';
@@ -7,6 +8,7 @@ interface AddStepPopoverProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (stepType: StepType) => void;
+  onAddMilestone?: () => void;
 }
 
 interface StepGroup {
@@ -29,7 +31,7 @@ const STEP_GROUPS: StepGroup[] = [
   },
 ];
 
-export function AddStepPopover({ open, onOpenChange, onSelect }: AddStepPopoverProps) {
+export function AddStepPopover({ open, onOpenChange, onSelect, onAddMilestone }: AddStepPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -87,6 +89,28 @@ export function AddStepPopover({ open, onOpenChange, onSelect }: AddStepPopoverP
           })}
         </div>
       ))}
+
+      {/* Layout section */}
+      {onAddMilestone && (
+        <div>
+          <div className="px-3 py-1.5 text-[11px] font-medium text-gray-400 uppercase tracking-wider border-t border-gray-100 mt-1">
+            Layout
+          </div>
+          <button
+            onClick={() => {
+              onAddMilestone();
+              onOpenChange(false);
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition-colors text-left"
+          >
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-gray-100">
+              <Flag className="w-3.5 h-3.5 text-gray-600" />
+            </div>
+            <span className="text-sm text-gray-700 font-medium">Milestone</span>
+            <div className="w-2 h-2 rounded-full ml-auto shrink-0 bg-gray-400" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

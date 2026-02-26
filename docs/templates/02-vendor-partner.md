@@ -31,12 +31,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Registration & Compliance** | | | |
 | 1 | Vendor registration form | Form | Vendor Contact | Register your organization by providing legal name, entity type, DUNS number, products or services offered, and NAICS code. |
 | 2 | Tax & insurance documents | File Request | Vendor Contact | Upload your W-9 (or W-8BEN for international vendors), certificate of general liability insurance, professional liability insurance, and workers compensation documentation. |
 | 3 | Compliance questionnaire | Form | Vendor Contact | Complete the compliance questionnaire covering OFAC sanctions, anti-bribery policies, data privacy practices, diversity certifications, and references. |
 | 4 | AI vendor risk assessment | To-Do | Procurement Owner | AI-powered: Assess the vendor across financial stability, industry risk, insurance adequacy, and sanctions screening. Generate a risk profile with recommendations. |
+| | **📌 Agreements & Payment** | | | |
 | 5 | NDA / MSA execution | E-Sign | Vendor Contact | Review and sign the Non-Disclosure Agreement and Master Service Agreement to formalize the vendor relationship. |
 | 6 | Banking & payment setup | Form | Vendor Contact | Provide your banking and payment details so we can set up your account in our payables system. |
+| | **📌 Activation** | | | |
 | 7 | Procurement approval | Approval | Procurement Owner | Review all submitted vendor information, risk assessment results, and executed agreements. Approve to activate the vendor in the procurement system. |
 | 8 | Vendor activation notification | To-Do | Procurement Owner | Automated notification: Send the vendor activation confirmation with purchase order procedures, portal access, and key contact information. |
 
@@ -96,12 +99,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Information Gathering** | | | |
 | 1 | Security questionnaire (SIG/CAIQ) | Form | Vendor Contact | Complete the standardized security questionnaire covering your organization's information security controls, policies, and practices. |
 | 2 | Certification uploads (SOC 2, ISO, etc.) | File Request | Vendor Contact | Upload current security certifications such as SOC 2 Type II report, ISO 27001 certificate, or other relevant compliance documentation. |
 | 3 | Architecture documentation | File Request | Vendor Contact | Upload your system architecture documentation showing data flows, network topology, and security boundaries relevant to our integration. |
 | 4 | Penetration test results | File Request | Vendor Contact | Upload your most recent penetration test report and any remediation evidence for identified findings. |
+| | **📌 Security Review** | | | |
 | 5 | Security review | To-Do | Security Reviewer | Review all submitted security documentation, questionnaire responses, and certifications. Document findings and identify any gaps or concerns. |
 | 6 | Follow-up questions | Form | Vendor Contact | Answer follow-up questions from our security team regarding any gaps or clarifications needed from the initial review. |
+| | **📌 Risk Decision** | | | |
 | 7 | Risk assessment | To-Do | IT Risk Manager | Complete the formal risk assessment based on security review findings. Assign a risk rating and document any required compensating controls or conditions. |
 | 8 | Risk acceptance | Approval | IT Risk Manager | Approve or reject the vendor based on the completed risk assessment. If approved with conditions, document the conditions and timeline for remediation. |
 
@@ -149,10 +155,12 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Vendor Submission** | | | |
 | 1 | Annual refresh notification | Form | Vendor Contact | Confirm your organization details are still current and indicate any material changes since the last compliance certification. |
 | 2 | Updated certifications & policies | File Request | Vendor Contact | Upload your current certifications, updated policies, and any new compliance documentation for the annual review. |
 | 3 | Insurance certificates | File Request | Vendor Contact | Upload current certificates of insurance showing active coverage that meets our minimum requirements. |
 | 4 | Compliance attestation | Acknowledgement | Vendor Contact | Attest that your organization continues to comply with all contractual obligations, regulatory requirements, and our vendor code of conduct. |
+| | **📌 Internal Review** | | | |
 | 5 | Documentation review | To-Do | Compliance Reviewer | Review all submitted certifications, insurance documents, and the compliance attestation. Verify currency and adequacy of all documentation. |
 | 6 | Compliance approved | Approval | Compliance Reviewer | Approve or reject the vendor's annual compliance certification based on the documentation review. |
 
@@ -191,10 +199,12 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Information Collection** | | | |
 | 1 | Due diligence questionnaire | Form | Third Party Contact | Complete the due diligence questionnaire covering your organization's background, operations, financial stability, and regulatory standing. |
 | 2 | Supporting documentation | File Request | Third Party Contact | Upload supporting documentation such as financial statements, regulatory filings, and compliance certifications. |
 | 3 | Ownership & structure disclosure | File Request | Third Party Contact | Upload documents disclosing your organizational structure, beneficial ownership (25%+ owners), and any parent/subsidiary relationships. |
 | 4 | Clarification questions | Form | Third Party Contact | Answer any clarification questions that arose during the initial review of your due diligence submission. |
+| | **📌 Review & Assessment** | | | |
 | 5 | Legal review | To-Do | Legal Counsel | Review submitted documentation for legal risks, contractual concerns, regulatory exposure, and litigation history. |
 | 6 | Compliance review | To-Do | Compliance Officer | Review the third party against AML/KYC requirements, sanctions lists, and anti-corruption standards. Document compliance findings. |
 | 7 | Risk assessment | To-Do | Risk Reviewer | Consolidate legal and compliance findings into a comprehensive risk assessment with an overall risk rating and recommendations. |
@@ -243,12 +253,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Planning** | | | |
 | 1 | Remediation plan submission | Form | Third Party Contact | Submit your remediation plan detailing each finding, the corrective action to be taken, responsible parties, and target completion dates. |
 | 2 | Timeline acknowledgement | Acknowledgement | Third Party Contact | Acknowledge and commit to the agreed remediation timeline and milestones. |
+| | **📌 Evidence & Verification** | | | |
 | 3 | Evidence of remediation | File Request | Third Party Contact | Upload evidence demonstrating that the corrective actions have been implemented (screenshots, configuration exports, updated policies, test results). |
 | 4 | Internal control owner verification | To-Do | Control Owner | Verify the remediation evidence against the original findings. Confirm that the corrective actions adequately address each identified gap. |
 | 5 | Remediation review | To-Do | Risk Reviewer | Review the control owner verification and remediation evidence. Determine if all findings have been satisfactorily addressed or if follow-up is needed. |
 | 6 | Follow-up evidence (if needed) | File Request | Third Party Contact | If additional evidence was requested during the review, upload the supplemental documentation here. |
+| | **📌 Closure** | | | |
 | 7 | Remediation accepted | Approval | Risk Reviewer | Approve or reject the remediation based on the evidence review. If rejected, document the remaining gaps and required next steps. |
 | 8 | Completion notification | Acknowledgement | Risk Reviewer | Acknowledge that the remediation process is complete and all findings have been satisfactorily resolved. |
 
@@ -292,13 +305,16 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Application & Agreements** | | | |
 | 1 | Partner application form | Form | Partner Contact | Submit your partner application with company details, partner type, target market, geography, and sales capacity. |
 | 2 | Partner qualification questionnaire | Form | Partner Contact | Provide details on your team's certifications, relevant experience, and revenue commitment to help us determine the right partner tier. |
 | 3 | Partnership agreement | E-Sign | Partner Contact | Review and sign the partnership agreement that defines terms, commissions, territories, and obligations. |
 | 4 | NDA execution | E-Sign | Partner Contact | Review and sign the mutual Non-Disclosure Agreement to protect confidential information shared during the partnership. |
+| | **📌 Enablement** | | | |
 | 5 | Portal & demo environment setup | To-Do | Partner Manager | Provision the partner portal account, set up the demo/sandbox environment, and configure deal registration access. |
 | 6 | Sales & technical certification | To-Do | Partner Contact | Complete the required sales and technical certification courses to become an authorized partner. Access training materials through the partner portal. |
 | 7 | Go-to-market plan review | Approval | Partner Manager | Review and approve the partner's go-to-market plan including target accounts, marketing activities, and pipeline commitments. |
+| | **📌 Launch** | | | |
 | 8 | Launch readiness confirmation | To-Do | Partner Manager | Verify that all enablement is complete, certifications are earned, and the partner is ready for launch. Confirm marketing materials and co-branded assets are prepared. |
 | 9 | Partner launch announcement | To-Do | Partner Manager | Automated notification: Send the partner launch announcement internally and to the partner with welcome resources, key contacts, and first 90-day playbook. |
 
@@ -350,12 +366,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Application** | | | |
 | 1 | Reseller application | Form | Reseller Contact | Submit your reseller application with company details, territory of interest, target customers, and sales team size. |
 | 2 | Business credentials & financials | File Request | Reseller Contact | Upload your business credentials including incorporation documents, financial statements, and trade references. |
 | 3 | Territory / pricing acknowledgement | Acknowledgement | Reseller Contact | Review and acknowledge the assigned territory boundaries, pricing schedules, discount structures, and minimum order requirements. |
 | 4 | Reseller agreement | E-Sign | Reseller Contact | Review and sign the reseller agreement covering terms, territory rights, pricing, and performance obligations. |
+| | **📌 Legal & Financial Setup** | | | |
 | 5 | Legal review | To-Do | Legal Reviewer | Review the executed reseller agreement and supporting credentials for legal sufficiency and any risk flags. |
 | 6 | Credit terms setup | To-Do | Finance | Establish credit terms based on the reseller's financial profile, set credit limits, and configure the account in the billing system. |
+| | **📌 Training & Activation** | | | |
 | 7 | Product training | To-Do | Reseller Contact | Complete the required product training modules covering product features, positioning, competitive differentiation, and support escalation procedures. |
 | 8 | Partner activation | Approval | Channel Manager | Review all onboarding steps and approve the reseller for activation. Confirm training completion, legal clearance, and credit setup. |
 | 9 | Onboarding complete | Acknowledgement | Reseller Contact | Acknowledge that onboarding is complete and you are ready to begin selling. Welcome to the partner network! |

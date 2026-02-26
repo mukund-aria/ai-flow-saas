@@ -31,14 +31,18 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Intake & Triage** | | | |
 | 1 | First Notice of Loss (FNOL) | Form | Claimant | Report the details of your loss or incident. Provide as much information as possible to help expedite your claim. |
 | 2 | AI coverage verification & triage | To-Do | Claims Adjuster | AI-powered: Validate policy coverage, confirm applicable coverages, check for exclusions, flag potential fraud indicators, and assign severity level based on the FNOL details. |
 | 3 | Claim acknowledgement | To-Do | Claims Adjuster | Automated notification: Send claim acknowledgement to the claimant including their claim number, assigned adjuster contact information, expected next steps, and estimated timeline. |
+| | **📌 Investigation & Documentation** | | | |
 | 4 | Loss documentation & evidence | File Request | Claimant | Upload documentation and evidence supporting your claim including photos or video of damage, police report (if applicable), repair estimates, and receipts for damaged items. |
 | 5 | Adjuster assessment & investigation | To-Do | Claims Adjuster | Review all submitted documentation, conduct the claim investigation, and prepare your assessment including coverage determination, damage valuation, and settlement recommendation. |
 | 6 | Additional documentation request | File Request | Claimant | Upload any additional documentation requested by the claims adjuster to complete the investigation. |
-| 7 | Claim decision | Approval | Claims Manager | Review the adjuster assessment and investigation findings. Approve the claim settlement, request additional investigation, or deny the claim with documented rationale. |
-| 8 | Settlement acknowledgement | Acknowledgement | Claimant | Review and acknowledge the claim settlement decision including the approved amount, payment method, and any next steps for receiving your settlement. |
+| | **📌 Decision & Settlement** | | | |
+| 7 | Coverage & validity determination | Decision | Claims Adjuster | Determine claim coverage and validity. Route valid covered claims to settlement; deny or investigate further for questionable claims. |
+| 8 | Claim decision | Approval | Claims Manager | Review the adjuster assessment and investigation findings. Approve the claim settlement, request additional investigation, or deny the claim with documented rationale. |
+| 9 | Settlement acknowledgement | Acknowledgement | Claimant | Review and acknowledge the claim settlement decision including the approved amount, payment method, and any next steps for receiving your settlement. |
 
 #### Step 1: First Notice of Loss (FNOL) — Form Fields
 
@@ -80,15 +84,19 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Application & Submission** | | | |
 | 1 | Application intake | Form | Applicant | Complete the insurance application with your business or personal information to begin the underwriting process. |
 | 2 | Supporting documentation | File Request | Applicant | Upload supporting documents for your application such as financial statements, loss runs, prior policy declarations, or industry-specific documentation. |
 | 3 | Agent submission | To-Do | Agent/Broker | Review the completed application and supporting documents for completeness. Submit the application package to the underwriting team with your broker notes and recommendation. |
+| | **📌 Underwriting Analysis** | | | |
 | 4 | Underwriting questions | Form | Applicant | Answer additional questions from the underwriting team to help them assess your risk profile. |
 | 5 | Risk assessment | To-Do | Underwriter | Perform the risk assessment including analysis of the application, supporting documents, claims history, and industry benchmarks. Prepare the underwriting recommendation. |
 | 6 | Conditional requirements | File Request | Applicant | Upload any additional documents requested as conditional requirements for underwriting approval, such as updated inspections, safety programs, or financial statements. |
 | 7 | Manager review (if needed) | To-Do | Underwriting Manager | Review the underwriting file for applications that exceed standard authority limits or present unusual risk characteristics. Provide guidance or final decision. |
-| 8 | Underwriting decision | Approval | Underwriter | Issue the underwriting decision including approved terms, premium, conditions, and any exclusions. Approve, modify, or decline the application. |
-| 9 | Policy acknowledgement | Acknowledgement | Applicant | Review and acknowledge the underwriting decision. If approved, confirm your understanding of the policy terms, premium, and effective date. |
+| | **📌 Decision & Issuance** | | | |
+| 8 | Underwriting decision | Decision | Underwriter | Make the underwriting decision: approve at standard rates, approve with modified terms, or decline the application. |
+| 9 | Underwriting approval | Approval | Underwriter | Issue the underwriting decision including approved terms, premium, conditions, and any exclusions. Approve, modify, or decline the application. |
+| 10 | Policy acknowledgement | Acknowledgement | Applicant | Review and acknowledge the underwriting decision. If approved, confirm your understanding of the policy terms, premium, and effective date. |
 
 #### Step 1: Application intake — Form Fields
 
@@ -195,12 +203,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Reporting & Investigation** | | | |
 | 1 | Injury report | Form | Injured Employee | Report the details of your workplace injury as soon as possible. Accurate information helps ensure you receive proper care and benefits. |
 | 2 | Employer incident investigation | Form | Employer/HR | Complete the incident investigation documenting the root cause, safety conditions, and OSHA recordability determination. |
 | 3 | Wage statement & employment verification | Form | Employer/HR | Provide the wage and employment details needed for benefits calculation and claim processing. |
 | 4 | First Report of Injury (FROI) filing | To-Do | Employer/HR | File the First Report of Injury with the state workers' compensation board and insurance carrier within the state-mandated deadline (typically 5-10 days). Document the filing confirmation. |
+| | **📌 Medical & Compensability** | | | |
 | 5 | Medical records & treatment plan | File Request | Treating Physician | Upload the medical documentation including diagnosis, treatment plan, work restrictions, and disability status determination. |
 | 6 | Compensability determination | Decision | Claims Adjuster | Review all investigation materials, medical documentation, and employment records. Determine claim compensability: Accept, Deny, or Investigate Further. |
+| | **📌 Return to Work & Closure** | | | |
 | 7 | Return-to-work plan | Form | Treating Physician | Provide the return-to-work plan with any restrictions, accommodations, and expected timeline for the injured employee. |
 | 8 | Modified duty acknowledgement | Acknowledgement | Injured Employee | Review and acknowledge the return-to-work plan including any work restrictions, modified duty assignments, and follow-up requirements. |
 | 9 | Claim closure approval | Approval | Claims Adjuster | Review the claim for closure. Verify that all benefits have been paid, treatment is complete or at maximum medical improvement (MMI), and authorize final case closure. |
@@ -274,12 +285,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Renewal Initiation** | | | |
 | 1 | Renewal notice acknowledgement | Acknowledgement | Policyholder | Acknowledge receipt of your upcoming policy renewal notice and confirm your intent to proceed with the renewal process. |
 | 2 | Updated exposure information | Form | Policyholder | Provide updated exposure information for the renewal period to ensure your coverage accurately reflects your current operations. |
 | 3 | Loss run / claims history | File Request | Policyholder | Upload your current loss run or claims history documentation for the underwriter to review during the renewal assessment. |
+| | **📌 Underwriting & Quoting** | | | |
 | 4 | Broker review | To-Do | Broker | Review the updated exposure information and loss history. Prepare the renewal submission with market analysis and coverage recommendations. |
 | 5 | Underwriter questions | Form | Policyholder | Answer additional questions from the underwriter about changes to your operations, claims, or risk profile since the last policy period. |
 | 6 | Renewal quote review | To-Do | Account Manager | Review the renewal quote terms, premium, and coverage changes. Prepare a comparison to the expiring policy and present options to the policyholder. |
+| | **📌 Binding** | | | |
 | 7 | Quote acceptance | Approval | Policyholder | Review the renewal quote including premium, coverage terms, and any changes from the expiring policy. Approve to bind the renewal. |
 | 8 | Renewal documents | E-Sign | Policyholder | Review and sign the renewal documents to formally bind coverage for the new policy period. |
 
@@ -331,12 +345,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Application & Documentation** | | | |
 | 1 | Bond application | Form | Principal (Applicant) | Complete the bond application with your project and company details to begin the underwriting process. |
 | 2 | Financial documentation | File Request | Principal (Applicant) | Upload your financial documentation including 3 years of CPA-prepared corporate financials, personal financial statements of owners, bank references, and current insurance certificates. |
 | 3 | Work-in-progress schedule | File Request | Principal (Applicant) | Upload your work-in-progress schedule including current projects, backlog, completed project history, and bonding capacity needs. |
 | 4 | General Indemnity Agreement | E-Sign | Principal (Applicant) | Review and execute the General Indemnity Agreement (GIA) by the principal and all individual indemnitors. This is required before underwriting proceeds. |
+| | **📌 Underwriting** | | | |
 | 5 | Credit check & loss history review | To-Do | Surety Agent | Pull a soft credit report on the principal and individual indemnitors. Obtain prior surety loss runs and claims history from previous surety companies. |
 | 6 | Underwriting review | To-Do | Underwriter | Evaluate the three Cs of surety underwriting: Character, Capacity, and Capital. Review financials, work-in-progress schedule, credit reports, claims history, and the executed GIA. |
+| | **📌 Decision & Issuance** | | | |
 | 7 | Bond approval & terms | Decision | Underwriter | Issue the bond decision: Approve, Conditional Approval, or Decline. Include premium rate, bond limits, and any conditions that must be met. |
 | 8 | Bond issuance & delivery | To-Do | Surety Agent | Execute the bond document, verify all obligee requirements are met, and deliver the executed bond to the obligee. |
 
@@ -379,10 +396,12 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Records Collection** | | | |
 | 1 | Audit notice acknowledgement | Acknowledgement | Policyholder | Acknowledge receipt of the audit notice and confirm your understanding of the documentation requirements and timeline. |
 | 2 | Payroll records | File Request | Policyholder | Upload your payroll records for the audit period including quarterly tax returns, payroll summaries by classification, and overtime detail. |
 | 3 | Sales / revenue records | File Request | Policyholder | Upload your sales and revenue records for the audit period including annual financial statements, sales reports, and subcontractor payment records. |
 | 4 | Classification questionnaire | Form | Policyholder | Complete the classification questionnaire to help the auditor accurately categorize your operations and employee classifications. |
+| | **📌 Audit & Findings** | | | |
 | 5 | Auditor review | To-Do | Auditor | Review all submitted records, verify classifications, and calculate the audited premium based on actual exposures during the policy period. |
 | 6 | Clarification questions | Form | Policyholder | Answer any clarification questions from the auditor regarding your records, classifications, or operations. |
 | 7 | Audit findings | File Request | Auditor | Upload the completed audit findings report including the audited premium calculation, classification adjustments, and any discrepancies identified. |

@@ -28,6 +28,11 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Submission',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Treatment request details',
         type: 'FORM',
         assigneeRole: 'Provider Staff',
@@ -52,6 +57,11 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         type: 'ACKNOWLEDGEMENT',
         assigneeRole: 'Patient',
         sampleDescription: 'Acknowledge that a prior authorization request has been submitted on your behalf and confirm your understanding that the treatment is pending payer approval.',
+      },
+      {
+        name: 'Clinical Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Payer review',
@@ -81,6 +91,17 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         type: 'FILE_REQUEST',
         assigneeRole: 'Provider Staff',
         sampleDescription: 'Upload any additional clinical information requested by the payer to support the authorization determination.',
+      },
+      {
+        name: 'Determination',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
+        name: 'Authorization determination',
+        type: 'DECISION',
+        assigneeRole: 'Payer Contact',
+        sampleDescription: 'Determine authorization outcome: approve the requested service, request additional clinical documentation, or deny with rationale.',
       },
       {
         name: 'Authorization decision',
@@ -125,6 +146,11 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Registration & Insurance',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Patient demographics',
         type: 'FORM',
         assigneeRole: 'Patient',
@@ -152,6 +178,11 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         sampleDescription: 'Verify the patient insurance coverage including eligibility, benefits, copay amounts, deductible status, and any referral or authorization requirements.',
       },
       {
+        name: 'Medical History & Records',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Medical history questionnaire',
         type: 'FORM',
         assigneeRole: 'Patient',
@@ -176,6 +207,11 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         type: 'FILE_REQUEST',
         assigneeRole: 'Prior Provider',
         sampleDescription: 'Upload any additional records or documentation that were not included in the initial records transfer.',
+      },
+      {
+        name: 'Consent & Completion',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Consent forms',
@@ -302,6 +338,11 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Application',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Credentialing application & attestation',
         type: 'FORM',
         assigneeRole: 'Provider',
@@ -328,6 +369,11 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         sampleDescription: 'Upload copies of your professional credentials including medical license, DEA certificate, board certification, malpractice insurance face sheet, CV, peer reference contacts, and government-issued ID.',
       },
       {
+        name: 'Verification',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Primary source verification & sanctions screening',
         type: 'TODO',
         assigneeRole: 'Credentialing Coordinator',
@@ -340,16 +386,32 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         sampleDescription: 'Compile all documents, primary source verification results, and reference responses into the credentialing file. Verify completeness and prepare the recommendation for committee review.',
       },
       {
+        name: 'Committee Review & Decision',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Medical Director review',
         type: 'APPROVAL',
         assigneeRole: 'Medical Director',
         sampleDescription: 'Review the compiled credentialing file. Evaluate any flags, gaps in practice history, or malpractice claims. Approve for committee review or escalate concerns.',
       },
       {
-        name: 'Credentialing Committee decision',
+        name: 'Committee credentialing decision',
+        type: 'DECISION',
+        assigneeRole: 'Credentialing Committee',
+        sampleDescription: 'Committee renders credentialing decision: approve full privileges, approve with restrictions, defer pending additional information, or deny.',
+      },
+      {
+        name: 'Credentialing Committee approval',
         type: 'APPROVAL',
         assigneeRole: 'Credentialing Committee',
         sampleDescription: 'Review the credentialing file and Medical Director recommendation. Approve with full privileges, approve with restrictions, or deny with documented rationale.',
+      },
+      {
+        name: 'Onboarding',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Provider notification',
@@ -401,6 +463,11 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Consent & Screening',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Informed consent & HIPAA authorization',
         type: 'ESIGN',
         assigneeRole: 'Participant',
@@ -432,6 +499,11 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'Eligibility Determination',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Inclusion/exclusion criteria verification',
         type: 'TODO',
         assigneeRole: 'Study Coordinator',
@@ -442,6 +514,11 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         type: 'DECISION',
         assigneeRole: 'Principal Investigator',
         sampleDescription: 'Review the eligibility summary and make the final determination: Eligible for enrollment, Screen Failure, or Rescreening Required.',
+      },
+      {
+        name: 'Enrollment & Randomization',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Baseline assessments & enrollment',

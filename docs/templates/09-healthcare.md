@@ -31,15 +31,19 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Submission** | | | |
 | 1 | Treatment request details | Form | Provider Staff | Submit the treatment or procedure request details for prior authorization review by the payer. |
 | 2 | Clinical documentation | File Request | Provider Staff | Upload supporting clinical documentation including relevant medical records, test results, treatment history, and clinical notes that support the authorization request. |
 | 3 | Patient consent | Acknowledgement | Patient | Acknowledge that a prior authorization request has been submitted on your behalf and confirm your understanding that the treatment is pending payer approval. |
+| | **📌 Clinical Review** | | | |
 | 4 | Payer review | To-Do | Payer Contact | Review the prior authorization request, clinical documentation, and medical necessity criteria. Determine if additional information is needed or if a decision can be rendered. |
 | 5 | Payer questions | Form | Provider Staff | Respond to additional questions from the payer regarding the authorization request. |
 | 6 | Physician peer-to-peer (if needed) | To-Do | Physician | Participate in a peer-to-peer review call with the payer medical director to discuss the clinical necessity of the requested treatment or procedure. |
 | 7 | Additional clinical information | File Request | Provider Staff | Upload any additional clinical information requested by the payer to support the authorization determination. |
-| 8 | Authorization decision | Approval | Payer Contact | Render the authorization decision: Approve, Deny, or Approve with Modifications. Include the authorization number, effective dates, and any conditions. |
-| 9 | Decision acknowledgement | Acknowledgement | Provider Staff | Acknowledge receipt of the authorization decision. If approved, proceed with scheduling. If denied, review appeal options with the patient and physician. |
+| | **📌 Determination** | | | |
+| 8 | Authorization determination | Decision | Payer Contact | Determine authorization outcome: approve the requested service, request additional clinical documentation, or deny with rationale. |
+| 9 | Authorization decision | Approval | Payer Contact | Render the authorization decision: Approve, Deny, or Approve with Modifications. Include the authorization number, effective dates, and any conditions. |
+| 10 | Decision acknowledgement | Acknowledgement | Provider Staff | Acknowledge receipt of the authorization decision. If approved, proceed with scheduling. If denied, review appeal options with the patient and physician. |
 
 #### Step 1: Treatment request details — Form Fields
 
@@ -90,12 +94,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Registration & Insurance** | | | |
 | 1 | Patient demographics | Form | Patient | Complete your patient demographics form with your personal and contact information. |
 | 2 | Insurance information | File Request | Patient | Upload a copy of your insurance card (front and back) along with any secondary insurance information. |
 | 3 | Insurance verification | To-Do | Insurance Verifier | Verify the patient insurance coverage including eligibility, benefits, copay amounts, deductible status, and any referral or authorization requirements. |
+| | **📌 Medical History & Records** | | | |
 | 4 | Medical history questionnaire | Form | Patient | Complete the medical history questionnaire to help your care team understand your health background. |
 | 5 | Prior medical records request | File Request | Prior Provider | Upload the requested medical records for the patient including clinical notes, lab results, imaging reports, and treatment history. |
 | 6 | Prior records delivery | File Request | Prior Provider | Upload any additional records or documentation that were not included in the initial records transfer. |
+| | **📌 Consent & Completion** | | | |
 | 7 | Consent forms | E-Sign | Patient | Review and sign the patient consent forms including consent to treat, financial responsibility, HIPAA privacy practices, and communication preferences. |
 | 8 | Intake complete | Acknowledgement | Intake Coordinator | Confirm that all patient intake materials have been received, insurance has been verified, and the patient file is complete and ready for the provider. |
 
@@ -201,15 +208,20 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Application** | | | |
 | 1 | Credentialing application & attestation | Form | Provider | Complete the credentialing application with your professional background, training, and practice information. Your attestation of accuracy is required. |
 | 2 | Supporting credentials upload | File Request | Provider | Upload copies of your professional credentials including medical license, DEA certificate, board certification, malpractice insurance face sheet, CV, peer reference contacts, and government-issued ID. |
+| | **📌 Verification** | | | |
 | 3 | Primary source verification & sanctions screening | To-Do | Credentialing Coordinator | Perform primary source verification including state license board verification, NPDB query, education and training verification, board certification with ABMS, DEA status check, OIG/SAM exclusion list screening, peer reference calls, and work history verification. |
 | 4 | Credentialing file assembly | To-Do | Credentialing Coordinator | Compile all documents, primary source verification results, and reference responses into the credentialing file. Verify completeness and prepare the recommendation for committee review. |
+| | **📌 Committee Review & Decision** | | | |
 | 5 | Medical Director review | Approval | Medical Director | Review the compiled credentialing file. Evaluate any flags, gaps in practice history, or malpractice claims. Approve for committee review or escalate concerns. |
-| 6 | Credentialing Committee decision | Approval | Credentialing Committee | Review the credentialing file and Medical Director recommendation. Approve with full privileges, approve with restrictions, or deny with documented rationale. |
-| 7 | Provider notification | To-Do | Credentialing Coordinator | Automated notification: Send the provider notification of the credentialing decision including effective date, approved privileges, and appeal process information if denied. |
-| 8 | Provider agreement | E-Sign | Provider | Review and sign the provider agreement acknowledging your approved privileges, organizational policies, and re-credentialing obligations. |
-| 9 | Re-credentialing schedule | To-Do | Credentialing Coordinator | Set up the 36-month re-credentialing trigger, enroll the provider in continuous NPDB monitoring, and configure license expiration alerts in the credentialing system. |
+| 6 | Committee credentialing decision | Decision | Credentialing Committee | Committee renders credentialing decision: approve full privileges, approve with restrictions, defer pending additional information, or deny. |
+| 7 | Credentialing Committee approval | Approval | Credentialing Committee | Review the credentialing file and Medical Director recommendation. Approve with full privileges, approve with restrictions, or deny with documented rationale. |
+| | **📌 Onboarding** | | | |
+| 8 | Provider notification | To-Do | Credentialing Coordinator | Automated notification: Send the provider notification of the credentialing decision including effective date, approved privileges, and appeal process information if denied. |
+| 9 | Provider agreement | E-Sign | Provider | Review and sign the provider agreement acknowledging your approved privileges, organizational policies, and re-credentialing obligations. |
+| 10 | Re-credentialing schedule | To-Do | Credentialing Coordinator | Set up the 36-month re-credentialing trigger, enroll the provider in continuous NPDB monitoring, and configure license expiration alerts in the credentialing system. |
 
 #### Step 1: Credentialing application & attestation — Form Fields
 
@@ -258,11 +270,14 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Consent & Screening** | | | |
 | 1 | Informed consent & HIPAA authorization | E-Sign | Participant | Review and sign the IRB-approved informed consent form covering the study purpose, procedures, risks, benefits, alternatives, confidentiality, and voluntary participation. The HIPAA authorization permits use of your protected health information for research purposes. |
 | 2 | Pre-screening questionnaire | Form | Participant | Complete the pre-screening questionnaire to help the study team determine your preliminary eligibility for the trial. |
 | 3 | Medical history & eligibility assessment | Form | Participant | Provide your detailed medical history and condition-specific information required by the study protocol for eligibility assessment. |
+| | **📌 Eligibility Determination** | | | |
 | 4 | Inclusion/exclusion criteria verification | To-Do | Study Coordinator | Review participant responses against the protocol inclusion and exclusion criteria. Document which criteria are met or unmet and prepare the eligibility summary for the Principal Investigator. |
 | 5 | Eligibility determination | Decision | Principal Investigator | Review the eligibility summary and make the final determination: Eligible for enrollment, Screen Failure, or Rescreening Required. |
+| | **📌 Enrollment & Randomization** | | | |
 | 6 | Baseline assessments & enrollment | To-Do | Study Coordinator | Complete the protocol-required baseline assessments and enter the enrollment case report form (CRF) in the electronic data capture (EDC) system. |
 | 7 | Enrollment confirmation & study materials | Acknowledgement | Participant | Acknowledge your enrollment in the study and confirm receipt of the study schedule, visit calendar, site contact information, and participant instructions. |
 | 8 | Randomization & treatment assignment | To-Do | Study Coordinator | Automated notification: Complete randomization per the protocol scheme and notify relevant parties of the treatment arm assignment. Blinding rules apply per the study protocol. |

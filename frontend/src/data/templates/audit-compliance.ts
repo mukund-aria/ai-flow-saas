@@ -14,6 +14,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Control Owner', 'Compliance Coordinator', 'External Auditor'],
     steps: [
       {
+        name: 'Scoping',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Audit scope & period confirmation',
         type: 'FORM',
         assigneeRole: 'Compliance Coordinator',
@@ -26,6 +31,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f4', label: 'Trust Service Criteria', type: 'CHECKBOX', required: true, options: [{ label: 'Security', value: 'security' }, { label: 'Availability', value: 'availability' }, { label: 'Processing Integrity', value: 'processing-integrity' }, { label: 'Confidentiality', value: 'confidentiality' }, { label: 'Privacy', value: 'privacy' }] },
           { fieldId: 'f5', label: 'Systems in Scope', type: 'TEXT_MULTI_LINE', required: true },
         ],
+      },
+      {
+        name: 'Evidence Collection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Evidence request list (PBC)',
@@ -44,6 +54,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f1', label: 'Clarification Responses', type: 'TEXT_MULTI_LINE', required: true },
           { fieldId: 'f2', label: 'Additional Notes', type: 'TEXT_MULTI_LINE' },
         ],
+      },
+      {
+        name: 'Internal Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Evidence review',
@@ -65,6 +80,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Compliance Coordinator',
         sampleDescription:
           'Review the complete evidence package for all controls. Approve the package as ready for external auditor review.',
+      },
+      {
+        name: 'Auditor Review & Closeout',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Share with external auditor',
@@ -126,6 +146,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Control Owner', 'ISO Program Owner', 'External Auditor'],
     steps: [
       {
+        name: 'Scoping & SoA',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'ISMS scope & sites confirmation',
         type: 'FORM',
         assigneeRole: 'ISO Program Owner',
@@ -144,6 +169,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'ISO Program Owner',
         sampleDescription:
           'Upload the current Statement of Applicability (SoA) mapping all Annex A controls to their implementation status and evidence sources.',
+      },
+      {
+        name: 'Evidence Collection & Remediation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Evidence by control area',
@@ -183,6 +213,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'ISO Program Owner',
         sampleDescription:
           'Review the complete evidence package including any remediation items. Approve the package as ready for external auditor review.',
+      },
+      {
+        name: 'Auditor Handoff',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'External auditor package',
@@ -226,6 +261,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['External Auditor', 'Controller/CFO', 'Department Heads'],
     steps: [
       {
+        name: 'Planning & PBC Distribution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Audit planning & timeline',
         type: 'FORM',
         assigneeRole: 'External Auditor',
@@ -245,6 +285,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Controller/CFO',
         sampleDescription:
           'Upload the Provided by Client (PBC) list to departments. Include all requested schedules, reconciliations, and supporting documentation.',
+      },
+      {
+        name: 'Evidence Collection & Fieldwork',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Department evidence collection',
@@ -270,6 +315,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Department Heads',
         sampleDescription:
           'Upload any additional documentation requested by the auditors during fieldwork. Address all open items promptly to avoid audit delays.',
+      },
+      {
+        name: 'Findings & Closeout',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Draft findings review',
@@ -320,6 +370,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Merchant Contact', 'Security Lead', 'Executive Signer'],
     steps: [
       {
+        name: 'Assessment & Evidence',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Determine SAQ type',
         type: 'FORM',
         assigneeRole: 'Merchant Contact',
@@ -358,6 +413,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f3', label: 'Compensating controls (if any)', type: 'TEXT_MULTI_LINE' },
           { fieldId: 'f4', label: 'Remediation plan for gaps', type: 'TEXT_MULTI_LINE' },
         ],
+      },
+      {
+        name: 'Security Review & Attestation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Security review',
@@ -420,6 +480,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Business Associate Contact', 'Compliance Lead'],
     steps: [
       {
+        name: 'Attestation Submission',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'BA attestation questionnaire',
         type: 'FORM',
         assigneeRole: 'Business Associate Contact',
@@ -455,6 +520,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Business Associate Contact',
         sampleDescription:
           'Upload relevant security documentation such as your HIPAA policies, risk assessment summary, incident response plan, or SOC 2 report.',
+      },
+      {
+        name: 'Compliance Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Compliance review',
@@ -508,6 +578,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Audit Lead', 'Control Owner', 'Department Manager'],
     steps: [
       {
+        name: 'Audit Kickoff',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Audit kickoff & scope',
         type: 'FORM',
         assigneeRole: 'Audit Lead',
@@ -520,6 +595,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f4', label: 'Audit Period', type: 'TEXT_SINGLE_LINE', required: true },
           { fieldId: 'f5', label: 'Evidence Submission Deadline', type: 'DATE', required: true },
         ],
+      },
+      {
+        name: 'Evidence & Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Evidence request',
@@ -552,6 +632,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Control Owner',
         sampleDescription:
           'Upload additional evidence to address gaps or findings identified during the audit review. Provide any requested supplementary documentation.',
+      },
+      {
+        name: 'Findings & Closeout',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Department manager sign-off',
@@ -602,6 +687,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Certifier', 'Compliance Officer', 'Executive'],
     steps: [
       {
+        name: 'Cycle Setup',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Certification cycle initiation',
         type: 'FORM',
         assigneeRole: 'Compliance Officer',
@@ -629,6 +719,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
           'Automated notification: Send certification notifications to all certifiers with instructions, reference materials, and the submission deadline.',
       },
       {
+        name: 'Self-Assessment Collection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Compliance self-assessment',
         type: 'FORM',
         assigneeRole: 'Certifier',
@@ -648,6 +743,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Certifier',
         sampleDescription:
           'Upload any supporting evidence for your certification responses. Include documentation for any exceptions or process changes noted.',
+      },
+      {
+        name: 'Review & Sign-off',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'AI certification aggregation',
@@ -885,6 +985,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Control Owner', 'Compliance Coordinator', 'Department Manager'],
     steps: [
       {
+        name: 'Cycle Setup',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Assessment cycle initiation',
         type: 'FORM',
         assigneeRole: 'Compliance Coordinator',
@@ -905,6 +1010,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
           'Upload the control inventory with descriptions, expected evidence, and prior assessment results. This will guide control owners in their self-assessment.',
       },
       {
+        name: 'Self-Assessment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Self-assessment questionnaire',
         type: 'FORM',
         assigneeRole: 'Control Owner',
@@ -923,6 +1033,11 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Control Owner',
         sampleDescription:
           'Upload evidence supporting your self-assessment responses. Include documentation demonstrating control operation and effectiveness.',
+      },
+      {
+        name: 'Review & Remediation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Compliance coordinator review',

@@ -29,6 +29,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Trial Setup',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Trial registration form',
         type: 'FORM',
         assigneeRole: 'Prospect',
@@ -58,6 +63,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
           'Review and acknowledge the trial plan including timeline, key milestones, and support resources available during your evaluation period.',
       },
       {
+        name: 'Evaluation & Check-in',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Mid-trial check-in survey',
         type: 'FORM',
         assigneeRole: 'Prospect',
@@ -81,6 +91,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Sales Rep',
         sampleDescription:
           'Conduct a personalized demo of advanced features based on the prospect\'s mid-trial feedback. Address blockers and showcase capabilities aligned with their goals.',
+      },
+      {
+        name: 'Conversion',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Trial outcome decision',
@@ -135,6 +150,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Scoping & Setup',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Pilot scope & objectives form',
         type: 'FORM',
         assigneeRole: 'Prospect Sponsor',
@@ -165,6 +185,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Pilot Lead',
         sampleDescription:
           'Set up the pilot environment including infrastructure provisioning, user accounts, SSO integration, data migration (if applicable), and monitoring dashboards.',
+      },
+      {
+        name: 'Active Pilot',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Pilot kickoff acknowledgement',
@@ -199,6 +224,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
           'Based on mid-pilot results, decide whether to continue the pilot as planned, adjust scope or timeline, or terminate the pilot early.',
       },
       {
+        name: 'Evaluation & Decision',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Final pilot data collection',
         type: 'FILE_REQUEST',
         assigneeRole: 'Prospect Sponsor',
@@ -218,6 +248,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Prospect Sponsor',
         sampleDescription:
           'Make the final go/no-go decision on enterprise rollout based on the pilot evaluation report, business impact analysis, and organizational readiness.',
+      },
+      {
+        name: 'Contract Execution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Final contract sign-off',
@@ -257,6 +292,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Request & Security Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'AI pilot request',
         type: 'FORM',
         assigneeRole: 'Business Sponsor',
@@ -284,6 +324,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Data Privacy Officer',
         sampleDescription:
           'Review the IT security assessment and approve the AI pilot from a data privacy perspective. Ensure compliance with applicable privacy regulations (GDPR, CCPA, etc.).',
+      },
+      {
+        name: 'Active Pilot',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Pilot environment setup',
@@ -321,6 +366,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f3', label: 'Estimated Time Saved per Week', type: 'NUMBER' },
           { fieldId: 'f4', label: 'Concerns or Edge Cases', type: 'TEXT_MULTI_LINE' },
         ],
+      },
+      {
+        name: 'Evaluation & Rollout Decision',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Final results & risk assessment',
@@ -375,6 +425,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Internal Preparation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Proposal request details',
         type: 'FORM',
         assigneeRole: 'Sales Lead',
@@ -415,6 +470,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
           'Automated notification: Send the approved proposal and SOW to the client prospect with a personalized cover message highlighting key value points.',
       },
       {
+        name: 'Client Review & Negotiation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Client Q&A submission',
         type: 'FORM',
         assigneeRole: 'Client Prospect',
@@ -438,6 +498,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Client Prospect',
         sampleDescription:
           'Review the final proposal and confirm you are satisfied with the terms, pricing, and scope. Approve to proceed to contract signing.',
+      },
+      {
+        name: 'Execution & Handoff',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'SOW e-signature',
@@ -484,6 +549,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Intake & Assessment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'RFP intake & details',
         type: 'FORM',
         assigneeRole: 'Proposal Lead',
@@ -518,6 +588,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
           'AI-powered: Parse the RFP requirements, categorize them by department or functional area, and create an assignment matrix mapping each requirement to the appropriate SME.',
       },
       {
+        name: 'Response Development',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Response kickoff & assignments',
         type: 'FORM',
         assigneeRole: 'Proposal Lead',
@@ -542,6 +617,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Proposal Lead',
         sampleDescription:
           'Upload the pricing model and commercial terms for the RFP response, including cost breakdown, payment terms, and any volume or term discounts.',
+      },
+      {
+        name: 'Review & Submission',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Internal review & quality check',

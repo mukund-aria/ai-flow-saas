@@ -31,9 +31,11 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 QBR Preparation** | | | |
 | 1 | Pre-QBR data collection | Form | Account Manager | Compile the key account metrics and context needed for the QBR presentation, including renewal timeline, revenue, support history, and relationship highlights. |
 | 2 | QBR presentation upload | File Request | Account Manager | Upload your QBR presentation deck with account performance data, usage trends, ROI analysis, and proposed recommendations for the upcoming quarter. |
 | 3 | Client pre-QBR survey | Form | Client Stakeholder | Share your perspective before the QBR meeting. Your input on satisfaction, priorities, and feature needs helps us make the session as productive as possible. |
+| | **📌 Meeting & Follow-up** | | | |
 | 4 | QBR meeting completion | To-Do | Account Manager | Conduct the QBR meeting, present findings and recommendations, capture client feedback, and document agreed-upon action items with owners and due dates. |
 | 5 | Action items acknowledgement | Acknowledgement | Client Stakeholder | Review and acknowledge the action items agreed upon during the QBR meeting. This confirms mutual understanding of next steps and responsibilities. |
 | 6 | Internal debrief | To-Do | Account Manager | Complete the internal debrief by updating the CRM, logging action items, flagging any risks or expansion opportunities, and sharing notes with the extended account team. |
@@ -87,12 +89,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Discovery & Assessment** | | | |
 | 1 | Renewal kickoff details | Form | CSM | Capture the renewal context including current contract details, account health indicators, and any upsell or risk factors to guide the renewal strategy. |
 | 2 | Usage & value report upload | File Request | CSM | Upload a usage and value report showing the client's product adoption, ROI metrics, and key achievements during the current contract period. |
 | 3 | Client renewal survey | Form | Client Contact | Help us understand your renewal priorities. Your feedback on satisfaction, usage, and budget directly shapes the renewal offer we prepare for you. |
+| | **📌 Proposal & Negotiation** | | | |
 | 4 | Internal pricing approval | Approval | Finance | Review the proposed renewal pricing, discount levels, and terms. Approve the pricing before the renewal proposal is sent to the client. |
 | 5 | Renewal proposal delivery | File Request | CSM | Upload the renewal proposal with updated pricing, terms, and any scope changes for delivery to the client. |
 | 6 | Client proposal review | Decision | Client Contact | Review the renewal proposal and indicate your decision. You can accept the proposal as-is, request negotiations on pricing or terms, downgrade your plan, or indicate you will not be renewing. |
+| | **📌 Contract Execution** | | | |
 | 7 | Renewal contract e-signature | E-Sign | Client Contact | Review and electronically sign the renewal contract to continue your subscription or service agreement. |
 | 8 | Post-renewal CRM update | To-Do | CSM | Update the CRM with the new contract details, renewal date, updated ARR, and any commitments made during the renewal process. Set the next renewal reminder. |
 
@@ -145,9 +150,11 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Assessment** | | | |
 | 1 | Health check trigger details | Form | CSM | Document what triggered this health check, the current account status, and how close the account is to renewal. |
 | 2 | Client satisfaction survey | Form | Client Contact | We value your feedback and want to ensure you're getting the most from our partnership. Please share your honest assessment of how things are going. |
 | 3 | Internal risk assessment | Form | CSM | Assess the account risk based on the client survey response and your relationship knowledge. Identify the primary risk factors and recommend an intervention strategy. |
+| | **📌 Intervention & Resolution** | | | |
 | 4 | Health check meeting | To-Do | CSM | Conduct the health check meeting with the client. Listen actively, address concerns, and collaboratively develop an action plan with clear owners and timelines. |
 | 5 | Action plan acknowledgement | Acknowledgement | Client Contact | Review and acknowledge the action plan developed during the health check meeting. This confirms our shared commitment to resolving the identified issues. |
 | 6 | Follow-up completion | To-Do | CSM | Complete all follow-up actions from the health check. Update the account health score, log outcomes in the CRM, and schedule the next check-in if needed. |
@@ -203,12 +210,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Dispute Intake** | | | |
 | 1 | Dispute intake form | Form | Client | Submit the details of your billing dispute so our finance team can investigate promptly. Include the invoice reference and a clear description of the issue. |
 | 2 | Supporting documentation | File Request | Client | Upload any supporting documentation for your dispute, such as the original invoice, contract excerpts, correspondence, or screenshots showing the discrepancy. |
+| | **📌 Investigation & Decision** | | | |
 | 3 | Internal investigation | To-Do | Finance Lead | Investigate the billing dispute by reviewing billing records, verifying charges against the contract terms, and determining the appropriate resolution. |
 | 4 | Resolution approval | Approval | Finance Lead | Approve the proposed resolution for the billing dispute. Document the resolution type (credit, refund, adjustment, or denial) and the rationale. |
 | 5 | Resolution notification | To-Do | Finance Lead | Automated notification: Notify the client of the dispute resolution decision, including a clear explanation of the findings and the action being taken. |
 | 6 | Resolution acceptance | Decision | Client | Review the resolution proposed by our finance team. You may accept the resolution, escalate if you disagree, or provide additional information to support your case. |
+| | **📌 Resolution & Close-out** | | | |
 | 7 | Resolution processing | To-Do | Finance Lead | Process the approved resolution including issuing credit memos, processing refunds, or making billing adjustments in the system. |
 | 8 | Resolution acknowledgement | Acknowledgement | Client | Acknowledge that the billing dispute has been resolved to your satisfaction. This closes the dispute record in our system. |
 

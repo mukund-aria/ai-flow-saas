@@ -7,7 +7,7 @@
  * "Add with AI..." button switches to AI mode.
  */
 
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Flag } from 'lucide-react';
 import { StepIcon } from './StepIcon';
 import { STEP_TYPE_META } from '@/types';
 import type { StepType } from '@/types';
@@ -78,6 +78,29 @@ function DraggablePaletteItem({ type }: { type: StepType }) {
   );
 }
 
+function MilestonePaletteItem() {
+  const { addMilestone } = useWorkflowStore();
+  const workflow = useWorkflowStore((s) => s.workflow);
+
+  const handleClick = () => {
+    const lastIndex = (workflow?.steps?.length ?? 1) - 1;
+    addMilestone(lastIndex);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors text-left group"
+    >
+      <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-gray-100">
+        <Flag className="w-3.5 h-3.5 text-gray-600" />
+      </div>
+      <span className="text-sm text-gray-700 group-hover:text-gray-900">Milestone</span>
+      <div className="w-1.5 h-1.5 rounded-full ml-auto shrink-0 opacity-60 bg-gray-400" />
+    </button>
+  );
+}
+
 export function StepPalette({ onSwitchToAI }: StepPaletteProps) {
   return (
     <div className="w-[220px] shrink-0 bg-white border-r border-gray-200 flex flex-col h-full overflow-hidden">
@@ -111,6 +134,14 @@ export function StepPalette({ onSwitchToAI }: StepPaletteProps) {
             ))}
           </div>
         ))}
+
+        {/* Layout section */}
+        <div className="mt-2">
+          <div className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+            Layout
+          </div>
+          <MilestonePaletteItem />
+        </div>
       </div>
     </div>
   );

@@ -28,12 +28,16 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Scoping** | | | |
 | 1 | Audit scope & period confirmation | Form | Compliance Coordinator | Define the audit scope, reporting period, and trust service criteria for this SOC 2 engagement. |
+| | **📌 Evidence Collection** | | | |
 | 2 | Evidence request list (PBC) | File Request | Control Owner | Review the PBC request list and upload all requested evidence for the controls you own. Ensure evidence covers the full audit period. |
 | 3 | Clarification Q&A | Form | Control Owner | Answer any clarification questions about the evidence you have submitted. Provide additional context where needed. |
+| | **📌 Internal Review** | | | |
 | 4 | Evidence review | To-Do | Compliance Coordinator | Review all submitted evidence for completeness, relevance, and proper coverage of the audit period. Identify any gaps or insufficient evidence. |
 | 5 | Follow-up evidence request | File Request | Control Owner | Upload additional evidence to address any gaps identified during the initial review. Ensure all follow-up items are fully addressed. |
 | 6 | Evidence package approved | Approval | Compliance Coordinator | Review the complete evidence package for all controls. Approve the package as ready for external auditor review. |
+| | **📌 Auditor Review & Closeout** | | | |
 | 7 | Share with external auditor | File Request | External Auditor | Access the evidence package prepared for your review. Upload any additional documentation you may need for the audit. |
 | 8 | Auditor follow-up questions | Form | External Auditor | Submit any follow-up questions or additional evidence requests based on your review of the evidence package. |
 | 9 | Final evidence uploads | File Request | Control Owner | Upload any final evidence requested by the external auditor. Ensure all auditor follow-up items are fully resolved. |
@@ -89,13 +93,16 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Scoping & SoA** | | | |
 | 1 | ISMS scope & sites confirmation | Form | ISO Program Owner | Confirm the Information Security Management System scope, sites included, and audit type for this evidence collection cycle. |
 | 2 | Statement of Applicability mapping | File Request | ISO Program Owner | Upload the current Statement of Applicability (SoA) mapping all Annex A controls to their implementation status and evidence sources. |
+| | **📌 Evidence Collection & Remediation** | | | |
 | 3 | Evidence by control area | File Request | Control Owner | Upload evidence for all controls assigned to you. Organize evidence by control area and ensure it demonstrates effective operation of each control. |
 | 4 | Control owner clarifications | Form | Control Owner | Provide any additional context or clarifications about the evidence you submitted. Explain any changes to control implementation since the last audit. |
 | 5 | Evidence completeness review | To-Do | ISO Program Owner | Review all submitted evidence against the Statement of Applicability. Verify completeness for every applicable control and identify any gaps requiring remediation. |
 | 6 | Gap remediation evidence | File Request | Control Owner | Upload evidence to address any gaps identified during the completeness review. This may include new documentation, updated procedures, or corrective actions. |
 | 7 | Evidence accepted | Approval | ISO Program Owner | Review the complete evidence package including any remediation items. Approve the package as ready for external auditor review. |
+| | **📌 Auditor Handoff** | | | |
 | 8 | External auditor package | File Request | External Auditor | Access the complete evidence package prepared for your ISO 27001 audit. Upload any additional requests or clarifications. |
 | 9 | Finding acknowledgement | Acknowledgement | ISO Program Owner | Acknowledge the audit findings and confirm understanding of any nonconformities, observations, or opportunities for improvement identified by the auditor. |
 
@@ -141,11 +148,14 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Planning & PBC Distribution** | | | |
 | 1 | Audit planning & timeline | Form | External Auditor | Provide the audit planning details including scope, timeline, and key dates for fieldwork and report issuance. |
 | 2 | PBC list distribution | File Request | Controller/CFO | Upload the Provided by Client (PBC) list to departments. Include all requested schedules, reconciliations, and supporting documentation. |
+| | **📌 Evidence Collection & Fieldwork** | | | |
 | 3 | Department evidence collection | File Request | Department Heads | Upload all requested audit evidence for your department. Ensure schedules reconcile to the general ledger and supporting documentation is complete. |
 | 4 | Auditor clarifications | Form | Controller/CFO | Respond to auditor clarification questions about the submitted evidence. Provide additional context or calculations as needed. |
 | 5 | Follow-up documentation | File Request | Department Heads | Upload any additional documentation requested by the auditors during fieldwork. Address all open items promptly to avoid audit delays. |
+| | **📌 Findings & Closeout** | | | |
 | 6 | Draft findings review | To-Do | Controller/CFO | Review the draft audit findings and proposed adjustments. Assess the impact of any identified misstatements and evaluate proposed management letter comments. |
 | 7 | Management response | File Request | Controller/CFO | Upload the management response to audit findings, including corrective action plans and timelines for any identified control deficiencies. |
 | 8 | Final report acknowledgement | Acknowledgement | Controller/CFO | Acknowledge receipt of the final audit report. Confirm understanding of the audit opinion, significant findings, and management letter recommendations. |
@@ -197,10 +207,12 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Assessment & Evidence** | | | |
 | 1 | Determine SAQ type | Form | Merchant Contact | Answer the following questions to determine which Self-Assessment Questionnaire (SAQ) type applies to your payment processing environment. |
 | 2 | Supporting evidence collection | File Request | Merchant Contact | Upload supporting evidence for your PCI compliance including network diagrams, vulnerability scan reports, and penetration test results. |
 | 3 | IT environment documentation | File Request | Merchant Contact | Upload documentation of your IT environment including cardholder data flow diagrams, system inventory, and third-party service provider list. |
 | 4 | Complete SAQ questionnaire | Form | Merchant Contact | Complete the self-assessment questionnaire for your determined SAQ type. Answer each requirement honestly based on your current environment. |
+| | **📌 Security Review & Attestation** | | | |
 | 5 | Security review | To-Do | Security Lead | Review the completed SAQ responses and supporting evidence. Verify that all requirements are properly addressed and evidence is sufficient. |
 | 6 | Remediation tasks (if required) | To-Do | Merchant Contact | Complete any remediation tasks identified during the security review. Address all gaps before the attestation can be finalized. |
 | 7 | SAQ approval | Approval | Security Lead | Approve the completed SAQ and supporting evidence as meeting PCI DSS requirements for the applicable SAQ type. |
@@ -253,10 +265,12 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Attestation Submission** | | | |
 | 1 | BA attestation questionnaire | Form | Business Associate Contact | Complete the business associate attestation questionnaire covering your HIPAA safeguards, policies, and practices. |
 | 2 | Safeguard acknowledgement | Acknowledgement | Business Associate Contact | Acknowledge that your organization has implemented the required administrative, physical, and technical safeguards for protecting PHI as required by the HIPAA Security Rule. |
 | 3 | Sub-processor disclosure | File Request | Business Associate Contact | Upload a list of all sub-processors or subcontractors who may access, process, or store PHI on your behalf. Include their role and data handling scope. |
 | 4 | Security documentation | File Request | Business Associate Contact | Upload relevant security documentation such as your HIPAA policies, risk assessment summary, incident response plan, or SOC 2 report. |
+| | **📌 Compliance Review** | | | |
 | 5 | Compliance review | To-Do | Compliance Lead | Review the attestation responses, safeguard acknowledgement, and supporting documentation. Assess the business associate's HIPAA compliance posture. |
 | 6 | Attestation accepted | Approval | Compliance Lead | Approve or reject the business associate attestation based on the compliance review. Document any conditions or follow-up requirements. |
 | 7 | Completion acknowledgement | Acknowledgement | Business Associate Contact | Acknowledge the outcome of the attestation review. If approved, confirm your ongoing commitment to maintaining HIPAA compliance. |
@@ -299,11 +313,14 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Audit Kickoff** | | | |
 | 1 | Audit kickoff & scope | Form | Audit Lead | Define the internal audit scope, objectives, and timeline. Identify the control areas and departments under review. |
+| | **📌 Evidence & Review** | | | |
 | 2 | Evidence request | File Request | Control Owner | Upload all requested audit evidence for the controls you own. Ensure documentation covers the full audit period and demonstrates control effectiveness. |
 | 3 | Clarification questions | Form | Control Owner | Respond to any clarification questions from the audit team about the evidence you submitted. |
 | 4 | Evidence review | To-Do | Audit Lead | Review all submitted evidence against the audit program. Document findings, note any control deficiencies, and identify areas requiring follow-up. |
 | 5 | Follow-up request | File Request | Control Owner | Upload additional evidence to address gaps or findings identified during the audit review. Provide any requested supplementary documentation. |
+| | **📌 Findings & Closeout** | | | |
 | 6 | Department manager sign-off | Approval | Department Manager | Review the audit findings for your department. Approve the findings and confirm that the management responses and corrective action plans are accurate. |
 | 7 | Finding response | File Request | Department Manager | Upload the formal management response to audit findings including corrective action plans, responsible parties, and target completion dates. |
 | 8 | Audit closeout | Acknowledgement | Audit Lead | Confirm that the internal audit engagement is complete. All evidence has been reviewed, findings documented, and management responses received. |
@@ -354,11 +371,14 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Cycle Setup** | | | |
 | 1 | Certification cycle initiation | Form | Compliance Officer | Set up the compliance certification cycle. Define the period, certification type, and list of certifiers. |
 | 2 | Pre-certification materials | File Request | Compliance Officer | Upload reference materials, guidance documents, and prior period certifications for certifier review. |
 | 3 | Certification notification | To-Do | Compliance Officer | Automated notification: Send certification notifications to all certifiers with instructions, reference materials, and the submission deadline. |
+| | **📌 Self-Assessment Collection** | | | |
 | 4 | Compliance self-assessment | Form | Certifier | Complete the compliance self-assessment for your area of responsibility. Answer each question based on the current state of your controls and processes. |
 | 5 | Supporting evidence upload | File Request | Certifier | Upload any supporting evidence for your certification responses. Include documentation for any exceptions or process changes noted. |
+| | **📌 Review & Sign-off** | | | |
 | 6 | AI certification aggregation | To-Do | Compliance Officer | AI-powered: Aggregate all certification responses and flag "No" responses, exceptions, inconsistencies across business units, and patterns requiring investigation. |
 | 7 | Exception investigation | To-Do | Compliance Officer | Investigate all flagged exceptions and inconsistencies from the certification responses. Document findings and required corrective actions. |
 | 8 | Compliance officer review | Approval | Compliance Officer | Review the aggregated certification results, exception investigations, and overall compliance posture. Approve the certification package for executive sign-off. |
@@ -513,10 +533,13 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Cycle Setup** | | | |
 | 1 | Assessment cycle initiation | Form | Compliance Coordinator | Set up the self-assessment cycle. Define the assessment period, scope, control areas, and assign control owners. |
 | 2 | Control inventory & prior findings | File Request | Compliance Coordinator | Upload the control inventory with descriptions, expected evidence, and prior assessment results. This will guide control owners in their self-assessment. |
+| | **📌 Self-Assessment** | | | |
 | 3 | Self-assessment questionnaire | Form | Control Owner | Complete the self-assessment for each control you own. Rate effectiveness, document any deviations, and report on remediation of prior findings. |
 | 4 | Supporting evidence upload | File Request | Control Owner | Upload evidence supporting your self-assessment responses. Include documentation demonstrating control operation and effectiveness. |
+| | **📌 Review & Remediation** | | | |
 | 5 | Compliance coordinator review | To-Do | Compliance Coordinator | Review all self-assessment responses and supporting evidence. Identify trends, common gaps, and areas requiring further investigation or remediation. |
 | 6 | Clarification questions | Form | Control Owner | Respond to follow-up questions from the compliance team about your self-assessment responses. |
 | 7 | Remediation plan for gaps (if any) | Form | Control Owner | If any control gaps or deficiencies were identified, submit a remediation plan with specific actions, responsible parties, and target dates. |

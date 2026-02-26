@@ -32,6 +32,10 @@ interface WorkflowStore {
   updateKickoffConfig: (kickoff: Partial<KickoffConfig>) => void;
   updateFlowSettings: (settings: Partial<FlowSettings>) => void;
   updateFlowPermissions: (permissions: Partial<FlowPermissions>) => void;
+  // Milestone CRUD
+  addMilestone: (afterStepIndex: number, name?: string) => void;
+  removeMilestone: (milestoneId: string) => void;
+  updateMilestone: (milestoneId: string, name: string) => void;
 }
 
 let stepCounter = 0;
@@ -258,6 +262,54 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
       workflow: {
         ...workflow,
         permissions: { ...defaultPerms, ...(workflow.permissions || {}), ...permissions },
+      },
+    });
+  },
+
+  addMilestone: (afterStepIndex, name) => {
+    const { workflow } = get();
+    if (!workflow) return;
+
+    const afterStepId = afterStepIndex >= 0 && afterStepIndex < workflow.steps.length
+      ? workflow.steps[afterStepIndex].stepId
+      : '';
+
+    const milestone = {
+      milestoneId: `milestone-${Date.now()}-${++stepCounter}`,
+      name: name || 'New Phase',
+      afterStepId,
+    };
+
+    set({
+      workflow: {
+        ...workflow,
+        milestones: [...(workflow.milestones || []), milestone],
+      },
+    });
+  },
+
+  removeMilestone: (milestoneId) => {
+    const { workflow } = get();
+    if (!workflow) return;
+
+    set({
+      workflow: {
+        ...workflow,
+        milestones: (workflow.milestones || []).filter(m => m.milestoneId !== milestoneId),
+      },
+    });
+  },
+
+  updateMilestone: (milestoneId, name) => {
+    const { workflow } = get();
+    if (!workflow) return;
+
+    set({
+      workflow: {
+        ...workflow,
+        milestones: (workflow.milestones || []).map(m =>
+          m.milestoneId === milestoneId ? { ...m, name } : m
+        ),
       },
     });
   },

@@ -29,6 +29,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Paperwork & Documentation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Personal information form',
         type: 'FORM',
         assigneeRole: 'New Hire',
@@ -68,6 +73,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
           'Upload identity and employment authorization documents per I-9 requirements: either one List A document, or one List B plus one List C document.',
       },
       {
+        name: 'Verification & Benefits',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'I-9 employer verification',
         type: 'TODO',
         assigneeRole: 'HR Coordinator',
@@ -90,6 +100,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f7', label: 'Vision Plan', type: 'DROPDOWN', required: false, options: [{ label: 'Standard', value: 'standard' }, { label: 'Waive', value: 'waive' }] },
           { fieldId: 'f8', label: '401(k) Contribution %', type: 'NUMBER', required: false },
         ],
+      },
+      {
+        name: 'Provisioning & Orientation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Equipment provisioning',
@@ -151,6 +166,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Intake & Classification',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Contractor information form',
         type: 'FORM',
         assigneeRole: 'Contractor',
@@ -187,6 +207,19 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
           'AI-powered: Evaluate the engagement against the IRS 20-factor test for worker classification. Generate a misclassification risk score (Low/Medium/High) with recommendations.',
       },
       {
+        name: 'Classification risk routing',
+        type: 'SINGLE_CHOICE_BRANCH',
+        assigneeRole: 'Hiring Manager',
+        sampleDescription:
+          'Route the engagement based on the classification risk assessment. Workers flagged as potential W-2 employees follow a different compliance path than confirmed 1099 contractors.',
+        samplePaths: [{ label: 'W-2 Employee Path' }, { label: '1099 Contractor Path' }],
+      },
+      {
+        name: 'Agreements & Compliance',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'SOW / contractor agreement',
         type: 'ESIGN',
         assigneeRole: 'Contractor',
@@ -208,6 +241,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Contractor',
         sampleDescription:
           'Upload your completed W-9 form and certificates of insurance (general liability and professional liability, if applicable).',
+      },
+      {
+        name: 'Payment & Access',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Payment setup form',
@@ -268,6 +306,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Authorization & Information',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Background check authorization',
         type: 'ESIGN',
         assigneeRole: 'Candidate',
@@ -306,6 +349,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'Verification',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Verification request',
         type: 'TODO',
         assigneeRole: 'Background Vendor',
@@ -334,11 +382,23 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
           'Verify the candidate\'s educational credentials with the listed institutions. Confirm degrees, dates of attendance, and any honors.',
       },
       {
+        name: 'Review & Determination',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Results review',
         type: 'TODO',
         assigneeRole: 'HR Coordinator',
         sampleDescription:
           'Review the completed background check results, employment verifications, and education verifications. Flag any discrepancies or adverse findings for further evaluation.',
+      },
+      {
+        name: 'Background check determination',
+        type: 'DECISION',
+        assigneeRole: 'HR Coordinator',
+        sampleDescription:
+          'Determine whether the candidate passes the background check based on the verification results. Candidates with clear results proceed to completion; candidates with discrepancies or adverse findings are routed for further review.',
       },
       {
         name: 'Candidate acknowledgement',
@@ -378,6 +438,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Separation Processing',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Separation notice',
         type: 'ACKNOWLEDGEMENT',
         assigneeRole: 'Departing Employee',
@@ -413,6 +478,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
           'Upload any outstanding expense reports and receipts for reimbursement processing before your last day.',
       },
       {
+        name: 'Administrative Closure',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Equipment return',
         type: 'TODO',
         assigneeRole: 'Departing Employee',
@@ -425,6 +495,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'IT Administrator',
         sampleDescription:
           'Revoke all system access including email, SSO, VPN, cloud services, and building access. Archive the user account per retention policy.',
+      },
+      {
+        name: 'Final Settlement',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Final paycheck',
@@ -476,6 +551,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Authorization & Planning',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Relocation authorization',
         type: 'FORM',
         assigneeRole: 'HR Coordinator',
@@ -513,6 +593,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
           'Review and acknowledge the relocation policy, including covered expenses, reimbursement procedures, tax implications, and clawback provisions.',
       },
       {
+        name: 'Move Coordination',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Home sale / lease break assistance',
         type: 'TODO',
         assigneeRole: 'Relocation Company',
@@ -539,6 +624,11 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Employee',
         sampleDescription:
           'Confirm the final move date and logistics. Acknowledge the packing, pickup, and delivery schedule.',
+      },
+      {
+        name: 'Completion',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Expense documentation',

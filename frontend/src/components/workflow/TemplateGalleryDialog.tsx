@@ -38,6 +38,8 @@ import {
   TrendingUp,
   UserCheck,
   Landmark,
+  Flag,
+  GitBranch,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createTemplate, getSamplePDF, type PDFUploadResult } from '@/lib/api';
@@ -74,6 +76,8 @@ const STEP_TYPE_ICONS: Record<string, React.ElementType> = {
   PDF_FORM: FileText,
   CUSTOM_ACTION: CheckSquare,
   WEB_APP: LayoutGrid,
+  MILESTONE: Flag,
+  SINGLE_CHOICE_BRANCH: GitBranch,
 };
 
 const STEP_TYPE_COLORS: Record<string, string> = {
@@ -88,6 +92,7 @@ const STEP_TYPE_COLORS: Record<string, string> = {
   PDF_FORM: 'bg-teal-100 text-teal-600',
   CUSTOM_ACTION: 'bg-indigo-100 text-indigo-600',
   WEB_APP: 'bg-cyan-100 text-cyan-600',
+  SINGLE_CHOICE_BRANCH: 'bg-amber-100 text-amber-600',
 };
 
 
@@ -110,40 +115,87 @@ function galleryTemplateToDefinition(template: GalleryTemplate, samplePDF?: PDFU
     resolutionType: 'CONTACT_TBD' as const,
   }));
 
-  // Create steps with sample data from gallery template
-  const steps = template.steps.map((step, i) => {
-    const config: Record<string, unknown> = {
-      name: step.name,
-      assignee: step.assigneeRole,
-      ...(step.sampleDescription ? { description: step.sampleDescription } : {}),
-    };
+  // Separate MILESTONE entries from actual steps
+  const milestones: Array<{ milestoneId: string; name: string; afterStepId: string }> = [];
+  const actualSteps: Array<typeof template.steps[number]> = [];
 
-    if (step.type === 'FORM') {
-      config.formFields = step.sampleFormFields || [];
-    } else if (step.type === 'QUESTIONNAIRE') {
-      config.questionnaire = { questions: [] };
-    } else if (step.type === 'ESIGN') {
-      config.esign = {
-        signingOrder: 'SEQUENTIAL',
-        ...(step.sampleDocumentRef ? { documentName: step.sampleDocumentRef } : {}),
-      };
-    } else if (step.type === 'PDF_FORM') {
-      config.pdfForm = {
-        fields: samplePDF ? samplePDF.fields : [],
-        ...(samplePDF ? { documentUrl: samplePDF.documentUrl } : {}),
-        ...(step.sampleDocumentRef ? { documentDescription: step.sampleDocumentRef } : {}),
-      };
-    } else if (step.type === 'FILE_REQUEST') {
-      config.fileRequest = { maxFiles: 5 };
+  for (const entry of template.steps) {
+    if (entry.type === 'MILESTONE') {
+      actualSteps.push(entry); // placeholder to track position
+    } else {
+      actualSteps.push(entry);
     }
+  }
 
-    return {
-      stepId: `${generateStepId()}-${i}`,
-      type: step.type,
-      order: i,
-      config,
-    };
-  });
+  // Generate step IDs for non-milestone steps, and build milestones
+  const stepEntries: Array<{ stepId: string; isMilestone: boolean; original: typeof template.steps[number] }> = [];
+  let stepOrder = 0;
+
+  for (const entry of template.steps) {
+    if (entry.type === 'MILESTONE') {
+      // Find the last non-milestone step's ID
+      const lastRealStep = stepEntries.filter(e => !e.isMilestone).at(-1);
+      milestones.push({
+        milestoneId: `milestone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        name: entry.name,
+        afterStepId: lastRealStep ? lastRealStep.stepId : '',
+      });
+      stepEntries.push({ stepId: '', isMilestone: true, original: entry });
+    } else {
+      const stepId = `${generateStepId()}-${stepOrder}`;
+      stepEntries.push({ stepId, isMilestone: false, original: entry });
+      stepOrder++;
+    }
+  }
+
+  // Create steps with sample data from gallery template (excluding milestones)
+  let order = 0;
+  const steps = stepEntries
+    .filter(e => !e.isMilestone)
+    .map(({ stepId, original: step }) => {
+      const config: Record<string, unknown> = {
+        name: step.name,
+        assignee: step.assigneeRole,
+        ...(step.sampleDescription ? { description: step.sampleDescription } : {}),
+      };
+
+      if (step.type === 'FORM') {
+        config.formFields = step.sampleFormFields || [];
+      } else if (step.type === 'QUESTIONNAIRE') {
+        config.questionnaire = { questions: [] };
+      } else if (step.type === 'ESIGN') {
+        config.esign = {
+          signingOrder: 'SEQUENTIAL',
+          ...(step.sampleDocumentRef ? { documentName: step.sampleDocumentRef } : {}),
+        };
+      } else if (step.type === 'PDF_FORM') {
+        config.pdfForm = {
+          fields: samplePDF ? samplePDF.fields : [],
+          ...(samplePDF ? { documentUrl: samplePDF.documentUrl } : {}),
+          ...(step.sampleDocumentRef ? { documentDescription: step.sampleDocumentRef } : {}),
+        };
+      } else if (step.type === 'FILE_REQUEST') {
+        config.fileRequest = { maxFiles: 5 };
+      } else if (step.type === 'SINGLE_CHOICE_BRANCH') {
+        config.paths = (step.samplePaths || [{ label: 'Path A' }, { label: 'Path B' }]).map((p, pi) => ({
+          pathId: `path-${Date.now()}-${pi}-${Math.random().toString(36).slice(2, 5)}`,
+          label: p.label,
+          steps: [],
+        }));
+      } else if (step.type === 'DECISION') {
+        config.outcomes = [
+          { outcomeId: `outcome-${Date.now()}-0`, label: 'Approved', steps: [] },
+          { outcomeId: `outcome-${Date.now()}-1`, label: 'Rejected', steps: [] },
+        ];
+      }
+
+      return {
+        stepId,
+        type: step.type,
+        order: order++,
+        config,
+      };
+    });
 
   return {
     flowId: `gallery-${template.id}`,
@@ -151,7 +203,7 @@ function galleryTemplateToDefinition(template: GalleryTemplate, samplePDF?: PDFU
     description: template.description,
     setupInstructions: template.setupInstructions,
     steps,
-    milestones: [],
+    milestones,
     assigneePlaceholders: placeholders,
     parameters: [],
   };
@@ -373,7 +425,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-xs text-gray-400">
                         <FileText className="w-3 h-3" />
-                        {template.steps.length} steps
+                        {template.steps.filter(s => s.type !== 'MILESTONE').length} steps
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-gray-400">
                         <Users className="w-3 h-3" />
@@ -400,7 +452,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                       </div>
                       <div className="min-w-0">
                         <h2 className="text-lg font-bold text-gray-900 truncate">{selectedTemplate.name}</h2>
-                        <p className="text-sm text-gray-400">{selectedTemplate.steps.length} steps</p>
+                        <p className="text-sm text-gray-400">{selectedTemplate.steps.filter(s => s.type !== 'MILESTONE').length} steps</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
@@ -432,14 +484,26 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                       <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-4">Flow Preview</p>
                       <div className="space-y-0">
                         {selectedTemplate.steps.map((step, i) => {
+                          if (step.type === 'MILESTONE') {
+                            return (
+                              <div key={i} className="py-1.5">
+                                <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-100 rounded-md">
+                                  <Flag className="w-3 h-3 text-gray-500 shrink-0" />
+                                  <span className="text-[10px] font-semibold text-gray-600 uppercase tracking-wider truncate">{step.name}</span>
+                                </div>
+                              </div>
+                            );
+                          }
                           const StepIcon = STEP_TYPE_ICONS[step.type] || FileText;
+                          const nextNonMilestone = selectedTemplate.steps.slice(i + 1).find(s => s.type !== 'MILESTONE');
+                          const isLast = !nextNonMilestone && !selectedTemplate.steps.slice(i + 1).some(s => s.type !== 'MILESTONE');
                           return (
                             <div key={i} className="flex items-start gap-2.5">
                               <div className="flex flex-col items-center">
                                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${STEP_TYPE_COLORS[step.type] || 'bg-gray-100 text-gray-600'}`}>
                                   <StepIcon className="w-3.5 h-3.5" />
                                 </div>
-                                {i < selectedTemplate.steps.length - 1 && (
+                                {!isLast && (
                                   <div className="w-px h-6 bg-gray-200 my-0.5" />
                                 )}
                               </div>
@@ -503,23 +567,35 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                           </button>
                         </div>
                         <div className={showStepDetails ? 'space-y-4' : 'space-y-1.5'}>
-                          {selectedTemplate.steps.map((step, i) => {
-                            const StepIcon = STEP_TYPE_ICONS[step.type] || FileText;
-                            return (
-                              <div key={i} className="flex items-start gap-3">
-                                <span className="text-sm font-semibold text-gray-300 mt-0.5 w-5 text-right shrink-0">{i + 1}</span>
-                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${STEP_TYPE_COLORS[step.type] || 'bg-gray-100 text-gray-600'}`}>
-                                  <StepIcon className="w-3.5 h-3.5" />
+                          {(() => {
+                            let stepNum = 0;
+                            return selectedTemplate.steps.map((step, i) => {
+                              if (step.type === 'MILESTONE') {
+                                return (
+                                  <div key={i} className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg mt-3 first:mt-0">
+                                    <Flag className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                                    <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider">{step.name}</span>
+                                  </div>
+                                );
+                              }
+                              stepNum++;
+                              const StepIcon = STEP_TYPE_ICONS[step.type] || FileText;
+                              return (
+                                <div key={i} className="flex items-start gap-3">
+                                  <span className="text-sm font-semibold text-gray-300 mt-0.5 w-5 text-right shrink-0">{stepNum}</span>
+                                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${STEP_TYPE_COLORS[step.type] || 'bg-gray-100 text-gray-600'}`}>
+                                    <StepIcon className="w-3.5 h-3.5" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-900">{step.name}</p>
+                                    {showStepDetails && step.sampleDescription && (
+                                      <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{step.sampleDescription}</p>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-gray-900">{step.name}</p>
-                                  {showStepDetails && step.sampleDescription && (
-                                    <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{step.sampleDescription}</p>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            });
+                          })()}
                         </div>
                       </div>
 
@@ -614,7 +690,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                       <div>
                         <p className="text-xs text-gray-400 mb-2">Step types</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {Array.from(new Set(selectedTemplate.steps.map(s => s.type))).map(type => {
+                          {Array.from(new Set(selectedTemplate.steps.filter(s => s.type !== 'MILESTONE').map(s => s.type))).map(type => {
                             const StepIcon = STEP_TYPE_ICONS[type] || FileText;
                             return (
                               <span key={type} className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded ${STEP_TYPE_COLORS[type] || 'bg-gray-100 text-gray-600'}`}>

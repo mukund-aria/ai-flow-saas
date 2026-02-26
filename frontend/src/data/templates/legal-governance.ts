@@ -14,6 +14,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Counterparty', 'Legal Reviewer', 'Executive'],
     steps: [
       {
+        name: 'Intake & Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Contract intake',
         type: 'FORM',
         assigneeRole: 'Legal Reviewer',
@@ -50,6 +55,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
           'Review the contract for indemnification clauses, IP ownership, termination provisions, pricing structures, and payment terms. Document any concerns or required changes.',
       },
       {
+        name: 'Negotiation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Redline document upload',
         type: 'FILE_REQUEST',
         assigneeRole: 'Legal Reviewer',
@@ -69,6 +79,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Legal Reviewer',
         sampleDescription:
           'Review the counterparty response and decide on next steps: accept the terms, continue negotiation, escalate to leadership, or terminate discussions.',
+      },
+      {
+        name: 'Execution & Filing',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Executive approval (if needed)',
@@ -123,6 +138,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Requestor', 'Legal Reviewer', 'Business Approver', 'Finance Reviewer', 'Deal Desk'],
     steps: [
       {
+        name: 'Request & Documentation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Exception request details',
         type: 'FORM',
         assigneeRole: 'Requestor',
@@ -149,6 +169,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Requestor',
         sampleDescription:
           'Upload any supporting documentation for the business justification, such as competitive analysis or customer relationship history.',
+      },
+      {
+        name: 'Review & Approval',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Legal analysis',
@@ -353,6 +378,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Corporate Secretary', 'Board Member', 'General Counsel', 'CEO'],
     steps: [
       {
+        name: 'Draft Review & Feedback',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Resolution draft distribution',
         type: 'FILE_REQUEST',
         assigneeRole: 'Corporate Secretary',
@@ -383,6 +413,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'General Counsel',
         sampleDescription:
           'Review the draft resolution for legal compliance, proper form, and alignment with corporate governance requirements. Address any board member questions.',
+      },
+      {
+        name: 'Execution & Filing',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Final resolution distribution',
@@ -446,6 +481,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Target Company Contact', 'Deal Team Lead', 'Buyer Counsel'],
     steps: [
       {
+        name: 'Data Room Setup',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'NDA & data room access',
         type: 'ACKNOWLEDGEMENT',
         assigneeRole: 'Target Company Contact',
@@ -458,6 +498,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Deal Team Lead',
         sampleDescription:
           'Upload the comprehensive due diligence request list organized by workstream (corporate, financial, tax, legal, employment, IP).',
+      },
+      {
+        name: 'Document Collection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Corporate & financial documents',
@@ -494,6 +539,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'Analysis & Decision',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Buyer counsel questions & follow-ups',
         type: 'FORM',
         assigneeRole: 'Target Company Contact',
@@ -517,6 +567,13 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Deal Team Lead',
         sampleDescription:
           'AI-powered: Synthesize findings across all due diligence workstreams to identify material risks, documentation gaps, potential deal-breakers, and representation/warranty requirements.',
+      },
+      {
+        name: 'Transaction Go/No-Go',
+        type: 'DECISION',
+        assigneeRole: 'Deal Team Lead',
+        sampleDescription:
+          'Based on due diligence findings, determine whether to proceed with the transaction, renegotiate terms, or terminate the deal.',
       },
       {
         name: 'Go/No-Go decision',
@@ -553,6 +610,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Data Subject', 'Privacy Operations', 'IT/Data Team', 'Legal Reviewer'],
     steps: [
       {
+        name: 'Intake & Verification',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Request intake & verification',
         type: 'FORM',
         assigneeRole: 'Data Subject',
@@ -585,6 +647,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'Data Processing & Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Data collection across systems',
         type: 'TODO',
         assigneeRole: 'IT/Data Team',
@@ -597,6 +664,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Legal Reviewer',
         sampleDescription:
           'Review the collected data for legal exemptions, third-party data that must be redacted, and any privileged information. Apply necessary redactions.',
+      },
+      {
+        name: 'Response Delivery',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Privacy ops review',
@@ -650,6 +722,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Legal Owner', 'Custodian', 'IT Administrator', 'Outside Counsel'],
     steps: [
       {
+        name: 'Identification & Preservation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Subpoena intake & analysis',
         type: 'FORM',
         assigneeRole: 'Legal Owner',
@@ -683,6 +760,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'IT Administrator',
         sampleDescription:
           'Implement technical preservation measures for relevant data sources. Suspend auto-deletion policies, preserve email archives, and secure backup tapes as needed.',
+      },
+      {
+        name: 'Collection & Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Document collection',
@@ -740,6 +822,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Founder', 'Legal Advisor', 'Registered Agent', 'Accountant'],
     steps: [
       {
+        name: 'Entity Planning',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Formation intake',
         type: 'FORM',
         assigneeRole: 'Founder',
@@ -774,6 +861,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
           'Upload government-issued identification for all founders. This is required for the formation filing and EIN application.',
       },
       {
+        name: 'Formation & Execution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Operating agreement / bylaws review',
         type: 'TODO',
         assigneeRole: 'Legal Advisor',
@@ -794,6 +886,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Registered Agent',
         sampleDescription:
           'Acknowledge your acceptance of the registered agent appointment for the newly formed entity.',
+      },
+      {
+        name: 'Post-Formation Setup',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'EIN application',
@@ -847,6 +944,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Franchisee', 'Franchise Development Manager', 'Legal Reviewer', 'Finance', 'Training Lead'],
     steps: [
       {
+        name: 'Application & Qualification',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Franchise application',
         type: 'FORM',
         assigneeRole: 'Franchisee',
@@ -867,6 +969,18 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Franchisee',
         sampleDescription:
           'Upload financial qualification documents including personal financial statements, bank statements, and tax returns.',
+      },
+      {
+        name: 'Franchisee qualification decision',
+        type: 'DECISION',
+        assigneeRole: 'Franchise Development Manager',
+        sampleDescription:
+          'Evaluate the franchisee candidate: approve and proceed to agreement, request additional information, or decline the application.',
+      },
+      {
+        name: 'FDD Review & Discovery',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'FDD acknowledgement (14-day waiting period)',
@@ -893,6 +1007,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Franchisee',
         sampleDescription:
           'Confirm your attendance at Discovery Day. This is your opportunity to visit headquarters, meet the team, and learn about day-to-day franchise operations.',
+      },
+      {
+        name: 'Agreement & Onboarding',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Franchise agreement review',
@@ -961,6 +1080,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     roles: ['Assignor', 'IP Counsel', 'Assignee', 'IP Administrator'],
     steps: [
       {
+        name: 'Due Diligence',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Assignment request intake',
         type: 'FORM',
         assigneeRole: 'IP Counsel',
@@ -989,6 +1113,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'IP Counsel',
         sampleDescription:
           'Verify the chain of title for the IP being assigned. Confirm current ownership, check for liens or encumbrances, and verify registration status with the relevant IP office.',
+      },
+      {
+        name: 'Execution & Recording',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Assignment agreement review',

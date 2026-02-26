@@ -31,12 +31,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Paperwork & Documentation** | | | |
 | 1 | Personal information form | Form | New Hire | Provide your personal details so we can set up your employee record. Include your legal name, date of birth, contact information, and emergency contacts. |
 | 2 | Offer letter & employment agreements | E-Sign | New Hire | Review and sign your offer letter, non-disclosure agreement, IP assignment agreement, and employee handbook acknowledgement. |
 | 3 | Tax forms (W-4, state) | File Request | New Hire | Upload your completed federal W-4 and applicable state withholding forms for payroll setup. |
 | 4 | I-9 verification documents | File Request | New Hire | Upload identity and employment authorization documents per I-9 requirements: either one List A document, or one List B plus one List C document. |
+| | **📌 Verification & Benefits** | | | |
 | 5 | I-9 employer verification | To-Do | HR Coordinator | Examine the new hire's I-9 documents, complete Section 2 of Form I-9, and ensure verification is completed within 3 business days of start date. |
 | 6 | Direct deposit & benefits enrollment | Form | New Hire | Set up your direct deposit and enroll in benefits. Provide your banking information and select your medical, dental, vision, and 401(k) options. |
+| | **📌 Provisioning & Orientation** | | | |
 | 7 | Equipment provisioning | To-Do | HR Coordinator | Order and provision the new hire's equipment (laptop, monitors, peripherals) and ensure delivery before or on the start date. |
 | 8 | System access & accounts | To-Do | HR Coordinator | Create the new hire's email account, SSO credentials, and access to role-specific applications. Verify all accounts are functional before day one. |
 | 9 | First-day orientation | To-Do | HR Coordinator | Conduct the first-day orientation covering company overview, policies, facilities tour (or virtual equivalent), and introductions to key team members. |
@@ -98,15 +101,19 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Intake & Classification** | | | |
 | 1 | Contractor information form | Form | Contractor | Provide your business details including legal or business name, entity type, and work authorization status. |
 | 2 | Engagement details | Form | Hiring Manager | Define the engagement parameters including project scope, start and end dates, rate, budget, and business justification. |
 | 3 | AI classification risk check | To-Do | Hiring Manager | AI-powered: Evaluate the engagement against the IRS 20-factor test for worker classification. Generate a misclassification risk score (Low/Medium/High) with recommendations. |
-| 4 | SOW / contractor agreement | E-Sign | Contractor | Review and sign the Statement of Work and independent contractor agreement defining scope, deliverables, and terms. |
-| 5 | NDA execution | E-Sign | Contractor | Review and sign the Non-Disclosure Agreement to protect confidential information accessed during the engagement. |
-| 6 | W-9 & insurance documents | File Request | Contractor | Upload your completed W-9 form and certificates of insurance (general liability and professional liability, if applicable). |
-| 7 | Payment setup form | Form | Contractor | Provide your payment details so we can process invoices promptly. |
-| 8 | System access provisioning | To-Do | Hiring Manager | Provision necessary system access for the contractor, including project tools, communication platforms, and any role-specific applications with appropriate permissions. |
-| 9 | Onboarding complete | Acknowledgement | Hiring Manager | Acknowledge that the contractor onboarding is complete and the engagement is ready to begin. |
+| 4 | Classification risk routing | Single Choice Branch | Hiring Manager | Route the engagement based on the classification risk assessment. Workers flagged as potential W-2 employees follow a different compliance path than confirmed 1099 contractors. Paths: W-2 Employee Path, 1099 Contractor Path. |
+| | **📌 Agreements & Compliance** | | | |
+| 5 | SOW / contractor agreement | E-Sign | Contractor | Review and sign the Statement of Work and independent contractor agreement defining scope, deliverables, and terms. |
+| 6 | NDA execution | E-Sign | Contractor | Review and sign the Non-Disclosure Agreement to protect confidential information accessed during the engagement. |
+| 7 | W-9 & insurance documents | File Request | Contractor | Upload your completed W-9 form and certificates of insurance (general liability and professional liability, if applicable). |
+| | **📌 Payment & Access** | | | |
+| 8 | Payment setup form | Form | Contractor | Provide your payment details so we can process invoices promptly. |
+| 9 | System access provisioning | To-Do | Hiring Manager | Provision necessary system access for the contractor, including project tools, communication platforms, and any role-specific applications with appropriate permissions. |
+| 10 | Onboarding complete | Acknowledgement | Hiring Manager | Acknowledge that the contractor onboarding is complete and the engagement is ready to begin. |
 
 #### Step 1: Contractor information form — Form Fields
 
@@ -129,7 +136,7 @@
 | Total Budget | Text (single line) | Yes |
 | Business Justification | Text (multi-line) | Yes |
 
-#### Step 7: Payment setup form — Form Fields
+#### Step 8: Payment setup form — Form Fields
 
 | Field | Type | Required |
 |-------|------|----------|
@@ -168,14 +175,18 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Authorization & Information** | | | |
 | 1 | Background check authorization | E-Sign | Candidate | Review and sign the background check authorization form consenting to criminal, employment, and education verification. |
 | 2 | Candidate information | Form | Candidate | Provide your personal information needed for the background screening process. |
 | 3 | Employment history | Form | Candidate | List your employment history for the past 7 years, including employer name, title, dates, and supervisor contact information. |
+| | **📌 Verification** | | | |
 | 4 | Verification request | To-Do | Background Vendor | Initiate the background check with the screening vendor. Submit candidate information and monitor progress across all verification categories. |
 | 5 | Previous employer verification | Form | Previous Employer | Verify the candidate's employment with your organization by confirming dates of employment, title, and eligibility for rehire. |
 | 6 | Education verification | To-Do | Background Vendor | Verify the candidate's educational credentials with the listed institutions. Confirm degrees, dates of attendance, and any honors. |
+| | **📌 Review & Determination** | | | |
 | 7 | Results review | To-Do | HR Coordinator | Review the completed background check results, employment verifications, and education verifications. Flag any discrepancies or adverse findings for further evaluation. |
-| 8 | Candidate acknowledgement | Acknowledgement | Candidate | Acknowledge that the background check process is complete. You will be notified of the outcome by the hiring team. |
+| 8 | Background check determination | Decision | HR Coordinator | Determine whether the candidate passes the background check based on the verification results. Candidates with clear results proceed to completion; candidates with discrepancies or adverse findings are routed for further review. |
+| 9 | Candidate acknowledgement | Acknowledgement | Candidate | Acknowledge that the background check process is complete. You will be notified of the outcome by the hiring team. |
 
 #### Step 2: Candidate information — Form Fields
 
@@ -238,12 +249,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Separation Processing** | | | |
 | 1 | Separation notice | Acknowledgement | Departing Employee | Acknowledge receipt of the separation notice and confirm your understanding of the offboarding timeline and process. |
 | 2 | Exit interview | Form | Departing Employee | Complete the confidential exit interview to share your feedback about your experience, management, and suggestions for improvement. |
 | 3 | Benefits / COBRA information | File Request | HR Coordinator | Prepare and deliver COBRA continuation coverage information, benefits termination details, and any applicable retirement plan distribution options. |
 | 4 | Final expense submission | File Request | Departing Employee | Upload any outstanding expense reports and receipts for reimbursement processing before your last day. |
+| | **📌 Administrative Closure** | | | |
 | 5 | Equipment return | To-Do | Departing Employee | Return all company-issued equipment including laptop, monitors, badges, keys, and any other company property. Ship to the provided address if working remotely. |
 | 6 | Access revocation | To-Do | IT Administrator | Revoke all system access including email, SSO, VPN, cloud services, and building access. Archive the user account per retention policy. |
+| | **📌 Final Settlement** | | | |
 | 7 | Final paycheck | To-Do | Finance | Process the final paycheck including any accrued PTO payout, expense reimbursements, and prorated compensation per state requirements. |
 | 8 | Separation agreement (if applicable) | E-Sign | Departing Employee | Review and sign the separation agreement, if applicable, covering release terms, severance, and any post-employment obligations. |
 | 9 | Offboarding complete | Acknowledgement | Manager | Acknowledge that all offboarding steps are complete, access has been revoked, equipment returned, and final pay processed. |
@@ -284,13 +298,16 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Authorization & Planning** | | | |
 | 1 | Relocation authorization | Form | HR Coordinator | Complete the relocation authorization form with employee details, origin and destination locations, approved relocation tier, and budget. |
 | 2 | Employee preferences | Form | Employee | Share your preferences for the relocation including housing type, school requirements, commute preferences, and any special considerations. |
 | 3 | Policy acknowledgement | Acknowledgement | Employee | Review and acknowledge the relocation policy, including covered expenses, reimbursement procedures, tax implications, and clawback provisions. |
+| | **📌 Move Coordination** | | | |
 | 4 | Home sale / lease break assistance | To-Do | Relocation Company | Assist the employee with selling their current home or breaking their lease. Coordinate with real estate agents, manage listings, or negotiate lease termination as applicable. |
 | 5 | Destination home search | To-Do | Destination Services | Help the employee find housing in the destination city based on their stated preferences. Arrange area tours, property viewings, and school visits. |
 | 6 | Moving estimate | File Request | Relocation Company | Provide the detailed moving estimate including household goods shipment, packing services, insurance, and any storage needs. |
 | 7 | Move date confirmation | Acknowledgement | Employee | Confirm the final move date and logistics. Acknowledge the packing, pickup, and delivery schedule. |
+| | **📌 Completion** | | | |
 | 8 | Expense documentation | File Request | Employee | Upload all relocation expense receipts and documentation for reimbursement, including travel, temporary housing, and miscellaneous moving costs. |
 | 9 | Relocation complete | Acknowledgement | HR Coordinator | Acknowledge that the relocation is complete. Confirm the employee has started at the new location and all expense claims have been submitted. |
 

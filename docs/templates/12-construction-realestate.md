@@ -31,15 +31,18 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Subcontractor Submission** | | | |
 | 1 | Company profile & capabilities | Form | Subcontractor | Provide your company details, trade specialties, bonding capacity, and relevant project experience. |
 | 2 | Insurance certificates (GL, WC, Auto) | File Request | Subcontractor | Upload current certificates of insurance for General Liability, Workers Compensation, and Commercial Auto. All policies must meet the minimum coverage limits specified in the subcontract. |
 | 3 | Safety program documentation | File Request | Subcontractor | Upload your company safety program, EMR letter, OSHA logs (300/300A), and any relevant safety certifications. |
 | 4 | License & bonding verification | File Request | Subcontractor | Upload copies of your state contractor license, any specialty licenses, and current bonding documentation. |
 | 5 | References | Form | Subcontractor | Provide at least three project references from the past two years, including contact information for each. |
+| | **📌 Review & Disposition** | | | |
 | 6 | Insurance review | To-Do | Insurance Coordinator | Review the uploaded insurance certificates against project requirements. Verify coverage limits, additional insured endorsements, and policy expiration dates. |
 | 7 | Safety review | To-Do | Safety Lead | Review the safety program documentation, EMR history, and OSHA logs. Confirm the subcontractor meets minimum safety standards for the project. |
-| 8 | Qualification decision | Approval | Project Manager | Review all collected materials, insurance review results, and safety review findings to make a final qualification decision for this subcontractor. |
-| 9 | Qualification acknowledgement | Acknowledgement | Subcontractor | Acknowledge receipt of the qualification decision and any conditions or next steps communicated by the project team. |
+| 8 | Qualification disposition | Decision | Project Manager | Render qualification decision: approve the subcontractor for the approved trades list, conditionally approve pending additional documentation, or disqualify. |
+| 9 | Qualification decision | Approval | Project Manager | Review all collected materials, insurance review results, and safety review findings to make a final qualification decision for this subcontractor. |
+| 10 | Qualification acknowledgement | Acknowledgement | Subcontractor | Acknowledge receipt of the qualification decision and any conditions or next steps communicated by the project team. |
 
 #### Step 1: Company profile & capabilities — Form Fields
 
@@ -100,9 +103,11 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Application & Documentation** | | | |
 | 1 | Payment application | Form | Subcontractor | Submit your payment application for the current billing period, including work completed, materials stored, and the amount due. |
 | 2 | Schedule of values & compliance docs | File Request | Subcontractor | Upload your updated schedule of values, certified payroll (if required), current insurance certificates, and any sub-tier lien waivers if applicable. |
 | 3 | Conditional lien waiver | E-Sign | Subcontractor | Sign the conditional lien waiver for the current billing period. This waiver is effective only upon receipt of payment. |
+| | **📌 Review & Payment** | | | |
 | 4 | Field verification & pay app review | To-Do | Project Manager | Verify that work quantities match the payment application, review the schedule of values, and confirm stored materials on site. |
 | 5 | Payment application approval | Approval | Project Manager | Approve the payment application after completing field verification and pay-app review. |
 | 6 | Payment processing | To-Do | Accounts Payable | Process the approved payment application. Issue payment to the subcontractor per the approved amount. |
@@ -149,12 +154,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Final Application & Punch List** | | | |
 | 1 | Final payment application | Form | Subcontractor | Submit your final payment application including the final contract amount, total work completed, retainage held, and final amount due. |
 | 2 | Punch list completion | To-Do | Subcontractor | Complete all remaining punch list items from the substantial completion walkthrough. Document completion of each item. |
 | 3 | Punch list verification | To-Do | Project Manager | Verify that all punch list items have been satisfactorily completed. Document verification with photos. |
+| | **📌 Closeout & Approval** | | | |
 | 4 | Closeout documents & sub-tier waivers | File Request | Subcontractor | Upload as-built drawings, warranty documents, O&M manuals, and final sub-tier lien waivers from all lower-tier vendors and suppliers. |
 | 5 | Final conditional lien waiver | E-Sign | Subcontractor | Sign the final conditional lien waiver that waives all remaining lien rights including retention. This is effective only upon receipt of final payment. |
 | 6 | Owner final approval | Approval | Owner Representative | Approve the final payment including retention release after reviewing all closeout documentation and lien waivers. |
+| | **📌 Final Payment & Release** | | | |
 | 7 | Final payment processing | To-Do | Accounts Payable | Process the final payment including all retained funds to the subcontractor. |
 | 8 | Final unconditional lien waiver | E-Sign | Subcontractor | Sign the final unconditional lien waiver confirming receipt of all payments including retention. This immediately waives all lien rights. Sign only after funds have cleared. |
 | 9 | Retention release confirmation | Acknowledgement | Subcontractor | Acknowledge receipt of all contract funds and confirm the account is fully settled. |
@@ -194,14 +202,18 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Submission** | | | |
 | 1 | Submittal package upload | File Request | Subcontractor | Upload the complete submittal package including shop drawings, product data sheets, material samples (photos), and any required calculations. |
 | 2 | PM preliminary review | To-Do | Project Manager | Perform a preliminary review of the submittal package for completeness, correct specification references, and contract compliance before forwarding to the design team. |
+| | **📌 Review Cycle** | | | |
 | 3 | Architect/Engineer review | To-Do | Architect/Engineer | Review the submittal for conformance with the design intent, specification requirements, and applicable codes. Note any deviations or required revisions. |
 | 4 | Review comments | Form | Architect/Engineer | Document your review findings including the review status and any comments or required revisions. |
-| 5 | Owner review (if required) | To-Do | Owner Representative | Review the submittal if owner input is required (e.g., finish selections, color choices). Mark as complete if owner review is not needed for this submittal. |
-| 6 | Revised submittal (if required) | File Request | Subcontractor | Upload the revised submittal addressing all review comments. If no revisions were required, upload a confirmation noting the original submittal stands. |
-| 7 | Final approval | Approval | Architect/Engineer | Grant final approval for the submittal, authorizing the subcontractor to proceed with ordering or fabrication. |
-| 8 | Approval acknowledgement | Acknowledgement | Subcontractor | Acknowledge receipt of the submittal approval and any noted conditions before proceeding with fabrication or procurement. |
+| 5 | A/E review disposition | Decision | Architect/Engineer | Architect/Engineer renders review disposition: approved, approved as noted, revise and resubmit, or rejected. |
+| 6 | Owner review (if required) | To-Do | Owner Representative | Review the submittal if owner input is required (e.g., finish selections, color choices). Mark as complete if owner review is not needed for this submittal. |
+| | **📌 Revision & Final Approval** | | | |
+| 7 | Revised submittal (if required) | File Request | Subcontractor | Upload the revised submittal addressing all review comments. If no revisions were required, upload a confirmation noting the original submittal stands. |
+| 8 | Final approval | Approval | Architect/Engineer | Grant final approval for the submittal, authorizing the subcontractor to proceed with ordering or fabrication. |
+| 9 | Approval acknowledgement | Acknowledgement | Subcontractor | Acknowledge receipt of the submittal approval and any noted conditions before proceeding with fabrication or procurement. |
 
 #### Step 4: Review comments — Form Fields
 
@@ -237,8 +249,10 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 RFI Submission** | | | |
 | 1 | RFI submission | Form | Contractor | Submit your RFI with a clear description of the question, the affected drawing or specification sections, and the urgency level. |
 | 2 | Supporting documentation | File Request | Contractor | Upload any supporting photos, sketches, or marked-up drawings that help illustrate the question or field condition. |
+| | **📌 Design Team Review** | | | |
 | 3 | Architect review | To-Do | Architect | Review the RFI and supporting documentation. Prepare a response or coordinate with the engineer if the question involves their discipline. |
 | 4 | Engineer input (if needed) | To-Do | Engineer | Provide engineering input if the RFI involves structural, mechanical, or other engineering disciplines. Mark as complete if not applicable. |
 | 5 | RFI response | File Request | Architect | Upload the formal RFI response including any revised sketches, details, or supplemental instructions for the contractor. |
@@ -284,14 +298,18 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Change Request** | | | |
 | 1 | Change order request | Form | Contractor | Submit the change order request with a description of the scope change, affected specifications, and reason for the modification. |
 | 2 | Cost breakdown & backup | File Request | Contractor | Upload the detailed cost breakdown including sub-quotes, material takeoffs, labor estimates, and site photos documenting the condition. |
+| | **📌 Review & Negotiation** | | | |
 | 3 | PM review | To-Do | Project Manager | Review the change order request and cost breakdown for completeness, accuracy, and schedule impact. Prepare a recommendation for the owner. |
 | 4 | Architect review | To-Do | Architect | Review the change order for design impact, code compliance, and alignment with the project design intent. |
 | 5 | Owner negotiation / questions | Form | Owner Representative | Review the change order details and submit any questions, counter-proposals, or negotiation points. |
-| 6 | Owner approval | Approval | Owner Representative | Approve the change order after reviewing the cost breakdown, PM recommendation, and architect assessment. |
-| 7 | Change order execution | E-Sign | Owner Representative | Sign the change order document to formally authorize the scope change, adjusted contract amount, and any schedule modifications. |
-| 8 | Change log update | To-Do | Project Manager | Update the project change log with the approved change order details, revised contract value, and any schedule adjustments. |
+| 6 | Owner change order decision | Decision | Owner Representative | Owner renders change order decision: approve as submitted, approve with modifications, or reject with rationale. |
+| | **📌 Execution** | | | |
+| 7 | Owner approval | Approval | Owner Representative | Approve the change order after reviewing the cost breakdown, PM recommendation, and architect assessment. |
+| 8 | Change order execution | E-Sign | Owner Representative | Sign the change order document to formally authorize the scope change, adjusted contract amount, and any schedule modifications. |
+| 9 | Change log update | To-Do | Project Manager | Update the project change log with the approved change order details, revised contract value, and any schedule adjustments. |
 
 #### Step 1: Change order request — Form Fields
 
@@ -336,12 +354,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Substantial Completion** | | | |
 | 1 | Substantial completion notification | Form | GC/Contractor | Notify the project team that substantial completion has been reached. Provide the completion date and any known outstanding items. |
 | 2 | Architect inspection & punch list | Form | Architect | Conduct a substantial completion inspection and document all punch list items that need to be addressed before final acceptance. |
 | 3 | Punch list acknowledgement | Acknowledgement | GC/Contractor | Acknowledge receipt of the punch list and commit to completing all items within the agreed timeframe. |
+| | **📌 Punch List Resolution** | | | |
 | 4 | Certificate of Occupancy & permits | File Request | GC/Contractor | Upload the Certificate of Occupancy, final inspection sign-offs, and all required permit close-out documentation. |
 | 5 | Punch list completion report | Form | GC/Contractor | Report on the status of all punch list items, documenting completion with dates and descriptions. |
 | 6 | Punch list final approval | Approval | Owner | Review the punch list completion report and approve that all items have been satisfactorily resolved. |
+| | **📌 Closeout & Turnover** | | | |
 | 7 | Closeout documentation | File Request | GC/Contractor | Upload all closeout documents including O&M manuals, warranty information, final lien waivers, and as-built drawings. |
 | 8 | Owner training & orientation | To-Do | GC/Contractor | Conduct owner training on building systems, equipment operation, and maintenance procedures. Document the training session and attendees. |
 | 9 | Final payment & retainage release | Approval | Owner | Approve the final payment and retainage release after all closeout requirements have been met. |
@@ -403,17 +424,22 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Contract & Escrow Opening** | | | |
 | 1 | Purchase agreement intake | Form | Buyer Agent | Enter the key terms from the executed purchase agreement to initiate the transaction workflow. |
 | 2 | Escrow opening & EMD | To-Do | Escrow/Title Agent | Open escrow and confirm receipt of the earnest money deposit. Distribute escrow instructions to all parties. |
+| | **📌 Due Diligence** | | | |
 | 3 | Title report & seller disclosures | File Request | Seller | Upload the preliminary title report, Transfer Disclosure Statement (TDS), Seller Property Questionnaire (SPQ), Natural Hazard Disclosure (NHD), and lead-based paint disclosure if applicable. |
 | 4 | Inspection reports | File Request | Buyer | Upload all inspection reports including general home inspection, pest inspection, and any specialty inspections (roof, sewer, foundation, etc.). |
-| 5 | Buyer repair request / contingency removal | Form | Buyer | Submit your response to inspection findings including items accepted as-is, repair requests, and your decision to proceed or cancel. |
-| 6 | Appraisal & loan processing | Form | Buyer Agent | Provide an update on the appraisal results and loan processing status. |
-| 7 | Contingency removal — appraisal & loan | Acknowledgement | Buyer | Acknowledge removal of appraisal and loan contingencies. Note that your earnest money deposit is now at risk if you fail to close. |
-| 8 | Title clearance & closing prep | To-Do | Escrow/Title Agent | Clear all title exceptions, prepare closing documents, and coordinate the signing appointment with all parties. |
-| 9 | Final walkthrough | To-Do | Buyer | Conduct the final walkthrough of the property to confirm condition matches expectations and any agreed repairs have been completed. |
-| 10 | Closing signing & funding | E-Sign | Buyer | Sign all closing and settlement documents. Funds will be disbursed upon recording. |
-| 11 | Recording & key transfer | To-Do | Escrow/Title Agent | Record the deed with the county, confirm funding, and coordinate key transfer to the buyer. |
+| 5 | Buyer inspection contingency | Decision | Buyer | Buyer decides based on inspection results: proceed as-is, request repairs/credits, or exercise contingency to terminate. |
+| 6 | Buyer repair request / contingency removal | Form | Buyer | Submit your response to inspection findings including items accepted as-is, repair requests, and your decision to proceed or cancel. |
+| | **📌 Financing & Contingency Removal** | | | |
+| 7 | Appraisal & loan processing | Form | Buyer Agent | Provide an update on the appraisal results and loan processing status. |
+| 8 | Contingency removal — appraisal & loan | Acknowledgement | Buyer | Acknowledge removal of appraisal and loan contingencies. Note that your earnest money deposit is now at risk if you fail to close. |
+| | **📌 Closing** | | | |
+| 9 | Title clearance & closing prep | To-Do | Escrow/Title Agent | Clear all title exceptions, prepare closing documents, and coordinate the signing appointment with all parties. |
+| 10 | Final walkthrough | To-Do | Buyer | Conduct the final walkthrough of the property to confirm condition matches expectations and any agreed repairs have been completed. |
+| 11 | Closing signing & funding | E-Sign | Buyer | Sign all closing and settlement documents. Funds will be disbursed upon recording. |
+| 12 | Recording & key transfer | To-Do | Escrow/Title Agent | Record the deed with the county, confirm funding, and coordinate key transfer to the buyer. |
 
 #### Step 1: Purchase agreement intake — Form Fields
 
@@ -426,7 +452,7 @@
 | Contingency Periods (days) | Text (Single Line) | No |
 | Close of Escrow Date | Date | Yes |
 
-#### Step 5: Buyer repair request / contingency removal — Form Fields
+#### Step 6: Buyer repair request / contingency removal — Form Fields
 
 | Field | Type | Required |
 |-------|------|----------|
@@ -434,7 +460,7 @@
 | Repair Requests | Text (Multi Line) | No |
 | Decision | Dropdown | Yes |
 
-#### Step 6: Appraisal & loan processing — Form Fields
+#### Step 7: Appraisal & loan processing — Form Fields
 
 | Field | Type | Required |
 |-------|------|----------|
@@ -472,10 +498,12 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Application & Screening** | | | |
 | 1 | Lease application | Form | Tenant | Complete the lease application with your business information, requested space details, and intended use. |
 | 2 | Financial documentation | File Request | Tenant | Upload financial documentation including business tax returns, bank statements, profit & loss statements, and any personal guarantor financials if applicable. |
 | 3 | Credit / background check authorization | E-Sign | Tenant | Sign the authorization for the landlord to run credit and background checks on the business and any personal guarantors. |
 | 4 | Landlord review | To-Do | Landlord Representative | Review the tenant application, financial documentation, and credit check results. Determine whether to proceed with the lease. |
+| | **📌 Negotiation & Execution** | | | |
 | 5 | Lease negotiation | Form | Tenant | Review the proposed lease terms and submit any requested modifications or questions. |
 | 6 | Lease execution | E-Sign | Tenant | Sign the finalized lease agreement including all exhibits and addenda. |
 | 7 | Landlord execution | E-Sign | Landlord Representative | Counter-sign the lease agreement to complete the dual-party execution. |
@@ -528,12 +556,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Notice & Pre-Inspection** | | | |
 | 1 | Move-out notice | Form | Tenant | Submit your formal move-out notice with the intended move-out date and forwarding address for deposit return. |
 | 2 | Pre-move-out inspection | To-Do | Property Manager | Schedule and conduct a pre-move-out inspection with the tenant. Document the current condition and identify any items requiring attention before move-out. |
 | 3 | Move-out checklist | Acknowledgement | Tenant | Acknowledge receipt of the move-out checklist including cleaning requirements, key return instructions, and utility transfer deadlines. |
+| | **📌 Move-Out & Final Inspection** | | | |
 | 4 | Key return acknowledgement | Acknowledgement | Tenant | Confirm that all keys, access cards, and remote controls have been returned to the property management office. |
 | 5 | Final inspection | To-Do | Maintenance | Conduct the final move-out inspection. Document the condition of each room, note any damage beyond normal wear and tear, and estimate repair costs. |
 | 6 | Final inspection report | File Request | Property Manager | Upload the completed final inspection report including photos, condition notes, and any estimated repair or cleaning costs. |
+| | **📌 Deposit Resolution** | | | |
 | 7 | Deposit accounting | To-Do | Accounting | Prepare the security deposit accounting statement itemizing any deductions for damages, unpaid rent, or cleaning charges. Calculate the refund amount. |
 | 8 | Deposit disposition acknowledgement | Acknowledgement | Tenant | Acknowledge receipt of the security deposit disposition statement and any refund issued. |
 

@@ -31,12 +31,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Order Entry & Validation** | | | |
 | 1 | Purchase order submission | Form | Customer | Submit your purchase order with all required details including line items, quantities, shipping address, and delivery requirements. |
 | 2 | PO acknowledgement & validation | To-Do | Warehouse Lead | Validate the purchase order by verifying pricing accuracy, confirming inventory availability, and checking credit status. Flag any discrepancies before confirming. |
 | 3 | Order confirmation | Acknowledgement | Customer | Acknowledge the order confirmation including confirmed quantities, pricing, and estimated delivery date. |
+| | **📌 Pick-Pack-Ship** | | | |
 | 4 | Pick, pack & quality check | To-Do | Warehouse Lead | Pick the order items from inventory, pack per customer requirements, and perform a quality check before release to shipping. |
 | 5 | Shipping & BOL upload | File Request | Shipping Coordinator | Upload shipping documents including carrier assignment, tracking number, Bill of Lading (BOL), and packing slip. |
 | 6 | Shipment notification | To-Do | Shipping Coordinator | Automated notification: Send the shipment notification to the customer with carrier details, tracking number, and estimated delivery date. |
+| | **📌 Delivery & Payment** | | | |
 | 7 | Delivery confirmation | Acknowledgement | Customer | Confirm receipt of the shipment and note any discrepancies, damages, or shortages upon delivery. |
 | 8 | Invoice & supporting docs | File Request | Shipping Coordinator | Upload the invoice and any supporting documentation including proof of delivery, signed BOL, and weight tickets. |
 | 9 | Payment confirmation | Acknowledgement | Warehouse Lead | Acknowledge receipt of payment and confirm the order is closed. Note any outstanding balance or credit issues. |
@@ -80,11 +83,14 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Requisition & Approval** | | | |
 | 1 | Purchase requisition | Form | Requisitioner | Submit your purchase requisition with justification, budget details, and vendor preference. |
 | 2 | Manager approval | Approval | Procurement Lead | Review the purchase requisition for budget availability, business justification, and compliance with procurement policies. |
+| | **📌 Procurement & Fulfillment** | | | |
 | 3 | Vendor selection & PO creation | To-Do | Procurement Lead | Select the vendor (or confirm the requested vendor), negotiate terms if needed, and create the official purchase order. |
 | 4 | Purchase order dispatch | File Request | Procurement Lead | Upload the finalized purchase order document for dispatch to the selected vendor. |
 | 5 | Vendor order acknowledgement | Acknowledgement | Vendor | Acknowledge receipt of the purchase order, confirm the order details, and provide an estimated delivery date. |
+| | **📌 Receipt & Payment** | | | |
 | 6 | Goods receipt & inspection | Form | Procurement Lead | Record the receipt of goods and document the inspection results including any quantity or quality discrepancies. |
 | 7 | Vendor invoice submission | File Request | Vendor | Upload your invoice for the delivered goods. Ensure the invoice references the correct PO number and matches the delivered quantities. |
 | 8 | 3-way match & discrepancy resolution | To-Do | Procurement Lead | Perform the three-way match comparing the purchase order, receiving report, and vendor invoice. Resolve any discrepancies before authorizing payment. |
@@ -140,10 +146,12 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Return Request & Authorization** | | | |
 | 1 | Return request submission | Form | Customer | Submit your return request with the order details, reason for return, and your preferred resolution. |
 | 2 | Supporting evidence | File Request | Customer | Upload photos of the defect or damage, the packing slip, and any error codes or diagnostic information that supports your return request. |
 | 3 | RMA approval | Approval | Returns Lead | Review the return request and supporting evidence. Approve or deny the RMA based on return policy and product condition. |
 | 4 | Return shipping instructions | Acknowledgement | Customer | Acknowledge receipt of the RMA number, return shipping address, and packaging instructions. Ship the item back using the provided details. |
+| | **📌 Inspection & Disposition** | | | |
 | 5 | Return receipt & inspection | Form | Returns Lead | Inspect the returned item upon receipt and document its condition, verify the defect, and record serial or lot numbers. |
 | 6 | Disposition decision | Decision | Returns Lead | Determine the disposition of the returned item: restock into inventory, send for repair, scrap, or return to vendor. |
 | 7 | Credit memo / refund processing | To-Do | Returns Lead | Process the credit memo, refund, or replacement order based on the approved disposition and the customer's preferred resolution. |
@@ -197,15 +205,18 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Intake & Triage** | | | |
 | 1 | Complaint registration | Form | Customer | Register your complaint with details about the product or service, severity, and your desired resolution. |
 | 2 | Supporting documentation | File Request | Customer | Upload any supporting documents such as photos, invoices, correspondence, or test results related to the complaint. |
 | 3 | AI complaint triage | To-Do | Quality Lead | AI-powered: Classify the complaint severity, check for patterns with similar past complaints, route to the appropriate department, and set the SLA timer based on priority. |
-| 4 | Complaint acknowledgement | To-Do | Quality Lead | Automated notification: Send the complaint acknowledgement to the customer with the reference number, assigned representative, and expected resolution timeline. |
-| 5 | Investigation & root cause analysis | To-Do | Quality Lead | Investigate the complaint, identify the root cause using appropriate analysis methods (5 Whys, fishbone diagram, etc.), and document findings. |
-| 6 | Corrective action plan | File Request | Quality Lead | Upload the corrective action plan documenting the root cause, immediate containment actions, and long-term corrective measures to prevent recurrence. |
-| 7 | Corrective action verification | Approval | Quality Lead | Verify that the corrective actions have been effectively implemented and the root cause has been addressed. |
-| 8 | Customer resolution offer | Form | Quality Lead | Present the resolution offer to the customer including the investigation findings and corrective actions taken. |
-| 9 | Customer acceptance | Approval | Customer | Review the resolution offer and investigation findings. Accept the proposed resolution or request additional action. |
+| 4 | Severity-based routing | Single Choice Branch | Quality Lead | Route the complaint based on severity assessment and potential impact. Paths: Standard resolution, Escalated resolution, Critical — executive review. |
+| 5 | Complaint acknowledgement | To-Do | Quality Lead | Automated notification: Send the complaint acknowledgement to the customer with the reference number, assigned representative, and expected resolution timeline. |
+| | **📌 Investigation & Resolution** | | | |
+| 6 | Investigation & root cause analysis | To-Do | Quality Lead | Investigate the complaint, identify the root cause using appropriate analysis methods (5 Whys, fishbone diagram, etc.), and document findings. |
+| 7 | Corrective action plan | File Request | Quality Lead | Upload the corrective action plan documenting the root cause, immediate containment actions, and long-term corrective measures to prevent recurrence. |
+| 8 | Corrective action verification | Approval | Quality Lead | Verify that the corrective actions have been effectively implemented and the root cause has been addressed. |
+| 9 | Customer resolution offer | Form | Quality Lead | Present the resolution offer to the customer including the investigation findings and corrective actions taken. |
+| 10 | Customer acceptance | Approval | Customer | Review the resolution offer and investigation findings. Accept the proposed resolution or request additional action. |
 
 #### Step 1: Complaint registration — Form Fields
 
@@ -217,7 +228,7 @@
 | Description of Issue | Text (Multi Line) | Yes |
 | Desired Resolution | Text (Multi Line) | Yes |
 
-#### Step 8: Customer resolution offer — Form Fields
+#### Step 9: Customer resolution offer — Form Fields
 
 | Field | Type | Required |
 |-------|------|----------|
@@ -255,11 +266,14 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Pre-Arrival Documentation** | | | |
 | 1 | Shipment details & bond confirmation | Form | Importer | Provide shipment details and confirm that a valid customs bond is on file for the import. |
 | 2 | Commercial documents upload | File Request | Importer | Upload all required commercial documents: commercial invoice, packing list, bill of lading or airway bill, certificate of origin (if applicable), and any PGA permits or licenses. |
+| | **📌 Entry & Classification** | | | |
 | 3 | ISF (10+2) filing | To-Do | Customs Broker | File the Importer Security Filing (ISF/10+2) via ACE at least 24 hours before vessel loading at origin. Late or inaccurate filings can result in $5,000 per violation penalties. |
 | 4 | Tariff classification & entry preparation | To-Do | Customs Broker | Classify the goods under the correct HTS code, determine the applicable duty rate, and prepare CBP Form 3461 for entry. |
 | 5 | Duty & fee estimate approval | Approval | Importer | Review the estimated duties, taxes, Merchandise Processing Fee (MPF), and Harbor Maintenance Fee (HMF). Authorize payment to proceed with entry. |
+| | **📌 Clearance & Release** | | | |
 | 6 | Government agency review (if applicable) | Decision | Regulatory Liaison | Determine if the shipment is subject to holds from FDA, USDA, EPA, CPSC, or other government agencies. Coordinate clearance if holds apply, or mark as not applicable. |
 | 7 | Customs release confirmation | Acknowledgement | Customs Broker | Confirm that CBP has authorized release and the cargo is cleared for pickup from the port or terminal. |
 | 8 | Entry summary filing & delivery | To-Do | Customs Broker | File CBP Form 7501 (entry summary) within 10 working days of release. Coordinate final delivery of the cleared cargo to the importer's facility. |
@@ -301,11 +315,14 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Non-Conformance & Containment** | | | |
 | 1 | Non-conformance report | Form | Quality Engineer | Document the non-conformance including the affected part, defect description, quantity impacted, and immediate containment actions taken. |
 | 2 | Supplier acknowledgement | Acknowledgement | Supplier Contact | Acknowledge receipt of the SCAR and confirm your commitment to respond within the required timeframe. |
+| | **📌 Root Cause & Corrective Action** | | | |
 | 3 | Root cause analysis | File Request | Supplier Contact | Upload your root cause analysis documenting the investigation methodology (8D, 5 Whys, fishbone, etc.), findings, and identified root cause(s). |
 | 4 | Corrective action plan | File Request | Supplier Contact | Upload your corrective action plan detailing the specific actions to eliminate the root cause, responsible parties, implementation timeline, and effectiveness metrics. |
 | 5 | Quality review | To-Do | Quality Engineer | Review the supplier's root cause analysis and corrective action plan. Assess whether the proposed actions adequately address the root cause and will prevent recurrence. |
+| | **📌 Verification & Closure** | | | |
 | 6 | Evidence of implementation | File Request | Supplier Contact | Upload evidence that the corrective actions have been implemented, such as updated procedures, process changes, training records, or inspection results. |
 | 7 | Verification | To-Do | Quality Engineer | Verify the effectiveness of the implemented corrective actions through incoming inspection data, audit results, or re-testing of parts from the corrected process. |
 | 8 | Procurement acknowledgement | Acknowledgement | Procurement Lead | Acknowledge the SCAR status and update the supplier scorecard accordingly. Note any impact on future sourcing decisions. |

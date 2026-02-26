@@ -29,6 +29,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Order Entry & Validation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Purchase order submission',
         type: 'FORM',
         assigneeRole: 'Customer',
@@ -57,6 +62,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
           'Acknowledge the order confirmation including confirmed quantities, pricing, and estimated delivery date.',
       },
       {
+        name: 'Pick-Pack-Ship',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Pick, pack & quality check',
         type: 'TODO',
         assigneeRole: 'Warehouse Lead',
@@ -76,6 +86,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Shipping Coordinator',
         sampleDescription:
           'Automated notification: Send the shipment notification to the customer with carrier details, tracking number, and estimated delivery date.',
+      },
+      {
+        name: 'Delivery & Payment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Delivery confirmation',
@@ -129,6 +144,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Requisition & Approval',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Purchase requisition',
         type: 'FORM',
         assigneeRole: 'Requisitioner',
@@ -152,6 +172,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
           'Review the purchase requisition for budget availability, business justification, and compliance with procurement policies.',
       },
       {
+        name: 'Procurement & Fulfillment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Vendor selection & PO creation',
         type: 'TODO',
         assigneeRole: 'Procurement Lead',
@@ -171,6 +196,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Vendor',
         sampleDescription:
           'Acknowledge receipt of the purchase order, confirm the order details, and provide an estimated delivery date.',
+      },
+      {
+        name: 'Receipt & Payment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Goods receipt & inspection',
@@ -242,6 +272,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Return Request & Authorization',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Return request submission',
         type: 'FORM',
         assigneeRole: 'Customer',
@@ -286,6 +321,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Customer',
         sampleDescription:
           'Acknowledge receipt of the RMA number, return shipping address, and packaging instructions. Ship the item back using the provided details.',
+      },
+      {
+        name: 'Inspection & Disposition',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Return receipt & inspection',
@@ -357,6 +397,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Intake & Triage',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Complaint registration',
         type: 'FORM',
         assigneeRole: 'Customer',
@@ -397,11 +442,24 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
           'AI-powered: Classify the complaint severity, check for patterns with similar past complaints, route to the appropriate department, and set the SLA timer based on priority.',
       },
       {
+        name: 'Severity-based routing',
+        type: 'SINGLE_CHOICE_BRANCH',
+        assigneeRole: 'Quality Lead',
+        sampleDescription:
+          'Route the complaint based on severity assessment and potential impact.',
+        samplePaths: [{ label: 'Standard resolution' }, { label: 'Escalated resolution' }, { label: 'Critical — executive review' }],
+      },
+      {
         name: 'Complaint acknowledgement',
         type: 'TODO',
         assigneeRole: 'Quality Lead',
         sampleDescription:
           'Automated notification: Send the complaint acknowledgement to the customer with the reference number, assigned representative, and expected resolution timeline.',
+      },
+      {
+        name: 'Investigation & Resolution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Investigation & root cause analysis',
@@ -475,6 +533,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Pre-Arrival Documentation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Shipment details & bond confirmation',
         type: 'FORM',
         assigneeRole: 'Importer',
@@ -504,6 +567,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
           'Upload all required commercial documents: commercial invoice, packing list, bill of lading or airway bill, certificate of origin (if applicable), and any PGA permits or licenses.',
       },
       {
+        name: 'Entry & Classification',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'ISF (10+2) filing',
         type: 'TODO',
         assigneeRole: 'Customs Broker',
@@ -523,6 +591,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Importer',
         sampleDescription:
           'Review the estimated duties, taxes, Merchandise Processing Fee (MPF), and Harbor Maintenance Fee (HMF). Authorize payment to proceed with entry.',
+      },
+      {
+        name: 'Clearance & Release',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Government agency review (if applicable)',
@@ -573,6 +646,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Non-Conformance & Containment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Non-conformance report',
         type: 'FORM',
         assigneeRole: 'Quality Engineer',
@@ -600,6 +678,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
           'Acknowledge receipt of the SCAR and confirm your commitment to respond within the required timeframe.',
       },
       {
+        name: 'Root Cause & Corrective Action',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Root cause analysis',
         type: 'FILE_REQUEST',
         assigneeRole: 'Supplier Contact',
@@ -619,6 +702,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Quality Engineer',
         sampleDescription:
           'Review the supplier\u2019s root cause analysis and corrective action plan. Assess whether the proposed actions adequately address the root cause and will prevent recurrence.',
+      },
+      {
+        name: 'Verification & Closure',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Evidence of implementation',
@@ -679,6 +767,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'FAI Initiation & Submission',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'FAI request & part identification',
         type: 'FORM',
         assigneeRole: 'Quality Engineer',
@@ -720,6 +813,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Supplier',
         sampleDescription:
           'Upload the complete AS9102 FAI package: Form 1 (Part Number Accountability \u2014 part ID, materials, sub-components), Form 2 (Product Accountability \u2014 raw material certs, special process approvals, functional test results), and Form 3 (Characteristic Accountability \u2014 dimensional inspection results for every drawing characteristic).',
+      },
+      {
+        name: 'Review & Disposition',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Quality engineer review',
@@ -778,6 +876,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Recall Initiation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Recall notification',
         type: 'FORM',
         assigneeRole: 'Manufacturer',
@@ -803,6 +906,18 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Manufacturer',
         sampleDescription:
           'Upload product photos, UPC/SKU information, lot code examples, and any other materials to help identify affected products in the supply chain.',
+      },
+      {
+        name: 'Recall scope decision',
+        type: 'DECISION',
+        assigneeRole: 'Manufacturer',
+        sampleDescription:
+          'Determine recall scope: voluntary recall, mandatory recall with regulatory notification, or targeted field correction.',
+      },
+      {
+        name: 'Supply Chain Notification & Quarantine',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Distributor acknowledgement',
@@ -843,6 +958,11 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f3', label: 'Customer Returns Received', type: 'NUMBER' },
           { fieldId: 'f4', label: 'Store Locations Affected', type: 'TEXT_MULTI_LINE' },
         ],
+      },
+      {
+        name: 'Recovery & Regulatory Closure',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Return instructions',

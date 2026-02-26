@@ -29,6 +29,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Document Collection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Personal information intake',
         type: 'FORM',
         assigneeRole: 'Individual',
@@ -70,6 +75,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Individual',
         sampleDescription:
           'Upload documentation supporting your declared source of funds, such as pay stubs, business financials, or investment statements.',
+      },
+      {
+        name: 'Due Diligence & Screening',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'CDD questionnaire',
@@ -118,6 +128,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
           'Additional documentation is required for enhanced due diligence. Upload any requested materials such as detailed financial statements, source of wealth evidence, or reference letters.',
       },
       {
+        name: 'Compliance Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Compliance review',
         type: 'TODO',
         assigneeRole: 'Compliance Reviewer',
@@ -162,6 +177,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Entity & Ownership Documentation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Business information intake',
         type: 'FORM',
         assigneeRole: 'Business Admin',
@@ -199,6 +219,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
           'Upload your ownership structure documentation such as an operating agreement, shareholder registry, or organizational chart showing all owners with their ownership percentages.',
       },
       {
+        name: 'Beneficial Owner Verification',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Beneficial owner identification',
         type: 'FORM',
         assigneeRole: 'Beneficial Owner',
@@ -218,6 +243,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Beneficial Owner',
         sampleDescription:
           'Upload a clear copy of your government-issued photo ID (passport, driver\'s license, or national ID) for identity verification.',
+      },
+      {
+        name: 'Compliance Review & Decision',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'KYB review',
@@ -274,6 +304,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Reporting Determination',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Exemption & reporting determination',
         type: 'FORM',
         assigneeRole: 'Filing Agent',
@@ -297,6 +332,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
           ] },
           { fieldId: 'f5', label: 'Exemption Analysis Notes', type: 'TEXT_MULTI_LINE' },
         ],
+      },
+      {
+        name: 'Ownership Data Collection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Reporting company information',
@@ -368,6 +408,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
             { label: 'Person Directing Filing', value: 'directing_filing' },
           ] },
         ],
+      },
+      {
+        name: 'Review & Filing',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Filing agent review & validation',
@@ -498,6 +543,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Application & Documentation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Loan application intake',
         type: 'FORM',
         assigneeRole: 'Borrower',
@@ -539,6 +589,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
           'Upload documentation for any collateral being offered, such as property appraisals, equipment valuations, or inventory reports.',
       },
       {
+        name: 'Underwriting & Credit Analysis',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Underwriter questions',
         type: 'FORM',
         assigneeRole: 'Borrower',
@@ -556,6 +611,13 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
           'Review the borrower\'s application, financial statements, and collateral documentation. Issue a conditional approval with any outstanding conditions, or decline with documented reasons.',
       },
       {
+        name: 'Underwriting decision',
+        type: 'DECISION',
+        assigneeRole: 'Underwriter',
+        sampleDescription:
+          'Based on the credit analysis and risk assessment, decide whether to approve the loan, decline the application, or issue a conditional approval requiring additional documentation or modified terms before proceeding to credit committee.',
+      },
+      {
         name: 'Additional conditions',
         type: 'FILE_REQUEST',
         assigneeRole: 'Borrower',
@@ -568,6 +630,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Credit Committee',
         sampleDescription:
           'Review the complete loan package including underwriter recommendation and conditional approval. Grant final approval or return for additional information.',
+      },
+      {
+        name: 'Closing & Execution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Borrower disclosures',
@@ -614,6 +681,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Request & Documentation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Wire transfer request',
         type: 'FORM',
         assigneeRole: 'Requestor',
@@ -643,6 +715,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
           'Upload the supporting documentation for this wire transfer, such as an invoice, contract, or approval memo that justifies the payment.',
       },
       {
+        name: 'Compliance Screening',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'OFAC/sanctions screening',
         type: 'TODO',
         assigneeRole: 'Treasury Operations',
@@ -650,11 +727,27 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
           'Screen the beneficiary and beneficiary bank against the OFAC SDN list and other applicable sanctions lists. Escalate any potential hits to compliance immediately.',
       },
       {
+        name: 'OFAC screening routing',
+        type: 'SINGLE_CHOICE_BRANCH',
+        assigneeRole: 'Treasury Operations',
+        sampleDescription:
+          'Route the wire transfer based on the OFAC/sanctions screening result. Clear results proceed to beneficiary verification and authorization; matches are escalated to the compliance team for further review.',
+        samplePaths: [
+          { label: 'Clear — proceed to authorization' },
+          { label: 'Match — escalate to compliance' },
+        ],
+      },
+      {
         name: 'Beneficiary verification & callback',
         type: 'TODO',
         assigneeRole: 'Treasury Operations',
         sampleDescription:
           'Match the beneficiary to the approved payee list, verify bank details against prior payments, and perform a callback to a known phone number to confirm wire instructions.',
+      },
+      {
+        name: 'Dual Authorization',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'First authorization',
@@ -669,6 +762,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Approver 2',
         sampleDescription:
           'Provide independent second authorization for this wire transfer. Required for amounts above the single-approval threshold. Verify the request independently from the first approver.',
+      },
+      {
+        name: 'Settlement & Reconciliation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Wire execution confirmation',
@@ -716,6 +814,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Application & Identity Verification',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Account application',
         type: 'FORM',
         assigneeRole: 'Investor',
@@ -748,6 +851,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Investor',
         sampleDescription:
           'If applicable, upload documentation supporting your accredited investor status such as recent tax returns, brokerage statements, or a CPA/attorney verification letter.',
+      },
+      {
+        name: 'Suitability & Disclosures',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Suitability questionnaire',
@@ -808,6 +916,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
           'Review and electronically sign the account agreement, including terms of service, fee schedule, and advisory or brokerage agreement.',
       },
       {
+        name: 'Compliance & Account Activation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Compliance review',
         type: 'TODO',
         assigneeRole: 'Compliance Officer',
@@ -859,6 +972,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
       'Sync updated facility terms and limits back to your core banking system upon document execution to keep records current',
     ],
     steps: [
+      {
+        name: 'Borrower Request & Financials',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
       {
         name: 'Renewal/increase request',
         type: 'FORM',
@@ -912,6 +1030,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'Credit Analysis & Approval',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Credit analysis & financial spreading',
         type: 'TODO',
         assigneeRole: 'Credit Analyst',
@@ -938,6 +1061,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Credit Committee',
         sampleDescription:
           'Review the complete credit package and provide final approval for the credit line renewal or increase. Note any conditions or modifications to the proposed terms.',
+      },
+      {
+        name: 'Document Execution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Renewal/modification documents',

@@ -31,13 +31,16 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Intake & Review** | | | |
 | 1 | Contract intake | Form | Legal Reviewer | Enter the key details of the contract being reviewed. Capture all relevant metadata to route the review properly. |
 | 2 | Draft contract upload | File Request | Legal Reviewer | Upload the draft contract document for review. Include any related exhibits or schedules. |
 | 3 | AI contract risk analysis | To-Do | Legal Reviewer | AI-powered: Analyze the contract for non-standard clauses, liability caps, IP provisions, data protection terms, and auto-renewal traps. |
 | 4 | Legal & financial review | To-Do | Legal Reviewer | Review the contract for indemnification clauses, IP ownership, termination provisions, pricing structures, and payment terms. Document any concerns or required changes. |
+| | **📌 Negotiation** | | | |
 | 5 | Redline document upload | File Request | Legal Reviewer | Upload the redlined version of the contract with all proposed changes tracked. |
 | 6 | Counterparty negotiation | File Request | Counterparty | Review the redlined contract and upload your response. Include accepted changes, counter-proposals, and any new redlines. |
 | 7 | Negotiation resolution | Decision | Legal Reviewer | Review the counterparty response and decide on next steps: accept the terms, continue negotiation, escalate to leadership, or terminate discussions. |
+| | **📌 Execution & Filing** | | | |
 | 8 | Executive approval (if needed) | Approval | Executive | Review the final negotiated terms and approve the contract for execution. Consider the business impact and risk exposure. |
 | 9 | Contract execution | E-Sign | Counterparty | Review the final contract and apply your electronic signature to execute the agreement. |
 | 10 | Executed contract filing | To-Do | Legal Reviewer | File the fully executed contract in the contract management system. Update the contract register and notify relevant stakeholders. |
@@ -79,9 +82,11 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Request & Documentation** | | | |
 | 1 | Exception request details | Form | Requestor | Provide the details of the contract exception you are requesting. Be specific about what non-standard terms are needed and why. |
 | 2 | Proposed redlines | File Request | Requestor | Upload the proposed contract redlines showing the specific language changes requested. |
 | 3 | Business justification | File Request | Requestor | Upload any supporting documentation for the business justification, such as competitive analysis or customer relationship history. |
+| | **📌 Review & Approval** | | | |
 | 4 | Legal analysis | To-Do | Legal Reviewer | Analyze the requested exception for legal risk. Assess whether the proposed terms are acceptable, need modification, or should be rejected. |
 | 5 | Finance impact assessment | To-Do | Finance Reviewer | Assess the financial impact of the requested exception. Consider revenue recognition, payment terms, and any precedent-setting implications. |
 | 6 | Business approval | Approval | Business Approver | Review the exception request along with legal and finance assessments. Approve or reject based on overall business impact. |
@@ -213,10 +218,12 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Draft Review & Feedback** | | | |
 | 1 | Resolution draft distribution | File Request | Corporate Secretary | Upload the draft resolution document along with any supporting materials for board member review. |
 | 2 | Director review acknowledgement | Acknowledgement | Board Member | Acknowledge that you have received and reviewed the draft resolution and supporting materials. |
 | 3 | Questions / comments | Form | Board Member | Submit any questions, comments, or concerns about the draft resolution. If you have no comments, indicate that you have no objections. |
 | 4 | Legal review | To-Do | General Counsel | Review the draft resolution for legal compliance, proper form, and alignment with corporate governance requirements. Address any board member questions. |
+| | **📌 Execution & Filing** | | | |
 | 5 | Final resolution distribution | File Request | Corporate Secretary | Upload the final version of the resolution incorporating any feedback from the board review and legal counsel. |
 | 6 | Resolution execution | E-Sign | Board Member | Review the final resolution and apply your electronic signature to execute the board consent. |
 | 7 | CEO attestation | E-Sign | CEO | Attest to the board resolution by applying your electronic signature as required by corporate governance procedures. |
@@ -255,16 +262,20 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Data Room Setup** | | | |
 | 1 | NDA & data room access | Acknowledgement | Target Company Contact | Acknowledge the NDA terms and confirm access to the virtual data room. You will use this data room to upload all requested due diligence documents. |
 | 2 | DD request list distribution | File Request | Deal Team Lead | Upload the comprehensive due diligence request list organized by workstream (corporate, financial, tax, legal, employment, IP). |
+| | **📌 Document Collection** | | | |
 | 3 | Corporate & financial documents | File Request | Target Company Contact | Upload all requested corporate and financial documents including organizational documents, financial statements, capitalization tables, and material agreements. |
 | 4 | Tax & legal documents | File Request | Target Company Contact | Upload all requested tax returns, legal filings, litigation records, and regulatory compliance documentation. |
 | 5 | Employment, IP & contracts | File Request | Target Company Contact | Upload employment agreements, benefit plans, IP registrations, license agreements, and all material contracts. |
 | 6 | Management questionnaire | Form | Target Company Contact | Complete the management questionnaire covering areas that are not fully captured in document review. Be thorough and transparent in your responses. |
+| | **📌 Analysis & Decision** | | | |
 | 7 | Buyer counsel questions & follow-ups | Form | Target Company Contact | Respond to follow-up questions from the buyer legal team based on their review of the submitted documents. |
 | 8 | Follow-up documentation | File Request | Target Company Contact | Upload any additional documents requested as a result of the follow-up questions and ongoing review. |
 | 9 | AI red flag summary | To-Do | Deal Team Lead | AI-powered: Synthesize findings across all due diligence workstreams to identify material risks, documentation gaps, potential deal-breakers, and representation/warranty requirements. |
-| 10 | Go/No-Go decision | Approval | Deal Team Lead | Review the complete due diligence findings and red flag summary. Make the go/no-go decision on proceeding with the transaction. |
+| 10 | Transaction Go/No-Go | Decision | Deal Team Lead | Based on due diligence findings, determine whether to proceed with the transaction, renegotiate terms, or terminate the deal. |
+| 11 | Go/No-Go decision | Approval | Deal Team Lead | Review the complete due diligence findings and red flag summary. Make the go/no-go decision on proceeding with the transaction. |
 
 #### Step 6: Management questionnaire — Form Fields
 
@@ -311,11 +322,14 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Intake & Verification** | | | |
 | 1 | Request intake & verification | Form | Data Subject | Submit your privacy rights request. Provide the details below so we can process your request in a timely manner. |
 | 2 | Identity verification documents | File Request | Data Subject | Upload identity verification documents so we can confirm your identity before processing the request. This is required to protect your data from unauthorized access. |
 | 3 | Scope clarification | Form | Data Subject | Help us narrow the scope of your request so we can respond accurately and efficiently. |
+| | **📌 Data Processing & Review** | | | |
 | 4 | Data collection across systems | To-Do | IT/Data Team | Collect all personal data associated with the data subject from all relevant systems. Document the data sources and compile a comprehensive data package. |
 | 5 | Legal review / redaction | To-Do | Legal Reviewer | Review the collected data for legal exemptions, third-party data that must be redacted, and any privileged information. Apply necessary redactions. |
+| | **📌 Response Delivery** | | | |
 | 6 | Privacy ops review | To-Do | Privacy Operations | Verify completeness of the response, ensure regulatory timelines are met, and prepare the final response package for delivery. |
 | 7 | Response delivery | File Request | Privacy Operations | Upload the final response package for the data subject. Include all collected data, any applicable explanations, and information about their rights. |
 | 8 | Completion acknowledgement | Acknowledgement | Data Subject | Acknowledge receipt of the response to your privacy rights request. If you have further questions or are not satisfied with the response, you may submit a follow-up request. |
@@ -363,10 +377,12 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Identification & Preservation** | | | |
 | 1 | Subpoena intake & analysis | Form | Legal Owner | Log the subpoena details and analyze its scope, deadlines, and requirements. Identify the key issues and relevant custodians. |
 | 2 | Custodian identification | To-Do | Legal Owner | Identify all custodians who may have responsive documents. Map data sources and document types to each custodian. |
 | 3 | Document preservation notice | Acknowledgement | Custodian | Acknowledge receipt of the document preservation notice. You must preserve all documents, communications, and data that may be responsive to the subpoena. |
 | 4 | IT data preservation | To-Do | IT Administrator | Implement technical preservation measures for relevant data sources. Suspend auto-deletion policies, preserve email archives, and secure backup tapes as needed. |
+| | **📌 Collection & Review** | | | |
 | 5 | Document collection | File Request | Custodian | Collect and upload all documents, communications, and data responsive to the subpoena from your data sources. |
 | 6 | Outside counsel review | To-Do | Outside Counsel | Review the collected documents for responsiveness, relevance, and potential objections. Identify any documents requiring privilege review. |
 | 7 | Privilege review | To-Do | Legal Owner | Conduct privilege review on flagged documents. Prepare the privilege log for any documents withheld on privilege grounds. |
@@ -411,12 +427,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Entity Planning** | | | |
 | 1 | Formation intake | Form | Founder | Provide the basic details of the business entity you want to form. This information will guide the entity structure and formation filing. |
 | 2 | Ownership & structure details | Form | Founder | Provide ownership and governance structure details. Include all founders, ownership percentages, and initial officers/managers. |
 | 3 | Founder identity documents | File Request | Founder | Upload government-issued identification for all founders. This is required for the formation filing and EIN application. |
+| | **📌 Formation & Execution** | | | |
 | 4 | Operating agreement / bylaws review | To-Do | Legal Advisor | Draft or review the operating agreement (LLC) or bylaws (corporation). Ensure governance provisions align with the founders' intent and applicable state law. |
 | 5 | Formation document execution | E-Sign | Founder | Review and sign the formation documents including articles of organization/incorporation and the operating agreement or bylaws. |
 | 6 | Registered agent acceptance | Acknowledgement | Registered Agent | Acknowledge your acceptance of the registered agent appointment for the newly formed entity. |
+| | **📌 Post-Formation Setup** | | | |
 | 7 | EIN application | To-Do | Accountant | Apply for the Employer Identification Number (EIN) with the IRS. Set up initial accounting records and advise on tax election deadlines. |
 | 8 | Post-formation checklist | To-Do | Legal Advisor | Complete the post-formation checklist: open bank account, obtain business licenses, register for state taxes, and set up initial corporate records. |
 | 9 | Formation complete | Acknowledgement | Founder | Acknowledge that the business formation is complete. Review the summary of all filed documents, key dates, and ongoing compliance obligations. |
@@ -469,16 +488,20 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Application & Qualification** | | | |
 | 1 | Franchise application | Form | Franchisee | Complete the franchise application with your personal, financial, and business background information. |
 | 2 | Financial qualification documents | File Request | Franchisee | Upload financial qualification documents including personal financial statements, bank statements, and tax returns. |
-| 3 | FDD acknowledgement (14-day waiting period) | Acknowledgement | Franchisee | Acknowledge receipt of the Franchise Disclosure Document (FDD). Per FTC rules, you must have at least 14 days to review the FDD before signing the franchise agreement. |
-| 4 | Franchisee questions | Form | Franchisee | Submit any questions about the FDD, franchise agreement, or franchise system. We encourage you to review the FDD with your own attorney. |
-| 5 | Discovery day confirmation | Acknowledgement | Franchisee | Confirm your attendance at Discovery Day. This is your opportunity to visit headquarters, meet the team, and learn about day-to-day franchise operations. |
-| 6 | Franchise agreement review | To-Do | Legal Reviewer | Review the franchise agreement for compliance, territory accuracy, and any negotiated modifications. Ensure FTC timing requirements have been met. |
-| 7 | Financial terms | To-Do | Finance | Verify the financial terms of the franchise agreement including initial franchise fee, royalty rates, advertising fund contributions, and payment schedules. |
-| 8 | Franchise agreement execution | E-Sign | Franchisee | Review the final franchise agreement and apply your electronic signature to execute the agreement. Ensure you have completed your 14-day FDD review period. |
-| 9 | Training schedule | To-Do | Training Lead | Schedule the initial franchise training program for the new franchisee. Prepare training materials and confirm venue/virtual setup. |
-| 10 | Onboarding kickoff | Acknowledgement | Franchise Development Manager | Confirm that the franchise onboarding process has been initiated. Verify that all required systems access, training schedule, and opening timeline have been communicated to the franchisee. |
+| 3 | Franchisee qualification decision | Decision | Franchise Development Manager | Evaluate the franchisee candidate: approve and proceed to agreement, request additional information, or decline the application. |
+| | **📌 FDD Review & Discovery** | | | |
+| 4 | FDD acknowledgement (14-day waiting period) | Acknowledgement | Franchisee | Acknowledge receipt of the Franchise Disclosure Document (FDD). Per FTC rules, you must have at least 14 days to review the FDD before signing the franchise agreement. |
+| 5 | Franchisee questions | Form | Franchisee | Submit any questions about the FDD, franchise agreement, or franchise system. We encourage you to review the FDD with your own attorney. |
+| 6 | Discovery day confirmation | Acknowledgement | Franchisee | Confirm your attendance at Discovery Day. This is your opportunity to visit headquarters, meet the team, and learn about day-to-day franchise operations. |
+| | **📌 Agreement & Onboarding** | | | |
+| 7 | Franchise agreement review | To-Do | Legal Reviewer | Review the franchise agreement for compliance, territory accuracy, and any negotiated modifications. Ensure FTC timing requirements have been met. |
+| 8 | Financial terms | To-Do | Finance | Verify the financial terms of the franchise agreement including initial franchise fee, royalty rates, advertising fund contributions, and payment schedules. |
+| 9 | Franchise agreement execution | E-Sign | Franchisee | Review the final franchise agreement and apply your electronic signature to execute the agreement. Ensure you have completed your 14-day FDD review period. |
+| 10 | Training schedule | To-Do | Training Lead | Schedule the initial franchise training program for the new franchisee. Prepare training materials and confirm venue/virtual setup. |
+| 11 | Onboarding kickoff | Acknowledgement | Franchise Development Manager | Confirm that the franchise onboarding process has been initiated. Verify that all required systems access, training schedule, and opening timeline have been communicated to the franchisee. |
 
 #### Step 1: Franchise application — Form Fields
 
@@ -491,7 +514,7 @@
 | Net Worth | Number | Yes |
 | Prior Franchise or Business Experience | Text (Multi Line) | No |
 
-#### Step 4: Franchisee questions — Form Fields
+#### Step 5: Franchisee questions — Form Fields
 
 | Field | Type | Required |
 |-------|------|----------|
@@ -528,9 +551,11 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Due Diligence** | | | |
 | 1 | Assignment request intake | Form | IP Counsel | Provide the details of the intellectual property being assigned. Include all registration information and the reason for transfer. |
 | 2 | IP schedule & registration documents | File Request | Assignor | Upload registration certificates, prior assignment records, existing license agreements, and documentation of any encumbrances on the IP. |
 | 3 | Chain of title verification | To-Do | IP Counsel | Verify the chain of title for the IP being assigned. Confirm current ownership, check for liens or encumbrances, and verify registration status with the relevant IP office. |
+| | **📌 Execution & Recording** | | | |
 | 4 | Assignment agreement review | File Request | IP Counsel | Upload the draft IP assignment agreement for review. Include any schedules listing the specific IP assets being transferred. |
 | 5 | Assignee review & comments | Form | Assignee | Review the assignment agreement and provide any comments or requested changes. |
 | 6 | Assignment execution | E-Sign | Assignor | Review and sign the IP assignment agreement as the assignor, transferring your rights in the intellectual property. |

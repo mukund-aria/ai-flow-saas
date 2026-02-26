@@ -29,6 +29,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Registration & Compliance',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Vendor registration form',
         type: 'FORM',
         assigneeRole: 'Vendor Contact',
@@ -71,6 +76,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
           'AI-powered: Assess the vendor across financial stability, industry risk, insurance adequacy, and sanctions screening. Generate a risk profile with recommendations.',
       },
       {
+        name: 'Agreements & Payment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'NDA / MSA execution',
         type: 'ESIGN',
         assigneeRole: 'Vendor Contact',
@@ -91,6 +101,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f4', label: 'Payment Terms', type: 'DROPDOWN', required: true, options: [{ label: 'Net 15', value: 'net-15' }, { label: 'Net 30', value: 'net-30' }, { label: 'Net 45', value: 'net-45' }, { label: 'Net 60', value: 'net-60' }] },
           { fieldId: 'f5', label: 'Invoice Submission Instructions', type: 'TEXT_MULTI_LINE', required: false },
         ],
+      },
+      {
+        name: 'Activation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Procurement approval',
@@ -134,6 +149,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Information Gathering',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Security questionnaire (SIG/CAIQ)',
         type: 'FORM',
         assigneeRole: 'Vendor Contact',
@@ -170,6 +190,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
           'Upload your most recent penetration test report and any remediation evidence for identified findings.',
       },
       {
+        name: 'Security Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Security review',
         type: 'TODO',
         assigneeRole: 'Security Reviewer',
@@ -186,6 +211,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f1', label: 'Clarification Responses', type: 'TEXT_MULTI_LINE', required: true },
           { fieldId: 'f2', label: 'Additional Supporting Information', type: 'TEXT_MULTI_LINE', required: false },
         ],
+      },
+      {
+        name: 'Risk Decision',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Risk assessment',
@@ -229,6 +259,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Vendor Submission',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Annual refresh notification',
         type: 'FORM',
         assigneeRole: 'Vendor Contact',
@@ -261,6 +296,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Vendor Contact',
         sampleDescription:
           'Attest that your organization continues to comply with all contractual obligations, regulatory requirements, and our vendor code of conduct.',
+      },
+      {
+        name: 'Internal Review',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Documentation review',
@@ -304,6 +344,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Information Collection',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Due diligence questionnaire',
         type: 'FORM',
         assigneeRole: 'Third Party Contact',
@@ -341,6 +386,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         sampleFormFields: [
           { fieldId: 'f1', label: 'Responses to Clarification Questions', type: 'TEXT_MULTI_LINE', required: true },
         ],
+      },
+      {
+        name: 'Review & Assessment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Legal review',
@@ -398,6 +448,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Planning',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Remediation plan submission',
         type: 'FORM',
         assigneeRole: 'Third Party Contact',
@@ -417,6 +472,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Third Party Contact',
         sampleDescription:
           'Acknowledge and commit to the agreed remediation timeline and milestones.',
+      },
+      {
+        name: 'Evidence & Verification',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Evidence of remediation',
@@ -445,6 +505,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Third Party Contact',
         sampleDescription:
           'If additional evidence was requested during the review, upload the supplemental documentation here.',
+      },
+      {
+        name: 'Closure',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Remediation accepted',
@@ -492,6 +557,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Application & Agreements',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Partner application form',
         type: 'FORM',
         assigneeRole: 'Partner Contact',
@@ -535,6 +605,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         sampleDocumentRef: 'partner-nda.pdf',
       },
       {
+        name: 'Enablement',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Portal & demo environment setup',
         type: 'TODO',
         assigneeRole: 'Partner Manager',
@@ -554,6 +629,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Partner Manager',
         sampleDescription:
           'Review and approve the partner\'s go-to-market plan including target accounts, marketing activities, and pipeline commitments.',
+      },
+      {
+        name: 'Launch',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Launch readiness confirmation',
@@ -600,6 +680,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Application',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Reseller application',
         type: 'FORM',
         assigneeRole: 'Reseller Contact',
@@ -637,6 +722,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         sampleDocumentRef: 'reseller-agreement.pdf',
       },
       {
+        name: 'Legal & Financial Setup',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Legal review',
         type: 'TODO',
         assigneeRole: 'Legal Reviewer',
@@ -649,6 +739,11 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Finance',
         sampleDescription:
           'Establish credit terms based on the reseller\'s financial profile, set credit limits, and configure the account in the billing system.',
+      },
+      {
+        name: 'Training & Activation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Product training',

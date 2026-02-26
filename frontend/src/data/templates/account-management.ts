@@ -29,6 +29,11 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'QBR Preparation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Pre-QBR data collection',
         type: 'FORM',
         assigneeRole: 'Account Manager',
@@ -65,6 +70,11 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
           { fieldId: 'f2', label: 'Top Priorities for Next Quarter', type: 'TEXT_MULTI_LINE', required: true },
           { fieldId: 'f3', label: 'Feature Requests or Improvements', type: 'TEXT_MULTI_LINE' },
         ],
+      },
+      {
+        name: 'Meeting & Follow-up',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'QBR meeting completion',
@@ -120,6 +130,11 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Discovery & Assessment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Renewal kickoff details',
         type: 'FORM',
         assigneeRole: 'CSM',
@@ -168,6 +183,11 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'Proposal & Negotiation',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Internal pricing approval',
         type: 'APPROVAL',
         assigneeRole: 'Finance',
@@ -187,6 +207,11 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Client Contact',
         sampleDescription:
           'Review the renewal proposal and indicate your decision. You can accept the proposal as-is, request negotiations on pricing or terms, downgrade your plan, or indicate you will not be renewing.',
+      },
+      {
+        name: 'Contract Execution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Renewal contract e-signature',
@@ -232,6 +257,11 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
       'Chain with the Annual Renewal template when health checks reveal at-risk accounts approaching contract expiration within 90 days',
     ],
     steps: [
+      {
+        name: 'Assessment',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
       {
         name: 'Health check trigger details',
         type: 'FORM',
@@ -290,6 +320,11 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
         ],
       },
       {
+        name: 'Intervention & Resolution',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Health check meeting',
         type: 'TODO',
         assigneeRole: 'CSM',
@@ -338,6 +373,11 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
     ],
     steps: [
       {
+        name: 'Dispute Intake',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
+      },
+      {
         name: 'Dispute intake form',
         type: 'FORM',
         assigneeRole: 'Client',
@@ -363,6 +403,11 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Client',
         sampleDescription:
           'Upload any supporting documentation for your dispute, such as the original invoice, contract excerpts, correspondence, or screenshots showing the discrepancy.',
+      },
+      {
+        name: 'Investigation & Decision',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Internal investigation',
@@ -391,6 +436,11 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'Client',
         sampleDescription:
           'Review the resolution proposed by our finance team. You may accept the resolution, escalate if you disagree, or provide additional information to support your case.',
+      },
+      {
+        name: 'Resolution & Close-out',
+        type: 'MILESTONE' as const,
+        assigneeRole: 'System',
       },
       {
         name: 'Resolution processing',

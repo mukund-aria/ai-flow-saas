@@ -31,11 +31,14 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Handoff & Discovery** | | | |
 | 1 | Sales-to-delivery handoff | Form | Implementation Lead | Complete the handoff form capturing key deal details so the delivery team has full context before engaging the client. |
 | 2 | Customer stakeholder identification | Form | Client Sponsor | Identify the key stakeholders from your organization who will be involved in the implementation. |
 | 3 | Pre-kickoff requirements | Form | Client Sponsor | Provide details about your current environment and any requirements that will shape the implementation plan. |
+| | **📌 Planning & Approval** | | | |
 | 4 | Project plan creation | To-Do | Implementation Lead | Create the project plan incorporating the handoff details, stakeholder input, and pre-kickoff requirements. Include milestones, timelines, and resource assignments. |
 | 5 | Project plan approval | Approval | Client Sponsor | Review the proposed project plan including milestones, timelines, and resource commitments. Approve to proceed or request changes. |
+| | **📌 Provisioning & Launch** | | | |
 | 6 | Environment provisioning | To-Do | Implementation Lead | Provision the client environment including user accounts, sandbox setup, and any required infrastructure configuration. |
 | 7 | Kickoff acknowledgement | Acknowledgement | Client Sponsor | Acknowledge that the engagement has officially kicked off and confirm your understanding of the project plan, timeline, and next steps. |
 
@@ -138,13 +141,17 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Readiness Assessment** | | | |
 | 1 | Go-live readiness assessment | Form | Implementation Lead | Complete the readiness assessment confirming the status of all go-live prerequisites. |
 | 2 | UAT sign-off | File Request | Client Sponsor | Upload the signed UAT completion document including the test summary and list of accepted known issues. |
 | 3 | Technical readiness certification | Approval | Implementation Lead | Certify that all technical prerequisites for go-live have been met including infrastructure, integrations, and performance benchmarks. |
+| | **📌 Go/No-Go Decision** | | | |
 | 4 | Go/No-Go decision | Decision | Implementation Lead | Make the go/no-go decision based on the readiness assessment, UAT results, and technical certification. Choose Go, Go with Conditions, or Postpone. |
 | 5 | Client go-live authorization | Approval | Client Sponsor | Authorize the production cutover to proceed. This is the final client approval before go-live execution. |
+| | **📌 Cutover & Verification** | | | |
 | 6 | Production cutover execution | To-Do | Implementation Lead | Execute the production cutover plan including DNS changes, data migration finalization, and system activation. |
 | 7 | Post-cutover verification | Form | Implementation Lead | Verify that all critical flows are working correctly in the production environment after cutover. |
+| | **📌 Hypercare Transition** | | | |
 | 8 | Go-live acknowledgement | Acknowledgement | Client Sponsor | Acknowledge that the system is live in production and confirm your understanding of the hypercare support period and escalation procedures. |
 | 9 | Hypercare exit & steady-state transition | Approval | Client Sponsor | Approve the transition from hypercare to steady-state support. Confirm that all post-go-live issues have been resolved and the system is operating as expected. |
 
@@ -296,14 +303,18 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Engagement & Intake** | | | |
 | 1 | Engagement letter | E-Sign | Client/Taxpayer | Review and sign the engagement letter outlining the scope of tax preparation services, fees, and responsibilities. |
 | 2 | Tax organizer questionnaire | Form | Client/Taxpayer | Complete the tax organizer questionnaire to help your preparer understand your tax situation for the current year. |
+| | **📌 Document Collection** | | | |
 | 3 | Income documents upload | File Request | Client/Taxpayer | Upload all income-related documents including W-2s, 1099s, K-1s, and SSA-1099 forms. |
 | 4 | Deduction & credit documents | File Request | Client/Taxpayer | Upload documents supporting deductions and credits including 1098 mortgage interest, property tax statements, charitable contribution receipts, medical expenses, and education expenses. |
 | 5 | Prior year returns (if new client) | File Request | Client/Taxpayer | If you are a new client, please upload your prior year federal and state tax returns for reference. |
 | 6 | Missing document follow-up | Form | Client/Taxpayer | Respond to any follow-up questions about missing or unclear documents identified during the initial review. |
+| | **📌 Preparation & Review** | | | |
 | 7 | Preparer review | To-Do | Tax Preparer | Review all submitted documents, prepare the tax return, and identify any issues or optimization opportunities for the client. |
 | 8 | Partner / manager review | To-Do | Tax Reviewer | Perform quality review of the prepared tax return. Verify calculations, check for missed deductions, and ensure compliance with current tax law. |
+| | **📌 Delivery & Filing** | | | |
 | 9 | Draft return delivery | File Request | Tax Preparer | Upload the draft tax return for client review. Include a summary of key figures and any items requiring client attention. |
 | 10 | Client approval & e-file authorization | E-Sign | Client/Taxpayer | Review the draft return, confirm all information is accurate, and sign the e-file authorization to allow electronic filing. |
 

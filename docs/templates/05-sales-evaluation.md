@@ -31,11 +31,14 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Trial Setup** | | | |
 | 1 | Trial registration form | Form | Prospect | Complete your trial registration so we can tailor the experience to your needs. Tell us about your company, team, and what you hope to achieve during the trial. |
 | 2 | Trial environment setup | To-Do | Sales Rep | Provision the trial environment, configure it for the prospect's use case, and prepare onboarding materials. Send access credentials and getting-started guide. |
 | 3 | Trial plan acknowledgement | Acknowledgement | Prospect | Review and acknowledge the trial plan including timeline, key milestones, and support resources available during your evaluation period. |
+| | **📌 Evaluation & Check-in** | | | |
 | 4 | Mid-trial check-in survey | Form | Prospect | Share your trial experience so far. This helps us understand what's working, identify any blockers, and tailor the remaining trial period to your needs. |
 | 5 | Guided demo of advanced features | To-Do | Sales Rep | Conduct a personalized demo of advanced features based on the prospect's mid-trial feedback. Address blockers and showcase capabilities aligned with their goals. |
+| | **📌 Conversion** | | | |
 | 6 | Trial outcome decision | Decision | Sales Rep | Evaluate the prospect's engagement and trial outcomes. Decide whether to convert to a paid plan, extend the trial for further evaluation, or close the opportunity. |
 | 7 | Proposal delivery | File Request | Sales Rep | Upload the customized proposal based on the prospect's trial usage and requirements. Include pricing, implementation timeline, and support terms. |
 | 8 | Proposal sign-off | Approval | Prospect | Review the proposal and confirm you'd like to proceed. If you have questions or need adjustments, use this step to request changes before signing. |
@@ -90,15 +93,19 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Scoping & Setup** | | | |
 | 1 | Pilot scope & objectives form | Form | Prospect Sponsor | Define the pilot scope including which business unit will participate, the evaluation timeline, user count, and the specific success metrics and KPIs you'll measure. |
 | 2 | Success criteria sign-off | Acknowledgement | Prospect Sponsor | Review and confirm the agreed-upon success criteria, evaluation methodology, and pilot timeline before the pilot begins. |
 | 3 | Technical environment setup | To-Do | Pilot Lead | Set up the pilot environment including infrastructure provisioning, user accounts, SSO integration, data migration (if applicable), and monitoring dashboards. |
+| | **📌 Active Pilot** | | | |
 | 4 | Pilot kickoff acknowledgement | Acknowledgement | Prospect Sponsor | Acknowledge the pilot kickoff, confirm that pilot users have access, and note the support escalation path and scheduled check-in cadence. |
 | 5 | Mid-pilot status review | Form | Prospect Sponsor | Provide a mid-pilot status update on adoption, user feedback, and any issues encountered. This helps the team adjust course if needed. |
 | 6 | Steering committee decision | Approval | Prospect Sponsor | Based on mid-pilot results, decide whether to continue the pilot as planned, adjust scope or timeline, or terminate the pilot early. |
+| | **📌 Evaluation & Decision** | | | |
 | 7 | Final pilot data collection | File Request | Prospect Sponsor | Upload final pilot data including usage reports, user survey results, performance metrics, and any internal evaluation documents. |
 | 8 | AI evaluation report | To-Do | Pilot Lead | AI-powered: Generate a comprehensive evaluation report comparing actual results against success criteria, quantifying business impact, and providing a data-driven recommendation for the go/no-go decision. |
 | 9 | Go/No-Go decision | Decision | Prospect Sponsor | Make the final go/no-go decision on enterprise rollout based on the pilot evaluation report, business impact analysis, and organizational readiness. |
+| | **📌 Contract Execution** | | | |
 | 10 | Final contract sign-off | E-Sign | Prospect Sponsor | Review and electronically sign the enterprise contract to proceed from pilot to full deployment. |
 
 #### Step 1: Pilot scope & objectives form — Form Fields
@@ -149,12 +156,15 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Request & Security Review** | | | |
 | 1 | AI pilot request | Form | Business Sponsor | Submit the AI pilot request with details about the tool, intended use case, data requirements, and success metrics for evaluation. |
 | 2 | IT security & data privacy review | To-Do | IT Security | Review the AI tool's data handling practices, model hosting infrastructure, access controls, and PII/PHI exposure risk. Document findings and any required mitigations. |
 | 3 | Data privacy sign-off | Approval | Data Privacy Officer | Review the IT security assessment and approve the AI pilot from a data privacy perspective. Ensure compliance with applicable privacy regulations (GDPR, CCPA, etc.). |
+| | **📌 Active Pilot** | | | |
 | 4 | Pilot environment setup | To-Do | AI Lead | Set up the pilot environment including sandbox configuration, test data preparation, user provisioning, and guardrails for responsible AI use. |
 | 5 | Pilot kickoff acknowledgement | Acknowledgement | Pilot Users | Acknowledge the pilot kickoff, review the acceptable use guidelines, and confirm you understand the evaluation timeline and feedback expectations. |
 | 6 | Mid-pilot feedback survey | Form | Pilot Users | Share your experience using the AI tool so far. Your feedback on accuracy, usability, and time savings is critical for the evaluation. |
+| | **📌 Evaluation & Rollout Decision** | | | |
 | 7 | Final results & risk assessment | File Request | AI Lead | Upload the final evaluation report including quantified results vs. success metrics, hallucination rate analysis, bias findings, cost analysis, and risk assessment. |
 | 8 | Go/No-Go decision | Decision | Business Sponsor | Based on the evaluation report, decide whether to scale the AI tool to the enterprise, extend the pilot for additional evaluation, or terminate the engagement. |
 | 9 | Enterprise rollout approval | Approval | Business Sponsor | Provide final approval to proceed with enterprise-wide rollout of the AI tool, including budget authorization and implementation timeline sign-off. |
@@ -209,13 +219,16 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Internal Preparation** | | | |
 | 1 | Proposal request details | Form | Sales Lead | Capture the key details needed to draft the proposal including client information, opportunity value, product scope, and specific requirements. |
 | 2 | Draft proposal & SOW upload | File Request | Sales Lead | Upload the draft proposal and statement of work for internal review before sending to the client. |
 | 3 | Internal review & approval | Approval | Sales Lead | Review the proposal and SOW for accuracy, pricing alignment, and compliance with company policies. Approve to release to the client. |
 | 4 | Proposal delivery | To-Do | Sales Lead | Automated notification: Send the approved proposal and SOW to the client prospect with a personalized cover message highlighting key value points. |
+| | **📌 Client Review & Negotiation** | | | |
 | 5 | Client Q&A submission | Form | Client Prospect | Review the proposal and submit any questions, concerns, or requested modifications. We want to make sure every detail meets your expectations. |
 | 6 | Revised terms / Q&A response | File Request | Sales Lead | Upload the revised proposal addressing the client's questions and requested changes, or a written Q&A response document. |
 | 7 | Client final review | Approval | Client Prospect | Review the final proposal and confirm you are satisfied with the terms, pricing, and scope. Approve to proceed to contract signing. |
+| | **📌 Execution & Handoff** | | | |
 | 8 | SOW e-signature | E-Sign | Client Prospect | Review and electronically sign the statement of work to formally engage and kick off the project. |
 | 9 | Handoff to delivery team | To-Do | Sales Lead | Complete the internal handoff to the delivery team including signed SOW, client requirements, key contacts, and any special agreements or commitments made during the sales process. |
 
@@ -265,13 +278,16 @@
 
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
+| | **📌 Intake & Assessment** | | | |
 | 1 | RFP intake & details | Form | Proposal Lead | Log the RFP details including the issuing organization, submission deadline, estimated deal value, and evaluation criteria. |
 | 2 | RFP document upload | File Request | Proposal Lead | Upload the complete RFP document and any attachments, addenda, or Q&A responses from the issuing organization. |
 | 3 | Go/No-Go evaluation | Decision | Proposal Lead | Evaluate whether to pursue this RFP based on solution fit, estimated win probability, required resources, and strategic value. Document the rationale for the decision. |
 | 4 | AI RFP requirements analysis | To-Do | Proposal Lead | AI-powered: Parse the RFP requirements, categorize them by department or functional area, and create an assignment matrix mapping each requirement to the appropriate SME. |
+| | **📌 Response Development** | | | |
 | 5 | Response kickoff & assignments | Form | Proposal Lead | Assign RFP sections to subject matter experts and set internal deadlines for each section submission. |
 | 6 | SME section inputs | File Request | SMEs | Upload your completed section(s) of the RFP response. Ensure all requirements in your assigned sections are addressed with specific, evidence-backed answers. |
 | 7 | Pricing & commercial terms | File Request | Proposal Lead | Upload the pricing model and commercial terms for the RFP response, including cost breakdown, payment terms, and any volume or term discounts. |
+| | **📌 Review & Submission** | | | |
 | 8 | Internal review & quality check | Approval | Proposal Lead | Review the assembled RFP response for completeness, consistency, compliance with RFP requirements, and quality of writing. Approve to send for executive review. |
 | 9 | Executive sign-off | Approval | Executive Sponsor | Review the final RFP response and authorize submission. Confirm pricing, strategic commitments, and any exceptions or assumptions noted in the response. |
 | 10 | Submission confirmation | To-Do | Proposal Lead | Submit the RFP response through the required channel (portal, email, physical delivery) and confirm receipt. Archive the final submitted version for records. |
