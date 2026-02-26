@@ -77,6 +77,16 @@ aiGuidance:
     - "What should the message say?"
     - "Should it go to the flow chat or as a direct message?"
 
+  editQuestions:
+    - question: "Change who receives the message?"
+      aspect: recipients
+    - question: "Update the message content?"
+      aspect: message_content
+    - question: "Change the channel? (flow chat / direct message / group)"
+      aspect: channel
+    - question: "Update the title or description?"
+      aspect: content
+
   defaults:
     - "Send to flow chat"
     - "No attachments"

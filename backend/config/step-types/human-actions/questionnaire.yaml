@@ -66,6 +66,15 @@ aiGuidance:
     - "Single question unless specified"
     - "Any one response completes"
 
+  editQuestions:
+    - question: "Change who answers?"
+      aspect: assignee
+      quickSuggestions: true
+    - question: "Update the questions being asked?"
+      aspect: questions
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "quick question"
       mapsTo: QUESTIONNAIRE

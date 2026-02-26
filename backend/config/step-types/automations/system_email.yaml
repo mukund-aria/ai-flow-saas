@@ -92,6 +92,16 @@ aiGuidance:
     - "No attachments"
     - "Coordinator-only visibility"
 
+  editQuestions:
+    - question: "Change who receives the email?"
+      aspect: recipients
+    - question: "Update the email subject or body?"
+      aspect: email_content
+    - question: "Change attachments or included data?"
+      aspect: attachments
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "send email"
       mapsTo: SYSTEM_EMAIL

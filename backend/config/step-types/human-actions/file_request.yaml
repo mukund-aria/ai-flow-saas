@@ -71,6 +71,17 @@ aiGuidance:
     - "Allow multiple file uploads"
     - "No specific format restrictions"
 
+  editQuestions:
+    - question: "Change who uploads files?"
+      aspect: assignee
+      quickSuggestions: true
+    - question: "Update file type or format requirements?"
+      aspect: file_requirements
+    - question: "Add a reviewer for uploaded files?"
+      aspect: reviewer
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "upload document"
       mapsTo: FILE_REQUEST

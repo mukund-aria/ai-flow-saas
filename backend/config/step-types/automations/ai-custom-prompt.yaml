@@ -96,6 +96,18 @@ aiGuidance:
     - "Use default Moxo AI model"
     - "Text output format unless specified"
 
+  editQuestions:
+    - question: "Change what the AI does? (update the prompt/instructions)"
+      aspect: prompt
+    - question: "Change the inputs the AI receives?"
+      aspect: inputs
+    - question: "Change what the AI outputs?"
+      aspect: outputs
+    - question: "Change the output format? (text / JSON / file)"
+      aspect: output_format
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "AI should classify"
       mapsTo: AI_CUSTOM_PROMPT

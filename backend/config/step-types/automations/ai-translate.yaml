@@ -120,6 +120,20 @@ aiGuidance:
     - "General domain unless specified"
     - "Default formality level"
 
+  editQuestions:
+    - question: "Change the target language?"
+      aspect: target_language
+    - question: "Change the source language?"
+      aspect: source_language
+    - question: "Change what content is translated? (inputs)"
+      aspect: inputs
+    - question: "Change the domain context? (legal / medical / technical / financial)"
+      aspect: domain
+    - question: "Change the formality level? (formal / informal)"
+      aspect: formality
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "translate to Spanish"
       mapsTo: AI_TRANSLATE

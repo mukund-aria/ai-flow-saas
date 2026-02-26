@@ -76,6 +76,17 @@ aiGuidance:
     - "Two buttons: Complete/Unable to Complete"
     - "No comment required"
 
+  editQuestions:
+    - question: "Change who performs this action?"
+      aspect: assignee
+      quickSuggestions: true
+    - question: "Change the completion buttons/outcomes?"
+      aspect: buttons
+    - question: "Add or remove comment requirement?"
+      aspect: require_comment
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "custom step"
       mapsTo: CUSTOM_ACTION

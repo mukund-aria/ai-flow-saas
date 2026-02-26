@@ -102,6 +102,17 @@ aiGuidance:
     - "No review gate unless explicitly requested"
     - "Visible only to assignee unless specified otherwise"
 
+  editQuestions:
+    - question: "Change who fills out this form?"
+      aspect: assignee
+      quickSuggestions: true
+    - question: "Update what information is collected? (add/remove/change fields)"
+      aspect: form_fields
+    - question: "Add a review requirement before proceeding?"
+      aspect: review_gate
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "collect client information"
       mapsTo: FORM

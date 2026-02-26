@@ -90,6 +90,17 @@ aiGuidance:
     - "Single approver (ONE) unless specified"
     - "Parallel approval unless sequential order requested"
 
+  editQuestions:
+    - question: "Change who approves?"
+      aspect: assignee
+      quickSuggestions: true
+    - question: "Change how many approvals are needed? (one / majority / all)"
+      aspect: completion_mode
+    - question: "Change approver order? (sequential / parallel)"
+      aspect: assignee_order
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "manager approval"
       mapsTo: APPROVAL

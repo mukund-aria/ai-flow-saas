@@ -68,6 +68,15 @@ aiGuidance:
     - "All assignees must complete"
     - "No checklist unless specified"
 
+  editQuestions:
+    - question: "Change who handles this task?"
+      aspect: assignee
+      quickSuggestions: true
+    - question: "Update what needs to be done? (title/description)"
+      aspect: content
+    - question: "Add or update checklist items?"
+      aspect: checklist
+
   examples:
     - trigger: "complete task"
       mapsTo: TODO

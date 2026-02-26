@@ -74,6 +74,15 @@ aiGuidance:
     - "All assignees must acknowledge"
     - "Standard acknowledgement text"
 
+  editQuestions:
+    - question: "Change who needs to acknowledge?"
+      aspect: assignee
+      quickSuggestions: true
+    - question: "Update what they're acknowledging? (content/text)"
+      aspect: content
+    - question: "Change the acknowledgement button text?"
+      aspect: acknowledgement_text
+
   examples:
     - trigger: "acknowledge"
       mapsTo: ACKNOWLEDGEMENT

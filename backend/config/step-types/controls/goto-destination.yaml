@@ -55,6 +55,10 @@ aiGuidance:
     - Don't place inside branches or decision outcomes
     - Don't create unnecessary destinations that are never referenced
 
+  editQuestions:
+    - question: "Change the destination label?"
+      aspect: label
+
   defaults:
     - Label should describe the logical section being re-entered
 

@@ -106,6 +106,16 @@ aiGuidance:
     - "What should happen for each condition?"
     - "What if no conditions match?"
 
+  editQuestions:
+    - question: "Change the conditions being evaluated?"
+      aspect: conditions
+    - question: "Change the actions taken when conditions match?"
+      aspect: actions
+    - question: "Change the default action (when no conditions match)?"
+      aspect: default_action
+    - question: "Update the title or description?"
+      aspect: content
+
   defaults:
     - "No default action (fail if no match)"
     - "Coordinator-only visibility"

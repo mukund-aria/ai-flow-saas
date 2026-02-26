@@ -111,6 +111,18 @@ aiGuidance:
     - "No speaker identification unless requested"
     - "File source type unless URL specified"
 
+  editQuestions:
+    - question: "Change the audio/video source?"
+      aspect: inputs
+    - question: "Change the source language?"
+      aspect: source_language
+    - question: "Add or remove timestamp inclusion?"
+      aspect: timestamps
+    - question: "Add or remove speaker identification?"
+      aspect: speaker_identification
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "transcribe the recording"
       mapsTo: AI_TRANSCRIBE

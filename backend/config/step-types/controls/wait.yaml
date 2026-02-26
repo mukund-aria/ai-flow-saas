@@ -62,6 +62,14 @@ aiGuidance:
     - "Is there a specific date, or a duration?"
     - "Should anything trigger early completion?"
 
+  editQuestions:
+    - question: "Change the wait duration or condition?"
+      aspect: wait_config
+    - question: "Change the wait type? (duration / date / condition)"
+      aspect: wait_type
+    - question: "Update the title?"
+      aspect: content
+
   defaults:
     - "Duration-based wait"
     - "No early trigger"

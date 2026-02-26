@@ -127,6 +127,22 @@ aiGuidance:
     - "Medium length unless specified"
     - "General content type unless specified"
 
+  editQuestions:
+    - question: "Change what the AI writes? (update the prompt/instructions)"
+      aspect: prompt
+    - question: "Change the content type? (email / letter / report / memo / proposal)"
+      aspect: content_type
+    - question: "Change the tone? (professional / formal / friendly / casual / technical)"
+      aspect: tone
+    - question: "Change the target audience?"
+      aspect: audience
+    - question: "Change the content length? (short / medium / long)"
+      aspect: max_length
+    - question: "Change the inputs the AI uses?"
+      aspect: inputs
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "draft an email to"
       mapsTo: AI_WRITE

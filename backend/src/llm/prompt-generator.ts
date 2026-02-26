@@ -565,6 +565,11 @@ function formatStepType(config: StepTypeConfig): string {
     output += `\n**Consider asking (if not already known):**\n${config.aiGuidance.seQuestions.map(q => `- ${q}`).join('\n')}`;
   }
 
+  // Include edit questions for when user wants to modify this step type
+  if (config.aiGuidance?.editQuestions && config.aiGuidance.editQuestions.length > 0) {
+    output += `\n**When editing this step type, ask which aspect to change:**\n${config.aiGuidance.editQuestions.map(eq => `- ${eq.question}`).join('\n')}`;
+  }
+
   return output;
 }
 
@@ -590,16 +595,8 @@ function generateConsultationSection(playbook: SEPlaybookConfig): string {
         stageText += `\n**For each step, consider:**\n${perStepQuestions.map((q: string) => `- ${q}`).join('\n')}`;
       }
 
-      // Add step type specific questions
-      const stepTypeQuestions = stage.stepTypeQuestions as Record<string, string[]> | undefined;
-      if (stepTypeQuestions) {
-        stageText += `\n**Step type specific questions:**`;
-        for (const [stepType, questions] of Object.entries(stepTypeQuestions)) {
-          if (Array.isArray(questions) && questions.length > 0) {
-            stageText += `\n  *${stepType}:* ${questions.join(' | ')}`;
-          }
-        }
-      }
+      // Note: Step type specific questions are rendered per-step-type via formatStepType()
+      // to avoid duplication. See aiGuidance.seQuestions in each step-type YAML.
 
       // Add proactive review items
       const proactiveReview = stage.proactiveReview as string[] | undefined;
@@ -703,19 +700,18 @@ For every configurable property, follow this decision tree:
 3. **Otherwise:**
    → Apply foundational default silently (document in assumptions)
 
-## Question Policy
+## Question Policy: The Rework Risk Test
 
-**IMPORTANT: For generic/vague prompts** (like "invoice approval" or "onboarding process"):
-- Ask 1-2 clarifying questions about key structural elements
-- Focus on: Who are the participants? What decisions/approvals are needed?
-- Don't assume everything - a generic prompt needs clarification
+Before deciding to ask or create, apply this test: **If I got it wrong, would the user need to start over or just tweak?**
 
-**Primary questions** (ask when cannot infer):
-- Questions that fundamentally change workflow structure
-- Questions where wrong assumption causes significant rework
-- Key decisions (can things be rejected, or approve-only?)
+- **Start over** → ASK (the wrong assumption would waste the user's time)
+- **Just tweak** → CREATE with assumptions (let the user refine)
 
-**Secondary questions** (always default, never ask):
+**ASK** when the user gives only a category with no process details (e.g., "client onboarding", "invoice approval"). You'd be guessing the entire structure.
+
+**CREATE with assumptions** when the user describes any concrete steps, roles, or process flow — even partially. Build what you can, document assumptions, and let them edit.
+
+**Never ask about** (always default silently):
 - Step names, titles, descriptions
 - Visibility, permissions
 - Form field details
@@ -803,7 +799,27 @@ Example: "${behaviors.whenConstraintViolated.example}"
 
 ## When Feature Is Unsupported
 ${behaviors.whenUnsupported.action}
-Example: "${behaviors.whenUnsupported.example}"`;
+Example: "${behaviors.whenUnsupported.example}"
+
+## Quick Suggestions in Clarification Questions
+
+When using ask_clarification, include quickSuggestions to reduce user effort:
+- **Extract from user input** - If they mentioned roles, departments, or people, convert those to suggestions (e.g., "sales rep signs up" → suggestion: "Sales Rep")
+- **2-4 suggestions** - Prioritize what they explicitly mentioned, then add contextually relevant options
+- **Don't ask users to re-type** - If they already described something, use it
+
+## Edit Clarification: When User Doesn't Specify What to Change
+
+When a user wants to **edit a specific step** but does NOT say what aspect to change (e.g., "update the approval step", "change the form", "modify the email step"):
+
+1. **Identify the step type** from the workflow context
+2. **Look at the "When editing this step type" questions** listed under that step type above
+3. **Use ask_clarification** with a selection question offering the top 2-3 most relevant editable aspects
+4. For assignee-related options, include existing workflow role names as quickSuggestions
+
+**IMPORTANT: Do NOT use this when the user's intent is clear.** If the user says what to change (e.g., "change the assignee to Manager", "rename it to X", "add a rejection path"), skip clarification and proceed directly with edit_workflow.
+
+**Never offer as edit options:** visibility settings, due dates (unless mentioned), completion modes (unless step has multiple assignees), coordinator toggles.`;
 }
 
 // ============================================================================
@@ -842,12 +858,48 @@ export function generateWorkflowContext(workflow: unknown): string {
     return 'No workflow exists yet. This will be a new workflow creation.';
   }
 
-  return `Current workflow state:
+  // Type assertion for workflow
+  const flow = workflow as {
+    name?: string;
+    steps?: Array<{ stepId: string; type: string; config?: { name?: string } }>;
+    assigneePlaceholders?: Array<{ placeholderId: string; name?: string; roleName?: string }>;
+  };
+
+  // Build step reference list for clarity
+  let stepList = '';
+  if (flow.steps && flow.steps.length > 0) {
+    const steps = flow.steps;
+    const lastStep = steps[steps.length - 1];
+    stepList = `\n## Step Reference (use these IDs for edit operations)\n`;
+    stepList += `**Last step ID: ${lastStep.stepId}** (use this for "add at end" requests)\n\n`;
+    steps.forEach((step, index) => {
+      const name = step.config?.name || 'Unnamed';
+      const isLast = index === steps.length - 1;
+      stepList += `${index + 1}. "${name}" (${step.type}) - ID: ${step.stepId}${isLast ? ' [LAST]' : ''}\n`;
+    });
+  }
+
+  // Build role reference list
+  let roleList = '';
+  if (flow.assigneePlaceholders && flow.assigneePlaceholders.length > 0) {
+    roleList = `\n## Roles\n`;
+    flow.assigneePlaceholders.forEach(role => {
+      const name = role.name || role.roleName || 'Unnamed';
+      roleList += `- "${name}" - ID: ${role.placeholderId}\n`;
+    });
+  }
+
+  return `Current workflow: "${flow.name || 'Untitled'}"
+${stepList}${roleList}
+## Full Workflow JSON
 \`\`\`json
 ${JSON.stringify(workflow, null, 2)}
 \`\`\`
 
-When editing, generate patch operations rather than a full workflow.`;
+## Edit Guidelines
+- When editing, use the step IDs from the reference list above
+- If the user's request is ambiguous about which step, ask for clarification
+- Never guess or make up step IDs - use the exact IDs shown above`;
 }
 
 /**

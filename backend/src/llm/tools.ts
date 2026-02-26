@@ -316,6 +316,11 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                   },
                   required: ['optionId', 'label']
                 }
+              },
+              quickSuggestions: {
+                type: 'array',
+                items: { type: 'string' },
+                description: `Optional 2-4 clickable suggestions. Only include when you can predict useful answers from context (e.g., existing roles, industry patterns). Omit for open-ended questions where the user needs to provide unique information.`
               }
             },
             required: ['id', 'text']
@@ -350,11 +355,12 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                   'ADD_BRANCH_PATH', 'REMOVE_BRANCH_PATH',
                   'ADD_OUTCOME', 'REMOVE_OUTCOME',
                   'UPDATE_GOTO_TARGET',
-                  'ADD_MILESTONE', 'REMOVE_MILESTONE', 'MOVE_TO_MILESTONE',
-                  'UPDATE_FLOW_METADATA', 'UPDATE_FLOW_SETTINGS',
-                  'UPDATE_TRIGGER_CONFIG', 'UPDATE_PERMISSIONS'
+                  'UPDATE_FLOW_NAME', 'UPDATE_FLOW_METADATA',
+                  'ADD_ASSIGNEE_PLACEHOLDER', 'REMOVE_ASSIGNEE_PLACEHOLDER', 'UPDATE_ASSIGNEE_PLACEHOLDER',
+                  'ADD_MILESTONE', 'REMOVE_MILESTONE', 'UPDATE_MILESTONE', 'MOVE_TO_MILESTONE',
+                  'UPDATE_FLOW_SETTINGS', 'UPDATE_TRIGGER_CONFIG', 'UPDATE_PERMISSIONS'
                 ],
-                description: 'The operation type'
+                description: 'The operation type. For milestone operations: ADD_MILESTONE requires milestone object with milestoneId, name, and sequence; REMOVE_MILESTONE/UPDATE_MILESTONE require milestoneId.'
               },
               stepId: { type: 'string', description: 'Target step ID' },
               afterStepId: { type: 'string', description: 'Step to add after' },
@@ -365,13 +371,15 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                 type: 'object',
                 description: 'New step definition (for add operations)',
                 properties: {
-                  type: { type: 'string' },
-                  config: {
+                  type: { type: 'string', description: 'Step type (FORM, APPROVAL, TODO, etc.)' },
+                  title: { type: 'string', description: 'Display name for the step' },
+                  description: { type: 'string', description: 'Step description' },
+                  assignees: {
                     type: 'object',
+                    description: 'Assignee reference - who performs this step',
                     properties: {
-                      name: { type: 'string' },
-                      description: { type: 'string' },
-                      assignee: { type: 'string' }
+                      mode: { type: 'string', enum: ['PLACEHOLDER'], description: 'Always PLACEHOLDER' },
+                      placeholderId: { type: 'string', description: 'ID of the assignee placeholder (role)' }
                     }
                   }
                 }
@@ -379,7 +387,27 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
               updates: {
                 type: 'object',
                 description: 'Updates to apply (for update operations)'
-              }
+              },
+              placeholder: {
+                type: 'object',
+                description: 'Assignee placeholder definition (for ADD_ASSIGNEE_PLACEHOLDER)',
+                properties: {
+                  name: { type: 'string', description: 'Display name for the role (e.g., "Manager", "Reviewer")' }
+                }
+              },
+              placeholderId: { type: 'string', description: 'Placeholder ID (for REMOVE/UPDATE_ASSIGNEE_PLACEHOLDER)' },
+              name: { type: 'string', description: 'New name (for UPDATE_FLOW_NAME)' },
+              milestone: {
+                type: 'object',
+                description: 'Milestone definition (required for ADD_MILESTONE). Must include milestoneId, name, and sequence.',
+                properties: {
+                  milestoneId: { type: 'string', description: 'Unique milestone ID (e.g., "milestone_1")' },
+                  name: { type: 'string', description: 'Display name for the milestone (e.g., "Document Collection")' },
+                  sequence: { type: 'number', description: 'Order in workflow (e.g., 1, 2, 3)' }
+                },
+                required: ['milestoneId', 'name', 'sequence']
+              },
+              milestoneId: { type: 'string', description: 'Milestone ID (for REMOVE_MILESTONE/UPDATE_MILESTONE)' }
             },
             required: ['op']
           }

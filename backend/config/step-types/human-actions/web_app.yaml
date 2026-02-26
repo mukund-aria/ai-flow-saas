@@ -77,6 +77,15 @@ aiGuidance:
     - "Manual completion"
     - "No parameters passed"
 
+  editQuestions:
+    - question: "Change who interacts with the app?"
+      aspect: assignee
+      quickSuggestions: true
+    - question: "Change the app URL or parameters?"
+      aspect: url_config
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "embed app"
       mapsTo: WEB_APP

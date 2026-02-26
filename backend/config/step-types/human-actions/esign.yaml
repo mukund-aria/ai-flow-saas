@@ -82,6 +82,17 @@ aiGuidance:
     - "All parties sign in parallel"
     - "Standard signature placement"
 
+  editQuestions:
+    - question: "Change who signs?"
+      aspect: assignee
+      quickSuggestions: true
+    - question: "Change signing order? (sequential / parallel)"
+      aspect: signing_order
+    - question: "Change the document to be signed?"
+      aspect: document
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "sign contract"
       mapsTo: ESIGN

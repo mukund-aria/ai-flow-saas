@@ -85,6 +85,16 @@ aiGuidance:
     - "What data needs to be included?"
     - "What should happen if the webhook fails?"
 
+  editQuestions:
+    - question: "Change the webhook endpoint URL?"
+      aspect: url
+    - question: "Change what data is sent? (payload/inputs)"
+      aspect: payload
+    - question: "Change the HTTP method?"
+      aspect: method
+    - question: "Update the title or description?"
+      aspect: content
+
   defaults:
     - "POST method"
     - "Retry 3 times on failure"

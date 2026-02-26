@@ -107,6 +107,17 @@ aiGuidance:
     - "Empty steps array for outcomes unless user specifies actions"
     - "Default 'No' path continues after branch (no terminate) unless specified"
 
+  editQuestions:
+    - question: "Change who makes this decision?"
+      aspect: assignee
+      quickSuggestions: true
+    - question: "Change the available outcomes? (add/remove/rename)"
+      aspect: outcomes
+    - question: "Add or modify steps within an outcome path?"
+      aspect: outcome_steps
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "approve or reject"
       mapsTo: DECISION

@@ -126,6 +126,18 @@ aiGuidance:
     - "Flag low-confidence extractions for review"
     - "All defined fields are required unless marked optional"
 
+  editQuestions:
+    - question: "Change what fields are extracted? (add/remove/rename fields)"
+      aspect: extraction_schema
+    - question: "Change the input source documents?"
+      aspect: inputs
+    - question: "Change the confidence threshold or low-confidence behavior?"
+      aspect: confidence_options
+    - question: "Update additional extraction instructions?"
+      aspect: prompt
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "extract information from the document"
       mapsTo: AI_EXTRACT

@@ -88,6 +88,14 @@ aiGuidance:
     - trigger: Collect documents from multiple departments simultaneously
       mapsTo: PARALLEL_BRANCH with paths for each department
 
+  editQuestions:
+    - question: "Add or remove parallel paths?"
+      aspect: paths
+    - question: "Add or modify steps within a path?"
+      aspect: path_steps
+    - question: "Change the path labels?"
+      aspect: path_labels
+
   defaults:
     - Default to 2 paths
     - Each path should have a descriptive label

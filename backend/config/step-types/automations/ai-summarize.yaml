@@ -106,6 +106,18 @@ aiGuidance:
     - "Medium length unless specified"
     - "No focus areas (summarize all content)"
 
+  editQuestions:
+    - question: "Change the summary format? (paragraph / bullet points / executive summary / action items)"
+      aspect: summary_format
+    - question: "Change the summary length? (brief / medium / detailed)"
+      aspect: max_length
+    - question: "Change what content is summarized? (inputs)"
+      aspect: inputs
+    - question: "Change which aspects to focus on?"
+      aspect: focus_areas
+    - question: "Update the title or description?"
+      aspect: content
+
   examples:
     - trigger: "summarize the responses"
       mapsTo: AI_SUMMARIZE

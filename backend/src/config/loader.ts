@@ -128,6 +128,11 @@ export interface StepTypeConfig {
     whenToUse: string;
     whenNotToUse?: string;
     seQuestions?: string[];
+    editQuestions?: Array<{
+      question: string;
+      aspect: string;
+      quickSuggestions?: boolean;
+    }>;
     defaults?: string[];
     examples?: Array<{
       trigger: string;

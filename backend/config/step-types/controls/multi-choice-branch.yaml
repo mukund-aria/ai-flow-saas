@@ -96,6 +96,14 @@ aiGuidance:
     - trigger: Apply all relevant compliance procedures based on region and industry
       mapsTo: MULTI_CHOICE_BRANCH with conditions for each compliance category
 
+  editQuestions:
+    - question: "Change which conditions are evaluated?"
+      aspect: conditions
+    - question: "Add, remove, or modify paths?"
+      aspect: paths
+    - question: "Add or modify steps within a path?"
+      aspect: path_steps
+
   defaults:
     - Each path should have a meaningful condition
     - Label should describe when the path applies

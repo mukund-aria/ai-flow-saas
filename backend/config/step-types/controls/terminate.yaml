@@ -59,6 +59,10 @@ aiGuidance:
     - Don't use on the main path (workflow ends naturally after last step)
     - Don't use if there are subsequent required steps that must execute
 
+  editQuestions:
+    - question: "Change the termination status? (completed / cancelled)"
+      aspect: status
+
   defaults:
     - Default status is CANCELLED when used in rejection/negative paths
     - Default status is COMPLETED when used in positive outcome paths

@@ -104,6 +104,14 @@ aiGuidance:
     - "Empty steps in paths unless user specifies"
     - "Condition references prior step outputs or variables"
 
+  editQuestions:
+    - question: "Change the branching condition?"
+      aspect: condition
+    - question: "Add or modify steps in a path?"
+      aspect: path_steps
+    - question: "Change the path labels?"
+      aspect: path_labels
+
   examples:
     - trigger: "if VIP then"
       mapsTo: SINGLE_CHOICE_BRANCH

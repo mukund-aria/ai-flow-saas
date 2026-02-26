@@ -72,122 +72,8 @@ consultationStages:
       - "How long should it take / should we set a due date?"
       - "Should it run concurrently with the previous step? (skipSequentialOrder for 2-3 steps, PARALLEL_BRANCH for multi-step tracks)"
       - "Should it be visible to anyone other than the assignee?"
-    # Questions specific to each step type (ask when that type is identified)
-    stepTypeQuestions:
-      # Human Actions
-      FORM:
-        - "Do you have an existing form or would you like to build it on Moxo from scratch?"
-        - "What fields need to be collected?"
-        - "Are any fields required vs optional?"
-      QUESTIONNAIRE:
-        - "What questions should be asked?"
-        - "Are there conditional/follow-up questions based on answers?"
-        - "Should responses be scored or categorized?"
-      FILE_REQUEST:
-        - "Do you require a reviewer to verify the submitted files before proceeding?"
-        - "What types of files are expected (PDF, images, documents)?"
-        - "Is there a maximum file size or count?"
-      ACKNOWLEDGEMENT:
-        - "Would you like to force the user to open the document before acknowledging?"
-        - "What document or content needs to be acknowledged?"
-      ESIGN:
-        - "Do you have the document that needs to be signed? Or will it be prepared during the flow?"
-        - "Do multiple people need to sign? In what order?"
-        - "Are there specific signature fields or placeholders needed?"
-      DECISION:
-        - "What are the possible outcomes (up to 3)?"
-        - "What happens if the decision is no/rejected?"
-        - "Who has authority to make this decision?"
-      APPROVAL:
-        - "Can the approver decline, or only approve?"
-        - "Do multiple people need to approve? All or just one?"
-        - "What criteria should the approver use?"
-      TODO:
-        - "Do all assignees need to complete this, or just one?"
-        - "Is there a checklist of items to complete?"
-      CUSTOM_ACTION:
-        - "What specific action should the user take?"
-        - "How will completion be verified?"
-      WEB_APP:
-        - "What is the URL of the web application?"
-        - "What should the user accomplish in the embedded app?"
-      # Control Steps
-      WAIT:
-        - "What are we waiting for (time, external event, condition)?"
-        - "How long should we wait maximum?"
-        - "What happens if the wait times out?"
-      SINGLE_CHOICE_BRANCH:
-        - "What are the possible conditional paths (up to 3, including else/default)?"
-        - "What criteria or rules determine which path to take?"
-        - "Should conditions use ALL (every rule must match) or ANY (at least one rule matches) logic?"
-      PARALLEL_BRANCH:
-        - "What tasks should happen simultaneously?"
-        - "Do all branches need to complete, or just one?"
-      # Automation Steps
-      SYSTEM_EMAIL:
-        - "Who should receive the email?"
-        - "What should the subject and body contain?"
-        - "Should any flow data be included in the email?"
-      SYSTEM_WEBHOOK:
-        - "What system should receive the webhook?"
-        - "What data should be sent?"
-        - "Should we wait for a response?"
-      PDF_FORM:
-        - "Do you have the PDF template that needs to be filled?"
-        - "What fields in the PDF should be populated with flow data?"
-        - "Should the filled PDF be sent to someone for review or signature?"
-      # Control Steps (continued)
-      SUB_FLOW:
-        - "Which existing flow should be triggered as a sub-flow?"
-        - "What data should be passed into the sub-flow?"
-        - "Should the parent flow wait for the sub-flow to complete?"
-      # AI Automation Steps (specialized)
-      AI_CUSTOM_PROMPT:
-        - "What should the AI analyze, transform, or generate?"
-        - "What inputs (prior step outputs, files, etc.) should the AI use?"
-        - "What format should the AI output be in (text, JSON, file)?"
-        - "Are there specific instructions or constraints for the AI?"
-      AI_EXTRACT:
-        - "What data needs to be extracted (names, dates, amounts, etc.)?"
-        - "From what type of document or content (PDF, form response, email)?"
-        - "Should the extracted data be structured (e.g., key-value pairs, table)?"
-        - "What should happen if extraction confidence is low?"
-      AI_SUMMARIZE:
-        - "What content needs to be summarized (document, form responses, conversation)?"
-        - "How long should the summary be (brief, detailed, bullet points)?"
-        - "What format should the summary follow (executive summary, action items, etc.)?"
-        - "Are there specific aspects to focus on or ignore?"
-      AI_TRANSCRIBE:
-        - "What is the source of the audio/video content (uploaded file, URL)?"
-        - "What language is the content in?"
-        - "Should timestamps be included in the transcription?"
-        - "Is speaker identification needed?"
-      AI_TRANSLATE:
-        - "What is the target language for translation?"
-        - "What is the source content (text from a prior step, uploaded document)?"
-        - "Should the translation preserve formatting or be plain text?"
-        - "Is there domain-specific terminology to handle (legal, medical, technical)?"
-      AI_WRITE:
-        - "What type of content should the AI write (email, report, letter, summary)?"
-        - "What tone and style should be used (formal, casual, technical)?"
-        - "Who is the target audience?"
-        - "What approximate length is expected?"
-        - "What data from prior steps should be incorporated?"
-      BUSINESS_RULE:
-        - "What conditions should be evaluated?"
-        - "What action should happen when conditions are met?"
-      GOTO:
-        - "What should trigger the loop back? (e.g., rejection, revision needed)"
-        - "Where should the workflow return to?"
-      GOTO_DESTINATION:
-        - "What section of the workflow might need to repeat?"
-      MULTI_CHOICE_BRANCH:
-        - "Which conditions can be true at the same time?"
-        - "What should happen for each matching condition?"
-        - "Is this based on multiple non-exclusive criteria?"
-      TERMINATE:
-        - "Should the flow end with COMPLETED or CANCELLED status?"
-        - "Are there subsequent steps that still need to execute?"
+    # Step type specific questions are defined in each step-type YAML's aiGuidance.seQuestions
+    # and rendered automatically by formatStepType() - no duplication needed here.
     proactiveReview:
       - "Look for approval/review steps that might need a revision loop → suggest GOTO pattern"
       - "Look for 2-3 independent steps that could run concurrently → suggest skipSequentialOrder"
@@ -283,11 +169,16 @@ behaviors:
 
   # When to ask vs. apply defaults
   askingPolicy:
-    # Primary questions: Ask ONLY when these would prevent rework (max 2 questions)
+    # Ask-vs-Create: Use the rework risk test
+    # Ask ONLY when a wrong assumption would force the user to start over.
+    # If you can build something reasonable that the user can tweak, create with assumptions.
     askWhen:
-      - "User's prompt is very generic (e.g., 'client onboarding') - ask about participants and main steps"
-      - "Multiple valid approaches exist and choice fundamentally changes workflow structure"
-      - "A constraint would be violated without clarification"
+      - "User names only a category with no process details (e.g., 'client onboarding', 'invoice approval') — you'd be guessing the entire structure"
+      - "Multiple valid approaches exist and the WRONG choice would require starting over (not just tweaking)"
+      - "A platform constraint would be violated without clarification"
+    # Rework risk test: If you got it wrong, would the user need to:
+    #   - Start over entirely? → ASK (high rework risk)
+    #   - Just rename/move/add a few steps? → CREATE with assumptions (low rework risk)
     # For generic prompts, derive from KEY QUESTIONS (bold) in SE consultation stages:
     # - Goal: answered by initial prompt
     # - Assignees: "Who is involved in this process?" ← KEY
@@ -331,17 +222,34 @@ behaviors:
         recommendation: "If there are approval/decision points, consider adding a GOTO loop so rejected items return for rework instead of ending the flow."
       - question: "Would you like to add permissions before launching?"
         recommendation: "Set who can start (execute), manage (coordinate), and modify (edit) this flow."
-    # IMPORTANT: Infer approvals from context, don't ask separately
-    inferApprovalsFromContext:
-      - "If user describes steps without mentioning approvals → assume no approvals needed"
-      - "If user's steps are client actions (forms, uploads, e-sign) → no internal approval"
-      - "Only ask about approvals if user's description hints at them (e.g., 'manager reviews')"
+    # IMPORTANT: Infer step types from context, don't ask about features user didn't mention
+    inferFromContext:
+      principle: "Generate based on what user described. Don't ask about features they didn't mention."
+
+      rules:
+        - "No approval mentioned → no approval steps"
+        - "No e-signature mentioned → no e-sign steps"
+        - "No decision/branching mentioned → linear flow"
+        - "No file upload mentioned → no file request steps"
+        - "No automation mentioned → manual steps only"
+        - "No conditional paths mentioned → sequential flow"
+
+      inference:
+        - "If user mentions 'review' or 'sign-off' → infer APPROVAL step"
+        - "If user mentions 'signature' or 'sign' for documents → infer ESIGN step"
+        - "If user mentions 'upload' or 'submit documents' → infer FILE_REQUEST step"
+        - "If user mentions 'if X then Y' or 'depending on' → infer branching"
+        - "If user mentions 'form' or 'collect information' → infer FORM step"
+        - "If user mentions 'acknowledge' or 'confirm receipt' → infer ACKNOWLEDGEMENT step"
+        - "If user mentions 'wait' or 'hold until' → infer WAIT step"
+        - "If user mentions 'notify' or 'send email' → infer SYSTEM_EMAIL step"
+
     # After user answers clarification questions:
     afterClarificationAnswers:
       - "Proceed to CREATE mode when you have enough information"
       - "If you have participants AND steps → generate a complete workflow"
-      - "Do NOT ask follow-up questions about approvals if user already described their steps"
-      - "Assume 'no approval mentioned' means 'no approval needed'"
+      - "Do NOT ask follow-up questions about step types the user didn't mention"
+      - "Infer step types from user's description of their process"
       - "If any information is missing, make reasonable assumptions and list them"
     # Secondary questions: ALWAYS default, document in assumptions
     neverAskAbout:
@@ -377,3 +285,105 @@ behaviors:
   whenUnsupported:
     action: "Politely explain, suggest workaround"
     example: "That specific feature isn't available yet, but we can use existing step types to achieve a similar result."
+
+# Quick Suggestions for Clarification Questions
+quickSuggestions:
+  description: |
+    When asking clarification questions, ALWAYS include quickSuggestions with 2-4 contextually relevant options.
+    These make it easy for users to click common answers rather than typing.
+
+  guidelines:
+    - "Derive suggestions from conversation context (industry, domain, existing workflow)"
+    - "For role questions in EDIT mode: mix existing workflow roles + contextually relevant new roles"
+    - "For role questions in CREATE mode: suggest industry-appropriate roles"
+    - "Never use generic suggestions when you have specific context"
+
+  examples:
+    roleQuestionEdit:
+      context: "Editing workflow with roles [Manager, Client]. User wants to add 'legal review step'"
+      suggestions: ["Manager", "Client", "Legal Counsel", "Compliance"]
+      explanation: "First 2 are existing roles, last 2 are contextual based on 'legal review'"
+
+    roleQuestionCreate:
+      context: "New workflow - User said 'invoice approval process'"
+      suggestions: ["Finance Manager", "AP Supervisor", "Controller", "Vendor"]
+
+    workflowName:
+      context: "User said 'client onboarding'"
+      suggestions: ["Client Onboarding", "New Client Setup", "Account Activation"]
+
+    stepType:
+      context: "After form submission step"
+      suggestions: ["Review", "Approval", "Notification", "File Request"]
+
+# Edit Clarification Policy
+# When a user wants to edit a step but doesn't specify WHAT to change,
+# use the step type's editQuestions to offer targeted options.
+editClarificationPolicy:
+  # Core principle: only ask when the user's intent is genuinely unclear
+  when: |
+    Use edit clarification ONLY when ALL of these are true:
+    1. The user has identified a step (or you've resolved which step)
+    2. The user has NOT specified what aspect to change
+    3. The step type has multiple meaningful editable aspects
+
+    Examples that NEED clarification:
+    - "Update the approval step" → what about it?
+    - "Change the form" → which aspect?
+    - "Modify the email step" → recipients? content? subject?
+
+    Examples that do NOT need clarification (proceed directly):
+    - "Change the approval step assignee to Manager" → clear intent, just do it
+    - "Rename the form to 'Client Intake'" → clear intent, just do it
+    - "Add a rejection path to the decision" → clear intent, just do it
+    - "Make the approval require all approvers" → clear intent, just do it
+
+  how: |
+    When clarification IS needed:
+    1. Look up the step's type in the step-type config
+    2. Use editQuestions from that step type's aiGuidance
+    3. Present the top 2-3 most relevant options as a selection question
+    4. For questions with quickSuggestions: true, include existing workflow roles as suggestions
+    5. Use ask_clarification with inputType "selection" so user can click an option
+
+  # These aspects are always low-priority — default silently, don't offer as options
+  neverOfferAsEditOptions:
+    - "visibility (visibleToAllAssignees)"
+    - "due dates (unless user mentions deadlines)"
+    - "completion mode (unless step has multiple assignees)"
+    - "coordinator toggle"
+
+# Edit Operations - Step Reference Handling
+editOperations:
+  stepReferences:
+    guidance: |
+      When editing a workflow and you need to reference a specific step:
+
+      1. If the user's request clearly identifies ONE step (by name or position):
+         - Use that step's actual stepId from the workflow context
+         - Match step names case-insensitively
+
+      2. If the request is ambiguous or could match multiple steps:
+         - Use clarify mode to ask user which step they mean
+         - Show the step names as selection options
+         - Example: "Which step should I add the approval after?"
+
+      3. Never guess or make up step IDs
+         - The workflow context includes actual step names and IDs
+         - Match by name when clear, ask when ambiguous
+
+    examples:
+      clearReference:
+        userRequest: "Add approval after the Client Form"
+        workflowHas: ["Welcome", "Client Form", "Review"]
+        action: "Match 'Client Form' to its stepId, no clarification needed"
+
+      ambiguousReference:
+        userRequest: "Add a step after the form"
+        workflowHas: ["Welcome Form", "Client Form", "Upload Form"]
+        action: "Use clarify mode - multiple forms exist"
+
+      positionalReference:
+        userRequest: "Add approval after the second step"
+        workflowHas: ["Step 1", "Step 2", "Step 3"]
+        action: "Reference step at position 2 by its stepId"
