@@ -48,6 +48,7 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
         name: 'Clarification Q&A',
         type: 'FORM',
         assigneeRole: 'Control Owner',
+        skipSequentialOrder: true,
         sampleDescription:
           'Answer any clarification questions about the evidence you have submitted. Provide additional context where needed.',
         sampleFormFields: [

@@ -23,7 +23,7 @@ const STEP_GROUPS: StepGroup[] = [
   },
   {
     label: 'Control Flow',
-    types: ['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'SUB_FLOW'],
+    types: ['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO_DESTINATION', 'GOTO', 'TERMINATE', 'SUB_FLOW'],
   },
   {
     label: 'Automations',

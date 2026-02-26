@@ -6,7 +6,7 @@
 
 export interface GalleryTemplateStep {
   name: string;
-  type: 'FORM' | 'QUESTIONNAIRE' | 'FILE_REQUEST' | 'TODO' | 'APPROVAL' | 'ACKNOWLEDGEMENT' | 'ESIGN' | 'DECISION' | 'PDF_FORM' | 'CUSTOM_ACTION' | 'WEB_APP' | 'MILESTONE' | 'SINGLE_CHOICE_BRANCH';
+  type: 'FORM' | 'QUESTIONNAIRE' | 'FILE_REQUEST' | 'TODO' | 'APPROVAL' | 'ACKNOWLEDGEMENT' | 'ESIGN' | 'DECISION' | 'PDF_FORM' | 'CUSTOM_ACTION' | 'WEB_APP' | 'MILESTONE' | 'SINGLE_CHOICE_BRANCH' | 'PARALLEL_BRANCH';
   assigneeRole: string;
   sampleFormFields?: Array<{
     fieldId: string;
@@ -17,7 +17,8 @@ export interface GalleryTemplateStep {
   }>;
   sampleDocumentRef?: string;
   sampleDescription?: string;
-  samplePaths?: Array<{ label: string }>;
+  samplePaths?: Array<{ label: string; steps?: GalleryTemplateStep[] }>;
+  skipSequentialOrder?: boolean;
 }
 
 export interface GalleryTemplate {

@@ -59,6 +59,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Government ID upload',
         type: 'FILE_REQUEST',
         assigneeRole: 'Individual',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload a clear copy of your government-issued photo ID (passport, driver\'s license, or national ID card). Both sides if applicable.',
       },
@@ -66,6 +67,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Proof of address',
         type: 'FILE_REQUEST',
         assigneeRole: 'Individual',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload a recent proof of address document such as a utility bill, bank statement, or government letter dated within the last 90 days.',
       },
@@ -73,6 +75,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Source of funds documentation',
         type: 'FILE_REQUEST',
         assigneeRole: 'Individual',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload documentation supporting your declared source of funds, such as pay stubs, business financials, or investment statements.',
       },
@@ -208,6 +211,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Formation documents (Articles, Cert of Good Standing)',
         type: 'FILE_REQUEST',
         assigneeRole: 'Business Admin',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload your business formation documents including Articles of Incorporation/Organization and a current Certificate of Good Standing from your state of formation.',
       },
@@ -215,6 +219,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Ownership structure documentation',
         type: 'FILE_REQUEST',
         assigneeRole: 'Business Admin',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload your ownership structure documentation such as an operating agreement, shareholder registry, or organizational chart showing all owners with their ownership percentages.',
       },
@@ -241,6 +246,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Beneficial owner ID verification',
         type: 'FILE_REQUEST',
         assigneeRole: 'Beneficial Owner',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload a clear copy of your government-issued photo ID (passport, driver\'s license, or national ID) for identity verification.',
       },
@@ -356,6 +362,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Beneficial owner identification',
         type: 'FORM',
         assigneeRole: 'Company Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Identify all individuals with 25% or greater ownership or who exercise substantial control over the company, including senior officers, those with appointment authority, and key decision-makers.',
         sampleFormFields: [
@@ -473,6 +480,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Updated documentation',
         type: 'FILE_REQUEST',
         assigneeRole: 'Client Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload any updated documents such as a current government ID, proof of address, or updated financial statements as applicable to your account type.',
       },
@@ -480,6 +488,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'UBO changes (if any)',
         type: 'FORM',
         assigneeRole: 'Client Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'If there have been any changes to beneficial ownership, provide updated details here including new owners, ownership percentage changes, or departures.',
         sampleFormFields: [
@@ -571,6 +580,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Personal financial statement',
         type: 'FILE_REQUEST',
         assigneeRole: 'Borrower',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload your personal financial statement showing assets, liabilities, and net worth.',
       },
@@ -578,6 +588,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Business tax returns & financial statements',
         type: 'FILE_REQUEST',
         assigneeRole: 'Borrower',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload your business tax returns and financial statements for the past 3 years, including income statements, balance sheets, and cash flow statements.',
       },
@@ -585,6 +596,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Collateral documentation',
         type: 'FILE_REQUEST',
         assigneeRole: 'Borrower',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload documentation for any collateral being offered, such as property appraisals, equipment valuations, or inventory reports.',
       },
@@ -711,6 +723,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Supporting documentation',
         type: 'FILE_REQUEST',
         assigneeRole: 'Requestor',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload the supporting documentation for this wire transfer, such as an invoice, contract, or approval memo that justifies the payment.',
       },
@@ -842,6 +855,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Identity verification documents',
         type: 'FILE_REQUEST',
         assigneeRole: 'Investor',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload a government-issued photo ID and a secondary verification document such as a utility bill or bank statement.',
       },
@@ -849,6 +863,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Accreditation documentation (if applicable)',
         type: 'FILE_REQUEST',
         assigneeRole: 'Investor',
+        skipSequentialOrder: true,
         sampleDescription:
           'If applicable, upload documentation supporting your accredited investor status such as recent tax returns, brokerage statements, or a CPA/attorney verification letter.',
       },
@@ -931,6 +946,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Operations setup',
         type: 'TODO',
         assigneeRole: 'Operations',
+        skipSequentialOrder: true,
         sampleDescription:
           'Set up the account in the trading and custodial systems, configure permissions, and prepare for funding instructions.',
       },
@@ -1000,6 +1016,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Updated financial statements',
         type: 'FILE_REQUEST',
         assigneeRole: 'Borrower',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload your current year profit & loss statement, balance sheet, interim financials, and most recent tax returns.',
       },
@@ -1007,6 +1024,7 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
         name: 'Borrower update questionnaire',
         type: 'FORM',
         assigneeRole: 'Borrower',
+        skipSequentialOrder: true,
         sampleDescription:
           'Provide updates on your business since the original facility was established. This helps the credit team assess any material changes.',
         sampleFormFields: [

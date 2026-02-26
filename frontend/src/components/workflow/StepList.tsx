@@ -99,6 +99,7 @@ interface MilestoneContainerProps {
   onAddStep: (index: number, stepType: StepType) => void;
   onAddMilestone?: (afterIndex: number) => void;
   assigneePlaceholders: Flow['assigneePlaceholders'];
+  workflow: Flow;
 }
 
 function MilestoneContainer({
@@ -113,6 +114,7 @@ function MilestoneContainer({
   onAddStep,
   onAddMilestone,
   assigneePlaceholders,
+  workflow,
 }: MilestoneContainerProps) {
   const { updateMilestone, removeMilestone } = useWorkflowStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -162,6 +164,7 @@ function MilestoneContainer({
                   step={step}
                   stepIndex={globalIndex}
                   assigneeIndices={assigneeIndices}
+                  allSteps={workflow.steps}
                 />
               </div>
             ) : (
@@ -297,6 +300,7 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
           onAddStep={handleAddStep}
           onAddMilestone={handleAddMilestone}
           assigneePlaceholders={workflow.assigneePlaceholders || []}
+          workflow={workflow}
         />
       ))}
 

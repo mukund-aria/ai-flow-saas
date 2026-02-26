@@ -92,6 +92,14 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     if (!workflow) return;
 
     const newStep = createDefaultStep(stepType);
+
+    // Auto-name GOTO_DESTINATION with next available letter
+    if (stepType === 'GOTO_DESTINATION') {
+      const existingCount = workflow.steps.filter(s => s.type === 'GOTO_DESTINATION').length;
+      const letter = String.fromCharCode(65 + existingCount); // A, B, C...
+      newStep.config.name = `Point ${letter}`;
+    }
+
     const steps = [...workflow.steps];
     steps.splice(afterIndex, 0, newStep);
 

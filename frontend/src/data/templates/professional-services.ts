@@ -505,12 +505,14 @@ export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
         name: 'Deduction & credit documents',
         type: 'FILE_REQUEST',
         assigneeRole: 'Client/Taxpayer',
+        skipSequentialOrder: true,
         sampleDescription: 'Upload documents supporting deductions and credits including 1098 mortgage interest, property tax statements, charitable contribution receipts, medical expenses, and education expenses.',
       },
       {
         name: 'Prior year returns (if new client)',
         type: 'FILE_REQUEST',
         assigneeRole: 'Client/Taxpayer',
+        skipSequentialOrder: true,
         sampleDescription: 'If you are a new client, please upload your prior year federal and state tax returns for reference.',
       },
       {

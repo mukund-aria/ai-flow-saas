@@ -308,6 +308,8 @@ export interface StepConfig {
   businessRule?: BusinessRuleConfig;
   // PDF Form config
   pdfForm?: PDFFormConfig;
+  // Skip sequential order — step starts without waiting for previous step
+  skipSequentialOrder?: boolean;
   // Sub Flow config
   subFlow?: SubFlowConfig;
   // Integration config
@@ -796,9 +798,9 @@ export const STEP_TYPE_META: Record<StepType, { label: string; color: string; ca
   SINGLE_CHOICE_BRANCH: { label: 'Single Choice', color: '#f59e0b', category: 'control' },
   MULTI_CHOICE_BRANCH: { label: 'Multi Choice', color: '#f59e0b', category: 'control' },
   PARALLEL_BRANCH: { label: 'Parallel Branch', color: '#f59e0b', category: 'control' },
-  GOTO: { label: 'Go To', color: '#6b7280', category: 'control' },
-  GOTO_DESTINATION: { label: 'Destination', color: '#6b7280', category: 'control' },
-  TERMINATE: { label: 'Terminate', color: '#ef4444', category: 'control' },
+  GOTO: { label: 'Go To', color: '#d97706', category: 'control' },
+  GOTO_DESTINATION: { label: 'Go To Destination', color: '#d97706', category: 'control' },
+  TERMINATE: { label: 'Flow Terminate', color: '#ef4444', category: 'control' },
   WAIT: { label: 'Wait', color: '#6b7280', category: 'control' },
   SUB_FLOW: { label: 'Sub Flow', color: '#f59e0b', category: 'control' },
 

@@ -58,6 +58,7 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
         name: 'Client pre-QBR survey',
         type: 'FORM',
         assigneeRole: 'Client Stakeholder',
+        skipSequentialOrder: true,
         sampleDescription:
           'Share your perspective before the QBR meeting. Your input on satisfaction, priorities, and feature needs helps us make the session as productive as possible.',
         sampleFormFields: [
@@ -160,6 +161,7 @@ export const ACCOUNT_MANAGEMENT_TEMPLATES: GalleryTemplate[] = [
         name: 'Client renewal survey',
         type: 'FORM',
         assigneeRole: 'Client Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Help us understand your renewal priorities. Your feedback on satisfaction, usage, and budget directly shapes the renewal offer we prepare for you.',
         sampleFormFields: [

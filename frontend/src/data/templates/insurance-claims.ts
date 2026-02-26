@@ -73,6 +73,7 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         name: 'Adjuster assessment & investigation',
         type: 'TODO',
         assigneeRole: 'Claims Adjuster',
+        skipSequentialOrder: true,
         sampleDescription: 'Review all submitted documentation, conduct the claim investigation, and prepare your assessment including coverage determination, damage valuation, and settlement recommendation.',
       },
       {
@@ -371,6 +372,7 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         name: 'Wage statement & employment verification',
         type: 'FORM',
         assigneeRole: 'Employer/HR',
+        skipSequentialOrder: true,
         sampleDescription: 'Provide the wage and employment details needed for benefits calculation and claim processing.',
         sampleFormFields: [
           { fieldId: 'f1', label: 'Average Weekly Wage', type: 'NUMBER', required: true },
@@ -489,6 +491,7 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         name: 'Loss run / claims history',
         type: 'FILE_REQUEST',
         assigneeRole: 'Policyholder',
+        skipSequentialOrder: true,
         sampleDescription: 'Upload your current loss run or claims history documentation for the underwriter to review during the renewal assessment.',
       },
       {
@@ -595,6 +598,7 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         name: 'Work-in-progress schedule',
         type: 'FILE_REQUEST',
         assigneeRole: 'Principal (Applicant)',
+        skipSequentialOrder: true,
         sampleDescription: 'Upload your work-in-progress schedule including current projects, backlog, completed project history, and bonding capacity needs.',
       },
       {
@@ -688,12 +692,14 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
         name: 'Sales / revenue records',
         type: 'FILE_REQUEST',
         assigneeRole: 'Policyholder',
+        skipSequentialOrder: true,
         sampleDescription: 'Upload your sales and revenue records for the audit period including annual financial statements, sales reports, and subcontractor payment records.',
       },
       {
         name: 'Classification questionnaire',
         type: 'FORM',
         assigneeRole: 'Policyholder',
+        skipSequentialOrder: true,
         sampleDescription: 'Complete the classification questionnaire to help the auditor accurately categorize your operations and employee classifications.',
         sampleFormFields: [
           { fieldId: 'f1', label: 'Number of Employees by Classification', type: 'TEXT_MULTI_LINE', required: true },

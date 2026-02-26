@@ -53,6 +53,7 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         name: 'Insurance certificates (GL, WC, Auto)',
         type: 'FILE_REQUEST',
         assigneeRole: 'Subcontractor',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload current certificates of insurance for General Liability, Workers Compensation, and Commercial Auto. All policies must meet the minimum coverage limits specified in the subcontract.',
       },
@@ -60,6 +61,7 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         name: 'Safety program documentation',
         type: 'FILE_REQUEST',
         assigneeRole: 'Subcontractor',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload your company safety program, EMR letter, OSHA logs (300/300A), and any relevant safety certifications.',
       },
@@ -67,6 +69,7 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         name: 'License & bonding verification',
         type: 'FILE_REQUEST',
         assigneeRole: 'Subcontractor',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload copies of your state contractor license, any specialty licenses, and current bonding documentation.',
       },
@@ -107,6 +110,7 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
         name: 'Safety review',
         type: 'TODO',
         assigneeRole: 'Safety Lead',
+        skipSequentialOrder: true,
         sampleDescription:
           'Review the safety program documentation, EMR history, and OSHA logs. Confirm the subcontractor meets minimum safety standards for the project.',
       },

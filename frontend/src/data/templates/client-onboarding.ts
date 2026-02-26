@@ -66,6 +66,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Data migration upload',
         type: 'FILE_REQUEST',
         assigneeRole: 'Customer Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload your data migration files (CSV exports, database dumps, or structured data) so our team can begin the import process.',
       },
@@ -191,6 +192,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Customer Due Diligence questionnaire',
         type: 'FORM',
         assigneeRole: 'Client',
+        skipSequentialOrder: true,
         sampleDescription:
           'Answer due diligence questions about the intended use of your account, expected transaction patterns, and any political or foreign account exposure.',
         sampleFormFields: [
@@ -350,6 +352,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Prior year returns & financials',
         type: 'FILE_REQUEST',
         assigneeRole: 'Client',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload your prior year tax returns and financial statements so we have a baseline for your engagement.',
       },
@@ -357,6 +360,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Accounting system access (if bookkeeping/payroll)',
         type: 'FORM',
         assigneeRole: 'Client',
+        skipSequentialOrder: true,
         sampleDescription:
           'If you selected bookkeeping or payroll services, provide access credentials for your accounting system and bank feed details.',
         sampleFormFields: [
@@ -381,6 +385,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Client portal setup',
         type: 'TODO',
         assigneeRole: 'Engagement Manager',
+        skipSequentialOrder: true,
         sampleDescription:
           'Create the client profile in the firm management system, set up the document portal, and configure recurring task schedules.',
       },
@@ -451,6 +456,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Matter evaluation & staffing',
         type: 'TODO',
         assigneeRole: 'Intake Attorney',
+        skipSequentialOrder: true,
         sampleDescription:
           'Evaluate the matter for viability, determine the appropriate fee arrangement (hourly, contingency, flat fee), and assign staffing.',
       },
@@ -485,6 +491,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Supporting document upload',
         type: 'FILE_REQUEST',
         assigneeRole: 'Client',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload any documents related to your matter, such as contracts, correspondence, court filings, or other relevant records.',
       },
@@ -504,6 +511,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Kickoff meeting',
         type: 'TODO',
         assigneeRole: 'Intake Attorney',
+        skipSequentialOrder: true,
         sampleDescription:
           'Schedule and conduct the kickoff meeting with the client to discuss strategy, timeline, and immediate next steps.',
       },
@@ -576,6 +584,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Supplemental documentation',
         type: 'FILE_REQUEST',
         assigneeRole: 'Broker/Applicant',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload supplemental materials such as financial statements, fleet or property schedules, and safety programs as applicable.',
       },
@@ -704,6 +713,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Required documents (W-9, insurance, etc.)',
         type: 'FILE_REQUEST',
         assigneeRole: 'Client Admin',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload required compliance documents such as W-9, certificate of insurance, and any other documents specified in your agreement.',
       },
@@ -796,6 +806,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Final billing acknowledgement',
         type: 'ACKNOWLEDGEMENT',
         assigneeRole: 'Client Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Review and acknowledge the final billing summary, including any remaining charges, credits, or refunds.',
       },
@@ -815,6 +826,7 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
         name: 'Final invoice',
         type: 'TODO',
         assigneeRole: 'Finance',
+        skipSequentialOrder: true,
         sampleDescription:
           'Generate and send the final invoice reflecting any prorated charges, credits, or refunds owed.',
       },

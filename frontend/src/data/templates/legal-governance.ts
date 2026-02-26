@@ -51,6 +51,7 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         name: 'Legal & financial review',
         type: 'TODO',
         assigneeRole: 'Legal Reviewer',
+        skipSequentialOrder: true,
         sampleDescription:
           'Review the contract for indemnification clauses, IP ownership, termination provisions, pricing structures, and payment terms. Document any concerns or required changes.',
       },
@@ -167,6 +168,7 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         name: 'Business justification',
         type: 'FILE_REQUEST',
         assigneeRole: 'Requestor',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload any supporting documentation for the business justification, such as competitive analysis or customer relationship history.',
       },
@@ -186,6 +188,7 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         name: 'Finance impact assessment',
         type: 'TODO',
         assigneeRole: 'Finance Reviewer',
+        skipSequentialOrder: true,
         sampleDescription:
           'Assess the financial impact of the requested exception. Consider revenue recognition, payment terms, and any precedent-setting implications.',
       },
@@ -515,6 +518,7 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         name: 'Tax & legal documents',
         type: 'FILE_REQUEST',
         assigneeRole: 'Target Company Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload all requested tax returns, legal filings, litigation records, and regulatory compliance documentation.',
       },
@@ -522,6 +526,7 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         name: 'Employment, IP & contracts',
         type: 'FILE_REQUEST',
         assigneeRole: 'Target Company Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload employment agreements, benefit plans, IP registrations, license agreements, and all material contracts.',
       },
@@ -758,6 +763,7 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         name: 'IT data preservation',
         type: 'TODO',
         assigneeRole: 'IT Administrator',
+        skipSequentialOrder: true,
         sampleDescription:
           'Implement technical preservation measures for relevant data sources. Suspend auto-deletion policies, preserve email archives, and secure backup tapes as needed.',
       },
@@ -903,6 +909,7 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         name: 'Post-formation checklist',
         type: 'TODO',
         assigneeRole: 'Legal Advisor',
+        skipSequentialOrder: true,
         sampleDescription:
           'Complete the post-formation checklist: open bank account, obtain business licenses, register for state taxes, and set up initial corporate records.',
       },
@@ -1024,6 +1031,7 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         name: 'Financial terms',
         type: 'TODO',
         assigneeRole: 'Finance',
+        skipSequentialOrder: true,
         sampleDescription:
           'Verify the financial terms of the franchise agreement including initial franchise fee, royalty rates, advertising fund contributions, and payment schedules.',
       },

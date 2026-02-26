@@ -88,6 +88,7 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         name: 'Direct deposit & benefits enrollment',
         type: 'FORM',
         assigneeRole: 'New Hire',
+        skipSequentialOrder: true,
         sampleDescription:
           'Set up your direct deposit and enroll in benefits. Provide your banking information and select your medical, dental, vision, and 401(k) options.',
         sampleFormFields: [
@@ -117,6 +118,7 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         name: 'System access & accounts',
         type: 'TODO',
         assigneeRole: 'HR Coordinator',
+        skipSequentialOrder: true,
         sampleDescription:
           'Create the new hire\'s email account, SSO credentials, and access to role-specific applications. Verify all accounts are functional before day one.',
       },
@@ -364,6 +366,7 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         name: 'Previous employer verification',
         type: 'FORM',
         assigneeRole: 'Previous Employer',
+        skipSequentialOrder: true,
         sampleDescription:
           'Verify the candidate\'s employment with your organization by confirming dates of employment, title, and eligibility for rehire.',
         sampleFormFields: [
@@ -378,6 +381,7 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         name: 'Education verification',
         type: 'TODO',
         assigneeRole: 'Background Vendor',
+        skipSequentialOrder: true,
         sampleDescription:
           'Verify the candidate\'s educational credentials with the listed institutions. Confirm degrees, dates of attendance, and any honors.',
       },
@@ -474,6 +478,7 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         name: 'Final expense submission',
         type: 'FILE_REQUEST',
         assigneeRole: 'Departing Employee',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload any outstanding expense reports and receipts for reimbursement processing before your last day.',
       },
@@ -493,6 +498,7 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         name: 'Access revocation',
         type: 'TODO',
         assigneeRole: 'IT Administrator',
+        skipSequentialOrder: true,
         sampleDescription:
           'Revoke all system access including email, SSO, VPN, cloud services, and building access. Archive the user account per retention policy.',
       },
@@ -608,6 +614,7 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         name: 'Destination home search',
         type: 'TODO',
         assigneeRole: 'Destination Services',
+        skipSequentialOrder: true,
         sampleDescription:
           'Help the employee find housing in the destination city based on their stated preferences. Arrange area tours, property viewings, and school visits.',
       },

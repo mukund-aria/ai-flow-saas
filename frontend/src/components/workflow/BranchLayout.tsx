@@ -7,6 +7,7 @@ interface BranchLayoutProps {
   step: Step;
   stepIndex: number;
   assigneeIndices: Map<string, number>;
+  allSteps?: Step[];
 }
 
 type PathOrOutcome = BranchPath | DecisionOutcome;
@@ -15,7 +16,7 @@ function getPathId(path: PathOrOutcome): string {
   return 'pathId' in path ? path.pathId : path.outcomeId;
 }
 
-export function BranchLayout({ step, stepIndex, assigneeIndices }: BranchLayoutProps) {
+export function BranchLayout({ step, stepIndex, assigneeIndices, allSteps }: BranchLayoutProps) {
   const paths = step.config?.paths || step.config?.outcomes || [];
   const isDecision = step.type === 'DECISION';
   const isParallel = step.type === 'PARALLEL_BRANCH';
@@ -82,6 +83,36 @@ export function BranchLayout({ step, stepIndex, assigneeIndices }: BranchLayoutP
 
                   // Calculate step number as "parentIndex.nestedIndex"
                   const stepNumber = `${stepIndex + 1}.${nestedIndex + 1}`;
+
+                  // GoTo — render as compact gold circle matching target label
+                  if (nestedStep.type === 'GOTO') {
+                    const targetDest = allSteps?.find(s => s.stepId === nestedStep.config?.targetStepId);
+                    const label = targetDest?.config?.name?.replace('Point ', '') || '?';
+                    return (
+                      <div key={nestedStep.stepId} className="w-full">
+                        {nestedIndex > 0 && <StepConnector showAddButton />}
+                        <div className="flex justify-center">
+                          <div className="w-8 h-8 rounded-full bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-amber-700 font-bold text-sm" title={`Go To ${targetDest?.config?.name || 'destination'}`}>
+                            {label}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // GoTo Destination inside branch (rare but handle it)
+                  if (nestedStep.type === 'GOTO_DESTINATION') {
+                    return (
+                      <div key={nestedStep.stepId} className="w-full">
+                        {nestedIndex > 0 && <StepConnector showAddButton />}
+                        <div className="flex justify-center">
+                          <div className="w-8 h-8 rounded-full bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-amber-700 font-bold text-sm">
+                            {nestedStep.config?.name?.replace('Point ', '') || '?'}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
 
                   return (
                     <div key={nestedStep.stepId} className="w-full">

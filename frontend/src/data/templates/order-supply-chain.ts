@@ -77,6 +77,7 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
         name: 'Shipping & BOL upload',
         type: 'FILE_REQUEST',
         assigneeRole: 'Shipping Coordinator',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload shipping documents including carrier assignment, tracking number, Bill of Lading (BOL), and packing slip.',
       },
@@ -84,6 +85,7 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
         name: 'Shipment notification',
         type: 'TODO',
         assigneeRole: 'Shipping Coordinator',
+        skipSequentialOrder: true,
         sampleDescription:
           'Automated notification: Send the shipment notification to the customer with carrier details, tracking number, and estimated delivery date.',
       },

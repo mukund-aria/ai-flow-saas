@@ -58,6 +58,7 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         name: 'Compliance questionnaire',
         type: 'FORM',
         assigneeRole: 'Vendor Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Complete the compliance questionnaire covering OFAC sanctions, anti-bribery policies, data privacy practices, diversity certifications, and references.',
         sampleFormFields: [
@@ -179,6 +180,7 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         name: 'Architecture documentation',
         type: 'FILE_REQUEST',
         assigneeRole: 'Vendor Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload your system architecture documentation showing data flows, network topology, and security boundaries relevant to our integration.',
       },
@@ -186,6 +188,7 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         name: 'Penetration test results',
         type: 'FILE_REQUEST',
         assigneeRole: 'Vendor Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload your most recent penetration test report and any remediation evidence for identified findings.',
       },
@@ -287,6 +290,7 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         name: 'Insurance certificates',
         type: 'FILE_REQUEST',
         assigneeRole: 'Vendor Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload current certificates of insurance showing active coverage that meets our minimum requirements.',
       },
@@ -294,6 +298,7 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         name: 'Compliance attestation',
         type: 'ACKNOWLEDGEMENT',
         assigneeRole: 'Vendor Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Attest that your organization continues to comply with all contractual obligations, regulatory requirements, and our vendor code of conduct.',
       },
@@ -374,6 +379,7 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         name: 'Ownership & structure disclosure',
         type: 'FILE_REQUEST',
         assigneeRole: 'Third Party Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload documents disclosing your organizational structure, beneficial ownership (25%+ owners), and any parent/subsidiary relationships.',
       },
@@ -403,6 +409,7 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         name: 'Compliance review',
         type: 'TODO',
         assigneeRole: 'Compliance Officer',
+        skipSequentialOrder: true,
         sampleDescription:
           'Review the third party against AML/KYC requirements, sanctions lists, and anti-corruption standards. Document compliance findings.',
       },
@@ -600,6 +607,7 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         name: 'NDA execution',
         type: 'ESIGN',
         assigneeRole: 'Partner Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Review and sign the mutual Non-Disclosure Agreement to protect confidential information shared during the partnership.',
         sampleDocumentRef: 'partner-nda.pdf',
@@ -620,6 +628,7 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         name: 'Sales & technical certification',
         type: 'TODO',
         assigneeRole: 'Partner Contact',
+        skipSequentialOrder: true,
         sampleDescription:
           'Complete the required sales and technical certification courses to become an authorized partner. Access training materials through the partner portal.',
       },
@@ -737,6 +746,7 @@ export const VENDOR_PARTNER_TEMPLATES: GalleryTemplate[] = [
         name: 'Credit terms setup',
         type: 'TODO',
         assigneeRole: 'Finance',
+        skipSequentialOrder: true,
         sampleDescription:
           'Establish credit terms based on the reseller\'s financial profile, set credit limits, and configure the account in the billing system.',
       },

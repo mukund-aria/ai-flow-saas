@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StepIcon } from './StepIcon';
 import { StepConfigPanel } from './StepConfigPanel';
-import { GripVertical, GitBranch, Pencil, Trash2, Copy } from 'lucide-react';
+import { GripVertical, GitBranch, Pencil, Trash2, Copy, Columns2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type { Step, AssigneePlaceholder } from '@/types';
@@ -45,6 +45,41 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
     color: '#6b7280',
     category: 'unknown',
   };
+
+  // GoTo Destination — render as compact gold marker
+  if (step.type === 'GOTO_DESTINATION') {
+    return (
+      <div ref={setNodeRef} style={style}>
+        <div
+          className={cn(
+            'flex items-center gap-2 py-1.5 px-2 group',
+            editMode && 'cursor-pointer',
+          )}
+          onClick={editMode ? () => setIsEditing(!isEditing) : undefined}
+        >
+          <div className="w-8 h-8 rounded-full bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-amber-700 font-bold text-sm shrink-0">
+            {step.config.name?.replace('Point ', '') || '?'}
+          </div>
+          <div className="h-0.5 w-6 bg-amber-300" />
+          <span className="text-xs font-medium text-amber-700">{step.config.name || 'Go To Destination'}</span>
+          {editMode && (
+            <div className="flex items-center gap-0.5 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={(e) => { e.stopPropagation(); setIsEditing(!isEditing); }} className="p-1 rounded text-gray-400 hover:text-violet-600"><Pencil className="w-3 h-3" /></button>
+              <button onClick={(e) => { e.stopPropagation(); removeStep(step.stepId); }} className="p-1 rounded text-gray-400 hover:text-red-600"><Trash2 className="w-3 h-3" /></button>
+            </div>
+          )}
+        </div>
+        {editMode && isEditing && (
+          <StepConfigPanel
+            step={step}
+            assigneePlaceholders={assigneePlaceholders}
+            onSave={(stepId, updates) => { updateStep(stepId, updates); setIsEditing(false); }}
+            onCancel={() => setIsEditing(false)}
+          />
+        )}
+      </div>
+    );
+  }
 
   const hasBranches =
     'paths' in step.config && Array.isArray(step.config.paths) && step.config.paths.length > 0;
@@ -88,6 +123,9 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
           <span className="text-xs font-semibold text-white tracking-wide">
             {meta.label}
           </span>
+          {step.config.skipSequentialOrder && (
+            <span title="Skip sequential order"><Columns2 className="w-3 h-3 text-white/80 ml-auto" /></span>
+          )}
           {isComplex && (
             <GitBranch className="w-3 h-3 text-white/80 ml-auto" />
           )}

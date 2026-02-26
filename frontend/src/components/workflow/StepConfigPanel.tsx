@@ -4,7 +4,7 @@ import { FormFieldsBuilder } from './FormFieldsBuilder';
 import { PDFFormConfigEditor } from './PDFFormConfigEditor';
 import { StepReminderOverride } from './StepReminderOverride';
 import { DDRTextInput } from './DDRTextInput';
-import { Plus, X, GripVertical, Sparkles } from 'lucide-react';
+import { Plus, X, GripVertical, Sparkles, ChevronUp, ChevronDown, Info } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type {
   Step, StepConfig, AssigneePlaceholder, FormField, BranchPath, DecisionOutcome,
@@ -1230,6 +1230,13 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
   const [formFields, setFormFields] = useState<FormField[]>(step.config.formFields || []);
   const [reminderOverride, setReminderOverride] = useState(step.config.reminderOverride);
 
+  // Skip sequential order (for human action steps)
+  const [skipSequentialOrder, setSkipSequentialOrder] = useState(step.config.skipSequentialOrder || false);
+  const [showAdditional, setShowAdditional] = useState(!!step.config.skipSequentialOrder);
+
+  // GoTo target step
+  const [targetStepId, setTargetStepId] = useState(step.config.targetStepId || '');
+
   // Branch paths (for branch step types)
   const isBranchStep = ['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH'].includes(step.type);
   const [branchPaths, setBranchPaths] = useState<BranchPath[]>(
@@ -1337,6 +1344,12 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
   // Steps that support due dates
   const hasDueDate = ['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION', 'ACKNOWLEDGEMENT', 'ESIGN', 'PDF_FORM'].includes(step.type);
 
+  // Human action steps that can skip sequential order
+  const isHumanAction = ['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'ACKNOWLEDGEMENT', 'ESIGN', 'DECISION', 'CUSTOM_ACTION', 'WEB_APP', 'PDF_FORM'].includes(step.type);
+
+  // GoTo destinations available for targeting
+  const gotoDestinations = workflow?.steps.filter(s => s.type === 'GOTO_DESTINATION') || [];
+
   const handleSave = () => {
     const updates: Partial<StepConfig> = {
       name: name.trim(),
@@ -1410,6 +1423,14 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
     const stepsWithReminders = ['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION', 'ESIGN'];
     if (stepsWithReminders.includes(step.type) && reminderOverride) {
       updates.reminderOverride = reminderOverride;
+    }
+
+    if (isHumanAction) {
+      updates.skipSequentialOrder = skipSequentialOrder || undefined;
+    }
+
+    if (step.type === 'GOTO') {
+      updates.targetStepId = targetStepId || undefined;
     }
 
     onSave(step.stepId, updates);
@@ -1645,6 +1666,73 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
             value={reminderOverride as { useFlowDefaults: boolean } | undefined}
             onChange={setReminderOverride as (v: { useFlowDefaults: boolean }) => void}
           />
+        </div>
+      )}
+
+      {/* GoTo Target Selector */}
+      {step.type === 'GOTO' && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <label className="block text-xs font-medium text-gray-600 mb-1">
+            Target Go To Destination *
+          </label>
+          {gotoDestinations.length === 0 ? (
+            <p className="text-xs text-gray-400 italic">No Go To Destination steps in this flow. Add one first.</p>
+          ) : (
+            <select
+              value={targetStepId}
+              onChange={(e) => setTargetStepId(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+            >
+              <option value="">Select destination...</option>
+              {gotoDestinations.map(dest => (
+                <option key={dest.stepId} value={dest.stepId}>
+                  {dest.config.name || 'Unnamed destination'}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
+
+      {/* GoTo Destination info */}
+      {step.type === 'GOTO_DESTINATION' && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <p className="text-xs text-gray-500">
+            This is a destination marker. Go To steps inside branches can jump back to this point.
+          </p>
+        </div>
+      )}
+
+      {/* Additional Options (for human action steps) */}
+      {isHumanAction && (
+        <div className="pt-3 border-t border-gray-100 mb-4">
+          <button
+            type="button"
+            onClick={() => setShowAdditional(!showAdditional)}
+            className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            {showAdditional ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            Additional options
+          </button>
+          {showAdditional && (
+            <div className="mt-3 space-y-3">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={skipSequentialOrder}
+                  onChange={(e) => setSkipSequentialOrder(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                />
+                <span className="text-sm text-gray-700">Skip sequential order</span>
+                <span className="relative group">
+                  <Info className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    This step starts immediately without waiting for the previous step to finish.
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
         </div>
       )}
 

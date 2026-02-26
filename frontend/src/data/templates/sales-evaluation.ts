@@ -615,6 +615,7 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
         name: 'Pricing & commercial terms',
         type: 'FILE_REQUEST',
         assigneeRole: 'Proposal Lead',
+        skipSequentialOrder: true,
         sampleDescription:
           'Upload the pricing model and commercial terms for the RFP response, including cost breakdown, payment terms, and any volume or term discounts.',
       },

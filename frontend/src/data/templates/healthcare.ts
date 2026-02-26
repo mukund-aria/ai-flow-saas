@@ -56,6 +56,7 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         name: 'Patient consent',
         type: 'ACKNOWLEDGEMENT',
         assigneeRole: 'Patient',
+        skipSequentialOrder: true,
         sampleDescription: 'Acknowledge that a prior authorization request has been submitted on your behalf and confirm your understanding that the treatment is pending payer approval.',
       },
       {
@@ -200,6 +201,7 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         name: 'Prior medical records request',
         type: 'FILE_REQUEST',
         assigneeRole: 'Prior Provider',
+        skipSequentialOrder: true,
         sampleDescription: 'Upload the requested medical records for the patient including clinical notes, lab results, imaging reports, and treatment history.',
       },
       {
@@ -281,12 +283,14 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         name: 'Identity verification',
         type: 'FILE_REQUEST',
         assigneeRole: 'Patient',
+        skipSequentialOrder: true,
         sampleDescription: 'Upload a copy of your government-issued photo ID for identity verification before records can be released.',
       },
       {
         name: 'Receiving party confirmation',
         type: 'ACKNOWLEDGEMENT',
         assigneeRole: 'Receiving Party',
+        skipSequentialOrder: true,
         sampleDescription: 'Confirm your identity as the designated receiving party and acknowledge your obligation to handle the medical records in compliance with applicable privacy regulations.',
       },
       {
@@ -430,6 +434,7 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
         name: 'Re-credentialing schedule',
         type: 'TODO',
         assigneeRole: 'Credentialing Coordinator',
+        skipSequentialOrder: true,
         sampleDescription: 'Set up the 36-month re-credentialing trigger, enroll the provider in continuous NPDB monitoring, and configure license expiration alerts in the credentialing system.',
       },
     ],

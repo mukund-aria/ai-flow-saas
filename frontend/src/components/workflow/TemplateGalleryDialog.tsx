@@ -78,6 +78,7 @@ const STEP_TYPE_ICONS: Record<string, React.ElementType> = {
   WEB_APP: LayoutGrid,
   MILESTONE: Flag,
   SINGLE_CHOICE_BRANCH: GitBranch,
+  PARALLEL_BRANCH: GitBranch,
 };
 
 const STEP_TYPE_COLORS: Record<string, string> = {
@@ -93,6 +94,7 @@ const STEP_TYPE_COLORS: Record<string, string> = {
   CUSTOM_ACTION: 'bg-indigo-100 text-indigo-600',
   WEB_APP: 'bg-cyan-100 text-cyan-600',
   SINGLE_CHOICE_BRANCH: 'bg-amber-100 text-amber-600',
+  PARALLEL_BRANCH: 'bg-green-100 text-green-600',
 };
 
 
@@ -148,52 +150,77 @@ function galleryTemplateToDefinition(template: GalleryTemplate, samplePDF?: PDFU
     }
   }
 
+  // Helper to convert a single gallery step to a step config
+  function convertStepConfig(step: GalleryTemplate['steps'][number], samplePDF?: PDFUploadResult): Record<string, unknown> {
+    const config: Record<string, unknown> = {
+      name: step.name,
+      assignee: step.assigneeRole,
+      ...(step.sampleDescription ? { description: step.sampleDescription } : {}),
+    };
+
+    if (step.skipSequentialOrder) {
+      config.skipSequentialOrder = true;
+    }
+
+    if (step.type === 'FORM') {
+      config.formFields = step.sampleFormFields || [];
+    } else if (step.type === 'QUESTIONNAIRE') {
+      config.questionnaire = { questions: [] };
+    } else if (step.type === 'ESIGN') {
+      config.esign = {
+        signingOrder: 'SEQUENTIAL',
+        ...(step.sampleDocumentRef ? { documentName: step.sampleDocumentRef } : {}),
+      };
+    } else if (step.type === 'PDF_FORM') {
+      config.pdfForm = {
+        fields: samplePDF ? samplePDF.fields : [],
+        ...(samplePDF ? { documentUrl: samplePDF.documentUrl } : {}),
+        ...(step.sampleDocumentRef ? { documentDescription: step.sampleDocumentRef } : {}),
+      };
+    } else if (step.type === 'FILE_REQUEST') {
+      config.fileRequest = { maxFiles: 5 };
+    } else if (step.type === 'SINGLE_CHOICE_BRANCH') {
+      config.paths = (step.samplePaths || [{ label: 'Path A' }, { label: 'Path B' }]).map((p, pi) => ({
+        pathId: `path-${Date.now()}-${pi}-${Math.random().toString(36).slice(2, 5)}`,
+        label: p.label,
+        steps: (p.steps || []).map((nested, ni) => ({
+          stepId: `${generateStepId()}-nested-${pi}-${ni}`,
+          type: nested.type === 'MILESTONE' ? 'TODO' : nested.type,
+          order: ni,
+          config: convertStepConfig(nested, samplePDF),
+        })),
+      }));
+    } else if (step.type === 'PARALLEL_BRANCH') {
+      config.paths = (step.samplePaths || [{ label: 'Path A' }, { label: 'Path B' }]).map((p, pi) => ({
+        pathId: `path-${Date.now()}-${pi}-${Math.random().toString(36).slice(2, 5)}`,
+        label: p.label,
+        steps: (p.steps || []).map((nested, ni) => ({
+          stepId: `${generateStepId()}-nested-${pi}-${ni}`,
+          type: nested.type === 'MILESTONE' ? 'TODO' : nested.type,
+          order: ni,
+          config: convertStepConfig(nested, samplePDF),
+        })),
+      }));
+    } else if (step.type === 'DECISION') {
+      config.outcomes = [
+        { outcomeId: `outcome-${Date.now()}-0`, label: 'Approved', steps: [] },
+        { outcomeId: `outcome-${Date.now()}-1`, label: 'Rejected', steps: [] },
+      ];
+    }
+
+    return config;
+  }
+
   // Create steps with sample data from gallery template (excluding milestones)
   let order = 0;
   const steps = stepEntries
     .filter(e => !e.isMilestone)
     .map(({ stepId, original: step }) => {
-      const config: Record<string, unknown> = {
-        name: step.name,
-        assignee: step.assigneeRole,
-        ...(step.sampleDescription ? { description: step.sampleDescription } : {}),
-      };
-
-      if (step.type === 'FORM') {
-        config.formFields = step.sampleFormFields || [];
-      } else if (step.type === 'QUESTIONNAIRE') {
-        config.questionnaire = { questions: [] };
-      } else if (step.type === 'ESIGN') {
-        config.esign = {
-          signingOrder: 'SEQUENTIAL',
-          ...(step.sampleDocumentRef ? { documentName: step.sampleDocumentRef } : {}),
-        };
-      } else if (step.type === 'PDF_FORM') {
-        config.pdfForm = {
-          fields: samplePDF ? samplePDF.fields : [],
-          ...(samplePDF ? { documentUrl: samplePDF.documentUrl } : {}),
-          ...(step.sampleDocumentRef ? { documentDescription: step.sampleDocumentRef } : {}),
-        };
-      } else if (step.type === 'FILE_REQUEST') {
-        config.fileRequest = { maxFiles: 5 };
-      } else if (step.type === 'SINGLE_CHOICE_BRANCH') {
-        config.paths = (step.samplePaths || [{ label: 'Path A' }, { label: 'Path B' }]).map((p, pi) => ({
-          pathId: `path-${Date.now()}-${pi}-${Math.random().toString(36).slice(2, 5)}`,
-          label: p.label,
-          steps: [],
-        }));
-      } else if (step.type === 'DECISION') {
-        config.outcomes = [
-          { outcomeId: `outcome-${Date.now()}-0`, label: 'Approved', steps: [] },
-          { outcomeId: `outcome-${Date.now()}-1`, label: 'Rejected', steps: [] },
-        ];
-      }
-
       return {
         stepId,
         type: step.type,
         order: order++,
-        config,
+        config: convertStepConfig(step, samplePDF),
       };
     });
 
@@ -497,20 +524,35 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                           const StepIcon = STEP_TYPE_ICONS[step.type] || FileText;
                           const nextNonMilestone = selectedTemplate.steps.slice(i + 1).find(s => s.type !== 'MILESTONE');
                           const isLast = !nextNonMilestone && !selectedTemplate.steps.slice(i + 1).some(s => s.type !== 'MILESTONE');
+                          const hasPaths = (step.type === 'PARALLEL_BRANCH' || step.type === 'SINGLE_CHOICE_BRANCH') && step.samplePaths && step.samplePaths.length > 0;
                           return (
-                            <div key={i} className="flex items-start gap-2.5">
-                              <div className="flex flex-col items-center">
-                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${STEP_TYPE_COLORS[step.type] || 'bg-gray-100 text-gray-600'}`}>
-                                  <StepIcon className="w-3.5 h-3.5" />
+                            <div key={i}>
+                              <div className="flex items-start gap-2.5">
+                                <div className="flex flex-col items-center">
+                                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${STEP_TYPE_COLORS[step.type] || 'bg-gray-100 text-gray-600'}`}>
+                                    <StepIcon className="w-3.5 h-3.5" />
+                                  </div>
+                                  {(!isLast || hasPaths) && (
+                                    <div className="w-px h-6 bg-gray-200 my-0.5" />
+                                  )}
                                 </div>
-                                {!isLast && (
-                                  <div className="w-px h-6 bg-gray-200 my-0.5" />
-                                )}
+                                <div className="min-w-0 pt-1 pb-2">
+                                  <p className="text-xs font-medium text-gray-700 leading-tight truncate">{step.name}</p>
+                                  <p className="text-[10px] text-gray-400 truncate">{step.assigneeRole}</p>
+                                </div>
                               </div>
-                              <div className="min-w-0 pt-1 pb-2">
-                                <p className="text-xs font-medium text-gray-700 leading-tight truncate">{step.name}</p>
-                                <p className="text-[10px] text-gray-400 truncate">{step.assigneeRole}</p>
-                              </div>
+                              {hasPaths && step.samplePaths && (
+                                <div className="ml-3 pl-3 border-l-2 border-gray-200 space-y-1 mb-2">
+                                  {step.samplePaths.map((p, pi) => (
+                                    <div key={pi} className="flex items-center gap-1.5">
+                                      <div className={`w-2 h-2 rounded-full ${step.type === 'PARALLEL_BRANCH' ? 'bg-green-400' : 'bg-amber-400'}`} />
+                                      <span className="text-[10px] text-gray-500 truncate">
+                                        {p.label}{p.steps && p.steps.length > 0 ? ` (${p.steps.length})` : ''}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           );
                         })}
