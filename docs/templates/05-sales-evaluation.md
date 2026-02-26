@@ -22,7 +22,8 @@
 **Recommendations**:
 - Connect to your CRM (HubSpot, Salesforce) to auto-create a trial opportunity and sync engagement data as the prospect progresses through milestones
 - Integrate with your product analytics platform (Mixpanel, Amplitude, Pendo) to pull real-time usage metrics into the mid-trial check-in step
-- Set up Slack notifications for the sales rep when mid-trial survey responses indicate low satisfaction or blockers, enabling faster intervention
+- Use AI to analyze mid-trial survey responses and usage data to auto-generate a personalized demo agenda focused on the prospect's underexplored features and stated blockers
+- Chain with the Proposal & SOW Delivery template when the trial outcome decision is "convert" to seamlessly transition into contract execution
 
 **Roles**: Prospect, Sales Rep
 
@@ -80,8 +81,8 @@
 **Recommendations**:
 - Connect to Salesforce to auto-update the opportunity stage as the pilot moves through scoping, mid-review, and go/no-go decision milestones
 - Integrate with your product analytics dashboard to auto-populate mid-pilot status review forms with actual adoption and usage metrics
-- Push signed contracts to DocuSign or Adobe Sign for tamper-evident e-signature execution and automatic archival
-- Set up Teams or Slack notifications for the steering committee when mid-pilot reviews are due or when the go/no-go decision is pending
+- Use AI to generate the evaluation report by comparing actual pilot metrics against defined success criteria and quantifying business impact with a data-driven go/no-go recommendation
+- Chain with the Quarterly Business Review (QBR) template after go-live to establish an ongoing success measurement cadence with the new customer
 
 **Roles**: Prospect Sponsor, Pilot Lead
 
@@ -138,9 +139,9 @@
 
 **Recommendations**:
 - Integrate with your IT asset management or vendor risk management platform (ServiceNow, OneTrust) to auto-register the AI tool and track its risk classification
-- Connect to your data governance catalog (Collibra, Alation) to auto-flag which data types require DPA or DPIA review before the pilot starts
-- Set up automated Slack alerts for IT Security and the Data Privacy Officer when new AI pilot requests are submitted for expedited triage
+- Use AI to aggregate and analyze mid-pilot feedback surveys, calculating accuracy scores, time-saved estimates, and sentiment trends to auto-draft the final evaluation report
 - Push final evaluation reports and approval records to your GRC platform for enterprise AI governance audit trail
+- Chain with the Vendor Security Assessment template to run a full security review before any AI tool handling sensitive data enters the pilot phase
 
 **Roles**: Business Sponsor, AI Lead, IT Security, Data Privacy Officer, Pilot Users
 
@@ -199,8 +200,8 @@
 **Recommendations**:
 - Connect to your CRM (Salesforce, HubSpot) to auto-update the deal stage and log proposal delivery, Q&A, and sign-off events on the opportunity timeline
 - Integrate with DocuSign or Adobe Sign for the SOW e-signature step to provide a legally binding, tamper-evident signing experience
-- Set up Slack or email notifications for the delivery team when the SOW is signed so they can begin implementation planning immediately
-- Push signed SOW documents and client requirements to your project management tool (Asana, Monday, Jira) to auto-create the implementation project
+- Use AI to draft personalized Q&A responses by analyzing the client's submitted questions against the proposal terms, pricing model, and prior deal context
+- Chain with the Engagement Kickoff template upon SOW signature to seamlessly hand off from sales to the delivery team with full context
 
 **Roles**: Client Prospect, Sales Lead
 
@@ -255,8 +256,8 @@
 **Recommendations**:
 - Integrate with your CRM to auto-log the RFP opportunity, track go/no-go decisions, and update deal stage as the response progresses through review and submission
 - Connect to a content library or proposal management tool (Loopio, Responsive, Qvidian) to help SMEs pull pre-approved answers for common RFP requirements
-- Set up calendar integrations to auto-schedule internal review meetings and deadline reminders aligned with the RFP submission timeline
-- Push the final submitted response and supporting documents to SharePoint or Google Drive for centralized archival and win/loss analysis
+- Use AI to parse the uploaded RFP document, extract and categorize each requirement by functional area, and auto-generate the SME assignment matrix with section-level deadlines
+- Chain with the Proposal & SOW Delivery template when the RFP is awarded to move directly into formal contract execution
 
 **Roles**: Proposal Lead, SMEs, Executive Sponsor
 

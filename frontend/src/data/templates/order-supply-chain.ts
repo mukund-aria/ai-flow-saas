@@ -24,8 +24,8 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your ERP (NetSuite, SAP) to auto-create sales orders from submitted POs and sync shipment tracking and invoice status back to the customer record',
       'Connect to your WMS (Manhattan, Oracle WMS) to auto-trigger pick-pack workflows when orders are confirmed and update inventory levels in real time',
-      'Set up automated email or SMS notifications to customers at each milestone (order confirmed, shipped, delivered) with carrier tracking links',
-      'Push invoice and proof-of-delivery documents to your accounting system (QuickBooks, Sage) for automatic accounts receivable reconciliation',
+      'Use AI to extract line items from uploaded PO documents and auto-match against catalog SKUs, flagging pricing discrepancies or discontinued items before warehouse confirmation',
+      'Chain with the RMA / Return Processing template when the customer reports discrepancies or damages at delivery confirmation',
     ],
     steps: [
       {
@@ -124,8 +124,8 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Connect to your ERP (SAP, Oracle, NetSuite) to auto-generate purchase orders from approved requisitions and sync goods receipt data for three-way match verification',
       'Integrate with your procurement platform (Coupa, Ariba) to leverage negotiated contract pricing, preferred vendor catalogs, and automated budget checks',
-      'Set up Slack or Teams notifications to alert approvers when requisitions are pending, and notify requisitioners when POs are dispatched to vendors',
-      'Push approved invoices to your accounts payable system (QuickBooks, Sage) to auto-schedule vendor payments based on negotiated payment terms',
+      'Use AI to auto-perform the three-way match by comparing PO line items, goods receipt quantities, and vendor invoice amounts, flagging mismatches for procurement review',
+      'Set up auto-launch when inventory levels drop below reorder points to generate purchase requisitions without manual intervention',
     ],
     steps: [
       {
@@ -237,8 +237,8 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your ERP (NetSuite, SAP) to auto-create RMA records, update inventory upon receipt, and trigger credit memo or replacement order processing',
       'Connect to your shipping platform (ShipStation, EasyPost) to auto-generate prepaid return shipping labels and track inbound return shipments',
-      'Set up automated email notifications to customers at each stage (RMA approved, return received, refund processed) with tracking and reference numbers',
-      'Push disposition and defect data to your quality management system (QMS) to identify recurring product issues and trigger supplier corrective actions',
+      'Enable AI to classify returned product defects from uploaded photos and inspection notes, then auto-route to the appropriate disposition path (restock, repair, scrap, or return to vendor)',
+      'Chain with the Supplier Corrective Action Request (SCAR) template when inspection reveals a recurring supplier-caused defect requiring formal root cause analysis',
     ],
     steps: [
       {
@@ -352,8 +352,8 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your CRM (Salesforce, HubSpot) to auto-log complaints against customer accounts, track resolution history, and flag at-risk accounts for your sales team',
       'Connect to your quality management system (QMS) to auto-create corrective action records and link complaint data to root cause analysis and CAPA workflows',
-      'Set up Slack or Teams alerts to escalate critical or safety-related complaints immediately to quality leadership and customer success managers',
-      'Push resolved complaint data and corrective action summaries to your BI platform (Power BI, Tableau) to track complaint trends, resolution times, and recurring issues',
+      'Use AI to analyze incoming complaint text and photos against historical complaint data, auto-classify severity, identify pattern matches with prior issues, and suggest root cause hypotheses for the Quality Lead',
+      'Chain with the Supplier Corrective Action Request (SCAR) template when root cause analysis traces the defect to a specific supplier',
     ],
     steps: [
       {
@@ -470,8 +470,8 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your freight forwarder or TMS (Flexport, Descartes, CargoWise) to auto-populate shipment details, pull commercial documents, and track vessel arrival status',
       'Connect to your customs brokerage platform (ACE, Descartes CustomsInfo) to auto-file ISF and entry documents and sync tariff classifications with your product catalog',
-      'Set up automated email alerts to the importer when duty estimates are ready for approval, when government agency holds are applied, and when cargo is released for pickup',
       'Push landed cost data (duties, fees, freight) to your ERP (SAP, NetSuite) for accurate inventory costing and accounts payable processing',
+      'Use AI to auto-classify commodities to the correct HTS tariff code by analyzing product descriptions and commercial invoice details, reducing misclassification penalties',
     ],
     steps: [
       {
@@ -568,8 +568,8 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your quality management system (SAP QM, ETQ, MasterControl) to auto-create non-conformance records and link SCARs to incoming inspection data and supplier scorecards',
       'Connect to your supplier portal or SRM platform (Coupa, SAP Ariba) to auto-notify suppliers of new SCARs and track response deadlines against contractual SLAs',
-      'Set up Slack or Teams alerts to escalate overdue SCAR responses to the procurement lead and quality manager, with automatic deadline reminders to the supplier',
-      'Push SCAR closure data and corrective action effectiveness metrics to your BI dashboard (Power BI, Tableau) for supplier performance trending and sourcing decisions',
+      'Use AI to evaluate the supplier\u2019s uploaded root cause analysis for completeness, checking that the methodology (8D, 5 Whys) is properly applied and all contributing factors are addressed before the Quality Engineer review',
+      'Chain with the First Article Inspection (FAI) template when corrective actions involve a process or tooling change that requires re-validation of the affected part',
     ],
     steps: [
       {
@@ -674,8 +674,8 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your PLM system (Teamcenter, Windchill, Arena) to auto-pull part numbers, revision levels, drawing files, and specification requirements into the FAI request',
       'Connect to your CMM or metrology software (PC-DMIS, Zeiss Calypso) to auto-import dimensional inspection data into the AS9102 Form 3 characteristic accountability report',
-      'Set up automated email notifications to the engineering reviewer when FAI packages are uploaded, and notify the supplier when disposition decisions are issued',
-      'Push approved FAI records to your quality management system (SAP QM, ETQ) to update part approval status and clear production holds',
+      'Use AI to compare Form 3 dimensional measurements against drawing tolerances and auto-flag out-of-spec characteristics with deviation severity before the Quality Engineer review',
+      'Chain with the Supplier Corrective Action Request (SCAR) template when FAI disposition is rejected, to initiate formal root cause analysis and corrective action from the supplier',
     ],
     steps: [
       {
@@ -772,8 +772,9 @@ export const ORDER_SUPPLY_CHAIN_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your ERP (SAP, Oracle, NetSuite) to auto-identify affected lot/batch numbers across the distribution chain and generate inventory quarantine orders at each location',
       'Connect to your EDI or supply chain network (SPS Commerce, TrueCommerce) to broadcast recall notifications to all distributors and retailers simultaneously with acknowledgement tracking',
-      'Set up automated email and SMS alerts to the regulatory liaison when inventory reconciliation data is submitted, and escalate to leadership if recovery rates fall below target thresholds',
       'Push recall completion data and recovery metrics to your regulatory filing platform (CPSC SaferProducts, FDA RES) for streamlined agency reporting and compliance documentation',
+      'Use AI to aggregate distributor and retailer inventory reconciliation data in real time, calculate recovery rates by channel, and auto-flag locations with low response rates for targeted follow-up',
+      'Chain with the Supplier Corrective Action Request (SCAR) template to drive formal root cause analysis and corrective action with the supplier responsible for the defect',
     ],
     steps: [
       {

@@ -22,7 +22,8 @@
 **Recommendations**:
 - Connect to your CRM (Salesforce, HubSpot) to auto-populate deal details in the sales-to-delivery handoff form
 - Integrate with your PSA tool (ConnectWise, Autotask) to auto-create the project and sync milestones once the plan is approved
-- Set up Slack or Teams notifications to alert the delivery team when the client approves the project plan
+- Use AI to auto-analyze the pre-kickoff requirements and generate a draft project plan with milestones, risk flags, and resource recommendations based on similar past engagements
+- Chain with the Deliverable Review & Client Approval template when the first project milestone is ready for client review
 
 **Roles**: Client Sponsor, Implementation Lead
 
@@ -84,7 +85,8 @@
 **Recommendations**:
 - Connect to Google Drive or SharePoint to auto-archive approved deliverables and maintain version history
 - Integrate with your project management tool (Asana, Monday.com, Jira) to auto-update task status when deliverables are approved
-- Set up email or Slack notifications to alert the service owner immediately when client feedback is submitted
+- Use AI to auto-summarize deliverable feedback from multiple reviewers into a consolidated action list with priority ranking for the service owner
+- Chain with the Change Request / Scope Change template when client feedback requires work beyond the original engagement scope
 
 **Roles**: Service Owner, Client Reviewer, Client Approver
 
@@ -127,8 +129,8 @@
 **Recommendations**:
 - Connect to your monitoring platform (Datadog, PagerDuty, New Relic) to auto-trigger post-cutover verification checks and escalate failures
 - Integrate with your PSA tool (ConnectWise, Autotask) to auto-transition the project from implementation to hypercare support phase
-- Set up Teams or Slack war-room notifications during the cutover window to keep all stakeholders informed in real time
-- Connect to your ticketing system (ServiceNow, Zendesk) to auto-create a hypercare support queue when go-live is authorized
+- Use AI to auto-score go-live readiness by analyzing the assessment form, open defects, and training completion against historical go-live success benchmarks
+- Chain with the Client Service Request Fulfillment template during the hypercare period so post-go-live issues are tracked in a structured workflow
 
 **Roles**: Client Sponsor, Implementation Lead
 
@@ -184,8 +186,9 @@
 
 **Recommendations**:
 - Connect to your PSA tool (ConnectWise, Autotask) or ticketing system (ServiceNow, Freshdesk) to auto-create service tickets from intake submissions
-- Set up Slack or Teams notifications to alert the service owner and manager when high-priority requests are submitted
 - Integrate with your billing system to auto-log billable hours and associate completed work with the client account
+- Use AI to auto-categorize and prioritize incoming service requests based on request description, client SLA tier, and historical resolution patterns
+- Chain with the Change Request / Scope Change template when a service request is determined to exceed the contracted service scope
 
 **Roles**: Client Requestor, Service Owner, Manager
 
@@ -237,7 +240,8 @@
 **Recommendations**:
 - Integrate with DocuSign or Adobe Sign to streamline the SOW amendment e-signature process with audit trail
 - Connect to your PSA tool (ConnectWise, Autotask) to auto-update project scope, budget, and timeline when the change is approved
-- Set up email notifications to alert the engagement manager and finance team when a cost/timeline impact is acknowledged by the client
+- Use AI to auto-generate the impact assessment draft by analyzing the change request against the current project plan, resource utilization, and budget remaining
+- Chain with the Deliverable Review & Client Approval template when the approved scope change produces a new deliverable requiring client sign-off
 
 **Roles**: Client Requestor, Engagement Manager, Approver
 
@@ -283,8 +287,8 @@
 **Recommendations**:
 - Connect to your practice management system (CCH Axcess, Lacerte, Drake) to auto-create the tax engagement and sync client data
 - Integrate with a secure document portal (SmartVault, ShareFile) for encrypted tax document collection and delivery
-- Set up automated email reminders to clients with outstanding document requests as tax deadlines approach
-- Connect to your e-file system to auto-submit returns once the client signs the e-file authorization
+- Use AI to auto-scan uploaded income and deduction documents, extract key figures (W-2 wages, 1099 amounts, mortgage interest), and flag missing documents against the prior year return
+- Schedule annual auto-launch for each client 90 days before their filing deadline based on entity type (April 15 for individuals, March 15 for partnerships/S-corps)
 
 **Roles**: Client/Taxpayer, Tax Preparer, Tax Reviewer
 

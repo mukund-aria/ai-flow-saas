@@ -21,9 +21,9 @@
 
 **Recommendations**:
 - Connect to Salesforce or HubSpot to auto-trigger this flow when a deal moves to Closed Won
-- Set up Slack or Microsoft Teams notifications to alert your implementation team when a new onboarding starts
+- Use AI to analyze the technical requirements questionnaire and auto-generate a tailored implementation plan with estimated timelines per integration
 - Integrate with your SSO provider (Okta, Azure AD) to auto-provision user accounts after UAT sign-off
-- Push onboarding milestones back to your CRM so sales and CS teams have real-time visibility into implementation progress
+- Chain with the Quarterly Business Review template after onboarding completes to establish an ongoing check-in cadence
 
 **Roles**: Customer Contact, Implementation Lead, CSM
 
@@ -89,10 +89,10 @@
 - [ ] Upload your account agreement document for e-signature (replaces sample)
 
 **Recommendations**:
-- Integrate with your core banking or wealth management platform to auto-trigger this flow when a new account application is created
 - Connect to a KYC/AML screening service (LexisNexis, Refinitiv World-Check) to automate sanctions and PEP screening
-- Set up Slack or email escalation alerts when a high-risk client is flagged so compliance officers can respond immediately
+- Use AI to auto-review uploaded identity documents and flag missing pages, expired IDs, or mismatched addresses before the analyst step
 - Integrate with DocuSign or Adobe Sign for the account agreement e-signature step to capture a legally binding audit trail
+- Schedule a Periodic KYC/KYB Refresh flow to auto-launch annually for high-risk clients or every three years for standard-risk clients
 
 **Roles**: Client, KYC Analyst, Compliance Officer
 
@@ -154,9 +154,9 @@
 
 **Recommendations**:
 - Connect to your practice management system (Canopy, Karbon, or CCH Axcess) to auto-create client records upon onboarding completion
+- Use AI to scan uploaded prior-year returns and auto-extract entity type, filing jurisdictions, and revenue figures to pre-populate the client profile
 - Integrate with QuickBooks Online or Xero to auto-link the client accounting file once bookkeeping access is provided
-- Set up automated reminders via email or Slack when tax authorization forms or prior-year documents are overdue
-- Push completed engagement data to your CRM to keep business development and partner teams informed of new client status
+- Pair with the Tax Return Preparation template to kick off the first-year engagement immediately after onboarding completes
 
 **Roles**: Client, Engagement Manager
 
@@ -224,8 +224,8 @@
 **Recommendations**:
 - Connect to your case management system (Clio, MyCase, or PracticePanther) to auto-create matters and populate client records upon intake completion
 - Integrate with your conflicts database to auto-run conflict checks when new party names are submitted in the intake form
-- Set up calendar integrations (Google Calendar, Outlook) to auto-schedule the kickoff meeting once the engagement letter is signed
-- Push new matter data to your billing system (LEDES/UTBMS) so billing codes and rate cards are configured from day one
+- Use AI to analyze uploaded supporting documents and auto-generate a matter summary with key dates, parties, and potential issues for the intake attorney
+- Pair with the Contract Review template for corporate matters or NDA template for engagements requiring immediate confidentiality agreements
 
 **Roles**: Client, Intake Attorney, Paralegal
 
@@ -272,9 +272,9 @@
 
 **Recommendations**:
 - Connect to your agency management system (Applied Epic, Vertafore AMS360) to auto-trigger this flow when a new submission is logged
+- Use AI to extract key data from uploaded ACORD applications and loss runs, auto-populating the underwriting workbench and flagging loss trends
 - Integrate with ACORD data exchange to pre-populate insured information from standard ACORD forms and reduce manual data entry
-- Set up Slack or Teams alerts to notify underwriters when new submissions arrive so triage begins within your SLA targets
-- Push issued policy data back to your policy administration system to auto-create records and generate certificates of insurance
+- Schedule a Policy Renewal flow to auto-launch 90 days before policy expiration to begin the renewal process
 
 **Roles**: Broker/Applicant, Underwriter
 
@@ -324,9 +324,9 @@
 
 **Recommendations**:
 - Connect to Salesforce, HubSpot, or Pipedrive to auto-trigger this flow when a deal moves to Closed Won
+- Use AI to auto-review uploaded compliance documents (W-9, insurance certificates) and flag missing fields or expired coverage before the verification step
 - Integrate with DocuSign or Adobe Sign for the contract execution step to streamline e-signature collection
-- Set up Slack or Microsoft Teams notifications to alert operations when a new client is ready for internal setup
-- Sync completed onboarding data back to your CRM so account managers have full context for ongoing relationship management
+- Chain with the Quarterly Business Review template after onboarding completes to establish a recurring client check-in cadence
 
 **Roles**: Client Admin, Account Manager, Operations Lead
 
@@ -377,9 +377,9 @@
 
 **Recommendations**:
 - Connect to your CRM (Salesforce, HubSpot) to auto-trigger this flow when a contract status changes to Churned or Non-Renewal
+- Use AI to analyze exit survey responses across all offboardings and surface recurring themes for product and service improvements
 - Integrate with your billing system (Stripe, Chargebee) to auto-generate the final invoice and process any remaining credits or refunds
-- Set up Slack alerts to notify account management and leadership when an offboarding request is submitted for early intervention
-- Auto-archive completed offboarding records to your compliance or document management system (SharePoint, Google Drive) for audit readiness
+- Run data export delivery and access revocation in parallel to cut offboarding turnaround time by 40%
 
 **Roles**: Client Contact, Account Manager, IT/Security, Finance
 

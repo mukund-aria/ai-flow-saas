@@ -22,10 +22,10 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
       'Customize form fields to match your organization',
     ],
     recommendations: [
-      'Connect to Procore or PlanGrid to auto-pull subcontractor profiles and sync qualification status to your project directory',
       'Integrate with a certificate management platform (myCOI, PINS) to auto-verify insurance coverage limits and flag expirations',
-      'Push qualification results to your ERP (Sage 300, Viewpoint Vista) to update vendor master records and approved bidder lists',
-      'Set up Slack or Teams notifications to alert the project manager when a subcontractor submits documents or when reviews are overdue',
+      'Connect to Procore or PlanGrid to auto-pull subcontractor profiles and sync qualification status to your project directory',
+      'Use AI to cross-check uploaded insurance certificates, EMR letters, and OSHA logs against project-specific safety thresholds and flag gaps before the Safety Lead reviews',
+      'Follow Subcontractor Qualification with the Lien Waiver Progress Payment template once the sub is awarded work and billing begins',
     ],
     steps: [
       {
@@ -141,7 +141,8 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your accounting system (Sage 300, QuickBooks, Viewpoint) to auto-trigger lien waiver requests when progress payments are scheduled',
       'Connect to DocuSign or your e-signature platform to streamline conditional and unconditional waiver execution with audit trails',
-      'Set up automated email reminders to subcontractors when lien waivers are outstanding, with escalation to the project manager after 48 hours',
+      'Schedule monthly auto-launch to coincide with each billing cycle so lien waiver collection starts automatically when progress payments are due',
+      'Use AI to extract pay-app line items and compare claimed work-completed amounts against the approved schedule of values, flagging overbilling before PM review',
     ],
     steps: [
       {
@@ -231,7 +232,7 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
       'Integrate with your construction accounting system (Sage 300, Viewpoint) to auto-reconcile retainage balances and trigger final payment processing upon waiver receipt',
       'Connect to DocuSign to execute final conditional and unconditional lien waivers with tamper-proof audit trails for project closeout files',
       'Push completed waiver packages to your document management system (Procore, Box) for automatic archival alongside closeout documentation',
-      'Set up Slack or email notifications to the owner representative when all sub-tier waivers are collected and the final payment package is ready for approval',
+      'Chain with the Construction Project Closeout template once final waivers are collected to kick off punch list resolution and turnover documentation',
     ],
     steps: [
       {
@@ -328,7 +329,8 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Connect to Procore or PlanGrid to auto-log submittal status, sync review comments, and maintain a centralized submittal register',
       'Integrate with Bluebeam Revu or Autodesk Build to enable markup and annotation directly on shop drawings during the review cycle',
-      'Set up Slack or Teams notifications to alert the architect/engineer when new submittals are uploaded, and notify subcontractors when reviews are complete',
+      'Use AI to auto-review submitted shop drawings against spec requirements and flag deviations before the architect/engineer review cycle begins',
+      'Chain with the Change Order Approval template when submittals reveal scope or cost impacts that require formal owner authorization',
     ],
     steps: [
       {
@@ -420,7 +422,8 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Connect to Procore or PlanGrid to auto-sync RFI numbers, responses, and status into your project RFI log for a single source of truth',
       'Integrate with your project scheduling tool (Primavera P6, Microsoft Project) to flag schedule impacts when RFI responses are delayed beyond the needed-by date',
-      'Set up Slack or Teams notifications to alert the architect when a new RFI is submitted, and escalate to the project manager if responses exceed the SLA deadline',
+      'Use AI to search past RFI responses and spec documents for similar questions and auto-draft a preliminary answer for architect review, reducing turnaround time',
+      'Chain with the Change Order Approval template when an RFI response results in a scope or cost change that requires owner authorization',
     ],
     steps: [
       {
@@ -504,8 +507,8 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Connect to Procore or Autodesk Build to auto-sync approved change orders into the project change log and update the committed cost report',
       'Integrate with your construction accounting system (Sage 300, Viewpoint Vista) to automatically adjust the contract value and budget when change orders are executed',
-      'Set up Slack or Teams notifications to alert the owner representative when a new change order is submitted, and notify the contractor when approvals or counter-proposals are issued',
-      'Push executed change order documents to DocuSign for e-signature and auto-archive signed copies to the project document management system',
+      'Use AI to compare contractor cost breakdowns against historical unit pricing for similar scope changes and flag line items that exceed benchmark ranges before PM review',
+      'Chain with the Lien Waiver Progress Payment template to ensure updated contract values are reflected in the next pay application cycle',
     ],
     steps: [
       {
@@ -605,8 +608,8 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Connect to Procore to auto-track punch list items, sync completion status, and generate the closeout documentation checklist from the project setup',
       'Integrate with your construction accounting system (Sage 300, Viewpoint) to auto-trigger retainage release and final payment processing when closeout approvals are complete',
-      'Push all closeout documents (O&M manuals, as-builts, warranties) to a shared document platform (Box, SharePoint) for owner access and long-term archival',
-      'Set up automated email notifications to the owner and architect when punch list milestones are reached and when the project is officially closed out',
+      'Use AI to analyze punch list inspection photos and auto-generate a categorized deficiency list with severity ratings and trade assignments',
+      'Chain with the Lien Waiver Final Payment template once punch list is approved to collect final waivers and release retainage',
     ],
     steps: [
       {
@@ -727,8 +730,8 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your MLS system (Zillow, MLS Grid) to auto-populate property details and purchase terms from the listing data',
       'Connect to DocuSign or Dotloop to streamline e-signature workflows for disclosures, contingency removals, and closing documents',
-      'Set up automated email and SMS reminders for contingency deadlines, inspection scheduling, and closing date milestones to keep all parties on track',
       'Integrate with your title company or escrow platform (Qualia, SoftPro) to sync transaction status, document uploads, and funding confirmation in real time',
+      'Use AI to review uploaded inspection reports and auto-generate a summary of material defects, estimated repair costs, and recommended negotiation points for the buyer agent',
     ],
     steps: [
       {
@@ -870,8 +873,8 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your property management system (Yardi, AppFolio, MRI) to auto-create tenant records and lease abstracts when the lease is fully executed',
       'Connect to a credit screening service (Experian, TransUnion) to auto-run tenant credit and background checks upon authorization signature',
-      'Push executed lease documents to DocuSign for dual-party e-signature and auto-archive signed copies to your lease management repository',
-      'Set up Slack or email notifications to the property manager when lease milestones are reached (application received, credit approved, lease signed) to coordinate move-in logistics',
+      'Use AI to extract key lease terms (rent, escalations, CAM caps, renewal options) from uploaded lease drafts and auto-populate the lease abstract for the property manager',
+      'Chain with the Tenant Move-Out & Security Deposit template when the lease expiration date approaches to automate the turnover process',
     ],
     steps: [
       {
@@ -971,8 +974,8 @@ export const CONSTRUCTION_REALESTATE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your property management system (Yardi, AppFolio, Buildium) to auto-update unit availability, close out the tenant ledger, and trigger deposit disposition processing',
       'Connect to your accounting software (QuickBooks, Sage) to auto-generate the security deposit accounting statement and issue refund checks or ACH transfers',
-      'Set up automated email reminders to the tenant for move-out checklist deadlines, key return, and utility transfer cutoff dates',
-      'Push completed inspection reports and deposit disposition documents to your document management system for compliance archival and audit readiness',
+      'Schedule auto-launch 60 days before each lease expiration date so the move-out process begins without manual tracking',
+      'Use AI to compare move-in and move-out inspection photos side-by-side and auto-flag damage beyond normal wear and tear with estimated repair costs',
     ],
     steps: [
       {

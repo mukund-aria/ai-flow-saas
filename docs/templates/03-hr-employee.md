@@ -21,9 +21,9 @@
 
 **Recommendations**:
 - Connect to your HRIS (BambooHR, Workday, Rippling) to auto-trigger this flow when a candidate status changes to Offer Accepted
+- Use AI to auto-review uploaded I-9 documents and flag expired IDs, mismatched names, or missing List B/C combinations before the HR coordinator verification step
 - Integrate with your IT asset management system (Jamf, Mosyle) to auto-order and ship equipment based on the new hire start date and role
-- Set up Slack or Microsoft Teams notifications to alert the hiring manager and IT when onboarding milestones are completed or overdue
-- Sync completed employee data back to your payroll system (ADP, Gusto, Paychex) to eliminate duplicate data entry for tax forms and direct deposit
+- Pair with the Background Check template to run pre-employment screening in parallel with onboarding paperwork
 
 **Roles**: New Hire, HR Coordinator, Hiring Manager
 
@@ -89,8 +89,8 @@
 **Recommendations**:
 - Connect to your vendor management system (SAP Fieldglass, Beeline) to auto-trigger this flow when a contractor requisition is approved
 - Integrate with your AP system to auto-configure payment schedules and invoice routing based on the engagement details and rate
-- Set up calendar reminders (Google Calendar, Outlook) to auto-alert hiring managers 30 days before contract end dates for renewal or extension decisions
-- Sync contractor records to your HRIS or workforce management platform to maintain a single view of your blended workforce for compliance reporting
+- Schedule an auto-reminder to launch 30 days before each contract end date so hiring managers can decide on renewal or extension
+- Pair with the Background Check template for contractor engagements that require pre-engagement screening
 
 **Roles**: Contractor, Hiring Manager, Finance
 
@@ -159,8 +159,8 @@
 **Recommendations**:
 - Integrate with your ATS (Greenhouse, Lever, iCIMS) to auto-trigger this flow when a candidate reaches the Background Check stage in your hiring pipeline
 - Connect to a background screening provider API (Checkr, Sterling, GoodHire) to auto-submit verification requests and pull results back into the flow
-- Set up Slack or email notifications to alert recruiters when adverse findings are flagged so they can initiate the adverse action process promptly
-- Sync screening results back to your HRIS to maintain a centralized compliance record for each employee or contractor
+- Use AI to cross-reference candidate-submitted employment history against verification results and auto-flag discrepancies for HR coordinator review
+- Set up a recurring schedule to auto-launch periodic re-screening for employees in regulated or sensitive positions
 
 **Roles**: Candidate, HR Coordinator, Background Vendor, Previous Employer
 
@@ -229,8 +229,8 @@
 **Recommendations**:
 - Connect to your HRIS (Workday, BambooHR) to auto-trigger this flow when an employee status changes to Terminating or Resigned
 - Integrate with your identity provider (Okta, Azure AD) to auto-revoke SSO access and deactivate accounts on the employee last day
-- Set up Slack or Microsoft Teams alerts to notify IT, facilities, and finance simultaneously when offboarding begins so parallel tasks start immediately
-- Sync exit interview data to your HR analytics platform to track attrition trends and surface actionable insights for retention improvements
+- Use AI to analyze exit interview responses and auto-generate a trend report highlighting recurring reasons for departure across the organization
+- Run equipment return, access revocation, and final paycheck processing in parallel to complete offboarding within 48 hours of last day
 
 **Roles**: Departing Employee, HR Coordinator, IT Administrator, Finance, Manager
 
@@ -275,7 +275,7 @@
 **Recommendations**:
 - Connect to your HRIS (Workday, SuccessFactors) to auto-trigger this flow when a transfer or relocation is approved in the system
 - Integrate with your relocation management company (SIRVA, Cartus) API to auto-submit relocation requests and receive status updates on move logistics
-- Set up Google Calendar or Outlook integrations to auto-schedule area tours, property viewings, and school visits based on employee preferences
+- Use AI to analyze employee preferences and destination market data to auto-generate a shortlist of neighborhoods matching commute, school, and budget criteria
 - Sync relocation expense data to your expense management system (Concur, Expensify) to streamline reimbursement and ensure policy compliance on spending limits
 
 **Roles**: Employee, HR Coordinator, Relocation Company, Destination Services

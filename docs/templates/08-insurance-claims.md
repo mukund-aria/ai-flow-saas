@@ -22,8 +22,8 @@
 **Recommendations**:
 - Connect to your claims management system (Guidewire, Duck Creek, Majesco) to auto-create claim records from FNOL submissions and sync status updates
 - Integrate with your policy administration system to auto-verify coverage and pull policy details during the triage step
-- Set up email or SMS notifications to claimants with real-time claim status updates at each stage of the process
-- Connect to your payment system to auto-initiate settlement disbursement once the claim decision is approved
+- Use AI to auto-review uploaded claim documents and extract key details (date of loss, damage type, estimated amount) before adjuster review, and flag potential fraud indicators based on pattern matching
+- Follow completed claims with the Insurance Audit Coordination template for annual premium reconciliation based on actual loss experience
 
 **Roles**: Claimant, Claims Adjuster, Claims Manager
 
@@ -71,8 +71,8 @@
 **Recommendations**:
 - Connect to your policy administration system (Guidewire, Duck Creek) to auto-create submissions and push approved policies directly into the system of record
 - Integrate with third-party data providers (LexisNexis, Verisk) to auto-pull loss history and risk scoring during underwriting review
-- Set up Slack or Teams notifications to alert underwriters when new applications are submitted and when applicants respond to underwriting questions
-- Connect to your agency management system (Applied Epic, Vertafore AMS360) to sync application status and policy details with the broker
+- Use AI to auto-score application risk by analyzing the applicant profile, loss history, and industry benchmarks, then generate a preliminary underwriting recommendation with supporting rationale
+- Chain with the Policy Renewal Coordination template by auto-scheduling the first renewal flow 90 days before the new policy expiration date
 
 **Roles**: Applicant, Agent/Broker, Underwriter, Underwriting Manager
 
@@ -130,7 +130,8 @@
 **Recommendations**:
 - Connect to your agency management system (Applied Epic, Vertafore AMS360) to auto-pull policy and coverage data for COI generation
 - Integrate with an ACORD forms platform to auto-populate Certificate of Insurance (ACORD 25) fields from request details
-- Set up automated email delivery to certificate holders with the completed COI attached as soon as it is uploaded
+- Use AI to auto-validate COI request details against the insured policy to flag coverage gaps, missing endorsements, or additional insured requirements that cannot be met before agent coordination begins
+- Chain with the Vendor Onboarding template when the COI is issued as part of a new vendor or subcontractor qualification process
 
 **Roles**: Certificate Holder, Insured, Insurance Coordinator, Agent
 
@@ -185,8 +186,8 @@
 **Recommendations**:
 - Connect to your HRIS (ADP, Workday, BambooHR) to auto-pull employee wage data and job classification for benefits calculation
 - Integrate with your state workers' compensation board e-filing portal to auto-submit the First Report of Injury (FROI) within mandated deadlines
-- Set up Teams or Slack notifications to alert HR and the claims adjuster immediately when a new injury report is submitted
-- Connect to your OSHA recordkeeping system to auto-log recordable incidents and maintain your 300 log
+- Use AI to auto-analyze the injury report and incident investigation to determine OSHA recordability, suggest the correct injury classification code, and draft the FROI form fields
+- Chain with the Insurance Audit Coordination template at policy expiration to reconcile actual payroll and classification data against the workers' compensation premium basis
 
 **Roles**: Injured Employee, Employer/HR, Claims Adjuster, Treating Physician
 
@@ -264,8 +265,8 @@
 **Recommendations**:
 - Connect to your policy administration system (Guidewire, Duck Creek) to auto-trigger renewal flows 90 days before expiration and pre-fill current policy data
 - Integrate with your agency management system (Applied Epic, Vertafore AMS360) to sync renewal quotes and bind confirmations with the broker of record
-- Set up automated email reminders to policyholders with escalating urgency as the renewal deadline approaches
-- Connect to third-party data providers (Verisk, ISO) to auto-pull updated loss cost data and industry benchmarks for underwriting review
+- Schedule annual auto-launch for each policy 90 days before the renewal date, pre-populating the flow with expiring policy data and prior-year exposure figures
+- Use AI to auto-compare the renewal quote against the expiring policy and market benchmarks, generating a plain-language summary of premium changes, coverage differences, and recommended actions for the policyholder
 
 **Roles**: Policyholder, Account Manager, Underwriter, Broker
 
@@ -321,8 +322,8 @@
 **Recommendations**:
 - Connect to your surety management system (Tinuiti, SurePath) to auto-create bond submissions and track bonding capacity utilization
 - Integrate with credit bureaus (Dun & Bradstreet, Experian) for automated credit pulls on principals and indemnitors during underwriting
-- Set up email notifications to the surety agent when financial documents and the signed GIA are submitted so underwriting can begin promptly
-- Connect to your construction project management platform (Procore, Sage) to auto-verify project details and contractor performance history
+- Use AI to auto-analyze the uploaded financial statements and work-in-progress schedule to calculate key surety ratios (working capital, equity, backlog-to-equity) and flag underwriting concerns before manual review
+- Chain with the Subcontractor Qualification template when the bonded contractor needs to vet subcontractors for the project
 
 **Roles**: Principal (Applicant), Surety Agent, Underwriter
 
@@ -369,7 +370,8 @@
 **Recommendations**:
 - Connect to your payroll provider (ADP, Paychex, Gusto) to auto-pull payroll records and classification data for the audit period
 - Integrate with your accounting system (QuickBooks, Sage, Xero) to auto-export sales and revenue records needed for premium calculation
-- Set up automated email reminders to policyholders with document checklists and escalating deadlines as the audit window progresses
+- Use AI to auto-cross-reference submitted payroll records against classification codes and flag discrepancies (misclassified employees, overtime allocation errors) before the auditor review step
+- Set up recurring annual auto-launch timed to 30 days after each policy expiration to ensure audits begin promptly and records are still readily available
 
 **Roles**: Policyholder, Auditor, Account Manager
 

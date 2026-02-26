@@ -20,10 +20,10 @@
 - [ ] Customize form fields to match your organization
 
 **Recommendations**:
-- Sync usage metrics from your product analytics platform (Mixpanel, Amplitude, Pendo) to auto-populate the pre-QBR data collection form with real adoption numbers
 - Connect to your CRM (Salesforce, HubSpot) to pull ARR, renewal date, and support ticket counts directly into the QBR preparation step
-- Integrate with Google Calendar or Outlook to auto-schedule the QBR meeting and send calendar invites once the client pre-QBR survey is submitted
-- Push documented action items to your project management tool (Asana, Monday) so follow-ups are tracked with owners and due dates post-meeting
+- Use AI to analyze usage patterns and client survey responses to auto-generate the QBR presentation deck with trend analysis, ROI highlights, and recommended next-quarter priorities
+- Set up quarterly auto-launch tied to your fiscal calendar so QBR preparation begins automatically without manual kickoff
+- Chain with the Annual Renewal template as accounts approach contract expiration to transition seamlessly from review to retention
 
 **Roles**: Client Stakeholder, Account Manager
 
@@ -75,10 +75,11 @@
 - [ ] Customize form fields to match your organization
 
 **Recommendations**:
-- Integrate with your CRM to auto-trigger the renewal flow 90 days before contract expiration and sync renewal status back to the opportunity record
 - Connect to DocuSign or Adobe Sign for the e-signature step to provide a seamless, legally binding signing experience
-- Set up Slack or Teams alerts for the CSM when client renewal survey responses indicate churn risk (e.g., low satisfaction, budget decreasing, evaluating competitors)
+- Use AI to analyze the client renewal survey responses and usage report to auto-generate a churn risk score and recommended retention strategy before the CSM prepares the renewal offer
+- Schedule auto-launch 90 days before contract expiration to start the renewal process and ensure no accounts lapse without outreach
 - Push updated contract details (new ARR, term dates, seat count) to your billing system (Stripe, Chargebee, Zuora) upon signature to eliminate manual data entry
+- Follow up with the Quarterly Business Review (QBR) template to establish an ongoing cadence after renewal is complete
 
 **Roles**: Client Contact, CSM, Finance
 
@@ -135,7 +136,8 @@
 **Recommendations**:
 - Integrate with your customer success platform (Gainsight, Totango, ChurnZero) to auto-trigger health check flows when account health scores drop below threshold
 - Connect to your product analytics to include real-time usage trend data (logins, feature adoption, API calls) in the internal risk assessment step
-- Set up Slack escalation alerts to the VP of Customer Success when accounts are assessed as high-risk with renewal within 90 days
+- Enable AI-powered sentiment analysis on client satisfaction survey responses to auto-classify risk level and recommend specific intervention strategies before the CSM review
+- Chain with the Annual Renewal template when health checks reveal at-risk accounts approaching contract expiration within 90 days
 
 **Roles**: Client Contact, CSM
 
@@ -192,8 +194,8 @@
 **Recommendations**:
 - Integrate with your billing system (Stripe, NetSuite, Zuora) to auto-pull invoice details and charge history when a dispute is submitted, reducing manual lookup
 - Connect to your CRM to log the dispute on the account record and flag the account health score during the investigation period
-- Set up automated email notifications to the client at each stage (investigation started, resolution proposed, credit issued) so they never have to ask for status updates
-- Push approved credits and refunds directly to your accounting system to auto-generate credit memos and update the general ledger without manual journal entries
+- Use AI to compare the disputed invoice against contract terms and billing records to auto-generate an investigation summary with a recommended resolution before the finance lead review
+- Chain with the Client Health Check template when repeated disputes signal a deteriorating account relationship that needs proactive attention
 
 **Roles**: Client, Finance Lead
 

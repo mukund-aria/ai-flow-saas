@@ -104,9 +104,9 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     ],
     recommendations: [
       'Integrate with your CLM (Ironclad, Agiloft, DocuSign CLM) to auto-import contract drafts and sync executed versions back to the repository',
-      'Set up Slack or Teams notifications for the legal team when contracts are pending review or when negotiation deadlines approach',
       'Connect to DocuSign or Adobe Sign for embedded e-signature execution with automatic status tracking',
-      'Push executed contracts to SharePoint or Google Drive with automated folder structure by contract type and counterparty',
+      'Use AI to auto-review contract redlines and summarize material changes before legal review',
+      'Set up auto-launch 60 days before contract expiration for renewal when auto-renewal terms apply',
     ],
   },
 
@@ -195,7 +195,8 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your CLM (Ironclad, Agiloft) to auto-flag non-standard clauses and pull exception history for precedent analysis',
       'Connect to your CRM (Salesforce, HubSpot) to link exception requests to deal records and track approval impact on win rates',
-      'Set up Slack or email escalation alerts when exception requests exceed SLA review timelines or approach deal close deadlines',
+      'Use AI to compare requested exceptions against your approved precedent library and recommend accept/reject with supporting rationale',
+      'Follow approved exceptions with the Contract Review & Execution template to finalize the amended agreement',
     ],
   },
 
@@ -273,7 +274,8 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with DocuSign or Adobe Sign for one-click NDA execution and automatic countersignature tracking',
       'Connect to your CLM (Ironclad, DocuSign CLM) to auto-generate NDAs from templates and sync executed copies to the contract repository',
-      'Push executed NDAs to SharePoint or Google Drive with automated expiration date tracking and renewal reminders',
+      'Enable AI to extract key clauses from uploaded NDAs and flag non-standard terms such as carve-outs, non-solicitation, or unusual jurisdiction provisions',
+      'Follow NDA Execution with the Contract Review & Execution template for the full agreement lifecycle',
     ],
   },
 
@@ -334,7 +336,7 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Connect to your e-discovery platform (Relativity, Exterro, Everlaw) to auto-trigger preservation workflows and sync custodian acknowledgement status',
       'Integrate with your HRIS (Workday, BambooHR) to auto-identify custodians by department and role when issuing holds',
-      'Set up email and Slack escalation alerts for custodians who have not acknowledged the hold within the required timeframe',
+      'Chain with the Subpoena Response Coordination template when the litigation hold leads to active document production requests',
     ],
   },
 
@@ -426,8 +428,8 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Connect to your board portal (Diligent, BoardEffect, OnBoard) to distribute materials, collect votes, and sync resolution status automatically',
       'Integrate with DocuSign or Adobe Sign for secure board member e-signature collection with audit trail',
-      'Set up calendar integrations (Google Calendar, Outlook) to auto-schedule board review periods and consent deadlines',
-      'Push executed resolutions to your corporate records system or SharePoint for automated minute book filing',
+      'Enable AI to draft the board resolution summary from meeting minutes, highlighting key actions and voting outcomes',
+      'Schedule annual auto-launch for recurring board resolutions such as officer appointments, compensation approvals, and auditor ratifications',
     ],
   },
 
@@ -533,8 +535,8 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Connect to a virtual data room (Intralinks, Datasite, Box) to auto-organize uploaded documents by workstream and track access logs',
       'Integrate with your deal management platform (DealCloud, Midaxo) to sync diligence status, red flags, and go/no-go decisions back to the deal record',
-      'Set up Slack or Teams notifications for the deal team when new documents are uploaded or follow-up questions are submitted by the target',
-      'Push completed diligence findings to SharePoint or Confluence for post-close integration team reference',
+      'Use AI to auto-classify uploaded diligence documents by workstream, flag missing items against the request list, and surface material risks across corporate, financial, and legal submissions',
+      'Chain with the NDA Execution template at the start to ensure confidentiality agreements are in place before any documents are exchanged',
     ],
   },
 
@@ -630,8 +632,8 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your privacy management platform (OneTrust, BigID, TrustArc) to auto-log DSARs, track regulatory deadlines, and generate compliance reports',
       'Connect to identity verification services (Jumio, Onfido) to automate data subject identity confirmation before processing requests',
+      'Use AI to auto-scan collected data for third-party PII and privileged content that requires redaction before the response is delivered',
       'Set up automated email notifications with countdown timers for GDPR 30-day and CCPA 45-day response deadlines',
-      'Sync completed DSAR responses to your GRC platform for audit trail documentation and regulatory reporting',
     ],
   },
 
@@ -720,7 +722,8 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Connect to your e-discovery platform (Relativity, Exterro, Everlaw) to auto-collect, process, and review responsive documents',
       'Integrate with your legal hold system to auto-trigger preservation notices and sync custodian compliance status',
-      'Set up Slack or email deadline alerts for response due dates and court-ordered production schedules',
+      'Use AI to auto-classify collected documents for responsiveness and privilege, generating a draft privilege log for attorney review',
+      'Launch the Litigation Hold Acknowledgement template first to ensure all custodians have preserved relevant data before collection begins',
     ],
   },
 
@@ -826,7 +829,8 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with registered agent services (CSC, CT Corporation) to auto-file formation documents and track state filing status',
       'Connect to the IRS EIN application portal to streamline federal tax ID registration after entity formation',
-      'Set up calendar reminders for ongoing compliance deadlines including annual report filings, franchise tax due dates, and registered agent renewals',
+      'Schedule annual auto-launch for recurring compliance filings such as annual reports, franchise tax payments, and registered agent renewals',
+      'Follow formation with the Trademark / IP Assignment template to register and assign initial IP assets to the new entity',
     ],
   },
 
@@ -939,8 +943,8 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with your franchise management platform (FranConnect, FRANdata) to sync franchisee data, territory assignments, and onboarding milestones',
       'Connect to DocuSign for FDD delivery tracking with built-in 14-day cooling period enforcement before agreement execution',
-      'Set up automated email reminders for FTC-mandated waiting periods and discovery day scheduling',
-      'Push executed agreements and financial terms to your accounting system (QuickBooks, Xero) for royalty tracking setup',
+      'Use AI to compare franchisee financial qualification documents against minimum thresholds and flag applicants that fall below requirements',
+      'Set up auto-launch for franchise renewal 90 days before agreement expiration to begin the re-execution process',
     ],
   },
 
@@ -1047,6 +1051,7 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     recommendations: [
       'Integrate with USPTO/WIPO electronic filing systems to auto-submit assignment recordation documents and track filing status',
       'Connect to your IP management platform (Anaqua, CPA Global, Clarivate) to sync assignment records, update ownership data, and maintain chain of title',
+      'Use AI to verify chain-of-title completeness by cross-referencing uploaded assignment history against IP office records and flagging gaps',
       'Set up automated deadline alerts for recordation filing windows and post-assignment maintenance fee due dates',
     ],
   },
