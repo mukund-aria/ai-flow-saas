@@ -19,8 +19,9 @@ const router = Router();
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    // For now, return all contacts (will add org filtering with auth later)
+    const orgId = req.organizationId;
     const allContacts = await db.query.contacts.findMany({
+      ...(orgId ? { where: eq(contacts.organizationId, orgId) } : {}),
       orderBy: [desc(contacts.updatedAt)],
     });
 
@@ -50,9 +51,12 @@ router.get(
   '/:id',
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
+    const orgId = req.organizationId;
 
     const contact = await db.query.contacts.findFirst({
-      where: eq(contacts.id, id),
+      where: orgId
+        ? and(eq(contacts.id, id), eq(contacts.organizationId, orgId))
+        : eq(contacts.id, id),
     });
 
     if (!contact) {
@@ -185,9 +189,12 @@ router.put(
     const id = req.params.id as string;
     const { name, email, type, status } = req.body;
 
-    // Check if contact exists
+    // Check if contact exists (scoped to org)
+    const orgId = req.organizationId;
     const existing = await db.query.contacts.findFirst({
-      where: eq(contacts.id, id),
+      where: orgId
+        ? and(eq(contacts.id, id), eq(contacts.organizationId, orgId))
+        : eq(contacts.id, id),
     });
 
     if (!existing) {
@@ -275,10 +282,13 @@ router.delete(
   '/:id',
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
+    const orgId = req.organizationId;
 
-    // Check if contact exists
+    // Check if contact exists (scoped to org)
     const existing = await db.query.contacts.findFirst({
-      where: eq(contacts.id, id),
+      where: orgId
+        ? and(eq(contacts.id, id), eq(contacts.organizationId, orgId))
+        : eq(contacts.id, id),
     });
 
     if (!existing) {
@@ -320,9 +330,12 @@ router.patch(
       return;
     }
 
-    // Check if contact exists
+    // Check if contact exists (scoped to org)
+    const orgId = req.organizationId;
     const existing = await db.query.contacts.findFirst({
-      where: eq(contacts.id, id),
+      where: orgId
+        ? and(eq(contacts.id, id), eq(contacts.organizationId, orgId))
+        : eq(contacts.id, id),
     });
 
     if (!existing) {

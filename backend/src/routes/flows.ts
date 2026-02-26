@@ -63,9 +63,12 @@ router.get(
   '/:id',
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
+    const orgId = req.organizationId;
 
     const flow = await db.query.flows.findFirst({
-      where: eq(flows.id, id),
+      where: orgId
+        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
+        : eq(flows.id, id),
       with: {
         createdBy: {
           columns: {
@@ -163,11 +166,14 @@ router.put(
   '/:id',
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
+    const orgId = req.organizationId;
     const { name, description, definition, status, version } = req.body;
 
-    // Check if flow exists
+    // Check if flow exists (scoped to org)
     const existing = await db.query.flows.findFirst({
-      where: eq(flows.id, id),
+      where: orgId
+        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
+        : eq(flows.id, id),
     });
 
     if (!existing) {
@@ -210,10 +216,13 @@ router.delete(
   '/:id',
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
+    const orgId = req.organizationId;
 
-    // Check if flow exists
+    // Check if flow exists (scoped to org)
     const existing = await db.query.flows.findFirst({
-      where: eq(flows.id, id),
+      where: orgId
+        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
+        : eq(flows.id, id),
     });
 
     if (!existing) {
@@ -246,10 +255,13 @@ router.post(
   '/:id/publish',
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
+    const orgId = req.organizationId;
 
-    // Check if flow exists
+    // Check if flow exists (scoped to org)
     const existing = await db.query.flows.findFirst({
-      where: eq(flows.id, id),
+      where: orgId
+        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
+        : eq(flows.id, id),
     });
 
     if (!existing) {
@@ -282,9 +294,12 @@ router.post(
   '/:id/duplicate',
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
+    const orgId = req.organizationId;
 
     const existing = await db.query.flows.findFirst({
-      where: eq(flows.id, id),
+      where: orgId
+        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
+        : eq(flows.id, id),
     });
 
     if (!existing) {

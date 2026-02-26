@@ -22,105 +22,36 @@ router.get(
   '/',
   asyncHandler(async (req, res) => {
     const { status, flowId } = req.query;
+    const orgId = req.organizationId;
 
-    // Build query with optional filters
-    let allRuns;
+    // Build query conditions with org scoping
+    const conditions = [];
+    if (orgId) conditions.push(eq(flowRuns.organizationId, orgId));
+    if (status) conditions.push(eq(flowRuns.status, status as FlowRunStatus));
+    if (flowId) conditions.push(eq(flowRuns.flowId, flowId as string));
 
-    if (status && flowId) {
-      allRuns = await db.query.flowRuns.findMany({
-        where: and(
-          eq(flowRuns.status, status as FlowRunStatus),
-          eq(flowRuns.flowId, flowId as string)
-        ),
-        orderBy: [desc(flowRuns.startedAt)],
-        with: {
-          flow: {
-            columns: {
-              id: true,
-              name: true,
-            },
-          },
-          startedBy: {
-            columns: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          stepExecutions: {
-            columns: { id: true },
+    const allRuns = await db.query.flowRuns.findMany({
+      ...(conditions.length > 0 ? { where: and(...conditions) } : {}),
+      orderBy: [desc(flowRuns.startedAt)],
+      with: {
+        flow: {
+          columns: {
+            id: true,
+            name: true,
           },
         },
-      });
-    } else if (status) {
-      allRuns = await db.query.flowRuns.findMany({
-        where: eq(flowRuns.status, status as FlowRunStatus),
-        orderBy: [desc(flowRuns.startedAt)],
-        with: {
-          flow: {
-            columns: {
-              id: true,
-              name: true,
-            },
-          },
-          startedBy: {
-            columns: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          stepExecutions: {
-            columns: { id: true },
+        startedBy: {
+          columns: {
+            id: true,
+            name: true,
+            email: true,
           },
         },
-      });
-    } else if (flowId) {
-      allRuns = await db.query.flowRuns.findMany({
-        where: eq(flowRuns.flowId, flowId as string),
-        orderBy: [desc(flowRuns.startedAt)],
-        with: {
-          flow: {
-            columns: {
-              id: true,
-              name: true,
-            },
-          },
-          startedBy: {
-            columns: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          stepExecutions: {
-            columns: { id: true },
-          },
+        stepExecutions: {
+          columns: { id: true },
         },
-      });
-    } else {
-      allRuns = await db.query.flowRuns.findMany({
-        orderBy: [desc(flowRuns.startedAt)],
-        with: {
-          flow: {
-            columns: {
-              id: true,
-              name: true,
-            },
-          },
-          startedBy: {
-            columns: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          stepExecutions: {
-            columns: { id: true },
-          },
-        },
-      });
-    }
+      },
+    });
 
     const runsWithTotalSteps = allRuns.map(run => ({
       ...run,
@@ -142,9 +73,12 @@ router.get(
   '/:id',
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
+    const orgId = req.organizationId;
 
     const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, id),
+      where: orgId
+        ? and(eq(flowRuns.id, id), eq(flowRuns.organizationId, orgId))
+        : eq(flowRuns.id, id),
       with: {
         flow: true,
         startedBy: {
@@ -201,9 +135,12 @@ router.post(
     const flowId = req.params.templateId as string;
     const { name, isTest, roleAssignments, kickoffData } = req.body;
 
-    // Get the flow template
+    // Get the flow template (scoped to org)
+    const orgId = req.organizationId;
     const flow = await db.query.flows.findFirst({
-      where: eq(flows.id, flowId),
+      where: orgId
+        ? and(eq(flows.id, flowId), eq(flows.organizationId, orgId))
+        : eq(flows.id, flowId),
     });
 
     if (!flow) {
@@ -238,10 +175,10 @@ router.post(
 
     // Use authenticated user context (set by requireAuth + orgScope middleware in production)
     let userId = req.user?.id;
-    let orgId = req.organizationId;
+    let resolvedOrgId = orgId;
 
     // Dev fallback: create default user/org if not authenticated
-    if (!userId || !orgId) {
+    if (!userId || !resolvedOrgId) {
       let defaultOrg = await db.query.organizations.findFirst();
       if (!defaultOrg) {
         const [newOrg] = await db
@@ -259,7 +196,7 @@ router.post(
         defaultUser = newUser;
       }
       userId = defaultUser.id;
-      orgId = defaultOrg.id;
+      resolvedOrgId = defaultOrg.id;
     }
 
     // Create the flow run
@@ -274,7 +211,7 @@ router.post(
         isSample: !!isTest,
         currentStepIndex: 0,
         startedById: userId,
-        organizationId: orgId,
+        organizationId: resolvedOrgId,
         roleAssignments: roleAssignments || null,
         kickoffData: kickoffData || null,
       })
@@ -404,10 +341,13 @@ router.post(
     const runId = req.params.id as string;
     const stepId = req.params.stepId as string;
     const { resultData } = req.body;
+    const orgId = req.organizationId;
 
-    // Get the flow run
+    // Get the flow run (scoped to org)
     const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, runId),
+      where: orgId
+        ? and(eq(flowRuns.id, runId), eq(flowRuns.organizationId, orgId))
+        : eq(flowRuns.id, runId),
       with: {
         flow: true,
         stepExecutions: {
@@ -578,10 +518,13 @@ router.post(
   '/:id/cancel',
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
+    const orgId = req.organizationId;
 
-    // Get the flow run
+    // Get the flow run (scoped to org)
     const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, id),
+      where: orgId
+        ? and(eq(flowRuns.id, id), eq(flowRuns.organizationId, orgId))
+        : eq(flowRuns.id, id),
     });
 
     if (!run) {
@@ -694,6 +637,22 @@ router.post(
   asyncHandler(async (req, res) => {
     const runId = req.params.id as string;
     const stepId = req.params.stepId as string;
+    const orgId = req.organizationId;
+
+    // Verify the flow run belongs to this org
+    const run = await db.query.flowRuns.findFirst({
+      where: orgId
+        ? and(eq(flowRuns.id, runId), eq(flowRuns.organizationId, orgId))
+        : eq(flowRuns.id, runId),
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+      });
+      return;
+    }
 
     // Get step execution
     const stepExec = await db.query.stepExecutions.findFirst({
@@ -769,6 +728,23 @@ router.post(
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
     const stepId = req.params.stepId as string;
+    const orgId = req.organizationId;
+
+    // Get run for context (scoped to org)
+    const run = await db.query.flowRuns.findFirst({
+      where: orgId
+        ? and(eq(flowRuns.id, id), eq(flowRuns.organizationId, orgId))
+        : eq(flowRuns.id, id),
+      with: { flow: true },
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+      });
+      return;
+    }
 
     // Get step execution
     const stepExec = await db.query.stepExecutions.findFirst({
@@ -790,20 +766,6 @@ router.post(
       res.status(400).json({
         success: false,
         error: { code: 'INVALID_STATE', message: 'Can only send reminders for active steps' },
-      });
-      return;
-    }
-
-    // Get run for context
-    const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, id),
-      with: { flow: true },
-    });
-
-    if (!run) {
-      res.status(404).json({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
       });
       return;
     }
