@@ -76,11 +76,13 @@ aiGuidance:
     - Different teams work on separate parts concurrently
     - Multiple documents need to be collected from different sources
     - Parallel approval chains that don't depend on each other
+    - When each parallel track has MULTIPLE steps (not just single concurrent steps)
 
   whenNotToUse: |
     - When paths depend on each other (use sequential steps instead)
     - When only one path should execute (use SINGLE_CHOICE_BRANCH)
     - When a decision determines which path to take (use DECISION)
+    - When only 2-3 individual steps need to run concurrently (use skipSequentialOrder instead — simpler)
 
   examples:
     - trigger: Collect documents from multiple departments simultaneously

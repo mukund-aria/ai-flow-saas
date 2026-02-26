@@ -49,6 +49,19 @@ export interface ConstraintsConfig {
   };
   completionModes: string[];
   assigneeOrderOptions: string[];
+  skipSequentialOrder?: {
+    description: string;
+    appliesToStepTypes: string;
+    notes: string[];
+  };
+  subflow?: {
+    maxNestingDepth: number;
+    notes: string[];
+  };
+  multiChoiceBranch?: {
+    maxPaths: number;
+    notes: string[];
+  };
 }
 
 export interface DefaultsConfig {
@@ -268,10 +281,27 @@ export function loadAllStepTypes(): StepTypeConfig[] {
 // Cached Singleton Access
 // ============================================================================
 
+export interface TemplateCatalogTemplate {
+  name: string;
+  roles: string[];
+  pattern: string;
+}
+
+export interface TemplateCatalogCategory {
+  name: string;
+  templates: TemplateCatalogTemplate[];
+}
+
+export interface TemplateCatalogConfig {
+  enabled: boolean;
+  categories: TemplateCatalogCategory[];
+}
+
 let cachedConstraints: ConstraintsConfig | null = null;
 let cachedDefaults: DefaultsConfig | null = null;
 let cachedStepTypes: StepTypeConfig[] | null = null;
 let cachedPlaybook: SEPlaybookConfig | null = null;
+let cachedTemplateCatalog: TemplateCatalogConfig | null | undefined = undefined;
 
 /**
  * Get constraints (cached)
@@ -304,6 +334,22 @@ export function getStepTypes(): StepTypeConfig[] {
 }
 
 /**
+ * Get template catalog (cached, returns null if file missing or disabled)
+ */
+export function getTemplateCatalog(): TemplateCatalogConfig | null {
+  if (cachedTemplateCatalog === undefined) {
+    try {
+      const catalog = loadYamlFile<TemplateCatalogConfig>('template-catalog.yaml');
+      cachedTemplateCatalog = catalog?.enabled ? catalog : null;
+    } catch {
+      // File missing or invalid — gracefully disable template awareness
+      cachedTemplateCatalog = null;
+    }
+  }
+  return cachedTemplateCatalog;
+}
+
+/**
  * Get SE playbook (cached)
  */
 export function getPlaybook(): SEPlaybookConfig {
@@ -321,6 +367,7 @@ export function clearConfigCache(): void {
   cachedDefaults = null;
   cachedStepTypes = null;
   cachedPlaybook = null;
+  cachedTemplateCatalog = undefined;
 }
 
 /**

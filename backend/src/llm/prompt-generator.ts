@@ -14,10 +14,12 @@ import {
   getStepTypes,
   getPlaybook,
   getDefaults,
+  getTemplateCatalog,
   type ConstraintsConfig,
   type StepTypeConfig,
   type SEPlaybookConfig,
   type DefaultsConfig,
+  type TemplateCatalogConfig,
 } from '../config/loader.js';
 
 // ============================================================================
@@ -49,6 +51,9 @@ export function generateSystemPrompt(metadata?: SessionMetadata): string {
   const stepTypes = getStepTypes();
   const playbook = getPlaybook();
   const defaults = getDefaults();
+  const templateCatalog = getTemplateCatalog();
+
+  const templateSection = templateCatalog ? `\n\n${generateTemplatePatternsSection(templateCatalog)}` : '';
 
   return `${generateRoleSection(playbook)}
 
@@ -62,7 +67,7 @@ ${generateConsultationSection(playbook)}
 
 ${generateDefaultsSection(defaults, playbook)}
 
-${generateBehaviorSection(playbook)}${generateClarificationContext(metadata)}`;
+${generateBehaviorSection(playbook)}${templateSection}${generateClarificationContext(metadata)}`;
 }
 
 // ============================================================================
@@ -316,6 +321,9 @@ SINGLE_CHOICE_BRANCH supports 2-3 paths. Each path can have a single \`condition
 \`\`\`
 ^ This is CORRECT: Manager Approval is INSIDE path_small, Director Approval is INSIDE path_large, Manual Review is INSIDE path_default.
 
+### For MULTI_CHOICE_BRANCH (multiple paths can execute):
+Unlike SINGLE_CHOICE_BRANCH (only one path), MULTI_CHOICE_BRANCH evaluates all conditions and executes ALL matching paths simultaneously. Use when criteria are not mutually exclusive (e.g., a case may be both "high value" AND "international").
+
 ### Step Types Available
 
 **Human Actions:** FORM, QUESTIONNAIRE, FILE_REQUEST, TODO, APPROVAL, ACKNOWLEDGEMENT, ESIGN, DECISION, CUSTOM_ACTION, WEB_APP, PDF_FORM
@@ -362,7 +370,94 @@ SINGLE_CHOICE_BRANCH supports 2-3 paths. Each path can have a single \`condition
     ]
   }
 }
-\`\`\``;
+\`\`\`
+
+## Concurrent Execution Patterns
+
+### skipSequentialOrder — For 2-3 concurrent individual steps
+Set \`skipSequentialOrder: true\` on steps that should run at the same time as the previous step.
+\`\`\`json
+{
+  "steps": [
+    { "stepId": "step_1", "type": "FORM", "config": { "name": "Application Form", "assignee": "Applicant" } },
+    { "stepId": "step_2", "type": "FILE_REQUEST", "config": { "name": "Background Check", "assignee": "HR", "skipSequentialOrder": true } },
+    { "stepId": "step_3", "type": "TODO", "config": { "name": "IT Setup", "assignee": "IT Admin", "skipSequentialOrder": true } },
+    { "stepId": "step_4", "type": "APPROVAL", "config": { "name": "Final Approval", "assignee": "Manager" } }
+  ]
+}
+\`\`\`
+Steps 2 and 3 run concurrently (both start after step 1). Step 4 waits for BOTH to complete.
+
+### PARALLEL_BRANCH — For multi-step parallel tracks
+Use when each parallel track has multiple steps. See PARALLEL_BRANCH step type docs.
+
+### Decision Tree:
+- 2-3 individual concurrent steps → \`skipSequentialOrder: true\`
+- Multi-step parallel tracks → PARALLEL_BRANCH
+- Conditional routing (automated) → SINGLE_CHOICE_BRANCH
+- Conditional routing (human) → DECISION
+
+## GOTO Revision Loops
+
+Pattern: Place a GOTO_DESTINATION before review steps, then use GOTO inside a DECISION "Reject" outcome to loop back.
+
+\`\`\`json
+{
+  "steps": [
+    { "stepId": "step_1", "type": "GOTO_DESTINATION", "config": { "name": "Review Start", "destinationLabel": "Point A" } },
+    { "stepId": "step_2", "type": "FILE_REQUEST", "config": { "name": "Upload Document", "assignee": "Client" } },
+    {
+      "stepId": "step_3", "type": "DECISION",
+      "config": {
+        "name": "Review Decision", "assignee": "Reviewer",
+        "outcomes": [
+          { "outcomeId": "approve", "label": "Approve", "steps": [
+            { "type": "SYSTEM_EMAIL", "config": { "name": "Approval Notice" } }
+          ]},
+          { "outcomeId": "reject", "label": "Request Revision", "steps": [
+            { "type": "GOTO", "config": { "name": "Back to Review", "targetGotoDestinationId": "step_1" } }
+          ]}
+        ]
+      }
+    }
+  ]
+}
+\`\`\`
+**Constraints:** GOTO can only be inside DECISION or SINGLE_CHOICE_BRANCH outcomes/paths. GOTO_DESTINATION must be on the main path.
+
+## Milestones (Workflow Phases)
+
+Milestones group steps into logical phases. Include in the \`milestones\` array.
+Each milestone has a name and afterStepId indicating where the phase boundary starts.
+
+Example:
+\`\`\`json
+{
+  "milestones": [
+    { "milestoneId": "m_1", "name": "Document Collection", "afterStepId": "step_0" },
+    { "milestoneId": "m_2", "name": "Review & Approval", "afterStepId": "step_3" },
+    { "milestoneId": "m_3", "name": "Completion", "afterStepId": "step_5" }
+  ]
+}
+\`\`\`
+**Constraint:** Milestones cannot be placed inside branches. For workflows with 8+ steps, suggest milestone phases.
+
+## Step-Specific Configuration
+
+When creating steps, include detailed config for these step types:
+- **FORM**: Include \`formFields\` array with fieldId, label, type, required, options
+- **QUESTIONNAIRE**: Include \`questionnaire.questions\` array with questionId, question, answerType, choices
+- **FILE_REQUEST**: Include \`fileRequest\` with maxFiles, allowedTypes, instructions
+- **ESIGN**: Include \`esign\` with documentName, signingOrder (SEQUENTIAL or PARALLEL)
+- **AI automation types**: Include \`aiAutomation\` with actionType, prompt, inputFields, outputFields
+- **SYSTEM_EMAIL**: Include \`systemEmail\` with to, subject, body (all support DDR references)
+- **SYSTEM_WEBHOOK**: Include \`systemWebhook\` with url, method, headers, payload
+- **PDF_FORM**: Include \`pdfForm\` with documentUrl, fields array
+- **SUB_FLOW**: Include \`subFlow\` with flowTemplateId, assigneeMappings, variableMappings
+- **WAIT**: Include \`waitType\` (DURATION, DATE, CONDITION) and \`waitDuration\`
+- **TERMINATE**: Include \`terminateStatus\` (COMPLETED or CANCELLED)
+- **GOTO**: Include \`targetGotoDestinationId\` referencing the GOTO_DESTINATION step
+- **GOTO_DESTINATION**: Include \`destinationLabel\` (e.g., "Point A")`;
 }
 
 function generateConstraintsSection(constraints: ConstraintsConfig): string {
@@ -397,7 +492,20 @@ These are absolute limits that cannot be exceeded:
 When a step has multiple assignees: ${constraints.completionModes.join(', ')}
 
 ## Assignee Order
-How assignees execute: ${constraints.assigneeOrderOptions.join(', ')}`;
+How assignees execute: ${constraints.assigneeOrderOptions.join(', ')}
+
+## Sub-Flow
+- Maximum nesting depth: ${constraints.subflow?.maxNestingDepth ?? 3} levels
+- Sub-flows cannot reference themselves (no recursion)
+
+## skipSequentialOrder
+- Applies to human action and automation steps
+- Set on 2nd/3rd concurrent steps, NOT on the 1st
+- For more than 3 concurrent steps or multi-step tracks, use PARALLEL_BRANCH
+
+## Multi-Choice Branch
+- Maximum paths: ${constraints.multiChoiceBranch?.maxPaths ?? 3}
+- All paths with true conditions execute simultaneously`;
 }
 
 function generateStepTypesSection(stepTypes: StepTypeConfig[]): string {
@@ -562,7 +670,19 @@ Apply these defaults unless the user specifies otherwise:
 
 ## Flow Settings
 - Chat assistance: ${defaults.flow.chatAssistanceEnabled ? 'Enabled' : 'Disabled'}
-- Auto-archive: ${defaults.flow.autoArchiveEnabled ? 'Enabled' : 'Disabled'}`;
+- Auto-archive: ${defaults.flow.autoArchiveEnabled ? 'Enabled' : 'Disabled'}
+
+## Skip Sequential Order
+- Default: No (steps run sequentially)
+- Set skipSequentialOrder: true for concurrent steps (apply to 2nd/3rd step, not 1st)
+
+## Approval vs Decision
+- APPROVAL: Cannot be declined (approve-only). Use for sign-offs.
+- DECISION: Choose between 2-3 outcomes. Use when rejection/revision is possible.
+
+## Assignee Experience
+- Default view: Spotlight (focused task view)
+- Alternative: Gallery (all visible steps shown)`;
 }
 
 function generateBehaviorSection(playbook: SEPlaybookConfig): string {
@@ -684,6 +804,30 @@ Example: "${behaviors.whenConstraintViolated.example}"
 ## When Feature Is Unsupported
 ${behaviors.whenUnsupported.action}
 Example: "${behaviors.whenUnsupported.example}"`;
+}
+
+// ============================================================================
+// Template Catalog (Optional)
+// ============================================================================
+
+function generateTemplatePatternsSection(catalog: TemplateCatalogConfig): string {
+  const categoryLines = catalog.categories.map(cat => {
+    const templateLines = cat.templates.map(t =>
+      `  - **${t.name}** — Roles: ${t.roles.join(', ')} — ${t.pattern}`
+    ).join('\n');
+    return `### ${cat.name}\n${templateLines}`;
+  }).join('\n\n');
+
+  return `# Template Pattern Library
+
+You have knowledge of 93 pre-built workflow templates across 13 industries. When a user's request closely matches a template pattern below, use it to:
+- **Skip unnecessary clarification** — you already know the typical roles, step types, and flow pattern
+- **Generate better initial workflows** — follow the proven pattern, then customize to the user's specifics
+- **Suggest the right step types** — each pattern shows the recommended step type sequence
+
+When a user describes a generic process (e.g., "client onboarding", "vendor assessment", "contract review"), check if a template below matches. If so, use its pattern as a starting point and note it in your assumptions.
+
+${categoryLines}`;
 }
 
 // ============================================================================

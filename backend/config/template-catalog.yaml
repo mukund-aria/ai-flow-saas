@@ -1,0 +1,332 @@
+# Template Catalog for AI Copilot
+# Compact index of 93 pre-built templates so the AI can recognize matching patterns.
+#
+# HOW IT WORKS:
+# - This catalog is injected into the system prompt (~1-2K tokens)
+# - When a user describes a process matching a template, the AI uses this
+#   knowledge to generate better-informed workflows with the right roles,
+#   step types, and patterns — without needing clarification.
+#
+# TO DISABLE: Set enabled: false or delete this file entirely.
+# The prompt generator gracefully skips this section when missing.
+
+enabled: true
+
+categories:
+  - name: Client Onboarding
+    templates:
+      - name: "SaaS Customer Onboarding"
+        roles: [Customer Contact, Implementation Lead, CSM]
+        pattern: "FORM → PARALLEL_BRANCH(env setup, training) → ACKNOWLEDGEMENT"
+      - name: "Financial Services Client Onboarding (KYC)"
+        roles: [Client, KYC Analyst, Compliance Officer]
+        pattern: "FORM → FILE_REQUEST(docs) → AI_EXTRACT(KYC) → DECISION(risk) → APPROVAL"
+      - name: "Accounting Firm Client Onboarding"
+        roles: [Client, Engagement Manager]
+        pattern: "FORM → FILE_REQUEST → ESIGN(engagement letter) → TODO(setup)"
+      - name: "Legal Client Intake & Matter Opening"
+        roles: [Client, Intake Attorney, Paralegal]
+        pattern: "FORM → QUESTIONNAIRE(conflict check) → DECISION → ESIGN(engagement)"
+      - name: "Insurance New Business Submission"
+        roles: [Broker/Applicant, Underwriter]
+        pattern: "FORM → FILE_REQUEST → AI_EXTRACT → DECISION(underwriting) → ESIGN"
+      - name: "General Post-Sale Onboarding"
+        roles: [Client Admin, Account Manager, Operations Lead]
+        pattern: "FORM → TODO(setup) → ACKNOWLEDGEMENT(welcome)"
+      - name: "Customer Offboarding & Account Closure"
+        roles: [Client Contact, Account Manager, IT/Security, Finance]
+        pattern: "FORM → PARALLEL_BRANCH(data export, access revoke) → ACKNOWLEDGEMENT"
+
+  - name: Vendor & Partner Management
+    templates:
+      - name: "Vendor Onboarding"
+        roles: [Vendor Contact, Procurement Owner, Finance Reviewer]
+        pattern: "FORM → FILE_REQUEST(compliance docs) → APPROVAL → ESIGN(contract)"
+      - name: "Vendor Security Assessment"
+        roles: [Vendor Contact, Security Reviewer, IT Risk Manager]
+        pattern: "QUESTIONNAIRE(security) → AI_CUSTOM_PROMPT(risk score) → DECISION"
+      - name: "Vendor Compliance Certification (Annual)"
+        roles: [Vendor Contact, Compliance Reviewer]
+        pattern: "FORM → FILE_REQUEST(certs) → APPROVAL"
+      - name: "Third-Party Due Diligence"
+        roles: [Third Party Contact, Risk Reviewer, Legal Counsel, Compliance Officer]
+        pattern: "FORM → FILE_REQUEST → QUESTIONNAIRE → DECISION(risk) → APPROVAL"
+      - name: "Third-Party Remediation Tracking"
+        roles: [Third Party Contact, Risk Reviewer, Control Owner]
+        pattern: "FORM(findings) → TODO(remediation) → FILE_REQUEST(evidence) → APPROVAL"
+      - name: "Partner/Channel Onboarding"
+        roles: [Partner Contact, Partner Manager]
+        pattern: "FORM → ESIGN(agreement) → TODO(enablement) → ACKNOWLEDGEMENT"
+      - name: "Reseller/Distributor Onboarding"
+        roles: [Reseller Contact, Channel Manager, Legal Reviewer, Finance]
+        pattern: "FORM → FILE_REQUEST → ESIGN → APPROVAL → TODO(setup)"
+
+  - name: HR & Employee Lifecycle
+    templates:
+      - name: "Employee Onboarding"
+        roles: [New Hire, HR Coordinator, Hiring Manager]
+        pattern: "FORM → PARALLEL_BRANCH(paperwork, IT setup, benefits) → ACKNOWLEDGEMENT"
+      - name: "Contractor/Freelancer Onboarding"
+        roles: [Contractor, Hiring Manager, Finance]
+        pattern: "FORM → QUESTIONNAIRE(classification) → ESIGN(agreement) → TODO"
+      - name: "Background Check & Employment Verification"
+        roles: [Candidate, HR Coordinator, Background Vendor, Previous Employer]
+        pattern: "FORM(consent) → PARALLEL_BRANCH(background, employment verify) → DECISION"
+      - name: "Employee Termination & Offboarding"
+        roles: [Departing Employee, HR Coordinator, IT Administrator, Finance, Manager]
+        pattern: "FORM → PARALLEL_BRANCH(exit interview, access revoke, equipment) → TODO"
+      - name: "Employee Relocation"
+        roles: [Employee, HR Coordinator, Relocation Company, Destination Services]
+        pattern: "FORM → APPROVAL → PARALLEL_BRANCH(housing, logistics) → TODO"
+
+  - name: Banking & Financial Services
+    templates:
+      - name: "Individual KYC Verification"
+        roles: [Individual, Compliance Reviewer, Compliance Manager]
+        pattern: "FORM → FILE_REQUEST(ID docs) → AI_EXTRACT → DECISION(risk) → APPROVAL"
+      - name: "Business KYB Document Collection"
+        roles: [Business Admin, Beneficial Owner, Compliance Reviewer, Compliance Manager]
+        pattern: "FORM → FILE_REQUEST(formation docs) → QUESTIONNAIRE(UBO) → APPROVAL"
+      - name: "Beneficial Ownership (FinCEN BOI) Collection"
+        roles: [Company Contact, Beneficial Owner, Filing Agent]
+        pattern: "FORM → FILE_REQUEST(ID) → PDF_FORM(BOI report) → APPROVAL"
+      - name: "Periodic KYC/KYB Refresh"
+        roles: [Client Contact, Beneficial Owner, Compliance Reviewer]
+        pattern: "FORM(update info) → FILE_REQUEST(updated docs) → APPROVAL"
+      - name: "Commercial Loan Application & Underwriting"
+        roles: [Borrower, Loan Officer, Underwriter, Credit Committee]
+        pattern: "FORM → FILE_REQUEST(financials) → AI_EXTRACT → DECISION(credit) → ESIGN"
+      - name: "Wire Transfer Authorization"
+        roles: [Requestor, Approver 1, Approver 2, Treasury Operations]
+        pattern: "FORM → APPROVAL(dual auth) → SYSTEM_WEBHOOK(OFAC) → TODO(execute)"
+      - name: "Investment Account Opening"
+        roles: [Investor, Account Manager, Compliance Officer, Operations]
+        pattern: "FORM → FILE_REQUEST(ID) → QUESTIONNAIRE(suitability) → APPROVAL → ESIGN"
+      - name: "Credit Line Renewal/Increase Request"
+        roles: [Borrower, Relationship Manager, Credit Analyst, Credit Committee]
+        pattern: "FORM → FILE_REQUEST(financials) → AI_SUMMARIZE → DECISION → ESIGN"
+
+  - name: Sales & Evaluation
+    templates:
+      - name: "Guided Product Trial"
+        roles: [Prospect, Sales Rep]
+        pattern: "FORM(registration) → TODO(setup) → QUESTIONNAIRE(mid-trial) → DECISION"
+      - name: "Pilot Program Evaluation"
+        roles: [Prospect Sponsor, Pilot Lead]
+        pattern: "FORM(scope) → PARALLEL_BRANCH(setup, success criteria) → DECISION(go/no-go)"
+      - name: "AI Pilot Evaluation"
+        roles: [Business Sponsor, AI Lead, IT Security, Data Privacy Officer, Pilot Users]
+        pattern: "FORM → QUESTIONNAIRE(security) → PARALLEL_BRANCH(pilot, privacy) → DECISION"
+      - name: "Proposal/SOW Delivery"
+        roles: [Client Prospect, Sales Lead]
+        pattern: "FORM(requirements) → FILE_REQUEST(proposal) → DECISION(accept) → ESIGN"
+      - name: "RFP Response Coordination"
+        roles: [Proposal Lead, SMEs, Executive Sponsor]
+        pattern: "DECISION(go/no-go) → PARALLEL_BRANCH(sections) → APPROVAL → FILE_REQUEST"
+
+  - name: Account Management
+    templates:
+      - name: "Quarterly Business Review (QBR)"
+        roles: [Client Stakeholder, Account Manager]
+        pattern: "FORM(data collection) → FILE_REQUEST(presentation) → TODO(action items)"
+      - name: "Annual Renewal"
+        roles: [Client Contact, CSM, Finance]
+        pattern: "QUESTIONNAIRE(satisfaction) → DECISION(renew/churn) → ESIGN(contract)"
+      - name: "Client Health Check"
+        roles: [Client Contact, CSM]
+        pattern: "QUESTIONNAIRE(pulse) → AI_SUMMARIZE → TODO(action plan)"
+      - name: "Billing Dispute Resolution"
+        roles: [Client, Finance Lead]
+        pattern: "FORM(dispute) → FILE_REQUEST(evidence) → DECISION → APPROVAL(credit)"
+
+  - name: Professional Services & Delivery
+    templates:
+      - name: "Engagement Kickoff & Scope Confirmation"
+        roles: [Client Sponsor, Implementation Lead]
+        pattern: "FORM(handoff) → ACKNOWLEDGEMENT(scope) → TODO(setup)"
+      - name: "Deliverable Review"
+        roles: [Service Owner, Client Reviewer, Client Approver]
+        pattern: "FILE_REQUEST(deliverable) → DECISION(review) → GOTO(revision loop)"
+      - name: "Go-Live/Launch Readiness"
+        roles: [Client Sponsor, Implementation Lead]
+        pattern: "QUESTIONNAIRE(readiness) → PARALLEL_BRANCH(deploy, train) → APPROVAL"
+      - name: "Client Service Request"
+        roles: [Client Requestor, Service Owner, Manager]
+        pattern: "FORM(request) → DECISION(priority) → TODO(fulfill) → APPROVAL"
+      - name: "Change Request/Scope Change"
+        roles: [Client Requestor, Engagement Manager, Approver]
+        pattern: "FORM(change) → AI_SUMMARIZE(impact) → APPROVAL → ESIGN(amendment)"
+      - name: "Tax Return Preparation"
+        roles: [Client/Taxpayer, Tax Preparer, Tax Reviewer]
+        pattern: "ESIGN(engagement) → FILE_REQUEST(docs) → PARALLEL_BRANCH(prep) → DECISION(review) → GOTO(revision) → ESIGN"
+
+  - name: Insurance & Claims
+    templates:
+      - name: "Insurance Claim Coordination"
+        roles: [Claimant, Claims Adjuster, Claims Manager]
+        pattern: "FORM(FNOL) → AI_EXTRACT(triage) → FILE_REQUEST(docs) → DECISION → APPROVAL"
+      - name: "Insurance Application & Underwriting"
+        roles: [Applicant, Agent/Broker, Underwriter, Underwriting Manager]
+        pattern: "FORM → QUESTIONNAIRE → AI_CUSTOM_PROMPT(risk) → DECISION(underwrite)"
+      - name: "Certificate of Insurance Request"
+        roles: [Certificate Holder, Insured, Insurance Coordinator, Agent]
+        pattern: "FORM(request) → APPROVAL → PDF_FORM(certificate) → SYSTEM_EMAIL"
+      - name: "Workers Compensation Claim"
+        roles: [Injured Employee, Employer/HR, Claims Adjuster, Treating Physician]
+        pattern: "FORM(injury report) → FILE_REQUEST(medical) → DECISION(accept/deny)"
+      - name: "Policy Renewal Coordination"
+        roles: [Policyholder, Account Manager, Underwriter, Broker]
+        pattern: "FORM(exposure update) → QUESTIONNAIRE → DECISION → ESIGN(renewal)"
+      - name: "Surety Bond Application"
+        roles: [Principal, Surety Agent, Underwriter]
+        pattern: "FORM → FILE_REQUEST(financials) → AI_EXTRACT → DECISION → ESIGN(bond)"
+      - name: "Insurance Audit Coordination"
+        roles: [Policyholder, Auditor, Account Manager]
+        pattern: "FORM → FILE_REQUEST(records) → QUESTIONNAIRE → DECISION(findings)"
+
+  - name: Healthcare
+    templates:
+      - name: "Prior Authorization Coordination"
+        roles: [Patient, Provider Staff, Payer Contact, Physician]
+        pattern: "FORM(request) → FILE_REQUEST(clinical docs) → DECISION(auth) → SYSTEM_EMAIL"
+      - name: "Patient Intake & Records Collection"
+        roles: [Patient, Intake Coordinator, Prior Provider, Insurance Verifier]
+        pattern: "FORM(demographics) → PARALLEL_BRANCH(insurance, records) → ACKNOWLEDGEMENT"
+      - name: "Medical Records Release"
+        roles: [Patient, Records Coordinator, Receiving Party]
+        pattern: "ESIGN(authorization) → TODO(locate records) → FILE_REQUEST → SYSTEM_EMAIL"
+      - name: "Provider Credentialing"
+        roles: [Provider, Credentialing Coordinator, Medical Director, Credentialing Committee]
+        pattern: "FORM → FILE_REQUEST(licenses) → QUESTIONNAIRE → DECISION(committee)"
+      - name: "Clinical Trial Enrollment"
+        roles: [Participant, Study Coordinator, Principal Investigator]
+        pattern: "ESIGN(consent) → QUESTIONNAIRE(eligibility) → DECISION(enroll)"
+
+  - name: Legal & Corporate Governance
+    templates:
+      - name: "Contract Review & Execution"
+        roles: [Counterparty, Legal Reviewer, Executive]
+        pattern: "FILE_REQUEST(contract) → AI_CUSTOM_PROMPT(risk analysis) → DECISION(review) → GOTO(revision) → ESIGN"
+      - name: "Contract Exception Request"
+        roles: [Requestor, Legal Reviewer, Business Approver, Finance Reviewer, Deal Desk]
+        pattern: "FORM(exception) → DECISION(risk) → PARALLEL_BRANCH(legal, finance) → APPROVAL"
+      - name: "NDA Execution"
+        roles: [External Party, Legal Owner]
+        pattern: "FORM(request) → ESIGN(NDA)"
+      - name: "Litigation Hold Acknowledgement"
+        roles: [Custodian, Legal Owner]
+        pattern: "ACKNOWLEDGEMENT(hold notice) → QUESTIONNAIRE(data sources)"
+      - name: "Board Resolution & Consent Collection"
+        roles: [Corporate Secretary, Board Member, General Counsel, CEO]
+        pattern: "FILE_REQUEST(resolution) → AI_SUMMARIZE → DECISION(vote) → ESIGN"
+      - name: "M&A Due Diligence Document Request"
+        roles: [Target Company Contact, Deal Team Lead, Buyer Counsel]
+        pattern: "FORM → PARALLEL_BRANCH(legal, financial, IP, HR) → AI_SUMMARIZE → DECISION"
+      - name: "DSAR/Privacy Rights Request"
+        roles: [Data Subject, Privacy Operations, IT/Data Team, Legal Reviewer]
+        pattern: "FORM(request) → DECISION(verify) → TODO(locate data) → APPROVAL → SYSTEM_EMAIL"
+      - name: "Subpoena Response Coordination"
+        roles: [Legal Owner, Custodian, IT Administrator, Outside Counsel]
+        pattern: "FORM → TODO(identify docs) → FILE_REQUEST → DECISION(privilege) → APPROVAL"
+      - name: "New Business Formation"
+        roles: [Founder, Legal Advisor, Registered Agent, Accountant]
+        pattern: "FORM(entity type) → PARALLEL_BRANCH(articles, EIN, banking) → ESIGN"
+      - name: "Franchise Agreement Execution"
+        roles: [Franchisee, Franchise Development Manager, Legal Reviewer, Finance, Training Lead]
+        pattern: "FORM → FILE_REQUEST(financials) → DECISION → ESIGN → PARALLEL_BRANCH(training, setup)"
+      - name: "Trademark/IP Assignment"
+        roles: [Assignor, IP Counsel, Assignee, IP Administrator]
+        pattern: "FORM(IP details) → FILE_REQUEST(registration) → ESIGN(assignment) → TODO(record)"
+
+  - name: Audit & Compliance
+    templates:
+      - name: "SOC 2 Evidence Collection"
+        roles: [Control Owner, Compliance Coordinator, External Auditor]
+        pattern: "FORM(scope) → PARALLEL_BRANCH(TSC domains) → DECISION(review) → GOTO(remediate)"
+      - name: "ISO 27001 Evidence Collection"
+        roles: [Control Owner, ISO Program Owner, External Auditor]
+        pattern: "FORM(scope) → FILE_REQUEST(evidence by control) → DECISION(findings)"
+      - name: "External Financial Audit Coordination"
+        roles: [External Auditor, Controller/CFO, Department Heads]
+        pattern: "FORM(PBC list) → PARALLEL_BRANCH(departments) → FILE_REQUEST → DECISION"
+      - name: "PCI DSS SAQ/AOC Collection"
+        roles: [Merchant Contact, Security Lead, Executive Signer]
+        pattern: "QUESTIONNAIRE(SAQ) → FILE_REQUEST(evidence) → ESIGN(AOC)"
+      - name: "HIPAA Business Associate Attestation"
+        roles: [Business Associate Contact, Compliance Lead]
+        pattern: "FORM → ACKNOWLEDGEMENT(BAA) → ESIGN"
+      - name: "Internal Audit Evidence Request"
+        roles: [Audit Lead, Control Owner, Department Manager]
+        pattern: "FORM(scope) → FILE_REQUEST(evidence) → DECISION(findings) → TODO(remediate)"
+      - name: "Periodic Compliance Certification"
+        roles: [Certifier, Compliance Officer, Executive]
+        pattern: "QUESTIONNAIRE(attestation) → APPROVAL → ESIGN(certification)"
+      - name: "Policy Acknowledgement Rollout"
+        roles: [Policy Recipient, Compliance Admin]
+        pattern: "ACKNOWLEDGEMENT(policy) → QUESTIONNAIRE(comprehension)"
+      - name: "Regulatory Inquiry Response Coordination"
+        roles: [Compliance Owner, Subject Matter Expert, Legal Counsel, Executive Sponsor]
+        pattern: "FORM(inquiry) → FILE_REQUEST(evidence) → APPROVAL → SYSTEM_EMAIL(response)"
+      - name: "Internal Control Self-Assessment"
+        roles: [Control Owner, Compliance Coordinator, Department Manager]
+        pattern: "QUESTIONNAIRE(assessment) → FILE_REQUEST(evidence) → DECISION → TODO(remediate)"
+
+  - name: Construction & Real Estate
+    templates:
+      - name: "Subcontractor Qualification"
+        roles: [Subcontractor, Project Manager, Safety Lead, Insurance Coordinator]
+        pattern: "FORM(profile) → FILE_REQUEST(insurance, licenses) → QUESTIONNAIRE(safety) → DECISION"
+      - name: "Lien Waiver & Progress Payment"
+        roles: [Subcontractor, Project Manager, Accounts Payable, Owner Representative]
+        pattern: "FORM(pay app) → FILE_REQUEST(lien waiver) → APPROVAL → SYSTEM_EMAIL"
+      - name: "Lien Waiver & Final Payment"
+        roles: [Subcontractor, Project Manager, Accounts Payable, Owner Representative]
+        pattern: "TODO(punch list) → FILE_REQUEST(closeout docs, final waiver) → APPROVAL"
+      - name: "Submittals & Shop Drawing Approval"
+        roles: [Subcontractor, Project Manager, Architect/Engineer, Owner Representative]
+        pattern: "FILE_REQUEST(submittal) → DECISION(review) → GOTO(revision) → APPROVAL"
+      - name: "RFI Coordination"
+        roles: [Contractor, Architect, Engineer]
+        pattern: "FORM(question) → DECISION(route) → TODO(answer) → SYSTEM_EMAIL"
+      - name: "Change Order Approval"
+        roles: [Contractor, Project Manager, Architect, Owner Representative]
+        pattern: "FORM(change) → FILE_REQUEST(backup) → DECISION(architect) → APPROVAL(owner)"
+      - name: "Construction Project Closeout"
+        roles: [GC/Contractor, Architect, Owner]
+        pattern: "TODO(punch list) → FILE_REQUEST(as-builts, warranties) → PARALLEL_BRANCH(inspections) → ESIGN"
+      - name: "Residential Purchase Transaction"
+        roles: [Buyer, Seller, Escrow/Title Agent, Buyer Agent]
+        pattern: "FORM → PARALLEL_BRANCH(inspection, financing, title) → ESIGN(closing)"
+      - name: "Commercial Lease Execution"
+        roles: [Tenant, Landlord Representative, Property Manager]
+        pattern: "FORM(application) → DECISION(credit) → FILE_REQUEST(negotiation) → ESIGN(lease)"
+      - name: "Tenant Move-Out & Security Deposit"
+        roles: [Tenant, Property Manager, Maintenance, Accounting]
+        pattern: "FORM(notice) → TODO(inspection) → DECISION(deductions) → SYSTEM_EMAIL"
+
+  - name: Order & Supply Chain
+    templates:
+      - name: "Order Fulfillment"
+        roles: [Customer, Warehouse Lead, Shipping Coordinator]
+        pattern: "FORM(PO) → TODO(pick-pack) → FILE_REQUEST(BOL) → SYSTEM_EMAIL(tracking)"
+      - name: "Purchase Order Processing"
+        roles: [Requisitioner, Procurement Lead, Vendor]
+        pattern: "FORM(requisition) → APPROVAL → SYSTEM_EMAIL(PO to vendor) → FILE_REQUEST(confirmation)"
+      - name: "RMA/Return Processing"
+        roles: [Customer, Returns Lead]
+        pattern: "FORM(return request) → DECISION(approve) → TODO(inspect) → DECISION(disposition)"
+      - name: "Customer Complaint Resolution"
+        roles: [Customer, Quality Lead]
+        pattern: "FORM(complaint) → AI_CUSTOM_PROMPT(triage) → TODO(investigate) → DECISION(resolution)"
+      - name: "Import/Customs Clearance"
+        roles: [Importer, Customs Broker, Regulatory Liaison]
+        pattern: "FILE_REQUEST(commercial docs) → TODO(classify) → APPROVAL(customs) → SYSTEM_EMAIL"
+      - name: "Supplier Corrective Action Request (SCAR)"
+        roles: [Supplier Contact, Quality Engineer, Procurement Lead, Quality Manager]
+        pattern: "FORM(defect) → FILE_REQUEST(root cause) → DECISION(review) → GOTO(insufficient) → APPROVAL"
+      - name: "First Article Inspection (FAI)"
+        roles: [Supplier, Quality Engineer, Engineering Reviewer]
+        pattern: "FILE_REQUEST(samples + data) → QUESTIONNAIRE(inspection) → DECISION(accept/reject)"
+      - name: "Product Recall Coordination"
+        roles: [Manufacturer, Distributor, Retailer, Regulatory Liaison]
+        pattern: "FORM(recall details) → PARALLEL_BRANCH(notify distributors, retailers) → FILE_REQUEST(confirmation)"

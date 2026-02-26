@@ -23,7 +23,8 @@ steps:
   # Default visibility
   visibleToAllAssignees: false
 
-  # Skip sequential order (run parallel with previous)
+  # Skip sequential order — when true, step starts without waiting for previous step.
+  # Use for 2-3 concurrent individual steps. For multi-step parallel tracks, use PARALLEL_BRANCH.
   skipSequentialOrder: false
 
   # Default completion mode for multi-assignee steps
@@ -86,3 +87,10 @@ acknowledgement:
 esign:
   # Default signing order
   signingOrder: SEQUENTIAL
+
+subFlow:
+  waitForCompletion: true
+  onTimeout: CONTINUE
+
+businessRule:
+  coordinatorOnly: true

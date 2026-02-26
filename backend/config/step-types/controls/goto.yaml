@@ -54,6 +54,7 @@ aiGuidance:
     - Send workflow back for re-review after rejection
     - Create retry loops for failed steps
     - Allow users to re-enter data after validation failure
+    - Inside DECISION 'Reject' outcomes to send back for revision
 
   whenNotToUse: |
     - Don't create infinite loops without exit conditions
@@ -63,6 +64,8 @@ aiGuidance:
   examples:
     - trigger: Send back for changes
       mapsTo: GOTO pointing to document upload step
+    - trigger: Revision loop after rejection
+      mapsTo: GOTO inside DECISION reject outcome, targeting GOTO_DESTINATION before the review step
 
   defaults:
     - Target should be placed before the GOTO in workflow order

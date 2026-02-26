@@ -61,3 +61,5 @@ aiGuidance:
   examples:
     - trigger: Return point for re-review
       mapsTo: GOTO_DESTINATION labeled "Back to document review"
+    - trigger: Document review revision cycle
+      mapsTo: GOTO_DESTINATION before file upload, referenced by GOTO in rejection path

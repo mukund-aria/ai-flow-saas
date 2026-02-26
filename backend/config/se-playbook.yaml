@@ -70,7 +70,7 @@ consultationStages:
       - "What should the action description be?"
       - "Who should it be assigned to?"
       - "How long should it take / should we set a due date?"
-      - "Should it run in parallel with the previous step?"
+      - "Should it run concurrently with the previous step? (skipSequentialOrder for 2-3 steps, PARALLEL_BRANCH for multi-step tracks)"
       - "Should it be visible to anyone other than the assignee?"
     # Questions specific to each step type (ask when that type is identified)
     stepTypeQuestions:
@@ -176,6 +176,24 @@ consultationStages:
       BUSINESS_RULE:
         - "What conditions should be evaluated?"
         - "What action should happen when conditions are met?"
+      GOTO:
+        - "What should trigger the loop back? (e.g., rejection, revision needed)"
+        - "Where should the workflow return to?"
+      GOTO_DESTINATION:
+        - "What section of the workflow might need to repeat?"
+      MULTI_CHOICE_BRANCH:
+        - "Which conditions can be true at the same time?"
+        - "What should happen for each matching condition?"
+        - "Is this based on multiple non-exclusive criteria?"
+      TERMINATE:
+        - "Should the flow end with COMPLETED or CANCELLED status?"
+        - "Are there subsequent steps that still need to execute?"
+    proactiveReview:
+      - "Look for approval/review steps that might need a revision loop → suggest GOTO pattern"
+      - "Look for 2-3 independent steps that could run concurrently → suggest skipSequentialOrder"
+      - "Look for multi-step parallel work tracks → suggest PARALLEL_BRANCH"
+      - "If using DECISION with reject outcome, ask if rejected items should loop back"
+      - "If there are more than 8 steps, consider grouping into milestone phases"
     validation:
       - "Can all steps be mapped to supported step types?"
       - "Are assignees defined for human actions?"
@@ -309,6 +327,10 @@ behaviors:
             text: "Who is allowed to edit this flow design?"
             hint: "Enter email addresses"
             mapsTo: "flow.permissions.edit"
+      - question: "Should any review steps support revision loops?"
+        recommendation: "If there are approval/decision points, consider adding a GOTO loop so rejected items return for rework instead of ending the flow."
+      - question: "Would you like to add permissions before launching?"
+        recommendation: "Set who can start (execute), manage (coordinate), and modify (edit) this flow."
     # IMPORTANT: Infer approvals from context, don't ask separately
     inferApprovalsFromContext:
       - "If user describes steps without mentioning approvals → assume no approvals needed"
@@ -342,6 +364,9 @@ behaviors:
       - "Process improvements"
       - "Missing edge cases (what if X fails?)"
       - "Parallel execution opportunities"
+      - "Revision loops for review/approval steps (GOTO pattern)"
+      - "skipSequentialOrder for concurrent steps vs PARALLEL_BRANCH for parallel tracks"
+      - "Milestone phases for longer workflows (8+ steps)"
 
   # Error handling
   whenConstraintViolated:

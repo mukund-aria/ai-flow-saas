@@ -87,6 +87,11 @@ aiGuidance:
     - When paths are not condition-based (use PARALLEL_BRANCH)
     - When conditions are mutually exclusive (use SINGLE_CHOICE_BRANCH)
 
+  seQuestions:
+    - "Which conditions can be true at the same time?"
+    - "What should happen for each matching condition?"
+    - "Is this based on multiple non-exclusive criteria?"
+
   examples:
     - trigger: Apply all relevant compliance procedures based on region and industry
       mapsTo: MULTI_CHOICE_BRANCH with conditions for each compliance category

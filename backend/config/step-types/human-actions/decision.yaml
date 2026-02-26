@@ -100,6 +100,7 @@ aiGuidance:
     - "What happens if the decision is 'No' or rejected?"
     - "Are there more than 2 possible outcomes?"
     - "Who should make this decision?"
+    - "If rejected, should the item loop back for revision? (GOTO pattern)"
 
   defaults:
     - "Two outcomes (Yes/No) unless more specified"
@@ -117,3 +118,5 @@ aiGuidance:
       mapsTo: DECISION
     - trigger: "if approved"
       mapsTo: DECISION
+    - trigger: "approve, reject with revision loop"
+      mapsTo: DECISION with GOTO in reject outcome

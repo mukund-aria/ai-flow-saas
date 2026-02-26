@@ -20,8 +20,9 @@ schema:
       type: path[]
       required: true
       constraints:
-        exactCount: 2
-      description: "Exactly two paths: if and else"
+        minCount: 2
+        maxCount: 3
+      description: "2-3 paths: conditions and optional else"
 
 # Path structure
 pathSchema:
@@ -68,7 +69,7 @@ completion:
   description: "After the matching path completes, flow continues to next main-path step"
 
 specialRules:
-  - "Exactly 2 paths (if and else)"
+  - "2-3 paths with conditions (last path should be ELSE fallback)"
   - "First path has condition, second path must have condition.type = ELSE"
   - "Exactly one path will execute"
   - "GOTO and TERMINATE are allowed inside paths"
@@ -76,8 +77,8 @@ specialRules:
   - "Branches can be nested up to maxNestingDepth (default: 2)"
 
 validationRules:
-  - rule: "paths.length === 2"
-    message: "Single choice branch must have exactly 2 paths"
+  - rule: "paths.length >= 2 && paths.length <= 3"
+    message: "Single choice branch must have 2-3 paths"
   - rule: "paths[1].condition.type === 'ELSE'"
     message: "Second path must be the ELSE fallback"
   - rule: "all nested steps have matching milestoneId"

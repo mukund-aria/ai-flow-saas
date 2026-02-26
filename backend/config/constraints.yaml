@@ -45,13 +45,13 @@ stepTypes:
       - SYSTEM_CHAT_MESSAGE
       - BUSINESS_RULE
     integrations:
-      - INTEGRATION_CRM
-      - INTEGRATION_PAYMENT
-      - INTEGRATION_STORAGE
-      - INTEGRATION_CALENDAR
-      - INTEGRATION_MESSAGING
-      - INTEGRATION_PROJECT_MGMT
-      - INTEGRATION_CUSTOM_API
+      - INTEGRATION_AIRTABLE
+      - INTEGRATION_CLICKUP
+      - INTEGRATION_DROPBOX
+      - INTEGRATION_GMAIL
+      - INTEGRATION_GOOGLE_DRIVE
+      - INTEGRATION_GOOGLE_SHEETS
+      - INTEGRATION_WRIKE
 
 branching:
   # Maximum number of parallel paths in a PARALLEL_BRANCH
@@ -129,3 +129,22 @@ completionModes:
 assigneeOrderOptions:
   - SEQUENTIAL
   - PARALLEL
+
+skipSequentialOrder:
+  description: "Allows a step to run concurrently with the previous step"
+  appliesToStepTypes: "All human action and automation steps"
+  notes:
+    - "Set on the 2nd and 3rd concurrent steps, NOT on the 1st"
+    - "For more than 3 concurrent steps or multi-step tracks, use PARALLEL_BRANCH"
+
+subflow:
+  maxNestingDepth: 3
+  notes:
+    - "Sub-flows cannot reference themselves (no recursion)"
+    - "Referenced flow must be in ACTIVE status"
+
+multiChoiceBranch:
+  maxPaths: 3
+  notes:
+    - "All paths with true conditions execute simultaneously"
+    - "At least one path should match in most cases"

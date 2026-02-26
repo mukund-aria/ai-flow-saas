@@ -49,9 +49,9 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                       'SYSTEM_WEBHOOK', 'SYSTEM_EMAIL',
                       'SYSTEM_CHAT_MESSAGE', 'BUSINESS_RULE',
                       // Integration Automations
-                      'INTEGRATION_CRM', 'INTEGRATION_PAYMENT', 'INTEGRATION_STORAGE',
-                      'INTEGRATION_CALENDAR', 'INTEGRATION_MESSAGING',
-                      'INTEGRATION_PROJECT_MGMT', 'INTEGRATION_CUSTOM_API'
+                      'INTEGRATION_AIRTABLE', 'INTEGRATION_CLICKUP', 'INTEGRATION_DROPBOX',
+                      'INTEGRATION_GMAIL', 'INTEGRATION_GOOGLE_DRIVE',
+                      'INTEGRATION_GOOGLE_SHEETS', 'INTEGRATION_WRIKE'
                     ]
                   },
                   config: {
@@ -94,7 +94,82 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                           },
                           required: ['outcomeId', 'label', 'steps']
                         }
-                      }
+                      },
+                      skipSequentialOrder: { type: 'boolean', description: 'When true, this step starts without waiting for the previous step. Use for 2-3 concurrent steps.' },
+                      // GOTO
+                      targetGotoDestinationId: { type: 'string', description: 'For GOTO steps: stepId of the GOTO_DESTINATION to jump to' },
+                      destinationLabel: { type: 'string', description: 'For GOTO_DESTINATION steps: label like "Point A"' },
+                      // TERMINATE
+                      terminateStatus: { type: 'string', enum: ['COMPLETED', 'CANCELLED'], description: 'For TERMINATE steps: the final flow status' },
+                      // WAIT
+                      waitType: { type: 'string', enum: ['DURATION', 'DATE', 'CONDITION'], description: 'For WAIT steps: type of wait' },
+                      waitDuration: { type: 'object', properties: { value: { type: 'number' }, unit: { type: 'string', enum: ['minutes', 'hours', 'days'] } } },
+                      // FORM
+                      formFields: {
+                        type: 'array', description: 'For FORM steps: fields to collect',
+                        items: { type: 'object', properties: {
+                          fieldId: { type: 'string' }, label: { type: 'string' },
+                          type: { type: 'string', enum: ['TEXT_SINGLE_LINE', 'TEXT_MULTI_LINE', 'SINGLE_SELECT', 'MULTI_SELECT', 'DROPDOWN', 'FILE_UPLOAD', 'DATE', 'NUMBER', 'EMAIL', 'PHONE', 'CURRENCY', 'NAME', 'ADDRESS', 'SIGNATURE'] },
+                          required: { type: 'boolean' }, options: { type: 'array', items: { type: 'object', properties: { label: { type: 'string' }, value: { type: 'string' } } } }
+                        }}
+                      },
+                      // QUESTIONNAIRE
+                      questionnaire: {
+                        type: 'object', properties: {
+                          questions: { type: 'array', items: { type: 'object', properties: {
+                            questionId: { type: 'string' }, question: { type: 'string' },
+                            answerType: { type: 'string', enum: ['SINGLE_SELECT', 'MULTI_SELECT', 'TEXT', 'YES_NO'] },
+                            choices: { type: 'array', items: { type: 'string' } }, required: { type: 'boolean' }
+                          }}}
+                        }
+                      },
+                      // FILE_REQUEST
+                      fileRequest: { type: 'object', properties: {
+                        maxFiles: { type: 'number' }, allowedTypes: { type: 'array', items: { type: 'string' } }, instructions: { type: 'string' }
+                      }},
+                      // ESIGN
+                      esign: { type: 'object', properties: {
+                        documentName: { type: 'string' }, documentDescription: { type: 'string' },
+                        signingOrder: { type: 'string', enum: ['SEQUENTIAL', 'PARALLEL'] }
+                      }},
+                      // AI Automation
+                      aiAutomation: { type: 'object', properties: {
+                        actionType: { type: 'string', enum: ['CUSTOM_PROMPT', 'EXTRACT', 'SUMMARIZE', 'TRANSCRIBE', 'TRANSLATE', 'WRITE'] },
+                        prompt: { type: 'string', description: 'AI instructions' },
+                        inputFields: { type: 'array', items: { type: 'object' } },
+                        outputFields: { type: 'array', items: { type: 'object' } }
+                      }},
+                      // System Email
+                      systemEmail: { type: 'object', properties: {
+                        to: { type: 'array', items: { type: 'string' }, description: 'Recipients (supports DDR like "{Role: Client / Email}")' },
+                        subject: { type: 'string' }, body: { type: 'string' }
+                      }},
+                      // System Webhook
+                      systemWebhook: { type: 'object', properties: {
+                        url: { type: 'string' }, method: { type: 'string', enum: ['GET', 'POST', 'PUT', 'PATCH'] },
+                        headers: { type: 'object' }, payload: { type: 'string' }
+                      }},
+                      // Sub Flow
+                      subFlow: { type: 'object', properties: {
+                        flowTemplateId: { type: 'string' },
+                        assigneeMappings: { type: 'array', items: { type: 'object' } },
+                        variableMappings: { type: 'array', items: { type: 'object' } }
+                      }},
+                      // PDF Form
+                      pdfForm: { type: 'object', properties: {
+                        documentUrl: { type: 'string' },
+                        fields: { type: 'array', items: { type: 'object', properties: {
+                          pdfFieldName: { type: 'string' }, label: { type: 'string' },
+                          fieldType: { type: 'string', enum: ['text', 'checkbox', 'dropdown', 'radio', 'signature'] },
+                          required: { type: 'boolean' }, dataRef: { type: 'string', description: 'DDR for pre-population' }
+                        }}}
+                      }},
+                      // Integration
+                      integration: { type: 'object', properties: {
+                        provider: { type: 'string', enum: ['AIRTABLE', 'CLICKUP', 'DROPBOX', 'GMAIL', 'GOOGLE_DRIVE', 'GOOGLE_SHEETS', 'WRIKE'] },
+                        event: { type: 'string' },
+                        fieldMappings: { type: 'array', items: { type: 'object' } }
+                      }}
                     },
                     required: ['name']
                   }
@@ -115,23 +190,67 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                 required: ['roleName']
               }
             },
+            milestones: {
+              type: 'array',
+              description: 'Phases/stages of the workflow. Each milestone groups steps that follow it.',
+              items: {
+                type: 'object',
+                properties: {
+                  milestoneId: { type: 'string' },
+                  name: { type: 'string', description: 'Phase name (e.g., "Initiation", "Review", "Completion")' },
+                  afterStepId: { type: 'string', description: 'The stepId after which this milestone starts' }
+                },
+                required: ['name', 'afterStepId']
+              }
+            },
             triggerConfig: {
               type: 'object',
               description: 'How the workflow gets started. Always include this based on clarification answers about kickoff.',
               properties: {
                 type: {
                   type: 'string',
-                  enum: ['manual', 'automatic', 'scheduled'],
-                  description: 'manual = someone clicks to start, automatic = triggered by external system, scheduled = runs on a schedule'
+                  enum: ['manual', 'kickoff_form', 'start_link', 'webhook', 'scheduled', 'integration'],
+                  description: 'manual = someone clicks to start, kickoff_form = collect data first, start_link = shareable URL, webhook = triggered by external system, scheduled = runs on a schedule, integration = triggered by connected app'
                 },
                 initiator: { type: 'string', description: 'Who starts the workflow (for manual). e.g., "HR", "Manager", "Sales Rep"' },
                 kickoffFields: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Data collected at kickoff via a form (for manual with kickoff form). e.g., ["Client Name", "Contact Email", "Project Type"]'
+                  description: 'Data collected at kickoff via a form (for kickoff_form). e.g., ["Client Name", "Contact Email", "Project Type"]'
                 },
-                triggerSource: { type: 'string', description: 'External system that triggers (for automatic). e.g., "Salesforce", "HubSpot webhook"' },
-                schedule: { type: 'string', description: 'Schedule expression (for scheduled). e.g., "Daily at 9am", "Every Monday"' }
+                triggerSource: { type: 'string', description: 'External system that triggers (for webhook/integration). e.g., "Salesforce", "HubSpot webhook"' },
+                schedule: { type: 'string', description: 'Schedule expression (for scheduled). e.g., "Daily at 9am", "Every Monday"' },
+                flowVariables: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      key: { type: 'string' },
+                      type: { type: 'string', enum: ['TEXT', 'FILE'] },
+                      required: { type: 'boolean' },
+                      description: { type: 'string' }
+                    }
+                  },
+                  description: 'Variables available at flow initiation'
+                }
+              }
+            },
+            permissions: {
+              type: 'object', description: 'Who can start, edit, and coordinate this flow',
+              properties: {
+                execute: { type: 'object', properties: { type: { type: 'string', enum: ['EXPLICIT_USERS', 'ALL_MEMBERS', 'ADMINS_ONLY'] } } },
+                edit: { type: 'object', properties: { type: { type: 'string', enum: ['EXPLICIT_USERS', 'ALL_MEMBERS', 'ADMINS_ONLY'] } } },
+                coordinate: { type: 'object', properties: { type: { type: 'string', enum: ['EXPLICIT_USERS', 'ALL_MEMBERS', 'ADMINS_ONLY'] } } }
+              }
+            },
+            settings: {
+              type: 'object', description: 'Flow-level settings',
+              properties: {
+                chatAssistanceEnabled: { type: 'boolean' },
+                autoArchiveEnabled: { type: 'boolean' },
+                assigneeExperience: { type: 'object', properties: {
+                  viewMode: { type: 'string', enum: ['SPOTLIGHT', 'GALLERY'], description: 'SPOTLIGHT = focused task view, GALLERY = all visible steps' }
+                }}
               }
             }
           },
@@ -226,8 +345,14 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                 type: 'string',
                 enum: [
                   'ADD_STEP_AFTER', 'ADD_STEP_BEFORE', 'REMOVE_STEP',
-                  'UPDATE_STEP', 'MOVE_STEP', 'ADD_PATH_STEP_AFTER',
-                  'ADD_PATH_STEP_BEFORE', 'UPDATE_FLOW_METADATA'
+                  'UPDATE_STEP', 'MOVE_STEP',
+                  'ADD_PATH_STEP_AFTER', 'ADD_PATH_STEP_BEFORE',
+                  'ADD_BRANCH_PATH', 'REMOVE_BRANCH_PATH',
+                  'ADD_OUTCOME', 'REMOVE_OUTCOME',
+                  'UPDATE_GOTO_TARGET',
+                  'ADD_MILESTONE', 'REMOVE_MILESTONE', 'MOVE_TO_MILESTONE',
+                  'UPDATE_FLOW_METADATA', 'UPDATE_FLOW_SETTINGS',
+                  'UPDATE_TRIGGER_CONFIG', 'UPDATE_PERMISSIONS'
                 ],
                 description: 'The operation type'
               },
