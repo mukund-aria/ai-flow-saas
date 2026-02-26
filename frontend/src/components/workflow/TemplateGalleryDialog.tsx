@@ -288,7 +288,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
 
         <div className="flex flex-1 overflow-hidden">
           {/* Left: Categories */}
-          <div className="w-72 border-r border-gray-200 overflow-y-auto bg-gray-50 shrink-0">
+          <div className="w-80 border-r border-gray-200 overflow-y-auto bg-gray-50 shrink-0">
             <div className="p-3">
               <button
                 onClick={() => { setSelectedCategory(null); setSelectedTemplate(null); }}

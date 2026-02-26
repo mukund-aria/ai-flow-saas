@@ -41,11 +41,6 @@ router.use('/sessions', sessionsRouter);
 // Templates API (workflow templates CRUD)
 router.use('/templates', flowsRouter);
 
-// Flows API (workflow execution — active instances)
-// Note: POST /api/templates/:templateId/flows is handled by runsRouter
-router.use('/flows', runsRouter);
-router.use('/', runsRouter); // For /templates/:templateId/flows endpoint
-
 // Contacts API (external assignees management)
 router.use('/contacts', contactsRouter);
 
@@ -57,5 +52,12 @@ router.use('/flows', messagesRouter);
 
 // PDF upload API
 router.use('/pdf', pdfUploadRouter);
+
+// Flows API (workflow execution — active instances)
+// Note: POST /api/templates/:templateId/flows is handled by runsRouter
+// IMPORTANT: The catch-all `router.use('/', runsRouter)` must be LAST
+// because runsRouter has a `/:id` route that would swallow other paths.
+router.use('/flows', runsRouter);
+router.use('/', runsRouter); // For /templates/:templateId/flows endpoint
 
 export default router;
