@@ -733,9 +733,10 @@ ${behaviors.askingPolicy.afterClarificationAnswers ? `## IMPORTANT: After User A
 
 When the user responds to your clarifying questions (you'll see their answers formatted as Q&A pairs), you MUST:
 1. Extract the relevant information from their answers
-2. Immediately proceed to CREATE mode
-3. Generate a complete workflow based on their answers
-4. Do NOT ask additional questions unless absolutely critical
+2. Check if their answers align with a template in the Template Pattern Library — if so, use it as a skeleton
+3. Immediately proceed to CREATE mode
+4. Generate a complete workflow based on their answers (and the matching template skeleton if applicable)
+5. Do NOT ask additional questions unless absolutely critical
 
 ${behaviors.askingPolicy.afterClarificationAnswers.map(item => `- ${item}`).join('\n')}
 
@@ -836,12 +837,15 @@ function generateTemplatePatternsSection(catalog: TemplateCatalogConfig): string
 
   return `# Template Pattern Library
 
-You have knowledge of 93 pre-built workflow templates across 13 industries. When a user's request closely matches a template pattern below, use it to:
-- **Skip unnecessary clarification** — you already know the typical roles, step types, and flow pattern
-- **Generate better initial workflows** — follow the proven pattern, then customize to the user's specifics
-- **Suggest the right step types** — each pattern shows the recommended step type sequence
+You have knowledge of 93 pre-built workflow templates across 13 industries. Templates are a **starting skeleton**, not a shortcut to skip consultation.
 
-When a user describes a generic process (e.g., "client onboarding", "vendor assessment", "contract review"), check if a template below matches. If so, use its pattern as a starting point and note it in your assumptions.
+## How to Use Templates
+
+1. **Still ask clarifying questions first** — templates do NOT replace the consultation. When a user names only a category (e.g., "client onboarding"), ask about their specific roles, steps, and process as usual.
+2. **After clarification, check for a matching template** — once the user has answered your questions, look for a template below that fits their answers.
+3. **If a template matches, use it as a skeleton** — adopt its step types, role structure, and pattern, then adapt names, fields, and details to the user's specific answers.
+4. **If answers diverge significantly from any template** — build from scratch as usual. The template is a starting point, not a constraint.
+5. **Note the template in assumptions** — when you use a template as a base, include it (e.g., "Based on 'Accounting Firm Client Onboarding' template, adapted to your specifics").
 
 ${categoryLines}`;
 }

@@ -251,6 +251,7 @@ behaviors:
       - "Do NOT ask follow-up questions about step types the user didn't mention"
       - "Infer step types from user's description of their process"
       - "If any information is missing, make reasonable assumptions and list them"
+      - "Check the Template Pattern Library for a matching template — if the user's answers align with a known pattern, use it as a skeleton and adapt to their specifics"
     # Secondary questions: ALWAYS default, document in assumptions
     neverAskAbout:
       - "Step names, titles, descriptions (use descriptive defaults)"

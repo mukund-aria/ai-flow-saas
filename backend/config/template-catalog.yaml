@@ -5,7 +5,7 @@
 # - This catalog is injected into the system prompt (~1-2K tokens)
 # - When a user describes a process matching a template, the AI uses this
 #   knowledge to generate better-informed workflows with the right roles,
-#   step types, and patterns — without needing clarification.
+#   step types, and patterns — as a skeleton AFTER clarification.
 #
 # TO DISABLE: Set enabled: false or delete this file entirely.
 # The prompt generator gracefully skips this section when missing.
