@@ -12,6 +12,7 @@ import {
   X,
   Search,
   ChevronRight,
+  ChevronDown,
   Loader2,
   Shield,
   UserPlus,
@@ -173,6 +174,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<GalleryTemplate | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [showStepDetails, setShowStepDetails] = useState(false);
 
   // Filter templates
   const filteredTemplates = useMemo(() => {
@@ -361,7 +363,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                 {filteredTemplates.map(template => (
                   <button
                     key={template.id}
-                    onClick={() => setSelectedTemplate(template)}
+                    onClick={() => { setSelectedTemplate(template); setShowStepDetails(false); }}
                     className={`text-left bg-white rounded-xl border p-4 hover:shadow-md transition-all ${
                       selectedTemplate?.id === template.id
                         ? 'border-violet-400 ring-2 ring-violet-100 shadow-md'
@@ -500,8 +502,17 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
 
                       {/* How it works */}
                       <div className="mb-8">
-                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">How it works</h3>
-                        <div className="space-y-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">How it works</h3>
+                          <button
+                            onClick={() => setShowStepDetails(!showStepDetails)}
+                            className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 font-medium transition-colors"
+                          >
+                            {showStepDetails ? 'Hide' : 'Show'} details
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showStepDetails ? 'rotate-180' : ''}`} />
+                          </button>
+                        </div>
+                        <div className={showStepDetails ? 'space-y-4' : 'space-y-1.5'}>
                           {selectedTemplate.steps.map((step, i) => {
                             const StepIcon = STEP_TYPE_ICONS[step.type] || FileText;
                             return (
@@ -512,7 +523,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-semibold text-gray-900">{step.name}</p>
-                                  {step.sampleDescription && (
+                                  {showStepDetails && step.sampleDescription && (
                                     <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{step.sampleDescription}</p>
                                   )}
                                 </div>
