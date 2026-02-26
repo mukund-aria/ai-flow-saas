@@ -90,11 +90,6 @@ const STEP_TYPE_COLORS: Record<string, string> = {
   WEB_APP: 'bg-cyan-100 text-cyan-600',
 };
 
-const COMPLEXITY_COLORS: Record<string, string> = {
-  Simple: 'bg-green-50 text-green-700 ring-green-600/20',
-  Standard: 'bg-blue-50 text-blue-700 ring-blue-600/20',
-  Complex: 'bg-orange-50 text-orange-700 ring-orange-600/20',
-};
 
 function generateStepId(): string {
   return `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -370,15 +365,10 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                         : 'border-gray-200 hover:border-violet-300'
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full ring-1 ${COMPLEXITY_COLORS[template.complexity] || ''}`}>
-                          {template.complexity}
-                        </span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-300" />
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-gray-900 text-sm line-clamp-2">{template.name}</h4>
+                      <ChevronRight className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
                     </div>
-                    <h4 className="font-semibold text-gray-900 text-sm mb-1.5 line-clamp-2">{template.name}</h4>
                     <p className="text-xs text-gray-500 line-clamp-2 mb-3">{template.description}</p>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-xs text-gray-400">
@@ -582,14 +572,6 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                   {/* Right: Metadata Sidebar */}
                   <div className="w-64 border-l border-gray-100 bg-white overflow-y-auto shrink-0">
                     <div className="p-5 space-y-6">
-                      {/* Complexity */}
-                      <div>
-                        <p className="text-xs text-gray-400 mb-1.5">Complexity</p>
-                        <span className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full ring-1 ${COMPLEXITY_COLORS[selectedTemplate.complexity] || ''}`}>
-                          {selectedTemplate.complexity}
-                        </span>
-                      </div>
-
                       {/* When to start */}
                       {selectedTemplate.trigger && (
                         <div>
