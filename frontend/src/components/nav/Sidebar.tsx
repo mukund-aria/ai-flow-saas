@@ -15,6 +15,7 @@ import {
   Plug,
   Plus,
   Settings,
+  Users,
   LogOut,
   RotateCcw,
   Play,
@@ -189,6 +190,7 @@ export function Sidebar() {
         <NavItem to="/home" icon={<Home className="w-5 h-5" />} label="Home" />
         <NavItem to="/flows" icon={<PlayCircle className="w-5 h-5" />} label="Flows" />
         <NavItem to="/templates" icon={<FileText className="w-5 h-5" />} label="Templates" />
+        <NavItem to="/contacts" icon={<Users className="w-5 h-5" />} label="Contacts" />
         <NavItem to="/reports" icon={<BarChart3 className="w-5 h-5" />} label="Reports" />
         <NavItem to="/schedules" icon={<Calendar className="w-5 h-5" />} label="Schedules" />
         <NavItem to="/integrations" icon={<Plug className="w-5 h-5" />} label="Integrations" />
