@@ -1,0 +1,472 @@
+import type { GalleryTemplate } from './types';
+
+export const PROFESSIONAL_SERVICES_TEMPLATES: GalleryTemplate[] = [
+  // ─── 37. Engagement Kickoff & Scope Confirmation ───
+  {
+    id: 'engagement-kickoff',
+    name: 'Engagement Kickoff & Scope Confirmation',
+    category: 'professional-services',
+    description: 'Streamline the transition from sales to delivery with a structured handoff, stakeholder alignment, and project plan sign-off. Ensures nothing falls through the cracks between deal close and project start.',
+    complexity: 'Simple',
+    tags: ['Professional Services', 'Consulting', 'SaaS'],
+    trigger: 'Contract signed / project start',
+    roles: ['Client Sponsor', 'Implementation Lead'],
+    useCases: [
+      'SaaS implementation kickoff after contract execution',
+      'Consulting engagement handoff from business development to delivery team',
+      'Professional services project initiation with client stakeholder alignment',
+      'Technology deployment kickoff requiring environment provisioning',
+    ],
+    requirements: [
+      'Customize form fields to match your organization',
+    ],
+    steps: [
+      {
+        name: 'Sales-to-delivery handoff',
+        type: 'FORM',
+        assigneeRole: 'Implementation Lead',
+        sampleDescription: 'Complete the handoff form capturing key deal details so the delivery team has full context before engaging the client.',
+        sampleFormFields: [
+          { fieldId: 'f1', label: 'Deal Summary', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f2', label: 'Contract Terms', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f3', label: 'Modules / Products Purchased', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f4', label: 'Key Stakeholders', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f5', label: 'Go-Live Target Date', type: 'DATE', required: true },
+        ],
+      },
+      {
+        name: 'Customer stakeholder identification',
+        type: 'FORM',
+        assigneeRole: 'Client Sponsor',
+        sampleDescription: 'Identify the key stakeholders from your organization who will be involved in the implementation.',
+        sampleFormFields: [
+          { fieldId: 'f1', label: 'Executive Sponsor Name', type: 'TEXT_SINGLE_LINE', required: true },
+          { fieldId: 'f2', label: 'Executive Sponsor Email', type: 'EMAIL', required: true },
+          { fieldId: 'f3', label: 'Project Lead Name', type: 'TEXT_SINGLE_LINE', required: true },
+          { fieldId: 'f4', label: 'Project Lead Email', type: 'EMAIL', required: true },
+          { fieldId: 'f5', label: 'Additional Team Members', type: 'TEXT_MULTI_LINE' },
+        ],
+      },
+      {
+        name: 'Pre-kickoff requirements',
+        type: 'FORM',
+        assigneeRole: 'Client Sponsor',
+        sampleDescription: 'Provide details about your current environment and any requirements that will shape the implementation plan.',
+        sampleFormFields: [
+          { fieldId: 'f1', label: 'Current Systems in Use', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f2', label: 'Data Migration Scope', type: 'TEXT_MULTI_LINE' },
+          { fieldId: 'f3', label: 'Required Integrations', type: 'TEXT_MULTI_LINE' },
+          { fieldId: 'f4', label: 'Known Blockers or Constraints', type: 'TEXT_MULTI_LINE' },
+        ],
+      },
+      {
+        name: 'Project plan creation',
+        type: 'TODO',
+        assigneeRole: 'Implementation Lead',
+        sampleDescription: 'Create the project plan incorporating the handoff details, stakeholder input, and pre-kickoff requirements. Include milestones, timelines, and resource assignments.',
+      },
+      {
+        name: 'Project plan approval',
+        type: 'APPROVAL',
+        assigneeRole: 'Client Sponsor',
+        sampleDescription: 'Review the proposed project plan including milestones, timelines, and resource commitments. Approve to proceed or request changes.',
+      },
+      {
+        name: 'Environment provisioning',
+        type: 'TODO',
+        assigneeRole: 'Implementation Lead',
+        sampleDescription: 'Provision the client environment including user accounts, sandbox setup, and any required infrastructure configuration.',
+      },
+      {
+        name: 'Kickoff acknowledgement',
+        type: 'ACKNOWLEDGEMENT',
+        assigneeRole: 'Client Sponsor',
+        sampleDescription: 'Acknowledge that the engagement has officially kicked off and confirm your understanding of the project plan, timeline, and next steps.',
+      },
+    ],
+  },
+
+  // ─── 38. Deliverable Review & Client Approval ───
+  {
+    id: 'deliverable-review',
+    name: 'Deliverable Review & Client Approval',
+    category: 'professional-services',
+    description: 'Manage the end-to-end deliverable review cycle from initial upload through client feedback, revision, and final approval. Keeps creative and consulting teams aligned with client expectations.',
+    complexity: 'Simple',
+    tags: ['Professional Services', 'Creative', 'Consulting'],
+    trigger: 'Deliverable ready for client review',
+    roles: ['Service Owner', 'Client Reviewer', 'Client Approver'],
+    useCases: [
+      'Design agency submitting creative assets for client review and approval',
+      'Consulting firm delivering strategy documents requiring client sign-off',
+      'Development team presenting completed sprint deliverables for acceptance',
+      'Marketing agency routing campaign materials through client approval',
+    ],
+    steps: [
+      {
+        name: 'Deliverable upload',
+        type: 'FILE_REQUEST',
+        assigneeRole: 'Service Owner',
+        sampleDescription: 'Upload the completed deliverable for client review. Include any supporting documentation or context notes.',
+      },
+      {
+        name: 'Client review',
+        type: 'TODO',
+        assigneeRole: 'Client Reviewer',
+        sampleDescription: 'Review the uploaded deliverable against the agreed scope and requirements. Note any feedback or revision requests.',
+      },
+      {
+        name: 'Feedback / revision requests',
+        type: 'FORM',
+        assigneeRole: 'Client Reviewer',
+        sampleDescription: 'Provide your feedback on the deliverable including any specific revision requests or areas that need attention.',
+        sampleFormFields: [
+          { fieldId: 'f1', label: 'Overall Assessment', type: 'DROPDOWN', required: true, options: [{ label: 'Approved as-is', value: 'approved' }, { label: 'Minor revisions needed', value: 'minor' }, { label: 'Major revisions needed', value: 'major' }] },
+          { fieldId: 'f2', label: 'Detailed Feedback', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f3', label: 'Specific Revision Requests', type: 'TEXT_MULTI_LINE' },
+        ],
+      },
+      {
+        name: 'Revised deliverable',
+        type: 'FILE_REQUEST',
+        assigneeRole: 'Service Owner',
+        sampleDescription: 'Upload the revised deliverable incorporating the client feedback. Include a summary of changes made.',
+      },
+      {
+        name: 'Final approval',
+        type: 'APPROVAL',
+        assigneeRole: 'Client Approver',
+        sampleDescription: 'Review the final deliverable and approve for acceptance. This confirms the deliverable meets all agreed requirements.',
+      },
+      {
+        name: 'Completion acknowledgement',
+        type: 'ACKNOWLEDGEMENT',
+        assigneeRole: 'Service Owner',
+        sampleDescription: 'Acknowledge that the deliverable has been approved and the review cycle is complete. Archive the final version for project records.',
+      },
+    ],
+  },
+
+  // ─── 39. Go-Live / Launch Readiness ───
+  {
+    id: 'go-live-launch-readiness',
+    name: 'Go-Live / Launch Readiness',
+    category: 'professional-services',
+    description: 'Coordinate the full go-live process from readiness assessment through production cutover and hypercare transition. Ensures all stakeholders confirm readiness before flipping the switch.',
+    complexity: 'Standard',
+    tags: ['SaaS', 'Technology'],
+    trigger: 'All implementation milestones complete',
+    roles: ['Client Sponsor', 'Implementation Lead'],
+    useCases: [
+      'SaaS platform go-live after completing all implementation milestones',
+      'Enterprise system cutover requiring multi-team readiness verification',
+      'Technology migration launch with UAT sign-off and rollback planning',
+      'Product launch readiness coordination across engineering and client teams',
+    ],
+    requirements: [
+      'Customize form fields to match your organization',
+    ],
+    steps: [
+      {
+        name: 'Go-live readiness assessment',
+        type: 'FORM',
+        assigneeRole: 'Implementation Lead',
+        sampleDescription: 'Complete the readiness assessment confirming the status of all go-live prerequisites.',
+        sampleFormFields: [
+          { fieldId: 'f1', label: 'All Milestones Signed Off', type: 'DROPDOWN', required: true, options: [{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }] },
+          { fieldId: 'f2', label: 'Open Defects Summary', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f3', label: 'Data Migration Status', type: 'DROPDOWN', required: true, options: [{ label: 'Complete', value: 'complete' }, { label: 'In Progress', value: 'in_progress' }, { label: 'Not Started', value: 'not_started' }] },
+          { fieldId: 'f4', label: 'Training Completion %', type: 'NUMBER', required: true },
+        ],
+      },
+      {
+        name: 'UAT sign-off',
+        type: 'FILE_REQUEST',
+        assigneeRole: 'Client Sponsor',
+        sampleDescription: 'Upload the signed UAT completion document including the test summary and list of accepted known issues.',
+      },
+      {
+        name: 'Technical readiness certification',
+        type: 'APPROVAL',
+        assigneeRole: 'Implementation Lead',
+        sampleDescription: 'Certify that all technical prerequisites for go-live have been met including infrastructure, integrations, and performance benchmarks.',
+      },
+      {
+        name: 'Go/No-Go decision',
+        type: 'DECISION',
+        assigneeRole: 'Implementation Lead',
+        sampleDescription: 'Make the go/no-go decision based on the readiness assessment, UAT results, and technical certification. Choose Go, Go with Conditions, or Postpone.',
+      },
+      {
+        name: 'Client go-live authorization',
+        type: 'APPROVAL',
+        assigneeRole: 'Client Sponsor',
+        sampleDescription: 'Authorize the production cutover to proceed. This is the final client approval before go-live execution.',
+      },
+      {
+        name: 'Production cutover execution',
+        type: 'TODO',
+        assigneeRole: 'Implementation Lead',
+        sampleDescription: 'Execute the production cutover plan including DNS changes, data migration finalization, and system activation.',
+      },
+      {
+        name: 'Post-cutover verification',
+        type: 'FORM',
+        assigneeRole: 'Implementation Lead',
+        sampleDescription: 'Verify that all critical flows are working correctly in the production environment after cutover.',
+        sampleFormFields: [
+          { fieldId: 'f1', label: 'User Login Flow', type: 'DROPDOWN', required: true, options: [{ label: 'Pass', value: 'pass' }, { label: 'Fail', value: 'fail' }] },
+          { fieldId: 'f2', label: 'Data Integration Flow', type: 'DROPDOWN', required: true, options: [{ label: 'Pass', value: 'pass' }, { label: 'Fail', value: 'fail' }] },
+          { fieldId: 'f3', label: 'Core Business Process Flow', type: 'DROPDOWN', required: true, options: [{ label: 'Pass', value: 'pass' }, { label: 'Fail', value: 'fail' }] },
+          { fieldId: 'f4', label: 'Reporting / Analytics Flow', type: 'DROPDOWN', required: true, options: [{ label: 'Pass', value: 'pass' }, { label: 'Fail', value: 'fail' }] },
+          { fieldId: 'f5', label: 'Additional Notes', type: 'TEXT_MULTI_LINE' },
+        ],
+      },
+      {
+        name: 'Go-live acknowledgement',
+        type: 'ACKNOWLEDGEMENT',
+        assigneeRole: 'Client Sponsor',
+        sampleDescription: 'Acknowledge that the system is live in production and confirm your understanding of the hypercare support period and escalation procedures.',
+      },
+      {
+        name: 'Hypercare exit & steady-state transition',
+        type: 'APPROVAL',
+        assigneeRole: 'Client Sponsor',
+        sampleDescription: 'Approve the transition from hypercare to steady-state support. Confirm that all post-go-live issues have been resolved and the system is operating as expected.',
+      },
+    ],
+  },
+
+  // ─── 40. Client Service Request Fulfillment ───
+  {
+    id: 'client-service-request',
+    name: 'Client Service Request Fulfillment',
+    category: 'professional-services',
+    description: 'Handle client service requests from intake through fulfillment with structured review and approval. Provides a consistent process for any ad hoc service delivery.',
+    complexity: 'Simple',
+    tags: ['Professional Services', 'Managed Services'],
+    trigger: 'Client submits service request',
+    roles: ['Client Requestor', 'Service Owner', 'Manager'],
+    useCases: [
+      'Managed services team handling client configuration change requests',
+      'Consulting firm processing ad hoc advisory service requests',
+      'IT services provider fulfilling client support escalations',
+      'Accounting firm handling client requests for special reports or analyses',
+    ],
+    requirements: [
+      'Customize form fields to match your organization',
+    ],
+    steps: [
+      {
+        name: 'Service request intake',
+        type: 'FORM',
+        assigneeRole: 'Client Requestor',
+        sampleDescription: 'Submit your service request with enough detail for the team to understand and scope the work.',
+        sampleFormFields: [
+          { fieldId: 'f1', label: 'Request Title', type: 'TEXT_SINGLE_LINE', required: true },
+          { fieldId: 'f2', label: 'Request Description', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f3', label: 'Priority', type: 'DROPDOWN', required: true, options: [{ label: 'Low', value: 'low' }, { label: 'Medium', value: 'medium' }, { label: 'High', value: 'high' }, { label: 'Urgent', value: 'urgent' }] },
+          { fieldId: 'f4', label: 'Desired Completion Date', type: 'DATE' },
+        ],
+      },
+      {
+        name: 'Clarification questions',
+        type: 'FORM',
+        assigneeRole: 'Client Requestor',
+        sampleDescription: 'Answer the clarification questions from the service team to help scope and prioritize your request.',
+        sampleFormFields: [
+          { fieldId: 'f1', label: 'Additional Context', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f2', label: 'Impacted Users or Systems', type: 'TEXT_MULTI_LINE' },
+          { fieldId: 'f3', label: 'Any Known Constraints', type: 'TEXT_MULTI_LINE' },
+        ],
+      },
+      {
+        name: 'Required inputs / documents',
+        type: 'FILE_REQUEST',
+        assigneeRole: 'Client Requestor',
+        sampleDescription: 'Upload any documents, files, or reference materials needed to complete the service request.',
+      },
+      {
+        name: 'Work execution',
+        type: 'TODO',
+        assigneeRole: 'Service Owner',
+        sampleDescription: 'Complete the service request according to the intake details and client-provided materials. Document any decisions or deviations.',
+      },
+      {
+        name: 'Manager review',
+        type: 'APPROVAL',
+        assigneeRole: 'Manager',
+        sampleDescription: 'Review the completed work for quality and completeness before delivering to the client.',
+      },
+      {
+        name: 'Deliverable acknowledgement',
+        type: 'ACKNOWLEDGEMENT',
+        assigneeRole: 'Client Requestor',
+        sampleDescription: 'Acknowledge receipt of the completed service request deliverable and confirm it meets your requirements.',
+      },
+    ],
+  },
+
+  // ─── 41. Change Request / Scope Change ───
+  {
+    id: 'change-request-scope-change',
+    name: 'Change Request / Scope Change',
+    category: 'professional-services',
+    description: 'Manage scope change requests with impact assessment, cost acknowledgement, and formal SOW amendment. Keeps project scope under control while providing a clear path for necessary changes.',
+    complexity: 'Simple',
+    tags: ['Professional Services', 'Consulting', 'IT Services'],
+    trigger: 'Client requests scope change',
+    roles: ['Client Requestor', 'Engagement Manager', 'Approver'],
+    useCases: [
+      'Consulting client requesting additional deliverables mid-engagement',
+      'IT services project scope expansion requiring budget adjustment',
+      'Professional services engagement adding new workstreams',
+      'Software implementation project requiring feature additions beyond original scope',
+    ],
+    requirements: [
+      'Upload your SOW amendment document for e-signature (replaces sample)',
+    ],
+    steps: [
+      {
+        name: 'Change request details',
+        type: 'FORM',
+        assigneeRole: 'Client Requestor',
+        sampleDescription: 'Describe the requested change in detail so the team can assess impact on timeline, budget, and resources.',
+        sampleFormFields: [
+          { fieldId: 'f1', label: 'Change Request Title', type: 'TEXT_SINGLE_LINE', required: true },
+          { fieldId: 'f2', label: 'Description of Requested Change', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f3', label: 'Business Justification', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f4', label: 'Desired Timeline', type: 'TEXT_SINGLE_LINE' },
+        ],
+      },
+      {
+        name: 'Impact assessment',
+        type: 'FILE_REQUEST',
+        assigneeRole: 'Engagement Manager',
+        sampleDescription: 'Upload the impact assessment document covering timeline, cost, and resource implications of the requested change.',
+      },
+      {
+        name: 'Cost / timeline acknowledgement',
+        type: 'ACKNOWLEDGEMENT',
+        assigneeRole: 'Client Requestor',
+        sampleDescription: 'Review and acknowledge the impact assessment including any changes to cost, timeline, or resource allocation resulting from this scope change.',
+      },
+      {
+        name: 'Change approval',
+        type: 'APPROVAL',
+        assigneeRole: 'Approver',
+        sampleDescription: 'Review the change request and impact assessment. Approve to proceed with the scope change and SOW amendment.',
+      },
+      {
+        name: 'SOW amendment',
+        type: 'ESIGN',
+        assigneeRole: 'Client Requestor',
+        sampleDescription: 'Review and sign the Statement of Work amendment reflecting the approved scope change, updated timeline, and revised budget.',
+        sampleDocumentRef: 'Upload your SOW amendment document (PDF, 1-3 pages).',
+      },
+      {
+        name: 'Change confirmation',
+        type: 'ACKNOWLEDGEMENT',
+        assigneeRole: 'Client Requestor',
+        sampleDescription: 'Acknowledge that the scope change has been formally approved and the SOW has been amended. Work on the change will begin according to the updated plan.',
+      },
+    ],
+  },
+
+  // ─── 42. Tax Return Preparation Coordination ───
+  {
+    id: 'tax-return-preparation',
+    name: 'Tax Return Preparation Coordination',
+    category: 'professional-services',
+    description: 'Coordinate the full tax return preparation lifecycle from engagement letter through document collection, preparation, review, and e-file authorization. Keeps clients and preparers aligned throughout tax season.',
+    complexity: 'Complex',
+    tags: ['Accounting', 'Tax', 'Financial Services'],
+    trigger: 'Tax season / engagement letter signed',
+    roles: ['Client/Taxpayer', 'Tax Preparer', 'Tax Reviewer'],
+    useCases: [
+      'CPA firm coordinating individual tax return preparation with clients',
+      'Accounting practice managing business tax return document collection',
+      'Tax advisory firm handling complex multi-entity return preparation',
+      'Seasonal tax preparation with high-volume client document intake',
+    ],
+    requirements: [
+      'Upload your engagement letter document for e-signature (replaces sample)',
+      'Upload your e-file authorization document for e-signature (replaces sample)',
+      'Customize form fields to match your organization',
+    ],
+    steps: [
+      {
+        name: 'Engagement letter',
+        type: 'ESIGN',
+        assigneeRole: 'Client/Taxpayer',
+        sampleDescription: 'Review and sign the engagement letter outlining the scope of tax preparation services, fees, and responsibilities.',
+        sampleDocumentRef: 'Upload your tax engagement letter (PDF, 2-4 pages).',
+      },
+      {
+        name: 'Tax organizer questionnaire',
+        type: 'FORM',
+        assigneeRole: 'Client/Taxpayer',
+        sampleDescription: 'Complete the tax organizer questionnaire to help your preparer understand your tax situation for the current year.',
+        sampleFormFields: [
+          { fieldId: 'f1', label: 'Filing Type', type: 'DROPDOWN', required: true, options: [{ label: 'Single', value: 'single' }, { label: 'Married Filing Jointly', value: 'mfj' }, { label: 'Married Filing Separately', value: 'mfs' }, { label: 'Head of Household', value: 'hoh' }] },
+          { fieldId: 'f2', label: 'Life Changes This Year', type: 'TEXT_MULTI_LINE' },
+          { fieldId: 'f3', label: 'Income Sources', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f4', label: 'Deductions & Credits to Claim', type: 'TEXT_MULTI_LINE' },
+        ],
+      },
+      {
+        name: 'Income documents upload',
+        type: 'FILE_REQUEST',
+        assigneeRole: 'Client/Taxpayer',
+        sampleDescription: 'Upload all income-related documents including W-2s, 1099s, K-1s, and SSA-1099 forms.',
+      },
+      {
+        name: 'Deduction & credit documents',
+        type: 'FILE_REQUEST',
+        assigneeRole: 'Client/Taxpayer',
+        sampleDescription: 'Upload documents supporting deductions and credits including 1098 mortgage interest, property tax statements, charitable contribution receipts, medical expenses, and education expenses.',
+      },
+      {
+        name: 'Prior year returns (if new client)',
+        type: 'FILE_REQUEST',
+        assigneeRole: 'Client/Taxpayer',
+        sampleDescription: 'If you are a new client, please upload your prior year federal and state tax returns for reference.',
+      },
+      {
+        name: 'Missing document follow-up',
+        type: 'FORM',
+        assigneeRole: 'Client/Taxpayer',
+        sampleDescription: 'Respond to any follow-up questions about missing or unclear documents identified during the initial review.',
+        sampleFormFields: [
+          { fieldId: 'f1', label: 'Missing Document Status', type: 'TEXT_MULTI_LINE', required: true },
+          { fieldId: 'f2', label: 'Additional Information', type: 'TEXT_MULTI_LINE' },
+        ],
+      },
+      {
+        name: 'Preparer review',
+        type: 'TODO',
+        assigneeRole: 'Tax Preparer',
+        sampleDescription: 'Review all submitted documents, prepare the tax return, and identify any issues or optimization opportunities for the client.',
+      },
+      {
+        name: 'Partner / manager review',
+        type: 'TODO',
+        assigneeRole: 'Tax Reviewer',
+        sampleDescription: 'Perform quality review of the prepared tax return. Verify calculations, check for missed deductions, and ensure compliance with current tax law.',
+      },
+      {
+        name: 'Draft return delivery',
+        type: 'FILE_REQUEST',
+        assigneeRole: 'Tax Preparer',
+        sampleDescription: 'Upload the draft tax return for client review. Include a summary of key figures and any items requiring client attention.',
+      },
+      {
+        name: 'Client approval & e-file authorization',
+        type: 'ESIGN',
+        assigneeRole: 'Client/Taxpayer',
+        sampleDescription: 'Review the draft return, confirm all information is accurate, and sign the e-file authorization to allow electronic filing.',
+        sampleDocumentRef: 'Upload your e-file authorization form (PDF, 1-2 pages).',
+      },
+    ],
+  },
+];

@@ -2,7 +2,7 @@
  * Template Gallery Dialog
  *
  * Full-screen dialog for browsing and importing pre-built templates
- * from the 85-template gallery. Organized by category with preview
+ * from the 93-template gallery. Organized by 13 categories with preview
  * and one-click import as draft.
  */
 
@@ -33,10 +33,16 @@ import {
   ArrowRight,
   Sparkles,
   LayoutGrid,
+  Handshake,
+  TrendingUp,
+  UserCheck,
+  Landmark,
+  AlertTriangle,
+  Lightbulb,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createTemplate, getSamplePDF, type PDFUploadResult } from '@/lib/api';
-import { TEMPLATE_CATEGORIES, GALLERY_TEMPLATES, type GalleryTemplate } from '@/data/template-gallery';
+import { TEMPLATE_CATEGORIES, GALLERY_TEMPLATES, type GalleryTemplate } from '@/data/templates';
 
 // Icon map from string to component
 const CATEGORY_ICONS: Record<string, React.ElementType> = {
@@ -51,6 +57,10 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   Building,
   Truck,
   Users,
+  Handshake,
+  TrendingUp,
+  UserCheck,
+  Landmark,
 };
 
 const STEP_TYPE_ICONS: Record<string, React.ElementType> = {
@@ -413,11 +423,47 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                   <p className="text-sm text-gray-600 leading-relaxed">{selectedTemplate.description}</p>
                 </div>
 
+                {/* Use Cases */}
+                {selectedTemplate.useCases && selectedTemplate.useCases.length > 0 && (
+                  <div className="mb-5">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <Lightbulb className="w-3 h-3" />
+                      Use Cases
+                    </p>
+                    <ul className="space-y-1.5">
+                      {selectedTemplate.useCases.map((useCase, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                          <span className="text-violet-400 mt-1 shrink-0">&#8226;</span>
+                          {useCase}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Requirements */}
+                {selectedTemplate.requirements && selectedTemplate.requirements.length > 0 && (
+                  <div className="mb-5 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3 h-3" />
+                      Requirements to use
+                    </p>
+                    <ul className="space-y-1.5">
+                      {selectedTemplate.requirements.map((req, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-amber-800">
+                          <CheckSquare className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-600" />
+                          {req}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {/* Setup Instructions */}
                 {selectedTemplate.setupInstructions && (
-                  <div className="mb-5 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">Setup Instructions</p>
-                    <p className="text-sm text-amber-800 leading-relaxed">{selectedTemplate.setupInstructions}</p>
+                  <div className="mb-5 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-1">Setup Instructions</p>
+                    <p className="text-sm text-blue-800 leading-relaxed">{selectedTemplate.setupInstructions}</p>
                   </div>
                 )}
 
@@ -444,7 +490,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
 
                 {/* Steps */}
                 <div className="mb-6">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Steps ({selectedTemplate.steps.length})</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">How it works ({selectedTemplate.steps.length} steps)</p>
                   <div className="space-y-2">
                     {selectedTemplate.steps.map((step, i) => {
                       const StepIcon = STEP_TYPE_ICONS[step.type] || FileText;
@@ -461,6 +507,9 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                           <div className="flex-1 min-w-0 pb-1">
                             <p className="text-sm font-medium text-gray-900 leading-tight">{step.name}</p>
                             <p className="text-xs text-gray-400">{step.assigneeRole}</p>
+                            {step.sampleDescription && (
+                              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{step.sampleDescription}</p>
+                            )}
                           </div>
                         </div>
                       );

@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef } from 'react';
-import { Upload, FileText, RefreshCw, Loader2, X, Check, Type, CheckSquare, List, Radio, PenTool } from 'lucide-react';
+import { Upload, FileText, RefreshCw, Loader2, X, Type, CheckSquare, List, Radio, PenTool } from 'lucide-react';
 import { uploadPDF } from '@/lib/api';
 import type { PDFFormConfig, PDFFormField } from '@/types';
 
