@@ -224,7 +224,8 @@ router.post(
     }
 
     // Get flow definition and steps
-    const definition = flow.definition as { steps?: Array<{ id: string; name?: string; type?: string }> } | null;
+    // Note: steps may use `stepId` (gallery templates) or `id` (other sources)
+    const definition = flow.definition as { steps?: Array<Record<string, unknown>> } | null;
     const steps = definition?.steps || [];
 
     if (steps.length === 0) {
@@ -294,10 +295,12 @@ router.post(
       const stepDef = step as any;
       const assigneeRole = stepDef.config?.assignee || stepDef.assignee;
       const contactId = assigneeRole ? resolvedRoles[assigneeRole] : undefined;
+      // Support both `stepId` (gallery templates) and `id` field names
+      const resolvedStepId = stepDef.stepId || stepDef.id || `step-${index}`;
 
       return {
         flowRunId: newRun.id,
-        stepId: step.id,
+        stepId: resolvedStepId,
         stepIndex: index,
         status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
         startedAt: index === 0 ? new Date() : null,
@@ -329,7 +332,7 @@ router.post(
             await sendMagicLink({
               to: contact.email,
               contactName: contact.name,
-              stepName: (steps[0] as any).config?.name || 'Task',
+              stepName: (steps[0] as any).config?.name || (steps[0] as any).name || 'Task',
               flowName: flow.name,
               token,
             });
@@ -339,7 +342,7 @@ router.post(
     }
 
     // Schedule notification jobs for the first step if it has a due date
-    const firstStep = steps[0] as { id: string; due?: { value: number; unit: string } };
+    const firstStep = steps[0] as { id?: string; stepId?: string; due?: { value: number; unit: string }; config?: { due?: { value: number; unit: string } } };
     const firstStepExec = await db.query.stepExecutions.findFirst({
       where: and(
         eq(stepExecutions.flowRunId, newRun.id),
@@ -347,7 +350,7 @@ router.post(
       ),
     });
     if (firstStepExec) {
-      await onStepActivated(firstStepExec.id, firstStep.due, flow.definition);
+      await onStepActivated(firstStepExec.id, firstStep.due || firstStep.config?.due, flow.definition as Record<string, unknown>);
     }
 
     // Set initial activity timestamp
@@ -485,9 +488,10 @@ router.post(
         .where(eq(stepExecutions.id, nextStepExecution.id));
 
       // Schedule notification jobs for the next step
-      const definition = run.flow?.definition as { steps?: Array<{ id: string; due?: { value: number; unit: string } }> } | null;
-      const nextStepDef = definition?.steps?.find(s => s.id === nextStepExecution.stepId);
-      await onStepActivated(nextStepExecution.id, nextStepDef?.due, run.flow?.definition as Record<string, unknown>);
+      const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
+      const nextStepDef = definition?.steps?.find((s: any) => (s.stepId || s.id) === nextStepExecution.stepId);
+      const nextStepDue = (nextStepDef as any)?.due || (nextStepDef as any)?.config?.due;
+      await onStepActivated(nextStepExecution.id, nextStepDue, run.flow?.definition as Record<string, unknown>);
 
       // If next step has a contact assignee, create magic link and send email
       if (nextStepExecution.assignedToContactId) {

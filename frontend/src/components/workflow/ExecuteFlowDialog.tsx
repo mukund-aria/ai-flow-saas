@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { listContacts, startFlow } from '@/lib/api';
+import { listContacts, startFlow, getTemplate } from '@/lib/api';
 import type { Contact } from '@/lib/api';
 import { getRoleColor, getRoleInitials } from '@/types';
 import type { AssigneePlaceholder, KickoffConfig, FormField } from '@/types';
@@ -378,18 +378,48 @@ export function ExecuteFlowDialog({
   template,
   onFlowStarted,
 }: ExecuteFlowDialogProps) {
+  // ---- State ----
+  const [fullDefinition, setFullDefinition] = useState<Record<string, unknown> | null>(
+    template.definition ?? null
+  );
+  const [definitionLoading, setDefinitionLoading] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
+
+  // Fetch full template definition if not provided (list endpoint omits it)
+  useEffect(() => {
+    if (!open) return;
+    if (template.definition) {
+      setFullDefinition(template.definition);
+      return;
+    }
+    let cancelled = false;
+    setDefinitionLoading(true);
+    getTemplate(template.id)
+      .then((full) => {
+        if (!cancelled) {
+          setFullDefinition((full.definition as Record<string, unknown>) ?? null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setFullDefinition(null);
+      })
+      .finally(() => {
+        if (!cancelled) setDefinitionLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [open, template.id, template.definition]);
+
   // ---- Derived data from template definition ----
   const assigneePlaceholders: AssigneePlaceholder[] = useMemo(() => {
-    const def = template.definition;
-    if (!def) return [];
-    return (def.assigneePlaceholders as AssigneePlaceholder[]) ?? [];
-  }, [template.definition]);
+    if (!fullDefinition) return [];
+    return (fullDefinition.assigneePlaceholders as AssigneePlaceholder[]) ?? [];
+  }, [fullDefinition]);
 
   const kickoffConfig: KickoffConfig | null = useMemo(() => {
-    const def = template.definition;
-    if (!def?.kickoff) return null;
-    return def.kickoff as KickoffConfig;
-  }, [template.definition]);
+    if (!fullDefinition?.kickoff) return null;
+    return fullDefinition.kickoff as KickoffConfig;
+  }, [fullDefinition]);
 
   const kickoffFields: FormField[] = useMemo(() => {
     if (!kickoffConfig?.kickoffFormEnabled || !kickoffConfig.kickoffFormFields) {
@@ -400,10 +430,6 @@ export function ExecuteFlowDialog({
 
   const hasRoles = assigneePlaceholders.length > 0;
   const hasKickoffForm = kickoffFields.length > 0;
-
-  // ---- State ----
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [contactsLoading, setContactsLoading] = useState(false);
   const [roleAssignments, setRoleAssignments] = useState<
     Record<string, string | null>
   >({});
@@ -432,9 +458,9 @@ export function ExecuteFlowDialog({
     }
   }, [open, template.name]);
 
-  // Fetch contacts when dialog opens
+  // Fetch contacts when dialog opens and roles are known
   useEffect(() => {
-    if (!open || !hasRoles) return;
+    if (!open || definitionLoading || !hasRoles) return;
 
     let cancelled = false;
     setContactsLoading(true);
@@ -459,7 +485,7 @@ export function ExecuteFlowDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, hasRoles]);
+  }, [open, definitionLoading, hasRoles]);
 
   // ---- Handlers ----
 
@@ -584,8 +610,16 @@ export function ExecuteFlowDialog({
             />
           </div>
 
+          {/* Loading definition */}
+          {definitionLoading && (
+            <div className="flex items-center justify-center py-6 text-gray-400">
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <span className="text-sm">Loading flow details...</span>
+            </div>
+          )}
+
           {/* Role Mapping Section */}
-          {hasRoles && (
+          {!definitionLoading && hasRoles && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Users className="w-4 h-4 text-gray-500" />
@@ -654,7 +688,7 @@ export function ExecuteFlowDialog({
           )}
 
           {/* Kickoff Form Section */}
-          {hasKickoffForm && (
+          {!definitionLoading && hasKickoffForm && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <FileText className="w-4 h-4 text-gray-500" />
@@ -680,7 +714,7 @@ export function ExecuteFlowDialog({
           )}
 
           {/* Empty state: no roles, no kickoff form */}
-          {!hasRoles && !hasKickoffForm && (
+          {!definitionLoading && !hasRoles && !hasKickoffForm && (
             <div className="text-center py-4">
               <p className="text-sm text-gray-500">
                 This flow has no roles to assign or kickoff fields. You can
