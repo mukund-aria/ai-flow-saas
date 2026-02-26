@@ -19,6 +19,12 @@
 **Requirements**:
 - [ ] Customize form fields to match your organization
 
+**Recommendations**:
+- Sync usage metrics from your product analytics platform (Mixpanel, Amplitude, Pendo) to auto-populate the pre-QBR data collection form with real adoption numbers
+- Connect to your CRM (Salesforce, HubSpot) to pull ARR, renewal date, and support ticket counts directly into the QBR preparation step
+- Integrate with Google Calendar or Outlook to auto-schedule the QBR meeting and send calendar invites once the client pre-QBR survey is submitted
+- Push documented action items to your project management tool (Asana, Monday) so follow-ups are tracked with owners and due dates post-meeting
+
 **Roles**: Client Stakeholder, Account Manager
 
 ### Steps
@@ -67,6 +73,12 @@
 **Requirements**:
 - [ ] Upload your renewal contract document for e-signature (replaces sample)
 - [ ] Customize form fields to match your organization
+
+**Recommendations**:
+- Integrate with your CRM to auto-trigger the renewal flow 90 days before contract expiration and sync renewal status back to the opportunity record
+- Connect to DocuSign or Adobe Sign for the e-signature step to provide a seamless, legally binding signing experience
+- Set up Slack or Teams alerts for the CSM when client renewal survey responses indicate churn risk (e.g., low satisfaction, budget decreasing, evaluating competitors)
+- Push updated contract details (new ARR, term dates, seat count) to your billing system (Stripe, Chargebee, Zuora) upon signature to eliminate manual data entry
 
 **Roles**: Client Contact, CSM, Finance
 
@@ -120,6 +132,11 @@
 **Requirements**:
 - [ ] Customize form fields to match your organization
 
+**Recommendations**:
+- Integrate with your customer success platform (Gainsight, Totango, ChurnZero) to auto-trigger health check flows when account health scores drop below threshold
+- Connect to your product analytics to include real-time usage trend data (logins, feature adoption, API calls) in the internal risk assessment step
+- Set up Slack escalation alerts to the VP of Customer Success when accounts are assessed as high-risk with renewal within 90 days
+
 **Roles**: Client Contact, CSM
 
 ### Steps
@@ -171,6 +188,12 @@
 - Invoice amount mismatch due to a pricing error or miscommunication
 - Duplicate charge identified by the client during reconciliation
 - Client requesting a credit for a service outage or SLA breach
+
+**Recommendations**:
+- Integrate with your billing system (Stripe, NetSuite, Zuora) to auto-pull invoice details and charge history when a dispute is submitted, reducing manual lookup
+- Connect to your CRM to log the dispute on the account record and flag the account health score during the investigation period
+- Set up automated email notifications to the client at each stage (investigation started, resolution proposed, credit issued) so they never have to ask for status updates
+- Push approved credits and refunds directly to your accounting system to auto-generate credit memos and update the general ledger without manual journal entries
 
 **Roles**: Client, Finance Lead
 

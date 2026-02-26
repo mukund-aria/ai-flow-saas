@@ -32,6 +32,7 @@ export interface GalleryTemplate {
   setupInstructions?: string;
   useCases?: string[];
   requirements?: string[];
+  recommendations?: string[];
 }
 
 export interface TemplateCategory {

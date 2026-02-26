@@ -20,6 +20,12 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Connect to your claims management system (Guidewire, Duck Creek, Majesco) to auto-create claim records from FNOL submissions and sync status updates',
+      'Integrate with your policy administration system to auto-verify coverage and pull policy details during the triage step',
+      'Set up email or SMS notifications to claimants with real-time claim status updates at each stage of the process',
+      'Connect to your payment system to auto-initiate settlement disbursement once the claim decision is approved',
+    ],
     steps: [
       {
         name: 'First Notice of Loss (FNOL)',
@@ -98,6 +104,12 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     ],
     requirements: [
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Connect to your policy administration system (Guidewire, Duck Creek) to auto-create submissions and push approved policies directly into the system of record',
+      'Integrate with third-party data providers (LexisNexis, Verisk) to auto-pull loss history and risk scoring during underwriting review',
+      'Set up Slack or Teams notifications to alert underwriters when new applications are submitted and when applicants respond to underwriting questions',
+      'Connect to your agency management system (Applied Epic, Vertafore AMS360) to sync application status and policy details with the broker',
     ],
     steps: [
       {
@@ -190,6 +202,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Connect to your agency management system (Applied Epic, Vertafore AMS360) to auto-pull policy and coverage data for COI generation',
+      'Integrate with an ACORD forms platform to auto-populate Certificate of Insurance (ACORD 25) fields from request details',
+      'Set up automated email delivery to certificate holders with the completed COI attached as soon as it is uploaded',
+    ],
     steps: [
       {
         name: 'COI request details',
@@ -267,6 +284,12 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     ],
     requirements: [
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Connect to your HRIS (ADP, Workday, BambooHR) to auto-pull employee wage data and job classification for benefits calculation',
+      'Integrate with your state workers\' compensation board e-filing portal to auto-submit the First Report of Injury (FROI) within mandated deadlines',
+      'Set up Teams or Slack notifications to alert HR and the claims adjuster immediately when a new injury report is submitted',
+      'Connect to your OSHA recordkeeping system to auto-log recordable incidents and maintain your 300 log',
     ],
     steps: [
       {
@@ -373,6 +396,12 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your renewal documents for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Connect to your policy administration system (Guidewire, Duck Creek) to auto-trigger renewal flows 90 days before expiration and pre-fill current policy data',
+      'Integrate with your agency management system (Applied Epic, Vertafore AMS360) to sync renewal quotes and bind confirmations with the broker of record',
+      'Set up automated email reminders to policyholders with escalating urgency as the renewal deadline approaches',
+      'Connect to third-party data providers (Verisk, ISO) to auto-pull updated loss cost data and industry benchmarks for underwriting review',
+    ],
     steps: [
       {
         name: 'Renewal notice acknowledgement',
@@ -458,6 +487,12 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
       'Upload your General Indemnity Agreement document for e-signature (replaces sample)',
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Connect to your surety management system (Tinuiti, SurePath) to auto-create bond submissions and track bonding capacity utilization',
+      'Integrate with credit bureaus (Dun & Bradstreet, Experian) for automated credit pulls on principals and indemnitors during underwriting',
+      'Set up email notifications to the surety agent when financial documents and the signed GIA are submitted so underwriting can begin promptly',
+      'Connect to your construction project management platform (Procore, Sage) to auto-verify project details and contractor performance history',
+    ],
     steps: [
       {
         name: 'Bond application',
@@ -536,6 +571,11 @@ export const INSURANCE_CLAIMS_TEMPLATES: GalleryTemplate[] = [
     ],
     requirements: [
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Connect to your payroll provider (ADP, Paychex, Gusto) to auto-pull payroll records and classification data for the audit period',
+      'Integrate with your accounting system (QuickBooks, Sage, Xero) to auto-export sales and revenue records needed for premium calculation',
+      'Set up automated email reminders to policyholders with document checklists and escalating deadlines as the audit window progresses',
     ],
     steps: [
       {

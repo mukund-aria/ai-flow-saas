@@ -102,6 +102,12 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your contract document for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Integrate with your CLM (Ironclad, Agiloft, DocuSign CLM) to auto-import contract drafts and sync executed versions back to the repository',
+      'Set up Slack or Teams notifications for the legal team when contracts are pending review or when negotiation deadlines approach',
+      'Connect to DocuSign or Adobe Sign for embedded e-signature execution with automatic status tracking',
+      'Push executed contracts to SharePoint or Google Drive with automated folder structure by contract type and counterparty',
+    ],
   },
 
   // 56. Contract Exception Request
@@ -186,6 +192,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
       'Partner requesting non-standard SLA commitments for enterprise agreement',
       'Sales team seeking approval for pricing exceptions on a competitive deal',
     ],
+    recommendations: [
+      'Integrate with your CLM (Ironclad, Agiloft) to auto-flag non-standard clauses and pull exception history for precedent analysis',
+      'Connect to your CRM (Salesforce, HubSpot) to link exception requests to deal records and track approval impact on win rates',
+      'Set up Slack or email escalation alerts when exception requests exceed SLA review timelines or approach deal close deadlines',
+    ],
   },
 
   // 57. NDA Execution
@@ -259,6 +270,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your NDA document for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Integrate with DocuSign or Adobe Sign for one-click NDA execution and automatic countersignature tracking',
+      'Connect to your CLM (Ironclad, DocuSign CLM) to auto-generate NDAs from templates and sync executed copies to the contract repository',
+      'Push executed NDAs to SharePoint or Google Drive with automated expiration date tracking and renewal reminders',
+    ],
   },
 
   // 58. Litigation Hold Acknowledgement
@@ -314,6 +330,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
       'Preserving data for regulatory investigations or government inquiries',
       'Tracking acknowledgements across departments when a hold affects multiple custodians',
       'Documenting preservation compliance for discovery obligations',
+    ],
+    recommendations: [
+      'Connect to your e-discovery platform (Relativity, Exterro, Everlaw) to auto-trigger preservation workflows and sync custodian acknowledgement status',
+      'Integrate with your HRIS (Workday, BambooHR) to auto-identify custodians by department and role when issuing holds',
+      'Set up email and Slack escalation alerts for custodians who have not acknowledged the hold within the required timeframe',
     ],
   },
 
@@ -401,6 +422,12 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your board resolution document for e-signature (replaces sample)',
       'Upload your CEO attestation document for e-signature (replaces sample)',
+    ],
+    recommendations: [
+      'Connect to your board portal (Diligent, BoardEffect, OnBoard) to distribute materials, collect votes, and sync resolution status automatically',
+      'Integrate with DocuSign or Adobe Sign for secure board member e-signature collection with audit trail',
+      'Set up calendar integrations (Google Calendar, Outlook) to auto-schedule board review periods and consent deadlines',
+      'Push executed resolutions to your corporate records system or SharePoint for automated minute book filing',
     ],
   },
 
@@ -503,6 +530,12 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
       'Managing due diligence for a strategic corporate acquisition',
       'Running buy-side diligence for a venture-backed company acquisition',
     ],
+    recommendations: [
+      'Connect to a virtual data room (Intralinks, Datasite, Box) to auto-organize uploaded documents by workstream and track access logs',
+      'Integrate with your deal management platform (DealCloud, Midaxo) to sync diligence status, red flags, and go/no-go decisions back to the deal record',
+      'Set up Slack or Teams notifications for the deal team when new documents are uploaded or follow-up questions are submitted by the target',
+      'Push completed diligence findings to SharePoint or Confluence for post-close integration team reference',
+    ],
   },
 
   // 61. DSAR / Privacy Rights Request
@@ -594,6 +627,12 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Integrate with your privacy management platform (OneTrust, BigID, TrustArc) to auto-log DSARs, track regulatory deadlines, and generate compliance reports',
+      'Connect to identity verification services (Jumio, Onfido) to automate data subject identity confirmation before processing requests',
+      'Set up automated email notifications with countdown timers for GDPR 30-day and CCPA 45-day response deadlines',
+      'Sync completed DSAR responses to your GRC platform for audit trail documentation and regulatory reporting',
+    ],
   },
 
   // 62. Subpoena Response Coordination
@@ -677,6 +716,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
       'Coordinating document production for regulatory investigations',
       'Managing custodian-level document collection for multi-party lawsuits',
       'Handling grand jury subpoenas requiring rapid document preservation and production',
+    ],
+    recommendations: [
+      'Connect to your e-discovery platform (Relativity, Exterro, Everlaw) to auto-collect, process, and review responsive documents',
+      'Integrate with your legal hold system to auto-trigger preservation notices and sync custodian compliance status',
+      'Set up Slack or email deadline alerts for response due dates and court-ordered production schedules',
     ],
   },
 
@@ -778,6 +822,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     ],
     requirements: [
       'Upload your formation documents for e-signature (replaces sample)',
+    ],
+    recommendations: [
+      'Integrate with registered agent services (CSC, CT Corporation) to auto-file formation documents and track state filing status',
+      'Connect to the IRS EIN application portal to streamline federal tax ID registration after entity formation',
+      'Set up calendar reminders for ongoing compliance deadlines including annual report filings, franchise tax due dates, and registered agent renewals',
     ],
   },
 
@@ -887,6 +936,12 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your franchise agreement document for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Integrate with your franchise management platform (FranConnect, FRANdata) to sync franchisee data, territory assignments, and onboarding milestones',
+      'Connect to DocuSign for FDD delivery tracking with built-in 14-day cooling period enforcement before agreement execution',
+      'Set up automated email reminders for FTC-mandated waiting periods and discovery day scheduling',
+      'Push executed agreements and financial terms to your accounting system (QuickBooks, Xero) for royalty tracking setup',
+    ],
   },
 
   // 65. Trademark / IP Assignment
@@ -988,6 +1043,11 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
     ],
     requirements: [
       'Upload your IP assignment agreement for e-signature (replaces sample)',
+    ],
+    recommendations: [
+      'Integrate with USPTO/WIPO electronic filing systems to auto-submit assignment recordation documents and track filing status',
+      'Connect to your IP management platform (Anaqua, CPA Global, Clarivate) to sync assignment records, update ownership data, and maintain chain of title',
+      'Set up automated deadline alerts for recordation filing windows and post-assignment maintenance fee due dates',
     ],
   },
 ];

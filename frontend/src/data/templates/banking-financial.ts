@@ -21,6 +21,12 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Integrate with your core banking system to auto-trigger KYC verification when a new account application is received',
+      'Connect to a third-party identity verification API (Jumio, Onfido) to automate document authentication and reduce manual review time',
+      'Set up Slack or Teams alerts for the compliance team when high-risk scores or PEP matches are detected',
+      'Auto-archive completed KYC files to your compliance document management system (e.g., Laserfiche, iManage) for audit readiness',
+    ],
     steps: [
       {
         name: 'Personal information intake',
@@ -148,6 +154,12 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Integrate with a Secretary of State API to auto-verify business formation documents and good standing status',
+      'Connect to your core banking platform to auto-create the business account record upon KYB approval',
+      'Push verified beneficial ownership data to your CDD/AML case management system (e.g., Actimize, Verafin) for ongoing monitoring',
+      'Set up calendar reminders to trigger periodic KYB refresh flows based on the entity risk rating',
+    ],
     steps: [
       {
         name: 'Business information intake',
@@ -253,6 +265,12 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     ],
     requirements: [
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Connect to the FinCEN BOIR e-filing API to submit reports directly from the completed flow without manual re-entry',
+      'Integrate with your entity management system (e.g., Diligent Entities, CSC) to auto-populate company and ownership data',
+      'Set up automated 30-day change-detection reminders so updates or corrections are filed within the CTA deadline',
+      'Auto-archive filed BOI reports and supporting documents to your compliance records system for audit trail retention',
     ],
     steps: [
       {
@@ -385,6 +403,11 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
       'Risk-triggered refresh after adverse media screening alert',
       'Regulatory exam preparation requiring updated client documentation',
     ],
+    recommendations: [
+      'Integrate with your core banking system to auto-trigger refresh flows when the KYC review date arrives or a risk event is detected',
+      'Connect to sanctions screening services (World-Check, Dow Jones) to run automated re-screening against updated watchlists during each refresh',
+      'Push refresh completion status back to your AML case management platform to keep client risk profiles current',
+    ],
     steps: [
       {
         name: 'Refresh notification',
@@ -465,6 +488,12 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your closing document for e-signature (replaces sample)',
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Integrate with your loan origination system (LOS) to auto-create loan records and sync application data as the flow progresses',
+      'Connect to a credit bureau API (Equifax, Experian, TransUnion) to auto-pull credit reports during the underwriting step',
+      'Set up Slack or Teams notifications for underwriters and the credit committee when approvals are pending to reduce cycle time',
+      'Push closing documents to DocuSign or your e-signature provider to streamline execution and maintain a tamper-evident audit trail',
     ],
     steps: [
       {
@@ -576,6 +605,12 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Integrate with your treasury management system (TMS) to auto-populate beneficiary details from the approved payee list and reduce manual entry errors',
+      'Connect to an OFAC/sanctions screening API (Dow Jones, Refinitiv) to automate real-time beneficiary screening within the flow',
+      'Set up instant push notifications to approvers when wire requests above threshold amounts are submitted, reducing settlement delays',
+      'Sync completed wire records to your ERP general ledger (NetSuite, SAP) for automatic reconciliation and month-end close',
+    ],
     steps: [
       {
         name: 'Wire transfer request',
@@ -671,6 +706,12 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your account agreement document for e-signature (replaces sample)',
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Integrate with your portfolio management or custodial platform (Schwab, Pershing, Fidelity) to auto-create accounts upon approval and generate funding instructions',
+      'Connect to a KYC/AML identity verification service to automate investor ID authentication and reduce compliance review time',
+      'Push suitability questionnaire responses to your CRM (Salesforce Financial Services Cloud, Wealthbox) to build a complete investor profile for Reg BI documentation',
+      'Set up automated email or calendar invitations for an introductory portfolio strategy meeting once the account is activated',
     ],
     steps: [
       {
@@ -809,6 +850,12 @@ export const BANKING_FINANCIAL_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your renewal/modification document for e-signature (replaces sample)',
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Integrate with your loan origination system to auto-trigger renewal flows 90 days before facility maturity dates',
+      'Connect to a financial spreading tool (Moody\'s, Sageworks) to auto-import borrower financial data and accelerate credit analysis',
+      'Set up Slack or Teams alerts for the credit committee when approval packages are ready for review to reduce turnaround time',
+      'Sync updated facility terms and limits back to your core banking system upon document execution to keep records current',
     ],
     steps: [
       {

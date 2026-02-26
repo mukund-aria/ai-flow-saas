@@ -19,6 +19,12 @@
 **Requirements**:
 - [ ] Customize form fields to match your organization
 
+**Recommendations**:
+- Connect to Procore or PlanGrid to auto-pull subcontractor profiles and sync qualification status to your project directory
+- Integrate with a certificate management platform (myCOI, PINS) to auto-verify insurance coverage limits and flag expirations
+- Push qualification results to your ERP (Sage 300, Viewpoint Vista) to update vendor master records and approved bidder lists
+- Set up Slack or Teams notifications to alert the project manager when a subcontractor submits documents or when reviews are overdue
+
 **Roles**: Subcontractor, Project Manager, Safety Lead, Insurance Coordinator
 
 ### Steps
@@ -82,6 +88,11 @@
 - [ ] Upload your conditional lien waiver document for e-signature (replaces sample)
 - [ ] Upload your unconditional lien waiver document for e-signature (replaces sample)
 
+**Recommendations**:
+- Integrate with your accounting system (Sage 300, QuickBooks, Viewpoint) to auto-trigger lien waiver requests when progress payments are scheduled
+- Connect to DocuSign or your e-signature platform to streamline conditional and unconditional waiver execution with audit trails
+- Set up automated email reminders to subcontractors when lien waivers are outstanding, with escalation to the project manager after 48 hours
+
 **Roles**: Subcontractor, Project Manager, Accounts Payable, Owner Representative
 
 ### Steps
@@ -125,6 +136,12 @@
 - [ ] Upload your final conditional lien waiver document for e-signature (replaces sample)
 - [ ] Upload your final unconditional lien waiver document for e-signature (replaces sample)
 
+**Recommendations**:
+- Integrate with your construction accounting system (Sage 300, Viewpoint) to auto-reconcile retainage balances and trigger final payment processing upon waiver receipt
+- Connect to DocuSign to execute final conditional and unconditional lien waivers with tamper-proof audit trails for project closeout files
+- Push completed waiver packages to your document management system (Procore, Box) for automatic archival alongside closeout documentation
+- Set up Slack or email notifications to the owner representative when all sub-tier waivers are collected and the final payment package is ready for approval
+
 **Roles**: Subcontractor, Project Manager, Accounts Payable, Owner Representative
 
 ### Steps
@@ -164,6 +181,11 @@
 - Process finish material submittals for owner color and pattern approval
 - Track resubmissions when initial submittals are returned with comments
 
+**Recommendations**:
+- Connect to Procore or PlanGrid to auto-log submittal status, sync review comments, and maintain a centralized submittal register
+- Integrate with Bluebeam Revu or Autodesk Build to enable markup and annotation directly on shop drawings during the review cycle
+- Set up Slack or Teams notifications to alert the architect/engineer when new submittals are uploaded, and notify subcontractors when reviews are complete
+
 **Roles**: Subcontractor, Project Manager, Architect/Engineer, Owner Representative
 
 ### Steps
@@ -200,6 +222,11 @@
 - Request confirmation on an acceptable material substitution
 - Document a field condition that differs from the design documents
 - Get design direction on an unforeseen site condition
+
+**Recommendations**:
+- Connect to Procore or PlanGrid to auto-sync RFI numbers, responses, and status into your project RFI log for a single source of truth
+- Integrate with your project scheduling tool (Primavera P6, Microsoft Project) to flag schedule impacts when RFI responses are delayed beyond the needed-by date
+- Set up Slack or Teams notifications to alert the architect when a new RFI is submitted, and escalate to the project manager if responses exceed the SLA deadline
 
 **Roles**: Contractor, Architect, Engineer
 
@@ -241,6 +268,12 @@
 
 **Requirements**:
 - [ ] Upload your change order execution document for e-signature (replaces sample)
+
+**Recommendations**:
+- Connect to Procore or Autodesk Build to auto-sync approved change orders into the project change log and update the committed cost report
+- Integrate with your construction accounting system (Sage 300, Viewpoint Vista) to automatically adjust the contract value and budget when change orders are executed
+- Set up Slack or Teams notifications to alert the owner representative when a new change order is submitted, and notify the contractor when approvals or counter-proposals are issued
+- Push executed change order documents to DocuSign for e-signature and auto-archive signed copies to the project document management system
 
 **Roles**: Contractor, Project Manager, Architect, Owner Representative
 
@@ -287,6 +320,12 @@
 - Manage the punch list and turnover process for a new office building
 - Coordinate final inspections, documentation, and training for a school construction project
 - Process retainage release and final payment after all closeout requirements are met
+
+**Recommendations**:
+- Connect to Procore to auto-track punch list items, sync completion status, and generate the closeout documentation checklist from the project setup
+- Integrate with your construction accounting system (Sage 300, Viewpoint) to auto-trigger retainage release and final payment processing when closeout approvals are complete
+- Push all closeout documents (O&M manuals, as-builts, warranties) to a shared document platform (Box, SharePoint) for owner access and long-term archival
+- Set up automated email notifications to the owner and architect when punch list milestones are reached and when the project is officially closed out
 
 **Roles**: GC/Contractor, Architect, Owner
 
@@ -348,6 +387,12 @@
 
 **Requirements**:
 - [ ] Upload your closing/settlement document for e-signature (replaces sample)
+
+**Recommendations**:
+- Integrate with your MLS system (Zillow, MLS Grid) to auto-populate property details and purchase terms from the listing data
+- Connect to DocuSign or Dotloop to streamline e-signature workflows for disclosures, contingency removals, and closing documents
+- Set up automated email and SMS reminders for contingency deadlines, inspection scheduling, and closing date milestones to keep all parties on track
+- Integrate with your title company or escrow platform (Qualia, SoftPro) to sync transaction status, document uploads, and funding confirmation in real time
 
 **Roles**: Buyer, Seller, Escrow/Title Agent, Buyer Agent
 
@@ -412,6 +457,12 @@
 - [ ] Upload your credit/background check authorization document for e-signature (replaces sample)
 - [ ] Upload your lease agreement document for e-signature (replaces sample)
 
+**Recommendations**:
+- Integrate with your property management system (Yardi, AppFolio, MRI) to auto-create tenant records and lease abstracts when the lease is fully executed
+- Connect to a credit screening service (Experian, TransUnion) to auto-run tenant credit and background checks upon authorization signature
+- Push executed lease documents to DocuSign for dual-party e-signature and auto-archive signed copies to your lease management repository
+- Set up Slack or email notifications to the property manager when lease milestones are reached (application received, credit approved, lease signed) to coordinate move-in logistics
+
 **Roles**: Tenant, Landlord Representative, Property Manager
 
 ### Steps
@@ -461,6 +512,12 @@
 - Handle an early lease termination with required notice period
 - Manage a commercial tenant move-out with restoration requirements
 - Document property condition and calculate deposit deductions transparently
+
+**Recommendations**:
+- Integrate with your property management system (Yardi, AppFolio, Buildium) to auto-update unit availability, close out the tenant ledger, and trigger deposit disposition processing
+- Connect to your accounting software (QuickBooks, Sage) to auto-generate the security deposit accounting statement and issue refund checks or ACH transfers
+- Set up automated email reminders to the tenant for move-out checklist deadlines, key return, and utility transfer cutoff dates
+- Push completed inspection reports and deposit disposition documents to your document management system for compliance archival and audit readiness
 
 **Roles**: Tenant, Property Manager, Maintenance, Accounting
 

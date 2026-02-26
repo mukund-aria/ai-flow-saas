@@ -21,6 +21,11 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Connect to your CRM (HubSpot, Salesforce) to auto-create a trial opportunity and sync engagement data as the prospect progresses through milestones',
+      'Integrate with your product analytics platform (Mixpanel, Amplitude, Pendo) to pull real-time usage metrics into the mid-trial check-in step',
+      'Set up Slack notifications for the sales rep when mid-trial survey responses indicate low satisfaction or blockers, enabling faster intervention',
+    ],
     steps: [
       {
         name: 'Trial registration form',
@@ -120,6 +125,12 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your contract document for e-signature (replaces sample)',
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Connect to Salesforce to auto-update the opportunity stage as the pilot moves through scoping, mid-review, and go/no-go decision milestones',
+      'Integrate with your product analytics dashboard to auto-populate mid-pilot status review forms with actual adoption and usage metrics',
+      'Push signed contracts to DocuSign or Adobe Sign for tamper-evident e-signature execution and automatic archival',
+      'Set up Teams or Slack notifications for the steering committee when mid-pilot reviews are due or when the go/no-go decision is pending',
     ],
     steps: [
       {
@@ -237,6 +248,12 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Integrate with your IT asset management or vendor risk management platform (ServiceNow, OneTrust) to auto-register the AI tool and track its risk classification',
+      'Connect to your data governance catalog (Collibra, Alation) to auto-flag which data types require DPA or DPIA review before the pilot starts',
+      'Set up automated Slack alerts for IT Security and the Data Privacy Officer when new AI pilot requests are submitted for expedited triage',
+      'Push final evaluation reports and approval records to your GRC platform for enterprise AI governance audit trail',
+    ],
     steps: [
       {
         name: 'AI pilot request',
@@ -349,6 +366,12 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
       'Upload your SOW document for e-signature (replaces sample)',
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Connect to your CRM (Salesforce, HubSpot) to auto-update the deal stage and log proposal delivery, Q&A, and sign-off events on the opportunity timeline',
+      'Integrate with DocuSign or Adobe Sign for the SOW e-signature step to provide a legally binding, tamper-evident signing experience',
+      'Set up Slack or email notifications for the delivery team when the SOW is signed so they can begin implementation planning immediately',
+      'Push signed SOW documents and client requirements to your project management tool (Asana, Monday, Jira) to auto-create the implementation project',
+    ],
     steps: [
       {
         name: 'Proposal request details',
@@ -451,6 +474,12 @@ export const SALES_EVALUATION_TEMPLATES: GalleryTemplate[] = [
     ],
     requirements: [
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Integrate with your CRM to auto-log the RFP opportunity, track go/no-go decisions, and update deal stage as the response progresses through review and submission',
+      'Connect to a content library or proposal management tool (Loopio, Responsive, Qvidian) to help SMEs pull pre-approved answers for common RFP requirements',
+      'Set up calendar integrations to auto-schedule internal review meetings and deadline reminders aligned with the RFP submission timeline',
+      'Push the final submitted response and supporting documents to SharePoint or Google Drive for centralized archival and win/loss analysis',
     ],
     steps: [
       {

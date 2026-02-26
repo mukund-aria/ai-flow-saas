@@ -21,6 +21,12 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Connect to Salesforce or HubSpot to auto-trigger this flow when a deal moves to Closed Won',
+      'Set up Slack or Microsoft Teams notifications to alert your implementation team when a new onboarding starts',
+      'Integrate with your SSO provider (Okta, Azure AD) to auto-provision user accounts after UAT sign-off',
+      'Push onboarding milestones back to your CRM so sales and CS teams have real-time visibility into implementation progress',
+    ],
     steps: [
       {
         name: 'Customer kickoff form',
@@ -128,6 +134,12 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     ],
     requirements: [
       'Upload your account agreement document for e-signature (replaces sample)',
+    ],
+    recommendations: [
+      'Integrate with your core banking or wealth management platform to auto-trigger this flow when a new account application is created',
+      'Connect to a KYC/AML screening service (LexisNexis, Refinitiv World-Check) to automate sanctions and PEP screening',
+      'Set up Slack or email escalation alerts when a high-risk client is flagged so compliance officers can respond immediately',
+      'Integrate with DocuSign or Adobe Sign for the account agreement e-signature step to capture a legally binding audit trail',
     ],
     steps: [
       {
@@ -242,6 +254,12 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your engagement letter document for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Connect to your practice management system (Canopy, Karbon, or CCH Axcess) to auto-create client records upon onboarding completion',
+      'Integrate with QuickBooks Online or Xero to auto-link the client accounting file once bookkeeping access is provided',
+      'Set up automated reminders via email or Slack when tax authorization forms or prior-year documents are overdue',
+      'Push completed engagement data to your CRM to keep business development and partner teams informed of new client status',
+    ],
     steps: [
       {
         name: 'Client information form',
@@ -351,6 +369,12 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your engagement letter document for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Connect to your case management system (Clio, MyCase, or PracticePanther) to auto-create matters and populate client records upon intake completion',
+      'Integrate with your conflicts database to auto-run conflict checks when new party names are submitted in the intake form',
+      'Set up calendar integrations (Google Calendar, Outlook) to auto-schedule the kickoff meeting once the engagement letter is signed',
+      'Push new matter data to your billing system (LEDES/UTBMS) so billing codes and rate cards are configured from day one',
+    ],
     steps: [
       {
         name: 'Client intake form',
@@ -445,6 +469,12 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     ],
     requirements: [
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Connect to your agency management system (Applied Epic, Vertafore AMS360) to auto-trigger this flow when a new submission is logged',
+      'Integrate with ACORD data exchange to pre-populate insured information from standard ACORD forms and reduce manual data entry',
+      'Set up Slack or Teams alerts to notify underwriters when new submissions arrive so triage begins within your SLA targets',
+      'Push issued policy data back to your policy administration system to auto-create records and generate certificates of insurance',
     ],
     steps: [
       {
@@ -549,6 +579,12 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your contract document for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Connect to Salesforce, HubSpot, or Pipedrive to auto-trigger this flow when a deal moves to Closed Won',
+      'Integrate with DocuSign or Adobe Sign for the contract execution step to streamline e-signature collection',
+      'Set up Slack or Microsoft Teams notifications to alert operations when a new client is ready for internal setup',
+      'Sync completed onboarding data back to your CRM so account managers have full context for ongoing relationship management',
+    ],
     steps: [
       {
         name: 'Client information intake',
@@ -632,6 +668,12 @@ export const CLIENT_ONBOARDING_TEMPLATES: GalleryTemplate[] = [
       'Client merges with another organization and consolidates vendors',
       'Customer downgrades and needs to close a secondary account',
       'Mutual agreement to terminate a pilot engagement',
+    ],
+    recommendations: [
+      'Connect to your CRM (Salesforce, HubSpot) to auto-trigger this flow when a contract status changes to Churned or Non-Renewal',
+      'Integrate with your billing system (Stripe, Chargebee) to auto-generate the final invoice and process any remaining credits or refunds',
+      'Set up Slack alerts to notify account management and leadership when an offboarding request is submitted for early intervention',
+      'Auto-archive completed offboarding records to your compliance or document management system (SharePoint, Google Drive) for audit readiness',
     ],
     steps: [
       {

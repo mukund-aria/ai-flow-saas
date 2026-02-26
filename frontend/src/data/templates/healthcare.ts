@@ -20,6 +20,12 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Integrate with your EHR (Epic, Cerner, athenahealth) to auto-pull patient demographics, insurance details, and clinical history into the authorization request',
+      'Connect to payer prior auth portals (Availity, CoverMyMeds) to auto-submit requests and receive real-time status updates',
+      'Set up automated SMS or email notifications to patients when authorization decisions are rendered so scheduling can proceed immediately',
+      'Connect to your practice management system to auto-update the scheduling queue when authorizations are approved',
+    ],
     steps: [
       {
         name: 'Treatment request details',
@@ -111,6 +117,12 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
       'Upload your consent forms document for e-signature (replaces sample)',
       'Customize form fields to match your organization',
     ],
+    recommendations: [
+      'Integrate with your EHR (Epic, Cerner, athenahealth) to auto-create the patient chart and push demographics, medical history, and insurance data directly into the system',
+      'Connect to your insurance eligibility verification service (Availity, Waystar) to auto-verify coverage and benefits in real time',
+      'Set up automated email or text reminders to patients with outstanding intake forms as their appointment date approaches',
+      'Connect to a health information exchange (HIE) to auto-request prior medical records from previous providers',
+    ],
     steps: [
       {
         name: 'Patient demographics',
@@ -200,6 +212,11 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your HIPAA authorization document for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Connect to your EHR (Epic, Cerner) to auto-compile requested medical records and verify the release authorization against the patient chart',
+      'Integrate with a secure file exchange platform (Virtru, Kiteworks) for HIPAA-compliant encrypted delivery of medical records to receiving parties',
+      'Set up automated audit logging to your compliance system to track every records release for HIPAA accountability requirements',
+    ],
     steps: [
       {
         name: 'Release request',
@@ -275,6 +292,12 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your provider agreement document for e-signature (replaces sample)',
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Connect to your credentialing verification organization (CVO) or CAQH ProView to auto-pull provider application data and primary source verification results',
+      'Integrate with NPDB, OIG/SAM exclusion lists, and state license boards for automated sanctions screening and continuous monitoring alerts',
+      'Set up calendar reminders to auto-trigger re-credentialing flows 120 days before the 36-month expiration date',
+      'Connect to your provider enrollment system to auto-update network directories and payer rosters when credentialing is approved',
     ],
     steps: [
       {
@@ -368,6 +391,12 @@ export const HEALTHCARE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your informed consent form (ICF) with HIPAA authorization for e-signature (replaces sample)',
       'Customize form fields to match your organization',
+    ],
+    recommendations: [
+      'Connect to your electronic data capture (EDC) system (Medidata Rave, Oracle Clinical One, REDCap) to auto-push enrollment CRFs and baseline assessment data',
+      'Integrate with your clinical trial management system (CTMS) to auto-update enrollment counts, site metrics, and participant status in real time',
+      'Set up automated notifications to the Principal Investigator and sponsor when eligibility screening is complete and enrollment milestones are reached',
+      'Connect to your IVRS/IWRS system to auto-trigger randomization and drug supply allocation upon enrollment confirmation',
     ],
     steps: [
       {

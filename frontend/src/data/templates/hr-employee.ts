@@ -21,6 +21,12 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your offer letter and employment agreements for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Connect to your HRIS (BambooHR, Workday, Rippling) to auto-trigger this flow when a candidate status changes to Offer Accepted',
+      'Integrate with your IT asset management system (Jamf, Mosyle) to auto-order and ship equipment based on the new hire start date and role',
+      'Set up Slack or Microsoft Teams notifications to alert the hiring manager and IT when onboarding milestones are completed or overdue',
+      'Sync completed employee data back to your payroll system (ADP, Gusto, Paychex) to eliminate duplicate data entry for tax forms and direct deposit',
+    ],
     steps: [
       {
         name: 'Personal information form',
@@ -137,6 +143,12 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
       'Upload your SOW / contractor agreement for e-signature (replaces sample)',
       'Upload your NDA document for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Connect to your vendor management system (SAP Fieldglass, Beeline) to auto-trigger this flow when a contractor requisition is approved',
+      'Integrate with your AP system to auto-configure payment schedules and invoice routing based on the engagement details and rate',
+      'Set up calendar reminders (Google Calendar, Outlook) to auto-alert hiring managers 30 days before contract end dates for renewal or extension decisions',
+      'Sync contractor records to your HRIS or workforce management platform to maintain a single view of your blended workforce for compliance reporting',
+    ],
     steps: [
       {
         name: 'Contractor information form',
@@ -248,6 +260,12 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your background check authorization document for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Integrate with your ATS (Greenhouse, Lever, iCIMS) to auto-trigger this flow when a candidate reaches the Background Check stage in your hiring pipeline',
+      'Connect to a background screening provider API (Checkr, Sterling, GoodHire) to auto-submit verification requests and pull results back into the flow',
+      'Set up Slack or email notifications to alert recruiters when adverse findings are flagged so they can initiate the adverse action process promptly',
+      'Sync screening results back to your HRIS to maintain a centralized compliance record for each employee or contractor',
+    ],
     steps: [
       {
         name: 'Background check authorization',
@@ -352,6 +370,12 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
     requirements: [
       'Upload your separation agreement document for e-signature (replaces sample)',
     ],
+    recommendations: [
+      'Connect to your HRIS (Workday, BambooHR) to auto-trigger this flow when an employee status changes to Terminating or Resigned',
+      'Integrate with your identity provider (Okta, Azure AD) to auto-revoke SSO access and deactivate accounts on the employee last day',
+      'Set up Slack or Microsoft Teams alerts to notify IT, facilities, and finance simultaneously when offboarding begins so parallel tasks start immediately',
+      'Sync exit interview data to your HR analytics platform to track attrition trends and surface actionable insights for retention improvements',
+    ],
     steps: [
       {
         name: 'Separation notice',
@@ -443,6 +467,12 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
       'International transfer moves an employee to a new country office',
       'Office consolidation requires several employees to relocate',
       'New hire negotiates relocation assistance as part of offer package',
+    ],
+    recommendations: [
+      'Connect to your HRIS (Workday, SuccessFactors) to auto-trigger this flow when a transfer or relocation is approved in the system',
+      'Integrate with your relocation management company (SIRVA, Cartus) API to auto-submit relocation requests and receive status updates on move logistics',
+      'Set up Google Calendar or Outlook integrations to auto-schedule area tours, property viewings, and school visits based on employee preferences',
+      'Sync relocation expense data to your expense management system (Concur, Expensify) to streamline reimbursement and ensure policy compliance on spending limits',
     ],
     steps: [
       {

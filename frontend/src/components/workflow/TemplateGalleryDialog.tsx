@@ -533,6 +533,23 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                           </div>
                         </div>
                       )}
+
+                      {/* Recommendations */}
+                      {selectedTemplate.recommendations && selectedTemplate.recommendations.length > 0 && (
+                        <div className="mb-8">
+                          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recommendations</h3>
+                          <div className="bg-violet-50 border border-violet-200 rounded-lg p-4">
+                            <ul className="space-y-2">
+                              {selectedTemplate.recommendations.map((rec, i) => (
+                                <li key={i} className="flex items-start gap-2.5 text-sm text-violet-800">
+                                  <Sparkles className="w-4 h-4 mt-0.5 shrink-0 text-violet-500" />
+                                  {rec}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
