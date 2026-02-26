@@ -2,6 +2,8 @@
 
 > Hiring, onboarding, transfers, and offboarding
 
+**Concurrency notation**: Steps marked **(concurrent)** have `skipSequentialOrder: true` and can run in parallel with the preceding step rather than waiting for it to complete.
+
 ---
 
 ## 1. Employee Onboarding
@@ -38,10 +40,10 @@
 | 4 | I-9 verification documents | File Request | New Hire | Upload identity and employment authorization documents per I-9 requirements: either one List A document, or one List B plus one List C document. |
 | | **📌 Verification & Benefits** | | | |
 | 5 | I-9 employer verification | To-Do | HR Coordinator | Examine the new hire's I-9 documents, complete Section 2 of Form I-9, and ensure verification is completed within 3 business days of start date. |
-| 6 | Direct deposit & benefits enrollment | Form | New Hire | Set up your direct deposit and enroll in benefits. Provide your banking information and select your medical, dental, vision, and 401(k) options. |
+| 6 | Direct deposit & benefits enrollment **(concurrent)** | Form | New Hire | Set up your direct deposit and enroll in benefits. Provide your banking information and select your medical, dental, vision, and 401(k) options. |
 | | **📌 Provisioning & Orientation** | | | |
 | 7 | Equipment provisioning | To-Do | HR Coordinator | Order and provision the new hire's equipment (laptop, monitors, peripherals) and ensure delivery before or on the start date. |
-| 8 | System access & accounts | To-Do | HR Coordinator | Create the new hire's email account, SSO credentials, and access to role-specific applications. Verify all accounts are functional before day one. |
+| 8 | System access & accounts **(concurrent)** | To-Do | HR Coordinator | Create the new hire's email account, SSO credentials, and access to role-specific applications. Verify all accounts are functional before day one. |
 | 9 | First-day orientation | To-Do | HR Coordinator | Conduct the first-day orientation covering company overview, policies, facilities tour (or virtual equivalent), and introductions to key team members. |
 | 10 | Manager welcome & 30-day plan | Acknowledgement | Hiring Manager | Welcome the new hire to the team and share the 30-day plan including initial goals, key meetings, and ramp-up milestones. |
 
@@ -253,10 +255,10 @@
 | 1 | Separation notice | Acknowledgement | Departing Employee | Acknowledge receipt of the separation notice and confirm your understanding of the offboarding timeline and process. |
 | 2 | Exit interview | Form | Departing Employee | Complete the confidential exit interview to share your feedback about your experience, management, and suggestions for improvement. |
 | 3 | Benefits / COBRA information | File Request | HR Coordinator | Prepare and deliver COBRA continuation coverage information, benefits termination details, and any applicable retirement plan distribution options. |
-| 4 | Final expense submission | File Request | Departing Employee | Upload any outstanding expense reports and receipts for reimbursement processing before your last day. |
+| 4 | Final expense submission **(concurrent)** | File Request | Departing Employee | Upload any outstanding expense reports and receipts for reimbursement processing before your last day. |
 | | **📌 Administrative Closure** | | | |
 | 5 | Equipment return | To-Do | Departing Employee | Return all company-issued equipment including laptop, monitors, badges, keys, and any other company property. Ship to the provided address if working remotely. |
-| 6 | Access revocation | To-Do | IT Administrator | Revoke all system access including email, SSO, VPN, cloud services, and building access. Archive the user account per retention policy. |
+| 6 | Access revocation **(concurrent)** | To-Do | IT Administrator | Revoke all system access including email, SSO, VPN, cloud services, and building access. Archive the user account per retention policy. |
 | | **📌 Final Settlement** | | | |
 | 7 | Final paycheck | To-Do | Finance | Process the final paycheck including any accrued PTO payout, expense reimbursements, and prorated compensation per state requirements. |
 | 8 | Separation agreement (if applicable) | E-Sign | Departing Employee | Review and sign the separation agreement, if applicable, covering release terms, severance, and any post-employment obligations. |
@@ -304,7 +306,7 @@
 | 3 | Policy acknowledgement | Acknowledgement | Employee | Review and acknowledge the relocation policy, including covered expenses, reimbursement procedures, tax implications, and clawback provisions. |
 | | **📌 Move Coordination** | | | |
 | 4 | Home sale / lease break assistance | To-Do | Relocation Company | Assist the employee with selling their current home or breaking their lease. Coordinate with real estate agents, manage listings, or negotiate lease termination as applicable. |
-| 5 | Destination home search | To-Do | Destination Services | Help the employee find housing in the destination city based on their stated preferences. Arrange area tours, property viewings, and school visits. |
+| 5 | Destination home search **(concurrent)** | To-Do | Destination Services | Help the employee find housing in the destination city based on their stated preferences. Arrange area tours, property viewings, and school visits. |
 | 6 | Moving estimate | File Request | Relocation Company | Provide the detailed moving estimate including household goods shipment, packing services, insurance, and any storage needs. |
 | 7 | Move date confirmation | Acknowledgement | Employee | Confirm the final move date and logistics. Acknowledge the packing, pickup, and delivery schedule. |
 | | **📌 Completion** | | | |

@@ -2,6 +2,8 @@
 
 > Workflow templates for professional services firms including consulting engagements, deliverable management, go-live coordination, service requests, scope changes, and tax preparation.
 
+**Concurrency notation**: Steps marked **(concurrent)** have `skipSequentialOrder: true` and can run in parallel with the preceding step rather than waiting for it to complete.
+
 ---
 
 ## 1. Engagement Kickoff & Scope Confirmation
@@ -308,8 +310,8 @@
 | 2 | Tax organizer questionnaire | Form | Client/Taxpayer | Complete the tax organizer questionnaire to help your preparer understand your tax situation for the current year. |
 | | **📌 Document Collection** | | | |
 | 3 | Income documents upload | File Request | Client/Taxpayer | Upload all income-related documents including W-2s, 1099s, K-1s, and SSA-1099 forms. |
-| 4 | Deduction & credit documents | File Request | Client/Taxpayer | Upload documents supporting deductions and credits including 1098 mortgage interest, property tax statements, charitable contribution receipts, medical expenses, and education expenses. |
-| 5 | Prior year returns (if new client) | File Request | Client/Taxpayer | If you are a new client, please upload your prior year federal and state tax returns for reference. |
+| 4 | Deduction & credit documents **(concurrent)** | File Request | Client/Taxpayer | Upload documents supporting deductions and credits including 1098 mortgage interest, property tax statements, charitable contribution receipts, medical expenses, and education expenses. |
+| 5 | Prior year returns (if new client) **(concurrent)** | File Request | Client/Taxpayer | If you are a new client, please upload your prior year federal and state tax returns for reference. |
 | 6 | Missing document follow-up | Form | Client/Taxpayer | Respond to any follow-up questions about missing or unclear documents identified during the initial review. |
 | | **📌 Preparation & Review** | | | |
 | 7 | Preparer review | To-Do | Tax Preparer | Review all submitted documents, prepare the tax return, and identify any issues or optimization opportunities for the client. |

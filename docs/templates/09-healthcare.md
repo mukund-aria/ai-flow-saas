@@ -2,6 +2,8 @@
 
 > Workflow templates for healthcare organizations including prior authorization, patient intake, medical records release, provider credentialing, and clinical trial enrollment.
 
+**Concurrency notation**: Steps marked **(concurrent)** have `skipSequentialOrder: true` and can run in parallel with the preceding step rather than waiting for it to complete.
+
 ---
 
 ## 1. Prior Authorization Coordination
@@ -34,7 +36,7 @@
 | | **📌 Submission** | | | |
 | 1 | Treatment request details | Form | Provider Staff | Submit the treatment or procedure request details for prior authorization review by the payer. |
 | 2 | Clinical documentation | File Request | Provider Staff | Upload supporting clinical documentation including relevant medical records, test results, treatment history, and clinical notes that support the authorization request. |
-| 3 | Patient consent | Acknowledgement | Patient | Acknowledge that a prior authorization request has been submitted on your behalf and confirm your understanding that the treatment is pending payer approval. |
+| 3 | Patient consent **(concurrent)** | Acknowledgement | Patient | Acknowledge that a prior authorization request has been submitted on your behalf and confirm your understanding that the treatment is pending payer approval. |
 | | **📌 Clinical Review** | | | |
 | 4 | Payer review | To-Do | Payer Contact | Review the prior authorization request, clinical documentation, and medical necessity criteria. Determine if additional information is needed or if a decision can be rendered. |
 | 5 | Payer questions | Form | Provider Staff | Respond to additional questions from the payer regarding the authorization request. |
@@ -100,7 +102,7 @@
 | 3 | Insurance verification | To-Do | Insurance Verifier | Verify the patient insurance coverage including eligibility, benefits, copay amounts, deductible status, and any referral or authorization requirements. |
 | | **📌 Medical History & Records** | | | |
 | 4 | Medical history questionnaire | Form | Patient | Complete the medical history questionnaire to help your care team understand your health background. |
-| 5 | Prior medical records request | File Request | Prior Provider | Upload the requested medical records for the patient including clinical notes, lab results, imaging reports, and treatment history. |
+| 5 | Prior medical records request **(concurrent)** | File Request | Prior Provider | Upload the requested medical records for the patient including clinical notes, lab results, imaging reports, and treatment history. |
 | 6 | Prior records delivery | File Request | Prior Provider | Upload any additional records or documentation that were not included in the initial records transfer. |
 | | **📌 Consent & Completion** | | | |
 | 7 | Consent forms | E-Sign | Patient | Review and sign the patient consent forms including consent to treat, financial responsibility, HIPAA privacy practices, and communication preferences. |
@@ -160,8 +162,8 @@
 |---|------|------|-------------|-------------|
 | 1 | Release request | Form | Patient | Submit your records release request specifying which records you want released and to whom. |
 | 2 | HIPAA authorization | E-Sign | Patient | Review and sign the HIPAA authorization form granting permission to release your protected health information to the designated receiving party. |
-| 3 | Identity verification | File Request | Patient | Upload a copy of your government-issued photo ID for identity verification before records can be released. |
-| 4 | Receiving party confirmation | Acknowledgement | Receiving Party | Confirm your identity as the designated receiving party and acknowledge your obligation to handle the medical records in compliance with applicable privacy regulations. |
+| 3 | Identity verification **(concurrent)** | File Request | Patient | Upload a copy of your government-issued photo ID for identity verification before records can be released. |
+| 4 | Receiving party confirmation **(concurrent)** | Acknowledgement | Receiving Party | Confirm your identity as the designated receiving party and acknowledge your obligation to handle the medical records in compliance with applicable privacy regulations. |
 | 5 | Records preparation | To-Do | Records Coordinator | Compile the requested medical records, verify the HIPAA authorization is valid and complete, and prepare the records package for secure delivery. |
 | 6 | Records delivery | File Request | Records Coordinator | Upload the compiled medical records for secure delivery to the authorized receiving party. |
 | 7 | Receipt acknowledgement | Acknowledgement | Receiving Party | Acknowledge receipt of the medical records and confirm the records received match what was requested. |
@@ -221,7 +223,7 @@
 | | **📌 Onboarding** | | | |
 | 8 | Provider notification | To-Do | Credentialing Coordinator | Automated notification: Send the provider notification of the credentialing decision including effective date, approved privileges, and appeal process information if denied. |
 | 9 | Provider agreement | E-Sign | Provider | Review and sign the provider agreement acknowledging your approved privileges, organizational policies, and re-credentialing obligations. |
-| 10 | Re-credentialing schedule | To-Do | Credentialing Coordinator | Set up the 36-month re-credentialing trigger, enroll the provider in continuous NPDB monitoring, and configure license expiration alerts in the credentialing system. |
+| 10 | Re-credentialing schedule **(concurrent)** | To-Do | Credentialing Coordinator | Set up the 36-month re-credentialing trigger, enroll the provider in continuous NPDB monitoring, and configure license expiration alerts in the credentialing system. |
 
 #### Step 1: Credentialing application & attestation — Form Fields
 

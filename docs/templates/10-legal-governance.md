@@ -2,6 +2,10 @@
 
 > Manage contracts, legal processes, corporate governance, and intellectual property workflows. From NDA execution to M&A due diligence, these templates ensure proper legal review, risk analysis, and compliance throughout every stage.
 
+**Concurrency notation**: Steps marked **(concurrent)** have `skipSequentialOrder: true` and can run in parallel with the preceding step rather than waiting for it to complete.
+
+**Revision loop notation**: Steps marked with **[GOTO_DESTINATION: X]** define a revision loop anchor. A branch outcome marked **[GOTO X]** loops back to that anchor for iterative review cycles.
+
 ---
 
 ## 1. Contract Review & Execution
@@ -35,11 +39,12 @@
 | 1 | Contract intake | Form | Legal Reviewer | Enter the key details of the contract being reviewed. Capture all relevant metadata to route the review properly. |
 | 2 | Draft contract upload | File Request | Legal Reviewer | Upload the draft contract document for review. Include any related exhibits or schedules. |
 | 3 | AI contract risk analysis | To-Do | Legal Reviewer | AI-powered: Analyze the contract for non-standard clauses, liability caps, IP provisions, data protection terms, and auto-renewal traps. |
-| 4 | Legal & financial review | To-Do | Legal Reviewer | Review the contract for indemnification clauses, IP ownership, termination provisions, pricing structures, and payment terms. Document any concerns or required changes. |
+| 4 | Legal & financial review **(concurrent)** | To-Do | Legal Reviewer | Review the contract for indemnification clauses, IP ownership, termination provisions, pricing structures, and payment terms. Document any concerns or required changes. |
 | | **📌 Negotiation** | | | |
+| | **[GOTO_DESTINATION: A]** | | | *Revision loop anchor -- rejected redlines loop back here* |
 | 5 | Redline document upload | File Request | Legal Reviewer | Upload the redlined version of the contract with all proposed changes tracked. |
 | 6 | Counterparty negotiation | File Request | Counterparty | Review the redlined contract and upload your response. Include accepted changes, counter-proposals, and any new redlines. |
-| 7 | Negotiation resolution | Decision | Legal Reviewer | Review the counterparty response and decide on next steps: accept the terms, continue negotiation, escalate to leadership, or terminate discussions. |
+| 7 | Negotiation resolution | Single Choice Branch | Legal Reviewer | Review the counterparty response and decide on next steps: accept the terms and proceed to execution, or reject and loop back for another round of redlines. Path "Rejected" triggers **[GOTO A]** to repeat the negotiation cycle. |
 | | **📌 Execution & Filing** | | | |
 | 8 | Executive approval (if needed) | Approval | Executive | Review the final negotiated terms and approve the contract for execution. Consider the business impact and risk exposure. |
 | 9 | Contract execution | E-Sign | Counterparty | Review the final contract and apply your electronic signature to execute the agreement. |
@@ -85,10 +90,10 @@
 | | **📌 Request & Documentation** | | | |
 | 1 | Exception request details | Form | Requestor | Provide the details of the contract exception you are requesting. Be specific about what non-standard terms are needed and why. |
 | 2 | Proposed redlines | File Request | Requestor | Upload the proposed contract redlines showing the specific language changes requested. |
-| 3 | Business justification | File Request | Requestor | Upload any supporting documentation for the business justification, such as competitive analysis or customer relationship history. |
+| 3 | Business justification **(concurrent)** | File Request | Requestor | Upload any supporting documentation for the business justification, such as competitive analysis or customer relationship history. |
 | | **📌 Review & Approval** | | | |
 | 4 | Legal analysis | To-Do | Legal Reviewer | Analyze the requested exception for legal risk. Assess whether the proposed terms are acceptable, need modification, or should be rejected. |
-| 5 | Finance impact assessment | To-Do | Finance Reviewer | Assess the financial impact of the requested exception. Consider revenue recognition, payment terms, and any precedent-setting implications. |
+| 5 | Finance impact assessment **(concurrent)** | To-Do | Finance Reviewer | Assess the financial impact of the requested exception. Consider revenue recognition, payment terms, and any precedent-setting implications. |
 | 6 | Business approval | Approval | Business Approver | Review the exception request along with legal and finance assessments. Approve or reject based on overall business impact. |
 | 7 | Deal desk approval | Approval | Deal Desk | Review the exception for deal structure compliance and confirm it aligns with pricing and commercial guidelines. |
 | 8 | Decision acknowledgement | Acknowledgement | Requestor | Review the decision on your exception request. Acknowledge that you understand the outcome and any conditions attached. |
@@ -381,7 +386,7 @@
 | 1 | Subpoena intake & analysis | Form | Legal Owner | Log the subpoena details and analyze its scope, deadlines, and requirements. Identify the key issues and relevant custodians. |
 | 2 | Custodian identification | To-Do | Legal Owner | Identify all custodians who may have responsive documents. Map data sources and document types to each custodian. |
 | 3 | Document preservation notice | Acknowledgement | Custodian | Acknowledge receipt of the document preservation notice. You must preserve all documents, communications, and data that may be responsive to the subpoena. |
-| 4 | IT data preservation | To-Do | IT Administrator | Implement technical preservation measures for relevant data sources. Suspend auto-deletion policies, preserve email archives, and secure backup tapes as needed. |
+| 4 | IT data preservation **(concurrent)** | To-Do | IT Administrator | Implement technical preservation measures for relevant data sources. Suspend auto-deletion policies, preserve email archives, and secure backup tapes as needed. |
 | | **📌 Collection & Review** | | | |
 | 5 | Document collection | File Request | Custodian | Collect and upload all documents, communications, and data responsive to the subpoena from your data sources. |
 | 6 | Outside counsel review | To-Do | Outside Counsel | Review the collected documents for responsiveness, relevance, and potential objections. Identify any documents requiring privilege review. |
@@ -437,7 +442,7 @@
 | 6 | Registered agent acceptance | Acknowledgement | Registered Agent | Acknowledge your acceptance of the registered agent appointment for the newly formed entity. |
 | | **📌 Post-Formation Setup** | | | |
 | 7 | EIN application | To-Do | Accountant | Apply for the Employer Identification Number (EIN) with the IRS. Set up initial accounting records and advise on tax election deadlines. |
-| 8 | Post-formation checklist | To-Do | Legal Advisor | Complete the post-formation checklist: open bank account, obtain business licenses, register for state taxes, and set up initial corporate records. |
+| 8 | Post-formation checklist **(concurrent)** | To-Do | Legal Advisor | Complete the post-formation checklist: open bank account, obtain business licenses, register for state taxes, and set up initial corporate records. |
 | 9 | Formation complete | Acknowledgement | Founder | Acknowledge that the business formation is complete. Review the summary of all filed documents, key dates, and ongoing compliance obligations. |
 
 #### Step 1: Formation intake — Form Fields
@@ -498,7 +503,7 @@
 | 6 | Discovery day confirmation | Acknowledgement | Franchisee | Confirm your attendance at Discovery Day. This is your opportunity to visit headquarters, meet the team, and learn about day-to-day franchise operations. |
 | | **📌 Agreement & Onboarding** | | | |
 | 7 | Franchise agreement review | To-Do | Legal Reviewer | Review the franchise agreement for compliance, territory accuracy, and any negotiated modifications. Ensure FTC timing requirements have been met. |
-| 8 | Financial terms | To-Do | Finance | Verify the financial terms of the franchise agreement including initial franchise fee, royalty rates, advertising fund contributions, and payment schedules. |
+| 8 | Financial terms **(concurrent)** | To-Do | Finance | Verify the financial terms of the franchise agreement including initial franchise fee, royalty rates, advertising fund contributions, and payment schedules. |
 | 9 | Franchise agreement execution | E-Sign | Franchisee | Review the final franchise agreement and apply your electronic signature to execute the agreement. Ensure you have completed your 14-day FDD review period. |
 | 10 | Training schedule | To-Do | Training Lead | Schedule the initial franchise training program for the new franchisee. Prepare training materials and confirm venue/virtual setup. |
 | 11 | Onboarding kickoff | Acknowledgement | Franchise Development Manager | Confirm that the franchise onboarding process has been initiated. Verify that all required systems access, training schedule, and opening timeline have been communicated to the franchisee. |

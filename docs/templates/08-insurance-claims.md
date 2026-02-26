@@ -2,6 +2,8 @@
 
 > Workflow templates for insurance operations including claims coordination, application underwriting, certificates of insurance, workers' compensation, policy renewals, surety bonds, and premium audits.
 
+**Concurrency notation**: Steps marked **(concurrent)** have `skipSequentialOrder: true` and can run in parallel with the preceding step rather than waiting for it to complete.
+
 ---
 
 ## 1. Insurance Claim Coordination
@@ -37,7 +39,7 @@
 | 3 | Claim acknowledgement | To-Do | Claims Adjuster | Automated notification: Send claim acknowledgement to the claimant including their claim number, assigned adjuster contact information, expected next steps, and estimated timeline. |
 | | **📌 Investigation & Documentation** | | | |
 | 4 | Loss documentation & evidence | File Request | Claimant | Upload documentation and evidence supporting your claim including photos or video of damage, police report (if applicable), repair estimates, and receipts for damaged items. |
-| 5 | Adjuster assessment & investigation | To-Do | Claims Adjuster | Review all submitted documentation, conduct the claim investigation, and prepare your assessment including coverage determination, damage valuation, and settlement recommendation. |
+| 5 | Adjuster assessment & investigation **(concurrent)** | To-Do | Claims Adjuster | Review all submitted documentation, conduct the claim investigation, and prepare your assessment including coverage determination, damage valuation, and settlement recommendation. |
 | 6 | Additional documentation request | File Request | Claimant | Upload any additional documentation requested by the claims adjuster to complete the investigation. |
 | | **📌 Decision & Settlement** | | | |
 | 7 | Coverage & validity determination | Decision | Claims Adjuster | Determine claim coverage and validity. Route valid covered claims to settlement; deny or investigate further for questionable claims. |
@@ -206,7 +208,7 @@
 | | **📌 Reporting & Investigation** | | | |
 | 1 | Injury report | Form | Injured Employee | Report the details of your workplace injury as soon as possible. Accurate information helps ensure you receive proper care and benefits. |
 | 2 | Employer incident investigation | Form | Employer/HR | Complete the incident investigation documenting the root cause, safety conditions, and OSHA recordability determination. |
-| 3 | Wage statement & employment verification | Form | Employer/HR | Provide the wage and employment details needed for benefits calculation and claim processing. |
+| 3 | Wage statement & employment verification **(concurrent)** | Form | Employer/HR | Provide the wage and employment details needed for benefits calculation and claim processing. |
 | 4 | First Report of Injury (FROI) filing | To-Do | Employer/HR | File the First Report of Injury with the state workers' compensation board and insurance carrier within the state-mandated deadline (typically 5-10 days). Document the filing confirmation. |
 | | **📌 Medical & Compensability** | | | |
 | 5 | Medical records & treatment plan | File Request | Treating Physician | Upload the medical documentation including diagnosis, treatment plan, work restrictions, and disability status determination. |
@@ -288,7 +290,7 @@
 | | **📌 Renewal Initiation** | | | |
 | 1 | Renewal notice acknowledgement | Acknowledgement | Policyholder | Acknowledge receipt of your upcoming policy renewal notice and confirm your intent to proceed with the renewal process. |
 | 2 | Updated exposure information | Form | Policyholder | Provide updated exposure information for the renewal period to ensure your coverage accurately reflects your current operations. |
-| 3 | Loss run / claims history | File Request | Policyholder | Upload your current loss run or claims history documentation for the underwriter to review during the renewal assessment. |
+| 3 | Loss run / claims history **(concurrent)** | File Request | Policyholder | Upload your current loss run or claims history documentation for the underwriter to review during the renewal assessment. |
 | | **📌 Underwriting & Quoting** | | | |
 | 4 | Broker review | To-Do | Broker | Review the updated exposure information and loss history. Prepare the renewal submission with market analysis and coverage recommendations. |
 | 5 | Underwriter questions | Form | Policyholder | Answer additional questions from the underwriter about changes to your operations, claims, or risk profile since the last policy period. |
@@ -348,7 +350,7 @@
 | | **📌 Application & Documentation** | | | |
 | 1 | Bond application | Form | Principal (Applicant) | Complete the bond application with your project and company details to begin the underwriting process. |
 | 2 | Financial documentation | File Request | Principal (Applicant) | Upload your financial documentation including 3 years of CPA-prepared corporate financials, personal financial statements of owners, bank references, and current insurance certificates. |
-| 3 | Work-in-progress schedule | File Request | Principal (Applicant) | Upload your work-in-progress schedule including current projects, backlog, completed project history, and bonding capacity needs. |
+| 3 | Work-in-progress schedule **(concurrent)** | File Request | Principal (Applicant) | Upload your work-in-progress schedule including current projects, backlog, completed project history, and bonding capacity needs. |
 | 4 | General Indemnity Agreement | E-Sign | Principal (Applicant) | Review and execute the General Indemnity Agreement (GIA) by the principal and all individual indemnitors. This is required before underwriting proceeds. |
 | | **📌 Underwriting** | | | |
 | 5 | Credit check & loss history review | To-Do | Surety Agent | Pull a soft credit report on the principal and individual indemnitors. Obtain prior surety loss runs and claims history from previous surety companies. |
@@ -399,8 +401,8 @@
 | | **📌 Records Collection** | | | |
 | 1 | Audit notice acknowledgement | Acknowledgement | Policyholder | Acknowledge receipt of the audit notice and confirm your understanding of the documentation requirements and timeline. |
 | 2 | Payroll records | File Request | Policyholder | Upload your payroll records for the audit period including quarterly tax returns, payroll summaries by classification, and overtime detail. |
-| 3 | Sales / revenue records | File Request | Policyholder | Upload your sales and revenue records for the audit period including annual financial statements, sales reports, and subcontractor payment records. |
-| 4 | Classification questionnaire | Form | Policyholder | Complete the classification questionnaire to help the auditor accurately categorize your operations and employee classifications. |
+| 3 | Sales / revenue records **(concurrent)** | File Request | Policyholder | Upload your sales and revenue records for the audit period including annual financial statements, sales reports, and subcontractor payment records. |
+| 4 | Classification questionnaire **(concurrent)** | Form | Policyholder | Complete the classification questionnaire to help the auditor accurately categorize your operations and employee classifications. |
 | | **📌 Audit & Findings** | | | |
 | 5 | Auditor review | To-Do | Auditor | Review all submitted records, verify classifications, and calculate the audited premium based on actual exposures during the policy period. |
 | 6 | Clarification questions | Form | Policyholder | Answer any clarification questions from the auditor regarding your records, classifications, or operations. |

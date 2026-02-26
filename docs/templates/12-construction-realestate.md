@@ -2,6 +2,8 @@
 
 > Workflow templates for construction project management, lien waiver collection, submittals, RFIs, change orders, project closeout, and real estate transactions including residential purchases, commercial leasing, and tenant move-out processes.
 
+**Concurrency notation**: Steps marked **(concurrent)** have `skipSequentialOrder: true` and can run in parallel with the preceding step rather than waiting for it to complete.
+
 ---
 
 ## 1. Subcontractor Qualification
@@ -33,13 +35,13 @@
 |---|------|------|-------------|-------------|
 | | **📌 Subcontractor Submission** | | | |
 | 1 | Company profile & capabilities | Form | Subcontractor | Provide your company details, trade specialties, bonding capacity, and relevant project experience. |
-| 2 | Insurance certificates (GL, WC, Auto) | File Request | Subcontractor | Upload current certificates of insurance for General Liability, Workers Compensation, and Commercial Auto. All policies must meet the minimum coverage limits specified in the subcontract. |
-| 3 | Safety program documentation | File Request | Subcontractor | Upload your company safety program, EMR letter, OSHA logs (300/300A), and any relevant safety certifications. |
-| 4 | License & bonding verification | File Request | Subcontractor | Upload copies of your state contractor license, any specialty licenses, and current bonding documentation. |
+| 2 | Insurance certificates (GL, WC, Auto) **(concurrent)** | File Request | Subcontractor | Upload current certificates of insurance for General Liability, Workers Compensation, and Commercial Auto. All policies must meet the minimum coverage limits specified in the subcontract. |
+| 3 | Safety program documentation **(concurrent)** | File Request | Subcontractor | Upload your company safety program, EMR letter, OSHA logs (300/300A), and any relevant safety certifications. |
+| 4 | License & bonding verification **(concurrent)** | File Request | Subcontractor | Upload copies of your state contractor license, any specialty licenses, and current bonding documentation. |
 | 5 | References | Form | Subcontractor | Provide at least three project references from the past two years, including contact information for each. |
 | | **📌 Review & Disposition** | | | |
 | 6 | Insurance review | To-Do | Insurance Coordinator | Review the uploaded insurance certificates against project requirements. Verify coverage limits, additional insured endorsements, and policy expiration dates. |
-| 7 | Safety review | To-Do | Safety Lead | Review the safety program documentation, EMR history, and OSHA logs. Confirm the subcontractor meets minimum safety standards for the project. |
+| 7 | Safety review **(concurrent)** | To-Do | Safety Lead | Review the safety program documentation, EMR history, and OSHA logs. Confirm the subcontractor meets minimum safety standards for the project. |
 | 8 | Qualification disposition | Decision | Project Manager | Render qualification decision: approve the subcontractor for the approved trades list, conditionally approve pending additional documentation, or disqualify. |
 | 9 | Qualification decision | Approval | Project Manager | Review all collected materials, insurance review results, and safety review findings to make a final qualification decision for this subcontractor. |
 | 10 | Qualification acknowledgement | Acknowledgement | Subcontractor | Acknowledge receipt of the qualification decision and any conditions or next steps communicated by the project team. |

@@ -2,6 +2,8 @@
 
 > Workflows for managing ongoing client relationships including quarterly business reviews, contract renewals, proactive health checks, and billing dispute resolution. Built to reduce churn, strengthen partnerships, and maintain revenue integrity.
 
+**Concurrency notation**: Steps marked **(concurrent)** have `skipSequentialOrder: true` and can run in parallel with the preceding step rather than waiting for it to complete.
+
 ---
 
 ## 1. Quarterly Business Review (QBR)
@@ -34,7 +36,7 @@
 | | **📌 QBR Preparation** | | | |
 | 1 | Pre-QBR data collection | Form | Account Manager | Compile the key account metrics and context needed for the QBR presentation, including renewal timeline, revenue, support history, and relationship highlights. |
 | 2 | QBR presentation upload | File Request | Account Manager | Upload your QBR presentation deck with account performance data, usage trends, ROI analysis, and proposed recommendations for the upcoming quarter. |
-| 3 | Client pre-QBR survey | Form | Client Stakeholder | Share your perspective before the QBR meeting. Your input on satisfaction, priorities, and feature needs helps us make the session as productive as possible. |
+| 3 | Client pre-QBR survey **(concurrent)** | Form | Client Stakeholder | Share your perspective before the QBR meeting. Your input on satisfaction, priorities, and feature needs helps us make the session as productive as possible. |
 | | **📌 Meeting & Follow-up** | | | |
 | 4 | QBR meeting completion | To-Do | Account Manager | Conduct the QBR meeting, present findings and recommendations, capture client feedback, and document agreed-upon action items with owners and due dates. |
 | 5 | Action items acknowledgement | Acknowledgement | Client Stakeholder | Review and acknowledge the action items agreed upon during the QBR meeting. This confirms mutual understanding of next steps and responsibilities. |
@@ -92,7 +94,7 @@
 | | **📌 Discovery & Assessment** | | | |
 | 1 | Renewal kickoff details | Form | CSM | Capture the renewal context including current contract details, account health indicators, and any upsell or risk factors to guide the renewal strategy. |
 | 2 | Usage & value report upload | File Request | CSM | Upload a usage and value report showing the client's product adoption, ROI metrics, and key achievements during the current contract period. |
-| 3 | Client renewal survey | Form | Client Contact | Help us understand your renewal priorities. Your feedback on satisfaction, usage, and budget directly shapes the renewal offer we prepare for you. |
+| 3 | Client renewal survey **(concurrent)** | Form | Client Contact | Help us understand your renewal priorities. Your feedback on satisfaction, usage, and budget directly shapes the renewal offer we prepare for you. |
 | | **📌 Proposal & Negotiation** | | | |
 | 4 | Internal pricing approval | Approval | Finance | Review the proposed renewal pricing, discount levels, and terms. Approve the pricing before the renewal proposal is sent to the client. |
 | 5 | Renewal proposal delivery | File Request | CSM | Upload the renewal proposal with updated pricing, terms, and any scope changes for delivery to the client. |

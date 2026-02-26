@@ -2,6 +2,8 @@
 
 > Structured workflows for managing product trials, enterprise pilots, proposal delivery, and RFP response coordination. Designed to keep prospects engaged, sales teams aligned, and evaluation processes on track from first contact through contract execution.
 
+**Concurrency notation**: Steps marked **(concurrent)** have `skipSequentialOrder: true` and can run in parallel with the preceding step rather than waiting for it to complete.
+
 ---
 
 ## 1. Guided Product Trial
@@ -286,7 +288,7 @@
 | | **📌 Response Development** | | | |
 | 5 | Response kickoff & assignments | Form | Proposal Lead | Assign RFP sections to subject matter experts and set internal deadlines for each section submission. |
 | 6 | SME section inputs | File Request | SMEs | Upload your completed section(s) of the RFP response. Ensure all requirements in your assigned sections are addressed with specific, evidence-backed answers. |
-| 7 | Pricing & commercial terms | File Request | Proposal Lead | Upload the pricing model and commercial terms for the RFP response, including cost breakdown, payment terms, and any volume or term discounts. |
+| 7 | Pricing & commercial terms **(concurrent)** | File Request | Proposal Lead | Upload the pricing model and commercial terms for the RFP response, including cost breakdown, payment terms, and any volume or term discounts. |
 | | **📌 Review & Submission** | | | |
 | 8 | Internal review & quality check | Approval | Proposal Lead | Review the assembled RFP response for completeness, consistency, compliance with RFP requirements, and quality of writing. Approve to send for executive review. |
 | 9 | Executive sign-off | Approval | Executive Sponsor | Review the final RFP response and authorize submission. Confirm pricing, strategic commitments, and any exceptions or assumptions noted in the response. |

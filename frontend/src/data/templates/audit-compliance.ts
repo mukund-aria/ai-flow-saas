@@ -38,22 +38,79 @@ export const AUDIT_COMPLIANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'System',
       },
       {
-        name: 'Evidence request list (PBC)',
-        type: 'FILE_REQUEST',
-        assigneeRole: 'Control Owner',
-        sampleDescription:
-          'Review the PBC request list and upload all requested evidence for the controls you own. Ensure evidence covers the full audit period.',
-      },
-      {
-        name: 'Clarification Q&A',
-        type: 'FORM',
-        assigneeRole: 'Control Owner',
-        skipSequentialOrder: true,
-        sampleDescription:
-          'Answer any clarification questions about the evidence you have submitted. Provide additional context where needed.',
-        sampleFormFields: [
-          { fieldId: 'f1', label: 'Clarification Responses', type: 'TEXT_MULTI_LINE', required: true },
-          { fieldId: 'f2', label: 'Additional Notes', type: 'TEXT_MULTI_LINE' },
+        name: 'Parallel evidence collection by domain',
+        type: 'PARALLEL_BRANCH',
+        assigneeRole: 'System',
+        samplePaths: [
+          {
+            label: 'Security Controls',
+            steps: [
+              {
+                name: 'Security evidence upload',
+                type: 'FILE_REQUEST',
+                assigneeRole: 'Control Owner',
+                sampleDescription:
+                  'Upload evidence for security controls including access management, network security, vulnerability management, and incident response. Ensure evidence covers the full audit period.',
+              },
+              {
+                name: 'Security controls Q&A',
+                type: 'FORM',
+                assigneeRole: 'Control Owner',
+                sampleDescription:
+                  'Answer any clarification questions about the security evidence you submitted. Provide additional context on control implementation or changes during the audit period.',
+                sampleFormFields: [
+                  { fieldId: 'f1', label: 'Clarification Responses', type: 'TEXT_MULTI_LINE', required: true },
+                  { fieldId: 'f2', label: 'Additional Notes', type: 'TEXT_MULTI_LINE' },
+                ],
+              },
+            ],
+          },
+          {
+            label: 'Availability & Processing Integrity',
+            steps: [
+              {
+                name: 'Availability & processing evidence upload',
+                type: 'FILE_REQUEST',
+                assigneeRole: 'Control Owner',
+                sampleDescription:
+                  'Upload evidence for availability and processing integrity controls including SLA monitoring, capacity management, backup procedures, and data processing validation.',
+              },
+              {
+                name: 'Availability & processing Q&A',
+                type: 'FORM',
+                assigneeRole: 'Control Owner',
+                sampleDescription:
+                  'Answer any clarification questions about availability and processing integrity evidence. Provide additional context where needed.',
+                sampleFormFields: [
+                  { fieldId: 'f1', label: 'Clarification Responses', type: 'TEXT_MULTI_LINE', required: true },
+                  { fieldId: 'f2', label: 'Additional Notes', type: 'TEXT_MULTI_LINE' },
+                ],
+              },
+            ],
+          },
+          {
+            label: 'Confidentiality & Privacy',
+            steps: [
+              {
+                name: 'Confidentiality & privacy evidence upload',
+                type: 'FILE_REQUEST',
+                assigneeRole: 'Control Owner',
+                sampleDescription:
+                  'Upload evidence for confidentiality and privacy controls including data classification, encryption, retention policies, consent management, and privacy notice compliance.',
+              },
+              {
+                name: 'Confidentiality & privacy Q&A',
+                type: 'FORM',
+                assigneeRole: 'Control Owner',
+                sampleDescription:
+                  'Answer any clarification questions about confidentiality and privacy evidence. Provide additional context on data handling procedures or policy changes.',
+                sampleFormFields: [
+                  { fieldId: 'f1', label: 'Clarification Responses', type: 'TEXT_MULTI_LINE', required: true },
+                  { fieldId: 'f2', label: 'Additional Notes', type: 'TEXT_MULTI_LINE' },
+                ],
+              },
+            ],
+          },
         ],
       },
       {

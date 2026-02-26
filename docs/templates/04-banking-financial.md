@@ -2,6 +2,8 @@
 
 > Compliance-driven workflows for financial institutions covering KYC/KYB verification, loan underwriting, wire transfers, investment account opening, and credit facility management. Designed to meet AML, SEC, FINRA, and FinCEN regulatory requirements.
 
+**Concurrency notation**: Steps marked **(concurrent)** have `skipSequentialOrder: true` and can run in parallel with the preceding step rather than waiting for it to complete.
+
 ---
 
 ## 1. Individual KYC Verification
@@ -33,9 +35,9 @@
 |---|------|------|-------------|-------------|
 | | **📌 Document Collection** | | | |
 | 1 | Personal information intake | Form | Individual | Provide your personal details so we can begin the KYC verification process. All information is kept confidential and used solely for regulatory compliance. |
-| 2 | Government ID upload | File Request | Individual | Upload a clear copy of your government-issued photo ID (passport, driver's license, or national ID card). Both sides if applicable. |
-| 3 | Proof of address | File Request | Individual | Upload a recent proof of address document such as a utility bill, bank statement, or government letter dated within the last 90 days. |
-| 4 | Source of funds documentation | File Request | Individual | Upload documentation supporting your declared source of funds, such as pay stubs, business financials, or investment statements. |
+| 2 | Government ID upload **(concurrent)** | File Request | Individual | Upload a clear copy of your government-issued photo ID (passport, driver's license, or national ID card). Both sides if applicable. |
+| 3 | Proof of address **(concurrent)** | File Request | Individual | Upload a recent proof of address document such as a utility bill, bank statement, or government letter dated within the last 90 days. |
+| 4 | Source of funds documentation **(concurrent)** | File Request | Individual | Upload documentation supporting your declared source of funds, such as pay stubs, business financials, or investment statements. |
 | | **📌 Due Diligence & Screening** | | | |
 | 5 | CDD questionnaire | Form | Individual | Answer these customer due diligence questions to help us assess your account profile and ensure regulatory compliance. |
 | 6 | AI risk scoring & sanctions screening | To-Do | Compliance Reviewer | AI-powered: Screen the individual against OFAC, PEP databases, and adverse media sources. Generate a risk score (Low / Medium / High) based on the screening results and CDD responses. |
@@ -97,11 +99,11 @@
 |---|------|------|-------------|-------------|
 | | **📌 Entity & Ownership Documentation** | | | |
 | 1 | Business information intake | Form | Business Admin | Provide your company's basic business details including legal name, entity type, EIN, state of incorporation, and primary business activities. |
-| 2 | Formation documents (Articles, Cert of Good Standing) | File Request | Business Admin | Upload your business formation documents including Articles of Incorporation/Organization and a current Certificate of Good Standing from your state of formation. |
-| 3 | Ownership structure documentation | File Request | Business Admin | Upload your ownership structure documentation such as an operating agreement, shareholder registry, or organizational chart showing all owners with their ownership percentages. |
+| 2 | Formation documents (Articles, Cert of Good Standing) **(concurrent)** | File Request | Business Admin | Upload your business formation documents including Articles of Incorporation/Organization and a current Certificate of Good Standing from your state of formation. |
+| 3 | Ownership structure documentation **(concurrent)** | File Request | Business Admin | Upload your ownership structure documentation such as an operating agreement, shareholder registry, or organizational chart showing all owners with their ownership percentages. |
 | | **📌 Beneficial Owner Verification** | | | |
 | 4 | Beneficial owner identification | Form | Beneficial Owner | Provide your personal details as a beneficial owner of the business. This information is required for regulatory compliance. |
-| 5 | Beneficial owner ID verification | File Request | Beneficial Owner | Upload a clear copy of your government-issued photo ID (passport, driver's license, or national ID) for identity verification. |
+| 5 | Beneficial owner ID verification **(concurrent)** | File Request | Beneficial Owner | Upload a clear copy of your government-issued photo ID (passport, driver's license, or national ID) for identity verification. |
 | | **📌 Compliance Review & Decision** | | | |
 | 6 | KYB review | To-Do | Compliance Reviewer | Review all submitted business documents and beneficial owner information for completeness and accuracy. Flag any discrepancies or missing items. |
 | 7 | Clarification questions | Form | Business Admin | The compliance team has follow-up questions about your submission. Please provide the requested clarifications. |
@@ -169,7 +171,7 @@
 | 1 | Exemption & reporting determination | Form | Filing Agent | Analyze the entity type, formation jurisdiction, and applicable exemption categories to determine if a BOI report is required. The CTA provides 23 exemption categories. |
 | | **📌 Ownership Data Collection** | | | |
 | 2 | Reporting company information | Form | Company Contact | Provide the reporting company details required for the FinCEN BOI report, including all legal names, tax ID, and registered address. |
-| 3 | Beneficial owner identification | Form | Company Contact | Identify all individuals with 25% or greater ownership or who exercise substantial control over the company, including senior officers, those with appointment authority, and key decision-makers. |
+| 3 | Beneficial owner identification **(concurrent)** | Form | Company Contact | Identify all individuals with 25% or greater ownership or who exercise substantial control over the company, including senior officers, those with appointment authority, and key decision-makers. |
 | 4 | Beneficial owner details & ID upload | Form | Beneficial Owner | Provide your personal details and upload your identifying document for the BOI report. Accepted IDs include passport, driver's license, or state-issued ID. |
 | 5 | Company applicant information (if post-2024 entity) | Form | Filing Agent | For entities formed after January 1, 2024, provide information on up to two company applicants: the direct filer and the person who directed the filing. |
 | | **📌 Review & Filing** | | | |
@@ -253,8 +255,8 @@
 | # | Step | Type | Assigned To | Description |
 |---|------|------|-------------|-------------|
 | 1 | Refresh notification | Form | Client Contact | Your account is due for a periodic KYC/KYB refresh. Please confirm your current details and indicate any changes to your personal or business information. |
-| 2 | Updated documentation | File Request | Client Contact | Upload any updated documents such as a current government ID, proof of address, or updated financial statements as applicable to your account type. |
-| 3 | UBO changes (if any) | Form | Client Contact | If there have been any changes to beneficial ownership, provide updated details here including new owners, ownership percentage changes, or departures. |
+| 2 | Updated documentation **(concurrent)** | File Request | Client Contact | Upload any updated documents such as a current government ID, proof of address, or updated financial statements as applicable to your account type. |
+| 3 | UBO changes (if any) **(concurrent)** | Form | Client Contact | If there have been any changes to beneficial ownership, provide updated details here including new owners, ownership percentage changes, or departures. |
 | 4 | Updated UBO documentation | File Request | Beneficial Owner | If beneficial ownership has changed, upload updated identification documents and any supporting ownership structure documentation. |
 | 5 | Refresh review | To-Do | Compliance Reviewer | Review all updated documentation and compare against existing records. Verify that all changes are properly documented and the client profile is current. |
 | 6 | Refresh approved | Approval | Compliance Reviewer | Approve the KYC/KYB refresh to confirm the client's records are current and compliant. Reject if additional documentation or clarification is needed. |
@@ -305,9 +307,9 @@
 |---|------|------|-------------|-------------|
 | | **📌 Application & Documentation** | | | |
 | 1 | Loan application intake | Form | Borrower | Complete the loan application with your personal and business details, the purpose of the loan, and the amount requested. |
-| 2 | Personal financial statement | File Request | Borrower | Upload your personal financial statement showing assets, liabilities, and net worth. |
-| 3 | Business tax returns & financial statements | File Request | Borrower | Upload your business tax returns and financial statements for the past 3 years, including income statements, balance sheets, and cash flow statements. |
-| 4 | Collateral documentation | File Request | Borrower | Upload documentation for any collateral being offered, such as property appraisals, equipment valuations, or inventory reports. |
+| 2 | Personal financial statement **(concurrent)** | File Request | Borrower | Upload your personal financial statement showing assets, liabilities, and net worth. |
+| 3 | Business tax returns & financial statements **(concurrent)** | File Request | Borrower | Upload your business tax returns and financial statements for the past 3 years, including income statements, balance sheets, and cash flow statements. |
+| 4 | Collateral documentation **(concurrent)** | File Request | Borrower | Upload documentation for any collateral being offered, such as property appraisals, equipment valuations, or inventory reports. |
 | | **📌 Underwriting & Credit Analysis** | | | |
 | 5 | Underwriter questions | Form | Borrower | The underwriting team has follow-up questions about your application. Please provide thorough answers to expedite the review process. |
 | 6 | Conditional approval | Approval | Underwriter | Review the borrower's application, financial statements, and collateral documentation. Issue a conditional approval with any outstanding conditions, or decline with documented reasons. |
@@ -366,7 +368,7 @@
 |---|------|------|-------------|-------------|
 | | **📌 Request & Documentation** | | | |
 | 1 | Wire transfer request | Form | Requestor | Submit your wire transfer request with all beneficiary and payment details. Ensure bank routing information is accurate to avoid delays. |
-| 2 | Supporting documentation | File Request | Requestor | Upload the supporting documentation for this wire transfer, such as an invoice, contract, or approval memo that justifies the payment. |
+| 2 | Supporting documentation **(concurrent)** | File Request | Requestor | Upload the supporting documentation for this wire transfer, such as an invoice, contract, or approval memo that justifies the payment. |
 | | **📌 Compliance Screening** | | | |
 | 3 | OFAC/sanctions screening | To-Do | Treasury Operations | Screen the beneficiary and beneficiary bank against the OFAC SDN list and other applicable sanctions lists. Escalate any potential hits to compliance immediately. |
 | 4 | OFAC screening routing | Single Choice Branch | Treasury Operations | Route the wire transfer based on the OFAC/sanctions screening result. Clear results proceed to beneficiary verification and authorization; matches are escalated to the compliance team for further review. Paths: "Clear — proceed to authorization" / "Match — escalate to compliance". |
@@ -423,15 +425,15 @@
 |---|------|------|-------------|-------------|
 | | **📌 Application & Identity Verification** | | | |
 | 1 | Account application | Form | Investor | Complete your investment account application with personal details, employment information, and account preferences. |
-| 2 | Identity verification documents | File Request | Investor | Upload a government-issued photo ID and a secondary verification document such as a utility bill or bank statement. |
-| 3 | Accreditation documentation (if applicable) | File Request | Investor | If applicable, upload documentation supporting your accredited investor status such as recent tax returns, brokerage statements, or a CPA/attorney verification letter. |
+| 2 | Identity verification documents **(concurrent)** | File Request | Investor | Upload a government-issued photo ID and a secondary verification document such as a utility bill or bank statement. |
+| 3 | Accreditation documentation (if applicable) **(concurrent)** | File Request | Investor | If applicable, upload documentation supporting your accredited investor status such as recent tax returns, brokerage statements, or a CPA/attorney verification letter. |
 | | **📌 Suitability & Disclosures** | | | |
 | 4 | Suitability questionnaire | Form | Investor | Complete the suitability questionnaire to help us understand your investment objectives, risk tolerance, and financial situation. |
 | 5 | Risk disclosure acknowledgement | Acknowledgement | Investor | Review and acknowledge the investment risk disclosures, including the potential for loss of principal, market volatility, and liquidity risks. |
 | 6 | Account agreement | E-Sign | Investor | Review and electronically sign the account agreement, including terms of service, fee schedule, and advisory or brokerage agreement. |
 | | **📌 Compliance & Account Activation** | | | |
 | 7 | Compliance review | To-Do | Compliance Officer | Review the account application, identity verification, suitability questionnaire, and signed agreements for regulatory compliance. Flag any issues or discrepancies. |
-| 8 | Operations setup | To-Do | Operations | Set up the account in the trading and custodial systems, configure permissions, and prepare for funding instructions. |
+| 8 | Operations setup **(concurrent)** | To-Do | Operations | Set up the account in the trading and custodial systems, configure permissions, and prepare for funding instructions. |
 | 9 | Account activation | Approval | Account Manager | Confirm that compliance review and operations setup are complete. Activate the account and notify the investor that the account is ready for funding. |
 
 #### Step 1: Account application — Form Fields
@@ -488,8 +490,8 @@
 |---|------|------|-------------|-------------|
 | | **📌 Borrower Request & Financials** | | | |
 | 1 | Renewal/increase request | Form | Borrower | Submit your credit line renewal or increase request. Provide details about the current facility, requested changes, and the business reasons for the request. |
-| 2 | Updated financial statements | File Request | Borrower | Upload your current year profit & loss statement, balance sheet, interim financials, and most recent tax returns. |
-| 3 | Borrower update questionnaire | Form | Borrower | Provide updates on your business since the original facility was established. This helps the credit team assess any material changes. |
+| 2 | Updated financial statements **(concurrent)** | File Request | Borrower | Upload your current year profit & loss statement, balance sheet, interim financials, and most recent tax returns. |
+| 3 | Borrower update questionnaire **(concurrent)** | Form | Borrower | Provide updates on your business since the original facility was established. This helps the credit team assess any material changes. |
 | | **📌 Credit Analysis & Approval** | | | |
 | 4 | Credit analysis & financial spreading | To-Do | Credit Analyst | Perform financial spreading and credit analysis including covenant compliance, collateral coverage, cash flow adequacy, and industry trend assessment. |
 | 5 | Credit analyst recommendation | File Request | Credit Analyst | Upload your credit analysis report with recommendation, including financial spreading results, risk assessment, and proposed terms. |

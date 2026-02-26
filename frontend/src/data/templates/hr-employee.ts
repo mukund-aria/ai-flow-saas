@@ -356,34 +356,75 @@ export const HR_EMPLOYEE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'System',
       },
       {
-        name: 'Verification request',
-        type: 'TODO',
-        assigneeRole: 'Background Vendor',
-        sampleDescription:
-          'Initiate the background check with the screening vendor. Submit candidate information and monitor progress across all verification categories.',
-      },
-      {
-        name: 'Previous employer verification',
-        type: 'FORM',
-        assigneeRole: 'Previous Employer',
-        skipSequentialOrder: true,
-        sampleDescription:
-          'Verify the candidate\'s employment with your organization by confirming dates of employment, title, and eligibility for rehire.',
-        sampleFormFields: [
-          { fieldId: 'f1', label: 'Candidate Name', type: 'TEXT_SINGLE_LINE', required: true },
-          { fieldId: 'f2', label: 'Dates of Employment', type: 'TEXT_SINGLE_LINE', required: true },
-          { fieldId: 'f3', label: 'Job Title', type: 'TEXT_SINGLE_LINE', required: true },
-          { fieldId: 'f4', label: 'Eligible for Rehire?', type: 'DROPDOWN', required: true, options: [{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }, { label: 'N/A - Policy', value: 'na' }] },
-          { fieldId: 'f5', label: 'Additional Comments', type: 'TEXT_MULTI_LINE', required: false },
+        name: 'Parallel verification tracks',
+        type: 'PARALLEL_BRANCH',
+        assigneeRole: 'System',
+        samplePaths: [
+          {
+            label: 'Criminal & Credit Check',
+            steps: [
+              {
+                name: 'Initiate criminal & credit check',
+                type: 'TODO',
+                assigneeRole: 'Background Vendor',
+                sampleDescription:
+                  'Submit the candidate\'s information to initiate criminal background and credit history checks across all relevant jurisdictions.',
+              },
+              {
+                name: 'Criminal & credit results review',
+                type: 'FILE_REQUEST',
+                assigneeRole: 'Background Vendor',
+                sampleDescription:
+                  'Upload the completed criminal background and credit check reports once results are available from the screening agencies.',
+              },
+            ],
+          },
+          {
+            label: 'Employment Verification',
+            steps: [
+              {
+                name: 'Request employment verification',
+                type: 'TODO',
+                assigneeRole: 'Background Vendor',
+                sampleDescription:
+                  'Contact the candidate\'s listed previous employers to initiate employment history verification for the past 7 years.',
+              },
+              {
+                name: 'Previous employer verification',
+                type: 'FORM',
+                assigneeRole: 'Previous Employer',
+                sampleDescription:
+                  'Verify the candidate\'s employment with your organization by confirming dates of employment, title, and eligibility for rehire.',
+                sampleFormFields: [
+                  { fieldId: 'f1', label: 'Candidate Name', type: 'TEXT_SINGLE_LINE', required: true },
+                  { fieldId: 'f2', label: 'Dates of Employment', type: 'TEXT_SINGLE_LINE', required: true },
+                  { fieldId: 'f3', label: 'Job Title', type: 'TEXT_SINGLE_LINE', required: true },
+                  { fieldId: 'f4', label: 'Eligible for Rehire?', type: 'DROPDOWN', required: true, options: [{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }, { label: 'N/A - Policy', value: 'na' }] },
+                  { fieldId: 'f5', label: 'Additional Comments', type: 'TEXT_MULTI_LINE', required: false },
+                ],
+              },
+            ],
+          },
+          {
+            label: 'Education Verification',
+            steps: [
+              {
+                name: 'Request education verification',
+                type: 'TODO',
+                assigneeRole: 'Background Vendor',
+                sampleDescription:
+                  'Contact the candidate\'s listed educational institutions to initiate degree and enrollment verification.',
+              },
+              {
+                name: 'Education credentials confirmation',
+                type: 'FILE_REQUEST',
+                assigneeRole: 'Background Vendor',
+                sampleDescription:
+                  'Upload the completed education verification reports confirming degrees, dates of attendance, and any honors or certifications.',
+              },
+            ],
+          },
         ],
-      },
-      {
-        name: 'Education verification',
-        type: 'TODO',
-        assigneeRole: 'Background Vendor',
-        skipSequentialOrder: true,
-        sampleDescription:
-          'Verify the candidate\'s educational credentials with the listed institutions. Confirm degrees, dates of attendance, and any honors.',
       },
       {
         name: 'Review & Determination',

@@ -528,27 +528,68 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'System',
       },
       {
-        name: 'Corporate & financial documents',
-        type: 'FILE_REQUEST',
-        assigneeRole: 'Target Company Contact',
-        sampleDescription:
-          'Upload all requested corporate and financial documents including organizational documents, financial statements, capitalization tables, and material agreements.',
-      },
-      {
-        name: 'Tax & legal documents',
-        type: 'FILE_REQUEST',
-        assigneeRole: 'Target Company Contact',
-        skipSequentialOrder: true,
-        sampleDescription:
-          'Upload all requested tax returns, legal filings, litigation records, and regulatory compliance documentation.',
-      },
-      {
-        name: 'Employment, IP & contracts',
-        type: 'FILE_REQUEST',
-        assigneeRole: 'Target Company Contact',
-        skipSequentialOrder: true,
-        sampleDescription:
-          'Upload employment agreements, benefit plans, IP registrations, license agreements, and all material contracts.',
+        name: 'Parallel due diligence tracks',
+        type: 'PARALLEL_BRANCH',
+        assigneeRole: 'System',
+        samplePaths: [
+          {
+            label: 'Legal & Corporate Track',
+            steps: [
+              {
+                name: 'Corporate documents',
+                type: 'FILE_REQUEST',
+                assigneeRole: 'Target Company Contact',
+                sampleDescription:
+                  'Upload all requested corporate documents including articles of incorporation, bylaws, board minutes, organizational charts, and capitalization tables.',
+              },
+              {
+                name: 'Legal & regulatory documents',
+                type: 'FILE_REQUEST',
+                assigneeRole: 'Target Company Contact',
+                sampleDescription:
+                  'Upload all legal filings, litigation records, consent decrees, regulatory compliance documentation, and government correspondence.',
+              },
+            ],
+          },
+          {
+            label: 'Financial & Tax Track',
+            steps: [
+              {
+                name: 'Financial documents',
+                type: 'FILE_REQUEST',
+                assigneeRole: 'Target Company Contact',
+                sampleDescription:
+                  'Upload audited financial statements, management accounts, revenue breakdowns, accounts receivable/payable aging, and material agreements with financial impact.',
+              },
+              {
+                name: 'Tax documents',
+                type: 'FILE_REQUEST',
+                assigneeRole: 'Target Company Contact',
+                sampleDescription:
+                  'Upload federal and state tax returns for the past 3-5 years, transfer pricing documentation, tax audit correspondence, and any pending tax disputes.',
+              },
+            ],
+          },
+          {
+            label: 'Operational Track',
+            steps: [
+              {
+                name: 'Employment & HR documents',
+                type: 'FILE_REQUEST',
+                assigneeRole: 'Target Company Contact',
+                sampleDescription:
+                  'Upload employment agreements, benefit plans, employee census, pending labor claims, and organizational structure documentation.',
+              },
+              {
+                name: 'IP & contracts',
+                type: 'FILE_REQUEST',
+                assigneeRole: 'Target Company Contact',
+                sampleDescription:
+                  'Upload IP registrations, patent filings, trademark certificates, license agreements, key customer and vendor contracts, and technology stack documentation.',
+              },
+            ],
+          },
+        ],
       },
       {
         name: 'Management questionnaire',

@@ -2,6 +2,8 @@
 
 > Workflow templates for order fulfillment, purchase order processing, returns management, customer complaint resolution, import customs clearance, supplier corrective actions, first article inspection, and product recall coordination.
 
+**Concurrency notation**: Steps marked **(concurrent)** have `skipSequentialOrder: true` and can run in parallel with the preceding step rather than waiting for it to complete.
+
 ---
 
 ## 1. Order Fulfillment
@@ -37,8 +39,8 @@
 | 3 | Order confirmation | Acknowledgement | Customer | Acknowledge the order confirmation including confirmed quantities, pricing, and estimated delivery date. |
 | | **📌 Pick-Pack-Ship** | | | |
 | 4 | Pick, pack & quality check | To-Do | Warehouse Lead | Pick the order items from inventory, pack per customer requirements, and perform a quality check before release to shipping. |
-| 5 | Shipping & BOL upload | File Request | Shipping Coordinator | Upload shipping documents including carrier assignment, tracking number, Bill of Lading (BOL), and packing slip. |
-| 6 | Shipment notification | To-Do | Shipping Coordinator | Automated notification: Send the shipment notification to the customer with carrier details, tracking number, and estimated delivery date. |
+| 5 | Shipping & BOL upload **(concurrent)** | File Request | Shipping Coordinator | Upload shipping documents including carrier assignment, tracking number, Bill of Lading (BOL), and packing slip. |
+| 6 | Shipment notification **(concurrent)** | To-Do | Shipping Coordinator | Automated notification: Send the shipment notification to the customer with carrier details, tracking number, and estimated delivery date. |
 | | **📌 Delivery & Payment** | | | |
 | 7 | Delivery confirmation | Acknowledgement | Customer | Confirm receipt of the shipment and note any discrepancies, damages, or shortages upon delivery. |
 | 8 | Invoice & supporting docs | File Request | Shipping Coordinator | Upload the invoice and any supporting documentation including proof of delivery, signed BOL, and weight tickets. |
