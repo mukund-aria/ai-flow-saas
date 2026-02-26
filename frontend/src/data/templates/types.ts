@@ -6,7 +6,7 @@
 
 export interface GalleryTemplateStep {
   name: string;
-  type: 'FORM' | 'QUESTIONNAIRE' | 'FILE_REQUEST' | 'TODO' | 'APPROVAL' | 'ACKNOWLEDGEMENT' | 'ESIGN' | 'DECISION' | 'PDF_FORM' | 'CUSTOM_ACTION' | 'WEB_APP' | 'MILESTONE' | 'SINGLE_CHOICE_BRANCH' | 'PARALLEL_BRANCH';
+  type: 'FORM' | 'QUESTIONNAIRE' | 'FILE_REQUEST' | 'TODO' | 'APPROVAL' | 'ACKNOWLEDGEMENT' | 'ESIGN' | 'DECISION' | 'PDF_FORM' | 'CUSTOM_ACTION' | 'WEB_APP' | 'MILESTONE' | 'SINGLE_CHOICE_BRANCH' | 'PARALLEL_BRANCH' | 'GOTO' | 'GOTO_DESTINATION';
   assigneeRole: string;
   sampleFormFields?: Array<{
     fieldId: string;
@@ -19,6 +19,10 @@ export interface GalleryTemplateStep {
   sampleDescription?: string;
   samplePaths?: Array<{ label: string; steps?: GalleryTemplateStep[] }>;
   skipSequentialOrder?: boolean;
+  /** For GOTO_DESTINATION: label letter (e.g., 'A') used by GOTO steps to reference this destination */
+  destinationLabel?: string;
+  /** For GOTO: the destinationLabel of the GOTO_DESTINATION to jump to */
+  targetDestinationLabel?: string;
 }
 
 export interface GalleryTemplate {

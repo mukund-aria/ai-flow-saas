@@ -40,6 +40,8 @@ import {
   Landmark,
   Flag,
   GitBranch,
+  IterationCw,
+  IterationCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createTemplate, getSamplePDF, type PDFUploadResult } from '@/lib/api';
@@ -79,6 +81,8 @@ const STEP_TYPE_ICONS: Record<string, React.ElementType> = {
   MILESTONE: Flag,
   SINGLE_CHOICE_BRANCH: GitBranch,
   PARALLEL_BRANCH: GitBranch,
+  GOTO: IterationCw,
+  GOTO_DESTINATION: IterationCcw,
 };
 
 const STEP_TYPE_COLORS: Record<string, string> = {
@@ -95,6 +99,8 @@ const STEP_TYPE_COLORS: Record<string, string> = {
   WEB_APP: 'bg-cyan-100 text-cyan-600',
   SINGLE_CHOICE_BRANCH: 'bg-amber-100 text-amber-600',
   PARALLEL_BRANCH: 'bg-green-100 text-green-600',
+  GOTO: 'bg-amber-100 text-amber-600',
+  GOTO_DESTINATION: 'bg-amber-100 text-amber-600',
 };
 
 
@@ -211,18 +217,68 @@ function galleryTemplateToDefinition(template: GalleryTemplate, samplePDF?: PDFU
     return config;
   }
 
+  // Build a map from destinationLabel → stepId for GOTO linking
+  const destinationLabelToStepId = new Map<string, string>();
+  for (const entry of stepEntries) {
+    if (!entry.isMilestone && entry.original.type === 'GOTO_DESTINATION' && entry.original.destinationLabel) {
+      destinationLabelToStepId.set(entry.original.destinationLabel, entry.stepId);
+    }
+  }
+
   // Create steps with sample data from gallery template (excluding milestones)
   let order = 0;
   const steps = stepEntries
     .filter(e => !e.isMilestone)
     .map(({ stepId, original: step }) => {
+      const config = convertStepConfig(step, samplePDF);
+
+      // Resolve GOTO_DESTINATION name from label
+      if (step.type === 'GOTO_DESTINATION' && step.destinationLabel) {
+        config.name = `Point ${step.destinationLabel}`;
+      }
+
+      // Resolve GOTO target from label
+      if (step.type === 'GOTO' && step.targetDestinationLabel) {
+        const targetId = destinationLabelToStepId.get(step.targetDestinationLabel);
+        if (targetId) {
+          config.targetStepId = targetId;
+        }
+      }
+
       return {
         stepId,
         type: step.type,
         order: order++,
-        config: convertStepConfig(step, samplePDF),
+        config,
       };
     });
+
+  // Also resolve GOTO targets inside nested branch/path steps
+  for (const step of steps) {
+    const paths = (step.config.paths || step.config.outcomes) as Array<{ steps?: Array<{ config: Record<string, unknown>; type: string }> }> | undefined;
+    if (paths) {
+      for (const path of paths) {
+        for (const nested of (path.steps || [])) {
+          if (nested.type === 'GOTO') {
+            // Look up targetDestinationLabel from the original template step's nested steps
+            const originalStep = template.steps.find(s => s.name === step.config.name);
+            if (originalStep?.samplePaths) {
+              for (const origPath of originalStep.samplePaths) {
+                for (const origNested of (origPath.steps || [])) {
+                  if (origNested.type === 'GOTO' && origNested.targetDestinationLabel) {
+                    const targetId = destinationLabelToStepId.get(origNested.targetDestinationLabel);
+                    if (targetId) {
+                      nested.config.targetStepId = targetId;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
   return {
     flowId: `gallery-${template.id}`,
@@ -521,6 +577,28 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                               </div>
                             );
                           }
+                          // GoTo Destination — compact gold circle marker
+                          if (step.type === 'GOTO_DESTINATION') {
+                            const nextNonMilestone2 = selectedTemplate.steps.slice(i + 1).find(s => s.type !== 'MILESTONE');
+                            const isLast2 = !nextNonMilestone2;
+                            return (
+                              <div key={i}>
+                                <div className="flex items-start gap-2.5">
+                                  <div className="flex flex-col items-center">
+                                    <div className="w-7 h-7 rounded-full bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-amber-700 font-bold text-xs shrink-0">
+                                      {step.destinationLabel || '?'}
+                                    </div>
+                                    {!isLast2 && (
+                                      <div className="w-px h-6 bg-gray-200 my-0.5" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 pt-1 pb-2">
+                                    <p className="text-xs font-medium text-amber-700 leading-tight truncate">{step.name}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
                           const StepIcon = STEP_TYPE_ICONS[step.type] || FileText;
                           const nextNonMilestone = selectedTemplate.steps.slice(i + 1).find(s => s.type !== 'MILESTONE');
                           const isLast = !nextNonMilestone && !selectedTemplate.steps.slice(i + 1).some(s => s.type !== 'MILESTONE');
@@ -543,14 +621,20 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                               </div>
                               {hasPaths && step.samplePaths && (
                                 <div className="ml-3 pl-3 border-l-2 border-gray-200 space-y-1 mb-2">
-                                  {step.samplePaths.map((p, pi) => (
+                                  {step.samplePaths.map((p, pi) => {
+                                    const hasGoto = p.steps?.some(s => s.type === 'GOTO');
+                                    return (
                                     <div key={pi} className="flex items-center gap-1.5">
                                       <div className={`w-2 h-2 rounded-full ${step.type === 'PARALLEL_BRANCH' ? 'bg-green-400' : 'bg-amber-400'}`} />
                                       <span className="text-[10px] text-gray-500 truncate">
-                                        {p.label}{p.steps && p.steps.length > 0 ? ` (${p.steps.length})` : ''}
+                                        {p.label}{hasGoto ? '' : p.steps && p.steps.length > 0 ? ` (${p.steps.length})` : ''}
                                       </span>
+                                      {hasGoto && (
+                                        <span className="text-[10px] text-amber-600 font-medium">↩</span>
+                                      )}
                                     </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>

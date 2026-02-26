@@ -61,6 +61,12 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
         assigneeRole: 'System',
       },
       {
+        name: 'Point A',
+        type: 'GOTO_DESTINATION',
+        assigneeRole: 'System',
+        destinationLabel: 'A',
+      },
+      {
         name: 'Redline document upload',
         type: 'FILE_REQUEST',
         assigneeRole: 'Legal Reviewer',
@@ -76,10 +82,24 @@ export const LEGAL_GOVERNANCE_TEMPLATES: GalleryTemplate[] = [
       },
       {
         name: 'Negotiation resolution',
-        type: 'DECISION',
+        type: 'SINGLE_CHOICE_BRANCH',
         assigneeRole: 'Legal Reviewer',
         sampleDescription:
-          'Review the counterparty response and decide on next steps: accept the terms, continue negotiation, escalate to leadership, or terminate discussions.',
+          'Review the counterparty response and decide on next steps: accept the terms and proceed to execution, or reject and loop back for another round of redlines.',
+        samplePaths: [
+          { label: 'Accepted — proceed to execution' },
+          {
+            label: 'Rejected — revise redlines',
+            steps: [
+              {
+                name: 'Go To A',
+                type: 'GOTO',
+                assigneeRole: 'System',
+                targetDestinationLabel: 'A',
+              },
+            ],
+          },
+        ],
       },
       {
         name: 'Execution & Filing',
