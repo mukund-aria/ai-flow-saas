@@ -399,15 +399,41 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
             <>
               <div className="fixed inset-0 z-[60] bg-black/40" onClick={() => setSelectedTemplate(null)} />
               <div className="fixed inset-6 z-[60] flex">
-                <div className="relative flex w-full h-full bg-white rounded-2xl shadow-2xl overflow-hidden">
-                  {/* Close button */}
-                  <button
-                    onClick={() => setSelectedTemplate(null)}
-                    className="absolute top-4 right-4 z-10 p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                <div className="relative flex flex-col w-full h-full bg-white rounded-2xl shadow-2xl overflow-hidden">
+                  {/* Top Header Bar */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white shrink-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0">
+                        <LayoutGrid className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="min-w-0">
+                        <h2 className="text-lg font-bold text-gray-900 truncate">{selectedTemplate.name}</h2>
+                        <p className="text-sm text-gray-400">{selectedTemplate.steps.length} steps</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Button
+                        className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 h-10 text-sm gap-2 px-5"
+                        onClick={() => handleImport(selectedTemplate)}
+                        disabled={isImporting}
+                      >
+                        {isImporting ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <ArrowRight className="w-4 h-4" />
+                        )}
+                        Use this flow
+                      </Button>
+                      <button
+                        onClick={() => setSelectedTemplate(null)}
+                        className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
 
+                  <div className="flex flex-1 overflow-hidden">
                   {/* Left: Step Flow Visualization */}
                   <div className="w-72 border-r border-gray-100 bg-gray-50/50 overflow-y-auto shrink-0">
                     <div className="p-5">
@@ -439,17 +465,6 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                   {/* Center: Main Content */}
                   <div className="flex-1 overflow-y-auto">
                     <div className="max-w-2xl mx-auto px-8 py-8">
-                      {/* Title */}
-                      <div className="flex items-start gap-4 mb-6">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0">
-                          <LayoutGrid className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <h2 className="text-xl font-bold text-gray-900 mb-0.5">{selectedTemplate.name}</h2>
-                          <p className="text-sm text-gray-400">{selectedTemplate.steps.length} steps</p>
-                        </div>
-                      </div>
-
                       {/* Description */}
                       <div className="mb-8">
                         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Description</h3>
@@ -556,20 +571,6 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                   {/* Right: Metadata Sidebar */}
                   <div className="w-64 border-l border-gray-100 bg-white overflow-y-auto shrink-0">
                     <div className="p-5 space-y-6">
-                      {/* Import Button */}
-                      <Button
-                        className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 h-10 text-sm gap-2"
-                        onClick={() => handleImport(selectedTemplate)}
-                        disabled={isImporting}
-                      >
-                        {isImporting ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <ArrowRight className="w-4 h-4" />
-                        )}
-                        Use this flow
-                      </Button>
-
                       {/* Complexity */}
                       <div>
                         <p className="text-xs text-gray-400 mb-1.5">Complexity</p>
@@ -632,6 +633,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                         </div>
                       </div>
                     </div>
+                  </div>
                   </div>
                 </div>
               </div>
