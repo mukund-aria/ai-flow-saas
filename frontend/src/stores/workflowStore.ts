@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Flow, Step, StepType, StepConfig, KickoffConfig, FlowSettings, FlowPermissions } from '@/types';
+import type { Flow, Step, StepType, StepConfig, KickoffConfig, FlowSettings, FlowPermissions, FlowDueDates } from '@/types';
 
 interface WorkflowStore {
   workflow: Flow | null;
@@ -32,6 +32,7 @@ interface WorkflowStore {
   updateKickoffConfig: (kickoff: Partial<KickoffConfig>) => void;
   updateFlowSettings: (settings: Partial<FlowSettings>) => void;
   updateFlowPermissions: (permissions: Partial<FlowPermissions>) => void;
+  updateFlowDueDates: (dueDates: FlowDueDates) => void;
   // Milestone CRUD
   addMilestone: (afterStepIndex: number, name?: string) => void;
   removeMilestone: (milestoneId: string) => void;
@@ -270,6 +271,18 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
       workflow: {
         ...workflow,
         permissions: { ...defaultPerms, ...(workflow.permissions || {}), ...permissions },
+      },
+    });
+  },
+
+  updateFlowDueDates: (dueDates) => {
+    const { workflow } = get();
+    if (!workflow) return;
+
+    set({
+      workflow: {
+        ...workflow,
+        dueDates,
       },
     });
   },

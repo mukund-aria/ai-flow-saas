@@ -6,7 +6,7 @@
  */
 
 import type { AssigneeRef, AssigneeOrAssignees } from './assignees.js';
-import type { RelativeDue, AssigneeActionAlerts, CoordinatorEscalationAlerts } from './workflow.js';
+import type { RelativeDue, StepDue, AssigneeActionAlerts, CoordinatorEscalationAlerts } from './workflow.js';
 
 // ============================================================================
 // Step-Level Reminder Override
@@ -126,7 +126,7 @@ export interface FormField {
 export interface FormStep extends BaseStep {
   type: 'FORM';
   assignees: AssigneeOrAssignees;
-  due?: RelativeDue;
+  due?: StepDue;
   reminderOverride?: StepReminderOverride;
   options?: StepOptions;
   form: {
@@ -157,7 +157,7 @@ export interface FileRequestStep extends BaseStep {
   type: 'FILE_REQUEST';
   assignees: AssigneeOrAssignees;
   reviewer?: AssigneeRef;
-  due?: RelativeDue;
+  due?: StepDue;
   reminderOverride?: StepReminderOverride;
   options?: StepOptions;
   outputs?: StepOutput[];
@@ -169,7 +169,7 @@ export type CompletionMode = 'ONE' | 'MAJORITY' | 'ALL';
 export interface TodoStep extends BaseStep {
   type: 'TODO';
   assignees: AssigneeOrAssignees;
-  due?: RelativeDue;
+  due?: StepDue;
   reminderOverride?: StepReminderOverride;
   options?: StepOptions;
   completion?: {
@@ -184,7 +184,7 @@ export interface ApprovalStep extends BaseStep {
   type: 'APPROVAL';
   assignees: AssigneeOrAssignees;
   attachments?: { ref: string }[];
-  due?: RelativeDue;
+  due?: StepDue;
   reminderOverride?: StepReminderOverride;
   options?: StepOptions;
   approval: {
@@ -222,7 +222,7 @@ export interface DecisionOutcome {
 export interface DecisionStep extends BaseStep {
   type: 'DECISION';
   assignee: AssigneeRef;  // Single assignee only
-  due?: RelativeDue;
+  due?: StepDue;
   reminderOverride?: StepReminderOverride;
   options?: StepOptions;
   outcomes: DecisionOutcome[];
@@ -261,7 +261,7 @@ export interface PdfFormField {
 export interface PdfFormStep extends BaseStep {
   type: 'PDF_FORM';
   assignees: AssigneeOrAssignees;
-  due?: RelativeDue;
+  due?: StepDue;
   reminderOverride?: StepReminderOverride;
   options?: StepOptions;
   pdfForm: {

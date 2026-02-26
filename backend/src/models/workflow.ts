@@ -309,14 +309,33 @@ export function migrateNotificationSettings(raw: Record<string, unknown>): FlowN
 
 export type DueUnit = 'HOURS' | 'DAYS' | 'WEEKS';
 
+// --- Step-Level Due Dates ---
 export interface RelativeDue {
   type: 'RELATIVE';
   value: number;
   unit: DueUnit;
 }
 
+export interface FixedDue {
+  type: 'FIXED';
+  date: string;  // ISO 8601, e.g. "2026-04-15"
+}
+
+export interface BeforeFlowDue {
+  type: 'BEFORE_FLOW_DUE';
+  value: number;
+  unit: DueUnit;
+}
+
+export type StepDue = RelativeDue | FixedDue | BeforeFlowDue;
+
+// --- Flow-Level Due Dates ---
+export type FlowDue =
+  | { type: 'RELATIVE'; value: number; unit: DueUnit }
+  | { type: 'FIXED'; date: string };
+
 export interface FlowDueDates {
-  flowDue?: RelativeDue;
+  flowDue?: FlowDue;
 }
 
 // ============================================================================

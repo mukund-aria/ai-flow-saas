@@ -2,11 +2,12 @@
  * Flow Runs Page
  *
  * Lists all active and completed workflow instances.
- * Shows progress, status, and allows filtering.
+ * Shows progress, status, tracking badges, and allows filtering.
+ * Supports "Attention Needed" and "Where I'm Involved" filter modes.
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search,
   PlayCircle,
@@ -16,7 +17,7 @@ import {
   Loader2,
   XCircle,
 } from 'lucide-react';
-import { listFlows, type Flow } from '@/lib/api';
+import { listFlows, getAttentionItems, type Flow, type AttentionItem, type TrackingStatus } from '@/lib/api';
 
 function getStatusIcon(status: Flow['status']) {
   switch (status) {
@@ -74,6 +75,18 @@ function getStatusBadge(status: Flow['status']) {
   }
 }
 
+function getTrackingBadge(status: TrackingStatus) {
+  const baseClasses = 'inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-full';
+  switch (status) {
+    case 'ON_TRACK':
+      return <span className={`${baseClasses} bg-green-50 text-green-700`}>On Track</span>;
+    case 'AT_RISK':
+      return <span className={`${baseClasses} bg-amber-50 text-amber-700`}>At Risk</span>;
+    case 'OFF_TRACK':
+      return <span className={`${baseClasses} bg-red-50 text-red-700`}>Off Track</span>;
+  }
+}
+
 function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -95,19 +108,34 @@ function formatTimeAgo(dateString: string): string {
 
 export function FlowRunsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [runs, setRuns] = useState<Flow[]>([]);
+  const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Fetch flows on mount
+  // Read initial filter from URL search params
+  const filterParam = searchParams.get('filter');
+  const [statusFilter, setStatusFilter] = useState<string>(
+    filterParam === 'attention' ? 'ATTENTION' : filterParam === 'involved' ? 'INVOLVED' : 'all'
+  );
+
+  // Build attention run IDs lookup for tracking status
+  const attentionRunIds = new Set(attentionItems.map((a) => a.flowRun.id));
+  const attentionByRunId = new Map(attentionItems.map((a) => [a.flowRun.id, a]));
+
+  // Fetch flows and attention data on mount
   useEffect(() => {
-    async function fetchRuns() {
+    async function fetchData() {
       try {
         setIsLoading(true);
-        const data = await listFlows();
-        setRuns(data);
+        const [flowData, attention] = await Promise.all([
+          listFlows(),
+          getAttentionItems().catch(() => [] as AttentionItem[]),
+        ]);
+        setRuns(flowData);
+        setAttentionItems(attention);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load flows');
@@ -115,15 +143,40 @@ export function FlowRunsPage() {
         setIsLoading(false);
       }
     }
-    fetchRuns();
+    fetchData();
   }, []);
+
+  // Update URL when filter changes
+  const handleFilterChange = (newFilter: string) => {
+    setStatusFilter(newFilter);
+    if (newFilter === 'ATTENTION') {
+      setSearchParams({ filter: 'attention' });
+    } else if (newFilter === 'INVOLVED') {
+      setSearchParams({ filter: 'involved' });
+    } else if (newFilter !== 'all') {
+      setSearchParams({ filter: newFilter });
+    } else {
+      setSearchParams({});
+    }
+  };
 
   const filteredRuns = runs.filter((run) => {
     const matchesSearch =
       run.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (run.flow?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-    const matchesStatus =
-      statusFilter === 'all' || run.status === statusFilter;
+
+    let matchesStatus = true;
+    if (statusFilter === 'ATTENTION') {
+      matchesStatus = attentionRunIds.has(run.id);
+    } else if (statusFilter === 'INVOLVED') {
+      // "Where I'm Involved" — the attention API already scopes to involved runs
+      // so we include attention runs plus all runs (the API returns involved runs)
+      // For now, show attention items as a proxy for involvement
+      matchesStatus = attentionRunIds.has(run.id);
+    } else if (statusFilter !== 'all') {
+      matchesStatus = run.status === statusFilter;
+    }
+
     return matchesSearch && matchesStatus;
   });
 
@@ -175,10 +228,12 @@ export function FlowRunsPage() {
         </div>
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => handleFilterChange(e.target.value)}
           className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
         >
           <option value="all">All Status</option>
+          <option value="ATTENTION">Attention Needed</option>
+          <option value="INVOLVED">Where I'm Involved</option>
           <option value="IN_PROGRESS">In Progress</option>
           <option value="COMPLETED">Completed</option>
           <option value="PAUSED">Paused</option>
@@ -193,6 +248,9 @@ export function FlowRunsPage() {
             const progressPercent = run.totalSteps > 0
               ? (run.currentStepIndex / run.totalSteps) * 100
               : 0;
+
+            // Look up tracking status from attention data
+            const attentionData = attentionByRunId.get(run.id);
 
             return (
               <div
@@ -213,7 +271,12 @@ export function FlowRunsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4">
+                    {/* Tracking badge for in-progress runs */}
+                    {run.status === 'IN_PROGRESS' && attentionData && (
+                      getTrackingBadge(attentionData.trackingStatus)
+                    )}
+
                     {/* Status Badge */}
                     {getStatusBadge(run.status)}
 
@@ -256,10 +319,18 @@ export function FlowRunsPage() {
             <PlayCircle className="w-8 h-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No flows yet
+            {statusFilter === 'ATTENTION'
+              ? 'No items need attention'
+              : statusFilter === 'INVOLVED'
+              ? 'No flows where you are involved'
+              : 'No flows yet'}
           </h3>
           <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-            Flows are live instances of your workflow templates. Publish a template, then start a flow to see progress here.
+            {statusFilter === 'ATTENTION'
+              ? 'All your flows are on track. Check back later.'
+              : statusFilter === 'INVOLVED'
+              ? 'Start or get assigned to a flow to see it here.'
+              : 'Flows are live instances of your workflow templates. Publish a template, then start a flow to see progress here.'}
           </p>
         </div>
       )}

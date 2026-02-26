@@ -10,7 +10,7 @@ import { db, flows, flowRuns, stepExecutions, users, organizations, contacts, ma
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
-import { onStepActivated, onStepCompleted, onFlowCompleted, onFlowCancelled, updateFlowActivity } from '../services/execution.js';
+import { onStepActivated, onStepCompleted, onFlowCompleted, onFlowCancelled, updateFlowActivity, computeFlowDueAt } from '../services/execution.js';
 
 const router = Router();
 
@@ -202,6 +202,11 @@ router.post(
     // Create the flow run
     const runName = name || `${flow.name} - ${isTest ? 'Test' : 'Run'} ${new Date().toISOString().split('T')[0]}`;
 
+    // Compute flow-level dueAt from the template's dueDates config
+    const flowStartedAt = new Date();
+    const flowDueDates = (definition as any)?.dueDates;
+    const flowDueAt = computeFlowDueAt(flowDueDates?.flowDue, flowStartedAt);
+
     const [newRun] = await db
       .insert(flowRuns)
       .values({
@@ -214,6 +219,7 @@ router.post(
         organizationId: resolvedOrgId,
         roleAssignments: roleAssignments || null,
         kickoffData: kickoffData || null,
+        dueAt: flowDueAt,
       })
       .returning();
 
@@ -287,7 +293,7 @@ router.post(
       ),
     });
     if (firstStepExec) {
-      await onStepActivated(firstStepExec.id, firstStep.due || firstStep.config?.due, flow.definition as Record<string, unknown>);
+      await onStepActivated(firstStepExec.id, firstStep.due || firstStep.config?.due, flow.definition as Record<string, unknown>, flowDueAt);
     }
 
     // Set initial activity timestamp
@@ -428,10 +434,12 @@ router.post(
         .where(eq(stepExecutions.id, nextStepExecution.id));
 
       // Schedule notification jobs for the next step
-      const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
+      const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>>; dueDates?: { flowDue?: Record<string, unknown> } } | null;
       const nextStepDef = definition?.steps?.find((s: any) => (s.stepId || s.id) === nextStepExecution.stepId);
       const nextStepDue = (nextStepDef as any)?.due || (nextStepDef as any)?.config?.due;
-      await onStepActivated(nextStepExecution.id, nextStepDue, run.flow?.definition as Record<string, unknown>);
+      // Pass flow-level dueAt so BEFORE_FLOW_DUE steps can be computed
+      const runDueAt = run.dueAt ? new Date(run.dueAt) : null;
+      await onStepActivated(nextStepExecution.id, nextStepDue, run.flow?.definition as Record<string, unknown>, runDueAt);
 
       // If next step has a contact assignee, create magic link and send email
       if (nextStepExecution.assignedToContactId) {

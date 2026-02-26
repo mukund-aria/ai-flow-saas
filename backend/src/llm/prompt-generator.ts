@@ -67,6 +67,8 @@ ${generateConsultationSection(playbook)}
 
 ${generateDefaultsSection(defaults, playbook)}
 
+${generateDueDateTypesSection()}
+
 ${generateBehaviorSection(playbook)}${templateSection}${generateClarificationContext(metadata)}`;
 }
 
@@ -680,6 +682,21 @@ Apply these defaults unless the user specifies otherwise:
 ## Assignee Experience
 - Default view: Spotlight (focused task view)
 - Alternative: Gallery (all visible steps shown)`;
+}
+
+function generateDueDateTypesSection(): string {
+  return `## Due Date Types
+
+Steps support three due date modes:
+- **RELATIVE**: \`{ "type": "RELATIVE", "value": 3, "unit": "DAYS" }\` — X time after step starts
+- **FIXED**: \`{ "type": "FIXED", "date": "2026-04-15" }\` — specific calendar date
+- **BEFORE_FLOW_DUE**: \`{ "type": "BEFORE_FLOW_DUE", "value": 5, "unit": "DAYS" }\` — X time before flow deadline
+
+Flow-level due dates go in \`dueDates.flowDue\`: RELATIVE and FIXED only.
+Use RELATIVE for reusable templates (default). Use FIXED only when user mentions a specific date.
+Use BEFORE_FLOW_DUE when user describes backwards scheduling ("before the deadline").
+
+Valid units: HOURS, DAYS, WEEKS.`;
 }
 
 function generateBehaviorSection(playbook: SEPlaybookConfig): string {

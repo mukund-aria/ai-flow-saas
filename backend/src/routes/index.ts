@@ -13,6 +13,7 @@ import flowsRouter from './flows.js';
 import runsRouter from './runs.js';
 import contactsRouter from './contacts.js';
 import notificationsRouter from './notifications.js';
+import attentionRouter from './attention.js';
 import messagesRouter from './messages.js';
 import organizationsRouter from './organizations.js';
 import teamRouter from './team.js';
@@ -46,6 +47,9 @@ router.use('/contacts', contactsRouter);
 
 // Notifications API (in-app notifications)
 router.use('/notifications', notificationsRouter);
+
+// Attention API (coordinator attention needed items)
+router.use('/attention', attentionRouter);
 
 // Messages API (in-flow chat conversations)
 router.use('/flows', messagesRouter);

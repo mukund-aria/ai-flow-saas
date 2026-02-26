@@ -1,21 +1,23 @@
 import { useState } from 'react';
-import { X, Settings, Shield, Users, Bell } from 'lucide-react';
+import { X, Settings, Shield, Users, Bell, Clock } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { FlowPermissionsEditor } from './FlowPermissionsEditor';
 import { AssigneeExperienceEditor } from './AssigneeExperienceEditor';
 import { FlowNotificationSettingsPanel } from './FlowNotificationSettings';
+import type { FlowDueDates, FlowDue, DueUnit } from '@/types';
 
 interface FlowSettingsPanelProps {
   onClose: () => void;
 }
 
-type SettingsTab = 'general' | 'permissions' | 'assignee' | 'notifications';
+type SettingsTab = 'general' | 'permissions' | 'assignee' | 'notifications' | 'duedates';
 
 const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
   { id: 'general', label: 'General', icon: Settings },
   { id: 'permissions', label: 'Permissions', icon: Shield },
   { id: 'assignee', label: 'Assignee', icon: Users },
   { id: 'notifications', label: 'Notifications', icon: Bell },
+  { id: 'duedates', label: 'Due Dates', icon: Clock },
 ];
 
 export function FlowSettingsPanel({ onClose }: FlowSettingsPanelProps) {
@@ -23,6 +25,7 @@ export function FlowSettingsPanel({ onClose }: FlowSettingsPanelProps) {
   const workflow = useWorkflowStore((s) => s.workflow);
   const updateFlowMetadata = useWorkflowStore((s) => s.updateFlowMetadata);
   const updateFlowSettings = useWorkflowStore((s) => s.updateFlowSettings);
+  const updateFlowDueDates = useWorkflowStore((s) => s.updateFlowDueDates);
 
   if (!workflow) return null;
 
@@ -84,6 +87,13 @@ export function FlowSettingsPanel({ onClose }: FlowSettingsPanelProps) {
           <div className="space-y-4">
             <FlowNotificationSettingsPanel />
           </div>
+        )}
+
+        {activeTab === 'duedates' && (
+          <FlowDueDatesTab
+            dueDates={workflow.dueDates || {}}
+            onUpdate={updateFlowDueDates}
+          />
         )}
       </div>
     </div>
@@ -177,6 +187,173 @@ function GeneralTab({
           </p>
         </div>
       </label>
+    </div>
+  );
+}
+
+// ============================================================================
+// Due Dates Tab
+// ============================================================================
+
+type FlowDueMode = 'RELATIVE' | 'FIXED';
+
+interface FlowDueDatesTabProps {
+  dueDates: FlowDueDates;
+  onUpdate: (dueDates: FlowDueDates) => void;
+}
+
+function FlowDueDatesTab({ dueDates, onUpdate }: FlowDueDatesTabProps) {
+  const hasFlowDue = !!dueDates.flowDue;
+  const currentMode: FlowDueMode = dueDates.flowDue?.type || 'RELATIVE';
+
+  // Local state for relative mode
+  const [relativeValue, setRelativeValue] = useState(
+    dueDates.flowDue?.type === 'RELATIVE' ? dueDates.flowDue.value : 7
+  );
+  const [relativeUnit, setRelativeUnit] = useState<DueUnit>(
+    dueDates.flowDue?.type === 'RELATIVE' ? dueDates.flowDue.unit : 'DAYS'
+  );
+
+  // Local state for fixed mode
+  const [fixedDate, setFixedDate] = useState(
+    dueDates.flowDue?.type === 'FIXED' ? dueDates.flowDue.date : ''
+  );
+
+  const [mode, setMode] = useState<FlowDueMode>(currentMode);
+
+  const handleToggle = (checked: boolean) => {
+    if (checked) {
+      if (mode === 'RELATIVE') {
+        onUpdate({ flowDue: { type: 'RELATIVE', value: relativeValue, unit: relativeUnit } });
+      } else if (fixedDate) {
+        onUpdate({ flowDue: { type: 'FIXED', date: fixedDate } });
+      } else {
+        // Default to relative if no date set yet
+        setMode('RELATIVE');
+        onUpdate({ flowDue: { type: 'RELATIVE', value: relativeValue, unit: relativeUnit } });
+      }
+    } else {
+      onUpdate({ flowDue: undefined });
+    }
+  };
+
+  const handleModeChange = (newMode: FlowDueMode) => {
+    setMode(newMode);
+    if (newMode === 'RELATIVE') {
+      onUpdate({ flowDue: { type: 'RELATIVE', value: relativeValue, unit: relativeUnit } });
+    } else {
+      if (fixedDate) {
+        onUpdate({ flowDue: { type: 'FIXED', date: fixedDate } });
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Enable/disable toggle */}
+      <label className="flex items-start gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={hasFlowDue}
+          onChange={(e) => handleToggle(e.target.checked)}
+          className="mt-0.5 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+        />
+        <div>
+          <span className="text-sm font-medium text-gray-700">Set a flow-level deadline</span>
+          <p className="text-[11px] text-gray-400 mt-0.5">
+            Define when this flow should be completed by
+          </p>
+        </div>
+      </label>
+
+      {hasFlowDue && (
+        <div className="space-y-4 pl-1">
+          {/* Mode selector */}
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden w-fit">
+            <button
+              type="button"
+              onClick={() => handleModeChange('RELATIVE')}
+              className={`px-4 py-1.5 text-xs font-medium transition-colors ${
+                mode === 'RELATIVE'
+                  ? 'bg-violet-50 text-violet-700'
+                  : 'bg-white text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              Relative
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeChange('FIXED')}
+              className={`px-4 py-1.5 text-xs font-medium transition-colors border-l border-gray-200 ${
+                mode === 'FIXED'
+                  ? 'bg-violet-50 text-violet-700'
+                  : 'bg-white text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              Fixed Date
+            </button>
+          </div>
+
+          {/* Relative mode */}
+          {mode === 'RELATIVE' && (
+            <div className="space-y-2">
+              <p className="text-xs text-gray-500">This flow should complete within:</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  value={relativeValue}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value) || 1;
+                    setRelativeValue(v);
+                    onUpdate({ flowDue: { type: 'RELATIVE', value: v, unit: relativeUnit } });
+                  }}
+                  className="w-20 px-2 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+                />
+                <select
+                  value={relativeUnit}
+                  onChange={(e) => {
+                    const u = e.target.value as DueUnit;
+                    setRelativeUnit(u);
+                    onUpdate({ flowDue: { type: 'RELATIVE', value: relativeValue, unit: u } });
+                  }}
+                  className="px-2 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+                >
+                  <option value="HOURS">hours</option>
+                  <option value="DAYS">days</option>
+                  <option value="WEEKS">weeks</option>
+                </select>
+                <span className="text-xs text-gray-500">of starting</span>
+              </div>
+            </div>
+          )}
+
+          {/* Fixed date mode */}
+          {mode === 'FIXED' && (
+            <div className="space-y-2">
+              <p className="text-xs text-gray-500">This flow must complete by:</p>
+              <input
+                type="date"
+                value={fixedDate}
+                onChange={(e) => {
+                  setFixedDate(e.target.value);
+                  if (e.target.value) {
+                    onUpdate({ flowDue: { type: 'FIXED', date: e.target.value } });
+                  }
+                }}
+                className="px-3 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+              />
+            </div>
+          )}
+
+          <div className="border-t border-gray-100" />
+
+          {/* Info text */}
+          <p className="text-[11px] text-gray-400 leading-relaxed">
+            Step-level due dates can reference this deadline using the &quot;Before Flow Due&quot; mode in each step&apos;s due date settings.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

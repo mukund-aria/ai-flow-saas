@@ -474,6 +474,56 @@ export async function dismissNotification(id: string): Promise<void> {
 }
 
 // ============================================================================
+// Attention API (coordinator attention needed)
+// ============================================================================
+
+export type AttentionReasonType =
+  | 'YOUR_TURN'
+  | 'UNREAD_CHAT'
+  | 'STEP_OVERDUE'
+  | 'FLOW_OVERDUE'
+  | 'ESCALATED'
+  | 'STALLED'
+  | 'AUTOMATION_FAILED';
+
+export type TrackingStatus = 'ON_TRACK' | 'AT_RISK' | 'OFF_TRACK';
+
+export interface AttentionReason {
+  type: AttentionReasonType;
+  stepId?: string;
+  detail?: string;
+}
+
+export interface AttentionItem {
+  flowRun: {
+    id: string;
+    name: string;
+    status: string;
+    dueAt: string | null;
+    startedAt: string;
+    currentStepIndex: number;
+  };
+  flow: {
+    id: string;
+    name: string;
+  };
+  reasons: AttentionReason[];
+  trackingStatus: TrackingStatus;
+  totalSteps: number;
+  completedSteps: number;
+}
+
+/**
+ * Get items needing coordinator attention
+ */
+export async function getAttentionItems(): Promise<AttentionItem[]> {
+  const res = await fetch(`${API_BASE}/attention`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to get attention items');
+  return data.data;
+}
+
+// ============================================================================
 // Contacts API
 // ============================================================================
 

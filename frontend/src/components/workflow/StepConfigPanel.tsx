@@ -13,6 +13,7 @@ import type {
   AIAutomationConfig, AIInputField, AIOutputField, AIActionType, AIFieldType,
   SystemEmailConfig, SystemWebhookConfig, SystemChatMessageConfig,
   SystemUpdateWorkspaceConfig, BusinessRuleConfig, BusinessRuleInput,
+  StepDue, DueUnit,
 } from '@/types';
 
 interface StepConfigPanelProps {
@@ -1144,19 +1145,48 @@ function BusinessRuleConfigEditor({
 }
 
 // ============================================================================
-// Due Date Editor
+// Due Date Editor (Enhanced with mode switching)
 // ============================================================================
+
+type DueDateMode = 'RELATIVE' | 'FIXED' | 'BEFORE_FLOW_DUE';
+
+function inferMode(value?: StepDue): DueDateMode {
+  if (!value) return 'RELATIVE';
+  return value.type;
+}
 
 function DueDateEditor({
   value,
   onChange,
+  hasFlowDue,
 }: {
-  value?: { value: number; unit: 'hours' | 'days' };
-  onChange: (v: { value: number; unit: 'hours' | 'days' } | undefined) => void;
+  value?: StepDue;
+  onChange: (v: StepDue | undefined) => void;
+  hasFlowDue?: boolean;
 }) {
   const [enabled, setEnabled] = useState(!!value);
-  const [amount, setAmount] = useState(value?.value || 1);
-  const [unit, setUnit] = useState<'hours' | 'days'>(value?.unit || 'days');
+  const [mode, setMode] = useState<DueDateMode>(inferMode(value));
+
+  // State for Relative mode
+  const [relativeAmount, setRelativeAmount] = useState(
+    value && value.type === 'RELATIVE' ? value.value : 1
+  );
+  const [relativeUnit, setRelativeUnit] = useState<DueUnit>(
+    value && value.type === 'RELATIVE' ? value.unit : 'DAYS'
+  );
+
+  // State for Fixed date mode
+  const [fixedDate, setFixedDate] = useState(
+    value && value.type === 'FIXED' ? value.date : ''
+  );
+
+  // State for Before Flow Due mode
+  const [beforeAmount, setBeforeAmount] = useState(
+    value && value.type === 'BEFORE_FLOW_DUE' ? value.value : 1
+  );
+  const [beforeUnit, setBeforeUnit] = useState<DueUnit>(
+    value && value.type === 'BEFORE_FLOW_DUE' ? value.unit : 'DAYS'
+  );
 
   const handleToggle = () => {
     if (enabled) {
@@ -1164,9 +1194,54 @@ function DueDateEditor({
       onChange(undefined);
     } else {
       setEnabled(true);
-      onChange({ value: amount, unit });
+      emitValue(mode);
     }
   };
+
+  const emitValue = (m: DueDateMode) => {
+    switch (m) {
+      case 'RELATIVE':
+        onChange({ type: 'RELATIVE', value: relativeAmount, unit: relativeUnit });
+        break;
+      case 'FIXED':
+        if (fixedDate) {
+          onChange({ type: 'FIXED', date: fixedDate });
+        }
+        break;
+      case 'BEFORE_FLOW_DUE':
+        onChange({ type: 'BEFORE_FLOW_DUE', value: beforeAmount, unit: beforeUnit });
+        break;
+    }
+  };
+
+  const handleModeChange = (newMode: DueDateMode) => {
+    setMode(newMode);
+    emitValueForMode(newMode);
+  };
+
+  const emitValueForMode = (m: DueDateMode) => {
+    switch (m) {
+      case 'RELATIVE':
+        onChange({ type: 'RELATIVE', value: relativeAmount, unit: relativeUnit });
+        break;
+      case 'FIXED':
+        if (fixedDate) {
+          onChange({ type: 'FIXED', date: fixedDate });
+        } else {
+          onChange(undefined);
+        }
+        break;
+      case 'BEFORE_FLOW_DUE':
+        onChange({ type: 'BEFORE_FLOW_DUE', value: beforeAmount, unit: beforeUnit });
+        break;
+    }
+  };
+
+  const modes: { id: DueDateMode; label: string }[] = [
+    { id: 'RELATIVE', label: 'Relative' },
+    { id: 'FIXED', label: 'Fixed Date' },
+    ...(hasFlowDue ? [{ id: 'BEFORE_FLOW_DUE' as DueDateMode, label: 'Before Flow Due' }] : []),
+  ];
 
   return (
     <div>
@@ -1187,31 +1262,104 @@ function DueDateEditor({
         </button>
       </div>
       {enabled && (
-        <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-xs text-gray-500">Complete within</span>
-          <input
-            type="number"
-            min={1}
-            value={amount}
-            onChange={(e) => {
-              const v = parseInt(e.target.value) || 1;
-              setAmount(v);
-              onChange({ value: v, unit });
-            }}
-            className="w-16 px-2 py-1 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
-          />
-          <select
-            value={unit}
-            onChange={(e) => {
-              const u = e.target.value as 'hours' | 'days';
-              setUnit(u);
-              onChange({ value: amount, unit: u });
-            }}
-            className="px-2 py-1 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
-          >
-            <option value="hours">hours</option>
-            <option value="days">days</option>
-          </select>
+        <div className="mt-1.5 space-y-2.5">
+          {/* Mode Segmented Control */}
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+            {modes.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => handleModeChange(m.id)}
+                className={`flex-1 px-2 py-1.5 text-[11px] font-medium transition-colors ${
+                  mode === m.id
+                    ? 'bg-violet-50 text-violet-700 border-violet-200'
+                    : 'bg-white text-gray-500 hover:bg-gray-50'
+                } ${m.id !== modes[0].id ? 'border-l border-gray-200' : ''}`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Relative Mode */}
+          {mode === 'RELATIVE' && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Complete within</span>
+              <input
+                type="number"
+                min={1}
+                value={relativeAmount}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value) || 1;
+                  setRelativeAmount(v);
+                  onChange({ type: 'RELATIVE', value: v, unit: relativeUnit });
+                }}
+                className="w-16 px-2 py-1 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+              />
+              <select
+                value={relativeUnit}
+                onChange={(e) => {
+                  const u = e.target.value as DueUnit;
+                  setRelativeUnit(u);
+                  onChange({ type: 'RELATIVE', value: relativeAmount, unit: u });
+                }}
+                className="px-2 py-1 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+              >
+                <option value="HOURS">hours</option>
+                <option value="DAYS">days</option>
+                <option value="WEEKS">weeks</option>
+              </select>
+            </div>
+          )}
+
+          {/* Fixed Date Mode */}
+          {mode === 'FIXED' && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Due by</span>
+              <input
+                type="date"
+                value={fixedDate}
+                onChange={(e) => {
+                  setFixedDate(e.target.value);
+                  if (e.target.value) {
+                    onChange({ type: 'FIXED', date: e.target.value });
+                  }
+                }}
+                className="flex-1 px-2 py-1 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+              />
+            </div>
+          )}
+
+          {/* Before Flow Due Mode */}
+          {mode === 'BEFORE_FLOW_DUE' && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="number"
+                min={1}
+                value={beforeAmount}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value) || 1;
+                  setBeforeAmount(v);
+                  onChange({ type: 'BEFORE_FLOW_DUE', value: v, unit: beforeUnit });
+                }}
+                className="w-16 px-2 py-1 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+              />
+              <select
+                value={beforeUnit}
+                onChange={(e) => {
+                  const u = e.target.value as DueUnit;
+                  setBeforeUnit(u);
+                  onChange({ type: 'BEFORE_FLOW_DUE', value: beforeAmount, unit: u });
+                }}
+                className="px-2 py-1 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+              >
+                <option value="HOURS">hours</option>
+                <option value="DAYS">days</option>
+                <option value="WEEKS">weeks</option>
+              </select>
+              <span className="text-xs text-gray-500">before the flow deadline</span>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1330,10 +1478,20 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
     step.config.businessRule || { inputs: [], rules: [], outputs: [] }
   );
 
-  // Due date
-  const [dueDate, setDueDate] = useState<{ value: number; unit: 'hours' | 'days' } | undefined>(
-    step.config.waitDuration as { value: number; unit: 'hours' | 'days' } | undefined
-  );
+  // Due date (supports StepDue type; legacy waitDuration is migrated to RELATIVE)
+  const [dueDate, setDueDate] = useState<StepDue | undefined>(() => {
+    if (step.config.stepDue) return step.config.stepDue;
+    // Legacy migration: old waitDuration -> RELATIVE StepDue
+    if (step.config.waitDuration) {
+      const legacy = step.config.waitDuration as { value: number; unit: string };
+      return {
+        type: 'RELATIVE' as const,
+        value: legacy.value,
+        unit: (legacy.unit === 'hours' ? 'HOURS' : legacy.unit === 'days' ? 'DAYS' : 'DAYS') as DueUnit,
+      };
+    }
+    return undefined;
+  });
 
   // Automation step types don't have assignees
   const automationTypes = ['AI_CUSTOM_PROMPT', 'AI_EXTRACT', 'AI_SUMMARIZE', 'AI_TRANSCRIBE', 'AI_TRANSLATE', 'AI_WRITE', 'SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE', 'INTEGRATION_AIRTABLE', 'INTEGRATION_CLICKUP', 'INTEGRATION_DROPBOX', 'INTEGRATION_GMAIL', 'INTEGRATION_GOOGLE_DRIVE', 'INTEGRATION_GOOGLE_SHEETS', 'INTEGRATION_WRIKE'];
@@ -1416,8 +1574,8 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
       updates.businessRule = businessRuleConfig;
     }
 
-    if (hasDueDate && dueDate) {
-      updates.waitDuration = dueDate;
+    if (hasDueDate) {
+      updates.stepDue = dueDate;
     }
 
     const stepsWithReminders = ['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION', 'ESIGN'];
@@ -1535,7 +1693,7 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
       {/* Due Date */}
       {hasDueDate && (
         <div className="mb-4 pt-3 border-t border-gray-100">
-          <DueDateEditor value={dueDate} onChange={setDueDate} />
+          <DueDateEditor value={dueDate} onChange={setDueDate} hasFlowDue={!!workflow?.dueDates?.flowDue} />
         </div>
       )}
 

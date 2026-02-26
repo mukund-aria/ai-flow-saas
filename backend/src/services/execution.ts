@@ -15,7 +15,7 @@ import { db, stepExecutions, flowRuns } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import { scheduleReminder, scheduleOverdueCheck, scheduleEscalation, cancelStepJobs } from './scheduler.js';
 import { notifyStepCompleted, notifyFlowCompleted, notifyFlowCancelled } from './notification.js';
-import type { FlowNotificationSettings } from '../models/workflow.js';
+import type { FlowNotificationSettings, StepDue, FlowDue } from '../models/workflow.js';
 import { defaultFlowNotificationSettings, migrateNotificationSettings } from '../models/workflow.js';
 
 // ============================================================================
@@ -32,14 +32,44 @@ function dueUnitToMs(value: number, unit: string): number {
 }
 
 /**
- * Compute dueAt timestamp from a step's due config and a start time.
+ * Compute dueAt timestamp from a step's due config, start time, and optional flow deadline.
+ * Supports RELATIVE, FIXED, and BEFORE_FLOW_DUE modes.
  */
-function computeDueAt(
-  dueConfig: { value: number; unit: string } | undefined,
-  startedAt: Date
+function computeStepDueAt(
+  dueConfig: StepDue | { value: number; unit: string } | undefined,
+  stepStartedAt: Date,
+  flowDueAt?: Date | null
 ): Date | null {
   if (!dueConfig) return null;
-  return new Date(startedAt.getTime() + dueUnitToMs(dueConfig.value, dueConfig.unit));
+  // Legacy format (no type field) — treat as RELATIVE
+  if (!('type' in dueConfig)) {
+    return new Date(stepStartedAt.getTime() + dueUnitToMs(dueConfig.value, dueConfig.unit));
+  }
+  switch (dueConfig.type) {
+    case 'RELATIVE':
+      return new Date(stepStartedAt.getTime() + dueUnitToMs(dueConfig.value, dueConfig.unit));
+    case 'FIXED':
+      return new Date(dueConfig.date);
+    case 'BEFORE_FLOW_DUE':
+      if (!flowDueAt) return null;
+      return new Date(flowDueAt.getTime() - dueUnitToMs(dueConfig.value, dueConfig.unit));
+  }
+}
+
+/**
+ * Compute the flow-level dueAt from a FlowDue config and the run's start time.
+ */
+export function computeFlowDueAt(
+  flowDueConfig: FlowDue | undefined,
+  flowStartedAt: Date
+): Date | null {
+  if (!flowDueConfig) return null;
+  switch (flowDueConfig.type) {
+    case 'RELATIVE':
+      return new Date(flowStartedAt.getTime() + dueUnitToMs(flowDueConfig.value, flowDueConfig.unit));
+    case 'FIXED':
+      return new Date(flowDueConfig.date);
+  }
 }
 
 // ============================================================================
@@ -52,13 +82,14 @@ function computeDueAt(
  */
 export async function onStepActivated(
   stepExecutionId: string,
-  stepDueConfig?: { value: number; unit: string },
-  flowDefinition?: Record<string, unknown> | null
+  stepDueConfig?: StepDue | { value: number; unit: string },
+  flowDefinition?: Record<string, unknown> | null,
+  flowDueAt?: Date | null
 ): Promise<void> {
   const now = new Date();
 
   // Compute dueAt if the step has a due config
-  const dueAt = computeDueAt(stepDueConfig, now);
+  const dueAt = computeStepDueAt(stepDueConfig, now, flowDueAt);
 
   if (dueAt) {
     // Update the step execution with dueAt

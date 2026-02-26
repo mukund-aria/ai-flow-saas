@@ -3,8 +3,8 @@
  *
  * Sections:
  * 1. AI Prompt Area (simplified)
- * 2. Attention Needed (rich status badges)
- * 3. Recent Activity (actor + event variety)
+ * 2. Attention Needed (real attention data from API)
+ * 3. Setup Tracker
  */
 
 import { useState, useEffect } from 'react';
@@ -18,10 +18,13 @@ import {
   CheckCircle2,
   ArrowRight,
   ExternalLink,
+  MessageSquare,
+  Clock,
+  AlertTriangle,
+  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { listFlows } from '@/lib/api';
-import type { Flow } from '@/lib/api';
+import { getAttentionItems, type AttentionItem, type TrackingStatus } from '@/lib/api';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 
 // ---------------------------------------------------------------------------
@@ -64,6 +67,75 @@ function getFlowColor(index: number) {
 }
 
 // ---------------------------------------------------------------------------
+// Attention Badge Helpers
+// ---------------------------------------------------------------------------
+
+function getPrimaryReasonBadge(item: AttentionItem) {
+  // Priority order: AUTOMATION_FAILED > STEP_OVERDUE/FLOW_OVERDUE > ESCALATED > STALLED > YOUR_TURN > UNREAD_CHAT
+  const reasons = item.reasons.map((r) => r.type);
+
+  if (reasons.includes('AUTOMATION_FAILED')) {
+    return (
+      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 whitespace-nowrap inline-flex items-center gap-1">
+        <XCircle className="w-3 h-3" />
+        Failed
+      </span>
+    );
+  }
+  if (reasons.includes('STEP_OVERDUE') || reasons.includes('FLOW_OVERDUE')) {
+    return (
+      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 whitespace-nowrap inline-flex items-center gap-1">
+        <Clock className="w-3 h-3" />
+        Overdue
+      </span>
+    );
+  }
+  if (reasons.includes('ESCALATED')) {
+    return (
+      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-700 whitespace-nowrap inline-flex items-center gap-1">
+        <AlertTriangle className="w-3 h-3" />
+        Escalated
+      </span>
+    );
+  }
+  if (reasons.includes('STALLED')) {
+    return (
+      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 whitespace-nowrap inline-flex items-center gap-1">
+        <AlertCircle className="w-3 h-3" />
+        Stalled
+      </span>
+    );
+  }
+  if (reasons.includes('YOUR_TURN')) {
+    return (
+      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 whitespace-nowrap">
+        Your turn
+      </span>
+    );
+  }
+  if (reasons.includes('UNREAD_CHAT')) {
+    return (
+      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 whitespace-nowrap inline-flex items-center gap-1">
+        <MessageSquare className="w-3 h-3" />
+        New message
+      </span>
+    );
+  }
+  return null;
+}
+
+function getTrackingDot(status: TrackingStatus) {
+  switch (status) {
+    case 'ON_TRACK':
+      return <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" title="On Track" />;
+    case 'AT_RISK':
+      return <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" title="At Risk" />;
+    case 'OFF_TRACK':
+      return <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" title="Off Track" />;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Setup Steps (horizontal tracker)
 // ---------------------------------------------------------------------------
 
@@ -83,21 +155,20 @@ export function HomePage() {
   const navigate = useNavigate();
   const onboarding = useOnboardingStore();
 
-  const [runs, setRuns] = useState<Flow[]>([]);
+  const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [prompt, setPrompt] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
-    listFlows()
-      .then((data) => setRuns(data))
+    getAttentionItems()
+      .then((data) => setAttentionItems(data))
       .catch(() => {})
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Derived data
-  const inProgressRuns = runs.filter((r) => r.status === 'IN_PROGRESS');
-  const needsAttentionRuns = inProgressRuns.slice(0, 5);
+  // Show top 5 attention items
+  const displayItems = attentionItems.slice(0, 5);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,11 +221,7 @@ export function HomePage() {
                       <button
                         onClick={() => {
                           if (done) return;
-                          if (step.key === 'completeAction' && inProgressRuns.length > 0) {
-                            navigate(`/flows/${inProgressRuns[0].id}`);
-                          } else {
-                            navigate(step.path);
-                          }
+                          navigate(step.path);
                         }}
                         className={`flex flex-col items-center text-center group flex-1 rounded-lg py-3 transition-colors ${
                           done ? '' : 'hover:bg-violet-50 cursor-pointer'
@@ -271,46 +338,45 @@ export function HomePage() {
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-red-500" />
               <h2 className="text-base font-semibold text-gray-900">Attention Needed</h2>
-              {inProgressRuns.length > 0 && (
+              {attentionItems.length > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                  {inProgressRuns.length}
+                  {attentionItems.length}
                 </span>
               )}
             </div>
             <Link
-              to="/flows"
+              to="/flows?filter=attention"
               className="text-sm text-gray-500 hover:text-gray-700 font-medium inline-flex items-center gap-1"
             >
               View all <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
 
-          {needsAttentionRuns.length === 0 ? (
+          {displayItems.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
               <p className="text-sm text-gray-400">No items need your attention right now.</p>
             </div>
           ) : (
             <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
-              {needsAttentionRuns.map((run, idx) => {
+              {displayItems.map((item, idx) => {
                 const color = getFlowColor(idx);
                 const progress =
-                  run.totalSteps > 0
-                    ? Math.round((run.currentStepIndex / run.totalSteps) * 100)
+                  item.totalSteps > 0
+                    ? Math.round((item.completedSteps / item.totalSteps) * 100)
                     : 0;
-
-                // Determine status badge
-                const startedDate = new Date(run.startedAt);
-                const daysSinceStart = Math.floor(
-                  (Date.now() - startedDate.getTime()) / (1000 * 60 * 60 * 24)
+                const isOverdue = item.reasons.some(
+                  (r) => r.type === 'STEP_OVERDUE' || r.type === 'FLOW_OVERDUE'
                 );
-                const isOverdue = daysSinceStart > 3;
 
                 return (
                   <button
-                    key={run.id}
-                    onClick={() => navigate(`/flows/${run.id}`)}
+                    key={item.flowRun.id}
+                    onClick={() => navigate(`/flows/${item.flowRun.id}`)}
                     className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 transition-colors text-left"
                   >
+                    {/* Tracking status dot */}
+                    {getTrackingDot(item.trackingStatus)}
+
                     {/* Flow icon */}
                     <div className={`w-10 h-10 rounded-lg ${color.bg} flex items-center justify-center flex-shrink-0`}>
                       <PlayCircle className={`w-5 h-5 ${color.text}`} />
@@ -319,10 +385,10 @@ export function HomePage() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-gray-900 text-sm truncate">
-                        {run.name}
+                        {item.flowRun.name}
                       </div>
                       <div className="text-xs text-gray-500 mt-0.5">
-                        {run.flow?.name || 'Flow'}
+                        {item.flow.name}
                       </div>
                     </div>
 
@@ -330,7 +396,7 @@ export function HomePage() {
                     <div className="hidden sm:flex items-center gap-4 flex-shrink-0">
                       <div className="text-right">
                         <span className="text-xs font-medium text-gray-600">
-                          {run.currentStepIndex}/{run.totalSteps}
+                          {item.completedSteps}/{item.totalSteps}
                         </span>
                         <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1">
                           <div
@@ -340,21 +406,13 @@ export function HomePage() {
                         </div>
                       </div>
 
-                      {/* Status badge */}
-                      {isOverdue ? (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 whitespace-nowrap">
-                          Overdue
-                        </span>
-                      ) : (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 whitespace-nowrap">
-                          Your turn
-                        </span>
-                      )}
+                      {/* Attention reason badge */}
+                      {getPrimaryReasonBadge(item)}
                     </div>
 
                     {/* Time */}
                     <span className="text-xs text-gray-400 flex-shrink-0 w-16 text-right">
-                      {formatTimeAgo(run.startedAt)}
+                      {formatTimeAgo(item.flowRun.startedAt)}
                     </span>
                   </button>
                 );
