@@ -499,7 +499,7 @@ export function FlowsPage() {
               onDelete={() => handleDeleteFlow(flow.id)}
               onDuplicate={() => handleDuplicateFlow(flow.id)}
               isStarting={startingFlowId === flow.id}
-              onClick={() => handleViewDetail(flow.id)}
+              onClick={() => flow.status === 'DRAFT' ? handleEditFlow(flow.id) : handleViewDetail(flow.id)}
             />
           ))}
         </div>

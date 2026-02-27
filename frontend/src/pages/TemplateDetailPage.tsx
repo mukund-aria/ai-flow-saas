@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import {
   Loader2,
   ArrowLeft,
@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIcon } from '@/components/workflow/StepIcon';
+import { ExecuteFlowDialog } from '@/components/workflow/ExecuteFlowDialog';
 import { getTemplate, listFlows, type Template, type Flow } from '@/lib/api';
 import {
   STEP_TYPE_META,
@@ -141,6 +142,7 @@ export function TemplateDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showExecuteDialog, setShowExecuteDialog] = useState(false);
 
   // Extract flow definition data
   const definition = template?.definition as
@@ -220,6 +222,11 @@ export function TemplateDetailPage() {
     );
   }
 
+  // DRAFT templates should open in the builder, not the detail page
+  if (!isLoading && template?.status === 'DRAFT') {
+    return <Navigate to={`/templates/${id}`} replace />;
+  }
+
   // Error state
   if (error || !template) {
     return (
@@ -256,6 +263,18 @@ export function TemplateDetailPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
+      {showExecuteDialog && (
+        <ExecuteFlowDialog
+          open={showExecuteDialog}
+          onOpenChange={setShowExecuteDialog}
+          template={template}
+          onFlowStarted={(run) => {
+            setShowExecuteDialog(false);
+            navigate(`/flows/${run.id}`);
+          }}
+        />
+      )}
+
       {/* Back Button */}
       <div className="mb-6">
         <Button
@@ -319,10 +338,8 @@ export function TemplateDetailPage() {
         <div className="flex items-center gap-3 mt-6 pt-6 border-t border-gray-100">
           <Button
             className="bg-violet-600 hover:bg-violet-700 text-white"
-            onClick={() => {
-              // TODO: Open ExecuteFlowDialog
-              navigate(`/templates/${id}`);
-            }}
+            disabled={template.status !== 'ACTIVE'}
+            onClick={() => setShowExecuteDialog(true)}
           >
             <Play className="w-4 h-4" />
             Execute
