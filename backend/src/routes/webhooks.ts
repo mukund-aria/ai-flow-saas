@@ -95,8 +95,7 @@ router.post(
         startedById: userId,
         organizationId: orgId,
         roleAssignments: roleAssignments || null,
-        kickoffData: kickoffData || null,
-        // TODO: Store callbackUrl in run metadata for post-completion callbacks
+        kickoffData: { ...(kickoffData || {}), _callbackUrl: callbackUrl || undefined },
       })
       .returning();
 

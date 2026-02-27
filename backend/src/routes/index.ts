@@ -17,6 +17,8 @@ import attentionRouter from './attention.js';
 import messagesRouter from './messages.js';
 import organizationsRouter from './organizations.js';
 import teamRouter from './team.js';
+import reportsRouter from './reports.js';
+import schedulesRouter from './schedules.js';
 import { orgScope } from '../middleware/org-scope.js';
 
 const router = Router();
@@ -56,6 +58,12 @@ router.use('/flows', messagesRouter);
 
 // PDF upload API
 router.use('/pdf', pdfUploadRouter);
+
+// Reports API (analytics & dashboard metrics)
+router.use('/reports', reportsRouter);
+
+// Schedules API (scheduled workflow triggers)
+router.use('/schedules', schedulesRouter);
 
 // Flows API (workflow execution — active instances)
 // Note: POST /api/templates/:templateId/flows is handled by runsRouter

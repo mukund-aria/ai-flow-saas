@@ -188,6 +188,19 @@ export async function onFlowCompleted(
     orgId: run.organizationId,
     flowRunId: run.id,
   }).catch((err) => console.error('[Webhook] flow.completed dispatch error:', err));
+
+  // Invoke callback URL if one was stored at run creation (e.g., from webhook trigger)
+  try {
+    const fullRun = await db.query.flowRuns.findFirst({ where: eq(flowRuns.id, run.id) });
+    const callbackUrl = (fullRun?.kickoffData as any)?._callbackUrl;
+    if (callbackUrl && typeof callbackUrl === 'string') {
+      fetch(callbackUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'flow.completed', flowRunId: run.id, flowId: run.flowId, name: run.name, status: 'COMPLETED', completedAt: new Date().toISOString() }),
+      }).catch((err) => console.error('[Callback] Failed to invoke callbackUrl:', err));
+    }
+  } catch {}
 }
 
 // ============================================================================

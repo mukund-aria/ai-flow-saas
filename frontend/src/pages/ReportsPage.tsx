@@ -3,9 +3,10 @@
  *
  * Analytics dashboard with tabs matching Moxo Action Hub design.
  * Includes workspace status, action status, and progress insights sections.
+ * Fetches real data from the Reports API.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BarChart3,
   TrendingUp,
@@ -22,8 +23,19 @@ import {
   Activity,
   Target,
   PieChart,
+  Loader2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import {
+  getReportSummary,
+  getFlowReports,
+  getAssigneeReports,
+  getMemberReports,
+  type ReportSummary,
+  type FlowReport,
+  type AssigneeReport,
+  type MemberReport,
+} from '@/lib/api';
 
 // Types
 type TabId = 'dashboard' | 'flow-report' | 'assignee-report' | 'member-report';
@@ -38,7 +50,7 @@ interface Tab {
 interface StatusCard {
   label: string;
   value: number;
-  change: number; // percentage change
+  change: number;
   changeDirection: 'up' | 'down' | 'neutral';
   icon: React.ElementType;
   colorClass: string;
@@ -53,87 +65,6 @@ interface ActionCard {
   bgClass: string;
   urgent?: boolean;
 }
-
-// Mock data
-const mockWorkspaceStatus: StatusCard[] = [
-  {
-    label: 'New',
-    value: 12,
-    change: 8,
-    changeDirection: 'up',
-    icon: TrendingUp,
-    colorClass: 'text-blue-600',
-    bgClass: 'bg-blue-100',
-  },
-  {
-    label: 'In Progress',
-    value: 34,
-    change: 15,
-    changeDirection: 'up',
-    icon: Activity,
-    colorClass: 'text-amber-600',
-    bgClass: 'bg-amber-100',
-  },
-  {
-    label: 'Completed',
-    value: 89,
-    change: 23,
-    changeDirection: 'up',
-    icon: CheckCircle2,
-    colorClass: 'text-emerald-600',
-    bgClass: 'bg-emerald-100',
-  },
-  {
-    label: 'Due',
-    value: 7,
-    change: 12,
-    changeDirection: 'down',
-    icon: Calendar,
-    colorClass: 'text-violet-600',
-    bgClass: 'bg-violet-100',
-  },
-];
-
-const mockActionStatus: ActionCard[] = [
-  {
-    label: 'Your turn',
-    value: 5,
-    icon: Target,
-    colorClass: 'text-violet-600',
-    bgClass: 'bg-violet-100',
-  },
-  {
-    label: 'Due today',
-    value: 3,
-    icon: Clock,
-    colorClass: 'text-amber-600',
-    bgClass: 'bg-amber-100',
-    urgent: true,
-  },
-  {
-    label: 'Overdue',
-    value: 2,
-    icon: AlertCircle,
-    colorClass: 'text-red-600',
-    bgClass: 'bg-red-100',
-    urgent: true,
-  },
-  {
-    label: 'Due in 7 days',
-    value: 14,
-    icon: Calendar,
-    colorClass: 'text-blue-600',
-    bgClass: 'bg-blue-100',
-  },
-];
-
-const mockProgressData = {
-  completionRate: 78,
-  avgCompletionTime: '2.4 days',
-  activeFlows: 12,
-  totalRuns: 156,
-  weeklyTrend: [45, 52, 48, 61, 58, 72, 68],
-};
 
 const tabs: Tab[] = [
   { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -150,13 +81,30 @@ const timeRanges: { value: TimeRange; label: string }[] = [
   { value: 'year', label: 'This year' },
 ];
 
+// Loading spinner component
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+    </div>
+  );
+}
+
+// Empty state component
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+      <BarChart3 className="w-12 h-12 mb-3" />
+      <p className="text-sm">{message}</p>
+    </div>
+  );
+}
+
 // Components
 function StatusCardComponent({ card }: { card: StatusCard }) {
   const isPositive = card.changeDirection === 'up';
   const isNegative = card.changeDirection === 'down';
   const changeLabel = card.label === 'Due' || card.label === 'Overdue';
-
-  // For "Due" and "Overdue", down is good, up is bad
   const changeIsGood = changeLabel ? isNegative : isPositive;
 
   return (
@@ -209,9 +157,8 @@ function ActionCardComponent({ card }: { card: ActionCard }) {
   );
 }
 
-function ProgressInsightsSection({ timeRange: _timeRange }: { timeRange: TimeRange }) {
-  // TODO: fetch data based on _timeRange
-  const data = mockProgressData;
+function ProgressInsightsSection({ summary }: { summary: ReportSummary }) {
+  const data = summary.progress;
 
   return (
     <div className="space-y-6">
@@ -229,14 +176,14 @@ function ProgressInsightsSection({ timeRange: _timeRange }: { timeRange: TimeRan
             <Clock className="w-5 h-5 text-gray-400" />
             <span className="text-sm text-gray-500">Avg. Completion Time</span>
           </div>
-          <div className="text-2xl font-bold text-gray-900">{data.avgCompletionTime}</div>
+          <div className="text-2xl font-bold text-gray-900">{data.avgCompletionDays}</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
             <Layers className="w-5 h-5 text-gray-400" />
             <span className="text-sm text-gray-500">Active Templates</span>
           </div>
-          <div className="text-2xl font-bold text-gray-900">{data.activeFlows}</div>
+          <div className="text-2xl font-bold text-gray-900">{data.activeTemplates}</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-2">
@@ -247,7 +194,7 @@ function ProgressInsightsSection({ timeRange: _timeRange }: { timeRange: TimeRan
         </div>
       </div>
 
-      {/* Chart Placeholder */}
+      {/* Chart */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -270,7 +217,7 @@ function ProgressInsightsSection({ timeRange: _timeRange }: { timeRange: TimeRan
         <div className="flex items-end justify-between h-48 gap-4 px-4">
           {data.weeklyTrend.map((value, index) => {
             const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            const maxValue = Math.max(...data.weeklyTrend);
+            const maxValue = Math.max(...data.weeklyTrend, 1);
             const height = (value / maxValue) * 100;
             const isToday = index === data.weeklyTrend.length - 1;
 
@@ -284,7 +231,7 @@ function ProgressInsightsSection({ timeRange: _timeRange }: { timeRange: TimeRan
                         ? 'bg-gradient-to-t from-violet-600 to-violet-400'
                         : 'bg-gradient-to-t from-violet-300 to-violet-200'
                     }`}
-                    style={{ height: `${height}%` }}
+                    style={{ height: `${Math.max(height, 2)}%` }}
                   />
                 </div>
                 <span className={`text-xs mt-2 ${isToday ? 'font-medium text-violet-600' : 'text-gray-500'}`}>
@@ -300,12 +247,19 @@ function ProgressInsightsSection({ timeRange: _timeRange }: { timeRange: TimeRan
 }
 
 function FlowReportTab() {
-  const mockFlowData = [
-    { name: 'Client Onboarding', runs: 45, completed: 38, avgTime: '2.1 days' },
-    { name: 'Document Review', runs: 32, completed: 29, avgTime: '1.5 days' },
-    { name: 'Approval Workflow', runs: 28, completed: 25, avgTime: '0.8 days' },
-    { name: 'Support Ticket', runs: 19, completed: 16, avgTime: '3.2 days' },
-  ];
+  const [data, setData] = useState<FlowReport[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    getFlowReports()
+      .then(setData)
+      .catch((err) => console.error('Failed to fetch flow reports:', err))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) return <LoadingSpinner />;
+  if (data.length === 0) return <EmptyState message="No flow data yet. Start some flows to see reports here." />;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200">
@@ -325,10 +279,10 @@ function FlowReportTab() {
             </tr>
           </thead>
           <tbody>
-            {mockFlowData.map((flow, index) => {
-              const completionRate = Math.round((flow.completed / flow.runs) * 100);
+            {data.map((flow) => {
+              const completionRate = flow.runs > 0 ? Math.round((flow.completed / flow.runs) * 100) : 0;
               return (
-                <tr key={index} className="border-b border-gray-50 hover:bg-gray-50">
+                <tr key={flow.templateId} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
@@ -346,7 +300,7 @@ function FlowReportTab() {
                       {completionRate}%
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right text-gray-600">{flow.avgTime}</td>
+                  <td className="px-6 py-4 text-right text-gray-600">{flow.avgCompletionDays}</td>
                 </tr>
               );
             })}
@@ -358,12 +312,19 @@ function FlowReportTab() {
 }
 
 function AssigneeReportTab() {
-  const mockAssigneeData = [
-    { name: 'Sarah Johnson', avatar: 'SJ', tasks: 23, completed: 19, pending: 4 },
-    { name: 'Mike Chen', avatar: 'MC', tasks: 18, completed: 15, pending: 3 },
-    { name: 'Emily Davis', avatar: 'ED', tasks: 15, completed: 12, pending: 3 },
-    { name: 'Alex Kim', avatar: 'AK', tasks: 12, completed: 11, pending: 1 },
-  ];
+  const [data, setData] = useState<AssigneeReport[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    getAssigneeReports()
+      .then(setData)
+      .catch((err) => console.error('Failed to fetch assignee reports:', err))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) return <LoadingSpinner />;
+  if (data.length === 0) return <EmptyState message="No assignee data yet. Assign tasks to contacts to see reports here." />;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200">
@@ -383,14 +344,20 @@ function AssigneeReportTab() {
             </tr>
           </thead>
           <tbody>
-            {mockAssigneeData.map((assignee, index) => {
-              const progress = Math.round((assignee.completed / assignee.tasks) * 100);
+            {data.map((assignee) => {
+              const progress = assignee.tasks > 0 ? Math.round((assignee.completed / assignee.tasks) * 100) : 0;
+              const initials = assignee.name
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase();
               return (
-                <tr key={index} className="border-b border-gray-50 hover:bg-gray-50">
+                <tr key={assignee.contactId} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center text-white text-xs font-medium">
-                        {assignee.avatar}
+                        {initials}
                       </div>
                       <span className="font-medium text-gray-900">{assignee.name}</span>
                     </div>
@@ -420,33 +387,39 @@ function AssigneeReportTab() {
 }
 
 function MemberReportTab() {
-  const mockMemberData = [
-    { name: 'Acme Corp', contact: 'John Smith', activeRuns: 5, completedRuns: 12 },
-    { name: 'Tech Solutions', contact: 'Jane Doe', activeRuns: 3, completedRuns: 8 },
-    { name: 'Global Industries', contact: 'Bob Wilson', activeRuns: 2, completedRuns: 15 },
-    { name: 'StartUp Inc', contact: 'Alice Brown', activeRuns: 4, completedRuns: 6 },
-  ];
+  const [data, setData] = useState<MemberReport[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    getMemberReports()
+      .then(setData)
+      .catch((err) => console.error('Failed to fetch member reports:', err))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  if (isLoading) return <LoadingSpinner />;
+  if (data.length === 0) return <EmptyState message="No member data yet. Start some flows to see coordinator activity here." />;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200">
       <div className="p-6 border-b border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900">Member Activity</h3>
-        <p className="text-sm text-gray-500">Workflow engagement by member organization</p>
+        <p className="text-sm text-gray-500">Workflow engagement by team member</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100">
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Organization</th>
-              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Primary Contact</th>
+              <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Member</th>
               <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Active Runs</th>
               <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Completed</th>
               <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Total</th>
             </tr>
           </thead>
           <tbody>
-            {mockMemberData.map((member, index) => (
-              <tr key={index} className="border-b border-gray-50 hover:bg-gray-50">
+            {data.map((member) => (
+              <tr key={member.userId} className="border-b border-gray-50 hover:bg-gray-50">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
@@ -455,7 +428,6 @@ function MemberReportTab() {
                     <span className="font-medium text-gray-900">{member.name}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-gray-600">{member.contact}</td>
                 <td className="px-6 py-4 text-right">
                   <Badge variant="secondary" className="bg-amber-50 text-amber-700">
                     {member.activeRuns} active
@@ -477,6 +449,35 @@ function MemberReportTab() {
 export function ReportsPage() {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [timeRange, setTimeRange] = useState<TimeRange>('week');
+  const [summary, setSummary] = useState<ReportSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    getReportSummary(timeRange)
+      .then(setSummary)
+      .catch((err) => console.error('Failed to fetch report summary:', err))
+      .finally(() => setIsLoading(false));
+  }, [timeRange]);
+
+  // Build status/action cards from summary data
+  const workspaceStatus: StatusCard[] = summary
+    ? [
+        { label: 'New', value: summary.workspace.new, change: 0, changeDirection: 'neutral' as const, icon: TrendingUp, colorClass: 'text-blue-600', bgClass: 'bg-blue-100' },
+        { label: 'In Progress', value: summary.workspace.inProgress, change: 0, changeDirection: 'neutral' as const, icon: Activity, colorClass: 'text-amber-600', bgClass: 'bg-amber-100' },
+        { label: 'Completed', value: summary.workspace.completed, change: 0, changeDirection: 'neutral' as const, icon: CheckCircle2, colorClass: 'text-emerald-600', bgClass: 'bg-emerald-100' },
+        { label: 'Due', value: summary.workspace.due, change: 0, changeDirection: 'neutral' as const, icon: Calendar, colorClass: 'text-violet-600', bgClass: 'bg-violet-100' },
+      ]
+    : [];
+
+  const actionStatus: ActionCard[] = summary
+    ? [
+        { label: 'Your turn', value: summary.actions.yourTurn, icon: Target, colorClass: 'text-violet-600', bgClass: 'bg-violet-100' },
+        { label: 'Due today', value: summary.actions.dueToday, icon: Clock, colorClass: 'text-amber-600', bgClass: 'bg-amber-100', urgent: true },
+        { label: 'Overdue', value: summary.actions.overdue, icon: AlertCircle, colorClass: 'text-red-600', bgClass: 'bg-red-100', urgent: true },
+        { label: 'Due in 7 days', value: summary.actions.dueSoon, icon: Calendar, colorClass: 'text-blue-600', bgClass: 'bg-blue-100' },
+      ]
+    : [];
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -518,58 +519,66 @@ export function ReportsPage() {
 
       {/* Tab Content */}
       {activeTab === 'dashboard' && (
-        <div className="space-y-8">
-          {/* Workspace Status Section */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-                Workspace Status
-              </h2>
-              <span className="text-xs text-gray-400">vs. previous period</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {mockWorkspaceStatus.map((card, index) => (
-                <StatusCardComponent key={index} card={card} />
-              ))}
-            </div>
-          </section>
-
-          {/* Action Status Section */}
-          <section>
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-              Action Status
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {mockActionStatus.map((card, index) => (
-                <ActionCardComponent key={index} card={card} />
-              ))}
-            </div>
-          </section>
-
-          {/* Progress Insights Section */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-                Progress Insights
-              </h2>
-              <div className="relative">
-                <select
-                  value={timeRange}
-                  onChange={(e) => setTimeRange(e.target.value as TimeRange)}
-                  className="appearance-none pl-4 pr-10 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
-                >
-                  {timeRanges.map((range) => (
-                    <option key={range.value} value={range.value}>
-                      {range.label}
-                    </option>
+        <>
+          {isLoading ? (
+            <LoadingSpinner />
+          ) : !summary ? (
+            <EmptyState message="Unable to load dashboard data. Please try again." />
+          ) : (
+            <div className="space-y-8">
+              {/* Workspace Status Section */}
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+                    Workspace Status
+                  </h2>
+                  <span className="text-xs text-gray-400">vs. previous period</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {workspaceStatus.map((card, index) => (
+                    <StatusCardComponent key={index} card={card} />
                   ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
+                </div>
+              </section>
+
+              {/* Action Status Section */}
+              <section>
+                <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+                  Action Status
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {actionStatus.map((card, index) => (
+                    <ActionCardComponent key={index} card={card} />
+                  ))}
+                </div>
+              </section>
+
+              {/* Progress Insights Section */}
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+                    Progress Insights
+                  </h2>
+                  <div className="relative">
+                    <select
+                      value={timeRange}
+                      onChange={(e) => setTimeRange(e.target.value as TimeRange)}
+                      className="appearance-none pl-4 pr-10 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+                    >
+                      {timeRanges.map((range) => (
+                        <option key={range.value} value={range.value}>
+                          {range.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+                <ProgressInsightsSection summary={summary} />
+              </section>
             </div>
-            <ProgressInsightsSection timeRange={timeRange} />
-          </section>
-        </div>
+          )}
+        </>
       )}
 
       {activeTab === 'flow-report' && <FlowReportTab />}

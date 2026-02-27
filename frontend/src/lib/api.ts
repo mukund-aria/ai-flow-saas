@@ -603,6 +603,156 @@ export async function toggleContactStatus(id: string, status: 'ACTIVE' | 'INACTI
 }
 
 // ============================================================================
+// Reports API
+// ============================================================================
+
+export interface ReportSummary {
+  workspace: { new: number; inProgress: number; completed: number; due: number };
+  actions: { yourTurn: number; dueToday: number; overdue: number; dueSoon: number };
+  progress: { completionRate: number; avgCompletionDays: string; activeTemplates: number; totalRuns: number; weeklyTrend: number[] };
+}
+
+export interface FlowReport {
+  name: string;
+  templateId: string;
+  runs: number;
+  completed: number;
+  avgCompletionDays: string;
+}
+
+export interface AssigneeReport {
+  name: string;
+  contactId: string;
+  tasks: number;
+  completed: number;
+  pending: number;
+}
+
+export interface MemberReport {
+  name: string;
+  userId: string;
+  activeRuns: number;
+  completedRuns: number;
+}
+
+export async function getReportSummary(range: string = 'week'): Promise<ReportSummary> {
+  const res = await fetch(`${API_BASE}/reports/summary?range=${range}`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch report summary');
+  return data.data;
+}
+
+export async function getFlowReports(): Promise<FlowReport[]> {
+  const res = await fetch(`${API_BASE}/reports/flows`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch flow reports');
+  return data.data;
+}
+
+export async function getAssigneeReports(): Promise<AssigneeReport[]> {
+  const res = await fetch(`${API_BASE}/reports/assignees`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch assignee reports');
+  return data.data;
+}
+
+export async function getMemberReports(): Promise<MemberReport[]> {
+  const res = await fetch(`${API_BASE}/reports/members`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch member reports');
+  return data.data;
+}
+
+// ============================================================================
+// Schedules API
+// ============================================================================
+
+export interface Schedule {
+  id: string;
+  flowId: string;
+  flowName: string;
+  scheduleName: string;
+  cronPattern: string;
+  createdAt: string;
+  nextRun?: string;
+}
+
+export async function listSchedules(): Promise<Schedule[]> {
+  const res = await fetch(`${API_BASE}/schedules`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list schedules');
+  return data.data;
+}
+
+export async function createSchedule(data: {
+  flowId: string;
+  scheduleName: string;
+  cronPattern: string;
+}): Promise<Schedule> {
+  const res = await fetch(`${API_BASE}/schedules`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json();
+  if (!result.success) throw new Error(result.error?.message || 'Failed to create schedule');
+  return result.data;
+}
+
+export async function deleteSchedule(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/schedules/${id}`, { ...fetchOpts, method: 'DELETE' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to delete schedule');
+}
+
+// ============================================================================
+// Organization Update API
+// ============================================================================
+
+export async function updateOrganization(orgId: string, data: { name: string }): Promise<{ id: string; name: string; slug: string }> {
+  const res = await fetch(`${API_BASE}/organizations/${orgId}`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json();
+  if (!result.success) throw new Error(result.error?.message || 'Failed to update organization');
+  return result.data;
+}
+
+// ============================================================================
+// Notification Preferences API
+// ============================================================================
+
+export interface NotificationPreferences {
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+  digestFrequency: 'NONE' | 'DAILY' | 'WEEKLY';
+  mutedEventTypes: string[];
+}
+
+export async function getNotificationPreferences(): Promise<NotificationPreferences> {
+  const res = await fetch(`${API_BASE}/notifications/preferences`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch notification preferences');
+  return data.data;
+}
+
+export async function updateNotificationPreferences(prefs: Partial<Pick<NotificationPreferences, 'emailEnabled' | 'inAppEnabled' | 'digestFrequency'>>): Promise<NotificationPreferences> {
+  const res = await fetch(`${API_BASE}/notifications/preferences`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(prefs),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to update notification preferences');
+  return data.data;
+}
+
+// ============================================================================
 // PDF Upload API
 // ============================================================================
 

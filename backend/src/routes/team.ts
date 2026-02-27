@@ -8,6 +8,7 @@ import { Router } from 'express';
 import { db, userOrganizations, organizationInvites, users, organizations } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
+import { sendInvitation } from '../services/email.js';
 
 const router = Router();
 
@@ -140,7 +141,15 @@ router.post(
       expiresAt,
     }).returning();
 
-    // TODO: Send invitation email via Resend
+    // Send invitation email
+    const org = await db.query.organizations.findFirst({ where: eq(organizations.id, orgId) });
+    await sendInvitation({
+      to: email.toLowerCase(),
+      inviterName: user.name,
+      organizationName: org?.name || 'AI Flow',
+      token: invite.token,
+      role,
+    });
 
     res.status(201).json({
       success: true,

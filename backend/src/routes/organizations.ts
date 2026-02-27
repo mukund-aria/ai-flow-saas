@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import { db, organizations, users, userOrganizations, flows, flowRuns, stepExecutions } from '../db/index.js';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
 const router = Router();
@@ -250,6 +250,58 @@ router.post(
         name: (membership as any).organization?.name,
         role: membership.role,
       },
+    });
+  })
+);
+
+// ============================================================================
+// PUT /api/organizations/:id - Update organization (admin only)
+// ============================================================================
+
+router.put(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const user = req.user as any;
+    if (!user) {
+      res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED' } });
+      return;
+    }
+
+    const orgId = req.params.id as string;
+    const { name } = req.body;
+
+    // Verify admin membership
+    const membership = await db.query.userOrganizations.findFirst({
+      where: and(
+        eq(userOrganizations.userId, user.id),
+        eq(userOrganizations.organizationId, orgId)
+      ),
+    });
+
+    if (!membership || membership.role !== 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        error: { code: 'FORBIDDEN', message: 'Only admins can update organization settings' },
+      });
+      return;
+    }
+
+    if (!name || !name.trim()) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Organization name is required' },
+      });
+      return;
+    }
+
+    const [updated] = await db.update(organizations)
+      .set({ name: name.trim() })
+      .where(eq(organizations.id, orgId))
+      .returning();
+
+    res.json({
+      success: true,
+      data: { id: updated.id, name: updated.name, slug: updated.slug },
     });
   })
 );
