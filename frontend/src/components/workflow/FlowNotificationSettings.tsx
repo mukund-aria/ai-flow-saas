@@ -1,6 +1,7 @@
-import { Info, RotateCcw, Hash, MessageSquare, Check } from 'lucide-react';
+import { useState } from 'react';
+import { Info, RotateCcw, Hash, MessageSquare, Check, Globe, Plus, Trash2, Eye, EyeOff, Copy, FlaskConical, CheckCircle2, XCircle } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
-import type { DeliveryChannel, FlowNotificationSettings, SlackIntegrationSettings, ChannelIntegrations, SlackChannelMode, ChannelVisibility, ChannelInviteGroup } from '@/types';
+import type { DeliveryChannel, FlowNotificationSettings, SlackIntegrationSettings, ChannelIntegrations, SlackChannelMode, ChannelVisibility, ChannelInviteGroup, WebhookEndpointConfig, WebhookEventConfig, WebhookIntegrationSettings } from '@/types';
 
 const defaultSlackSettings: SlackIntegrationSettings = {
   enabled: false,
@@ -385,6 +386,263 @@ function ChannelIntegrationsSection({
           <Toggle checked={false} onChange={() => {}} />
         </div>
       </div>
+
+      {/* Outgoing Webhooks */}
+      <OutgoingWebhooksSection settings={settings} onChange={onChange} />
+    </div>
+  );
+}
+
+// ============================================================================
+// Outgoing Webhooks Section
+// ============================================================================
+
+const DEFAULT_EVENTS: WebhookEventConfig = {
+  flowStarted: true,
+  stepCompleted: true,
+  flowCompleted: true,
+  flowCancelled: true,
+  stepOverdue: false,
+  stepEscalated: false,
+  chatMessage: false,
+};
+
+function generateSecret(): string {
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function OutgoingWebhooksSection({
+  settings,
+  onChange,
+}: {
+  settings: FlowNotificationSettings;
+  onChange: (s: FlowNotificationSettings) => void;
+}) {
+  const savedFlowId = useWorkflowStore((s) => s.savedFlowId);
+  const ci = settings.channelIntegrations ?? { slack: { enabled: false, channelMode: 'SHARED' as const, shared: { channelName: '' }, perFlowRun: { namingPattern: '', visibility: 'PRIVATE' as const, inviteGroup: 'ALL_COORDINATORS' as const, additionalMembers: '', autoArchiveOnComplete: true }, events: { actionCompleted: true, flowStarted: true, flowCompleted: true, chatMessages: false } } };
+  const webhooks: WebhookIntegrationSettings = ci.webhooks ?? { endpoints: [] };
+  const endpoints = webhooks.endpoints;
+
+  const updateEndpoints = (newEndpoints: WebhookEndpointConfig[]) => {
+    onChange({
+      ...settings,
+      channelIntegrations: {
+        ...ci,
+        webhooks: { endpoints: newEndpoints },
+      },
+    });
+  };
+
+  const addEndpoint = () => {
+    const newEndpoint: WebhookEndpointConfig = {
+      id: crypto.randomUUID(),
+      label: '',
+      url: '',
+      secret: generateSecret(),
+      enabled: true,
+      events: { ...DEFAULT_EVENTS },
+      createdAt: new Date().toISOString(),
+    };
+    updateEndpoints([...endpoints, newEndpoint]);
+  };
+
+  const updateEndpoint = (id: string, updates: Partial<WebhookEndpointConfig>) => {
+    updateEndpoints(endpoints.map((ep) => (ep.id === id ? { ...ep, ...updates } : ep)));
+  };
+
+  const removeEndpoint = (id: string) => {
+    updateEndpoints(endpoints.filter((ep) => ep.id !== id));
+  };
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+        <div className="flex items-center gap-2">
+          <Globe className="w-4 h-4 text-gray-600" />
+          <span className="text-sm font-medium text-gray-800">Outgoing Webhooks</span>
+          {endpoints.length > 0 && (
+            <span className="px-1.5 py-0.5 text-[10px] font-medium text-violet-600 bg-violet-50 rounded">
+              {endpoints.length}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={addEndpoint}
+          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-violet-600 hover:bg-violet-50 rounded-md transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Add endpoint
+        </button>
+      </div>
+
+      {endpoints.length > 0 && (
+        <div className="divide-y divide-gray-100">
+          {endpoints.map((ep) => (
+            <WebhookEndpointRow
+              key={ep.id}
+              endpoint={ep}
+              templateId={savedFlowId}
+              onChange={(updates) => updateEndpoint(ep.id, updates)}
+              onRemove={() => removeEndpoint(ep.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      {endpoints.length === 0 && (
+        <div className="px-4 py-6 text-center">
+          <p className="text-xs text-gray-400">
+            Send flow events to external systems (Zapier, CRMs, internal tools).
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const EVENT_LABELS: { key: keyof WebhookEventConfig; label: string }[] = [
+  { key: 'flowStarted', label: 'Flow started' },
+  { key: 'stepCompleted', label: 'Step completed' },
+  { key: 'flowCompleted', label: 'Flow completed' },
+  { key: 'flowCancelled', label: 'Flow cancelled' },
+  { key: 'stepOverdue', label: 'Step overdue' },
+  { key: 'stepEscalated', label: 'Step escalated' },
+  { key: 'chatMessage', label: 'Chat message' },
+];
+
+function WebhookEndpointRow({
+  endpoint,
+  templateId,
+  onChange,
+  onRemove,
+}: {
+  endpoint: WebhookEndpointConfig;
+  templateId: string | null;
+  onChange: (updates: Partial<WebhookEndpointConfig>) => void;
+  onRemove: () => void;
+}) {
+  const [showSecret, setShowSecret] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; status: number; message: string } | null>(null);
+  const [isTesting, setIsTesting] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleTest = async () => {
+    if (!templateId || !endpoint.url) return;
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch(`/api/templates/${templateId}/test-webhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: endpoint.url, secret: endpoint.secret }),
+      });
+      const data = await res.json();
+      setTestResult({
+        success: data.success,
+        status: data.data?.status || 0,
+        message: data.success ? `HTTP ${data.data?.status}` : (data.data?.body || 'Failed'),
+      });
+    } catch (err) {
+      setTestResult({ success: false, status: 0, message: (err as Error).message });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const handleCopySecret = () => {
+    navigator.clipboard.writeText(endpoint.secret);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="px-4 py-3 space-y-3">
+      {/* Row 1: Toggle, Label, URL, Test, Delete */}
+      <div className="flex items-center gap-2">
+        <Toggle checked={endpoint.enabled} onChange={(v) => onChange({ enabled: v })} />
+        <input
+          type="text"
+          value={endpoint.label}
+          onChange={(e) => onChange({ label: e.target.value })}
+          placeholder="Label (e.g. Zapier)"
+          className="w-28 px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        />
+        <input
+          type="url"
+          value={endpoint.url}
+          onChange={(e) => onChange({ url: e.target.value })}
+          placeholder="https://hooks.example.com/..."
+          className="flex-1 px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent font-mono text-xs"
+        />
+        <button
+          onClick={handleTest}
+          disabled={isTesting || !endpoint.url || !templateId}
+          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-violet-600 hover:bg-violet-50 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          title="Send a test webhook"
+        >
+          <FlaskConical className="w-3.5 h-3.5" />
+          {isTesting ? '...' : 'Test'}
+        </button>
+        <button
+          onClick={onRemove}
+          className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
+          title="Remove endpoint"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Row 2: Secret */}
+      <div className="flex items-center gap-2 ml-11">
+        <span className="text-xs text-gray-500 shrink-0">Secret:</span>
+        <code className="flex-1 px-2 py-0.5 text-xs bg-gray-50 border border-gray-200 rounded font-mono truncate">
+          {showSecret ? endpoint.secret : '\u2022'.repeat(20)}
+        </code>
+        <button
+          onClick={() => setShowSecret(!showSecret)}
+          className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+          title={showSecret ? 'Hide secret' : 'Reveal secret'}
+        >
+          {showSecret ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+        </button>
+        <button
+          onClick={handleCopySecret}
+          className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+          title="Copy secret"
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+
+      {/* Row 3: Events */}
+      <div className="ml-11">
+        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Events</label>
+        <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+          {EVENT_LABELS.map(({ key, label }) => (
+            <label key={key} className="flex items-center gap-1.5 text-xs text-gray-700">
+              <input
+                type="checkbox"
+                checked={endpoint.events[key]}
+                onChange={(e) =>
+                  onChange({ events: { ...endpoint.events, [key]: e.target.checked } })
+                }
+                className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Test result */}
+      {testResult && (
+        <div className={`ml-11 flex items-center gap-1.5 text-xs ${testResult.success ? 'text-green-600' : 'text-red-600'}`}>
+          {testResult.success ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+          {testResult.success ? 'Test passed' : `Failed: ${testResult.message}`}
+        </div>
+      )}
     </div>
   );
 }

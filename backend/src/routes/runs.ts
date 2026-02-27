@@ -10,7 +10,7 @@ import { db, flows, flowRuns, stepExecutions, users, organizations, contacts, ma
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
-import { onStepActivated, onStepCompleted, onFlowCompleted, onFlowCancelled, updateFlowActivity, computeFlowDueAt } from '../services/execution.js';
+import { onStepActivated, onStepCompleted, onFlowCompleted, onFlowCancelled, onFlowStarted, updateFlowActivity, computeFlowDueAt } from '../services/execution.js';
 
 const router = Router();
 
@@ -323,6 +323,9 @@ router.post(
 
     // Set initial activity timestamp
     await updateFlowActivity(newRun.id);
+
+    // Dispatch flow.started webhook
+    await onFlowStarted({ id: newRun.id, name: runName, organizationId: resolvedOrgId, flowId: flow.id, flow: { name: flow.name } });
 
     // Fetch the complete run with step executions
     const completeRun = await db.query.flowRuns.findFirst({

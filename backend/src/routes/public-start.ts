@@ -10,7 +10,7 @@ import { db, flows, flowRuns, stepExecutions, organizations, users } from '../db
 import { eq } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
-import { onStepActivated, updateFlowActivity } from '../services/execution.js';
+import { onStepActivated, onFlowStarted, updateFlowActivity } from '../services/execution.js';
 
 const router = Router();
 
@@ -161,6 +161,9 @@ router.post(
 
     // Set initial activity timestamp
     await updateFlowActivity(newRun.id);
+
+    // Dispatch flow.started webhook
+    await onFlowStarted({ id: newRun.id, name: runName, organizationId: orgId, flowId: flow.id, flow: { name: flow.name } });
 
     // Audit: public link flow started
     logAction({

@@ -9,6 +9,7 @@
 import { db, notifications, notificationLog, userNotificationPrefs, stepExecutions, flowRuns, users, flows, contacts, magicLinks } from '../db/index.js';
 import { eq, and, gte, desc } from 'drizzle-orm';
 import * as email from './email.js';
+import { dispatchWebhooks } from './webhook.js';
 
 const EMAIL_FREQUENCY_CAP_MS = 12 * 60 * 60 * 1000; // 12 hours
 const STALLED_THRESHOLD_MS = 72 * 60 * 60 * 1000; // 72 hours
@@ -355,6 +356,23 @@ export async function notifyStepOverdue(
     flowRunId: run.id,
     stepExecutionId: stepExec.id,
   });
+
+  // Dispatch webhook
+  dispatchWebhooks({
+    flowId: run.flowId,
+    event: 'step.overdue',
+    payload: {
+      event: 'step.overdue',
+      timestamp: new Date().toISOString(),
+      flow: { id: run.flowId, name: run.flow?.name || run.name },
+      flowRun: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
+      step: { id: stepExec.stepId, name: stepExec.stepId, index: 0 },
+      metadata: {},
+    },
+    orgId: run.organizationId,
+    flowRunId: run.id,
+    stepExecId: stepExec.id,
+  }).catch((err) => console.error('[Webhook] step.overdue dispatch error:', err));
 }
 
 /**
@@ -409,6 +427,23 @@ export async function notifyEscalation(
       status: 'SENT',
     });
   }
+
+  // Dispatch webhook
+  dispatchWebhooks({
+    flowId: run.flowId,
+    event: 'step.escalated',
+    payload: {
+      event: 'step.escalated',
+      timestamp: new Date().toISOString(),
+      flow: { id: run.flowId, name: run.flow?.name || run.name },
+      flowRun: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
+      step: { id: stepExec.stepId, name: stepExec.stepId, index: 0 },
+      metadata: {},
+    },
+    orgId: run.organizationId,
+    flowRunId: run.id,
+    stepExecId: stepExec.id,
+  }).catch((err) => console.error('[Webhook] step.escalated dispatch error:', err));
 }
 
 /**

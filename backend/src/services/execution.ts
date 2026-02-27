@@ -15,6 +15,7 @@ import { db, stepExecutions, flowRuns } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import { scheduleReminder, scheduleOverdueCheck, scheduleEscalation, cancelStepJobs } from './scheduler.js';
 import { notifyStepCompleted, notifyFlowCompleted, notifyFlowCancelled } from './notification.js';
+import { dispatchWebhooks } from './webhook.js';
 import type { FlowNotificationSettings, StepDue, FlowDue } from '../models/workflow.js';
 import { defaultFlowNotificationSettings, migrateNotificationSettings } from '../models/workflow.js';
 
@@ -143,6 +144,23 @@ export async function onStepCompleted(
 
   // Notify coordinator that step was completed
   await notifyStepCompleted(stepExec, run);
+
+  // Dispatch webhook
+  dispatchWebhooks({
+    flowId: run.flowId,
+    event: 'step.completed',
+    payload: {
+      event: 'step.completed',
+      timestamp: new Date().toISOString(),
+      flow: { id: run.flowId, name: run.flow?.name || run.name },
+      flowRun: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
+      step: { id: stepExec.stepId, name: stepExec.stepId, index: 0 },
+      metadata: {},
+    },
+    orgId: run.organizationId,
+    flowRunId: run.id,
+    stepExecId: stepExec.id,
+  }).catch((err) => console.error('[Webhook] step.completed dispatch error:', err));
 }
 
 // ============================================================================
@@ -153,9 +171,23 @@ export async function onStepCompleted(
  * Called when a flow run is completed (all steps done).
  */
 export async function onFlowCompleted(
-  run: { id: string; name: string; organizationId: string; startedById: string; flowId: string }
+  run: { id: string; name: string; organizationId: string; startedById: string; flowId: string; flow?: { name: string } | null }
 ): Promise<void> {
   await notifyFlowCompleted(run);
+
+  dispatchWebhooks({
+    flowId: run.flowId,
+    event: 'flow.completed',
+    payload: {
+      event: 'flow.completed',
+      timestamp: new Date().toISOString(),
+      flow: { id: run.flowId, name: run.flow?.name || run.name },
+      flowRun: { id: run.id, name: run.name, status: 'COMPLETED' },
+      metadata: {},
+    },
+    orgId: run.organizationId,
+    flowRunId: run.id,
+  }).catch((err) => console.error('[Webhook] flow.completed dispatch error:', err));
 }
 
 // ============================================================================
@@ -167,7 +199,7 @@ export async function onFlowCompleted(
  * Cancels all pending jobs and notifies assignees.
  */
 export async function onFlowCancelled(
-  run: { id: string; name: string; organizationId: string; flowId: string },
+  run: { id: string; name: string; organizationId: string; flowId: string; flow?: { name: string } | null },
   stepExecIds: string[]
 ): Promise<void> {
   // Cancel all pending jobs for all steps
@@ -177,6 +209,46 @@ export async function onFlowCancelled(
 
   // Notify all active assignees
   await notifyFlowCancelled(run);
+
+  dispatchWebhooks({
+    flowId: run.flowId,
+    event: 'flow.cancelled',
+    payload: {
+      event: 'flow.cancelled',
+      timestamp: new Date().toISOString(),
+      flow: { id: run.flowId, name: run.flow?.name || run.name },
+      flowRun: { id: run.id, name: run.name, status: 'CANCELLED' },
+      metadata: {},
+    },
+    orgId: run.organizationId,
+    flowRunId: run.id,
+  }).catch((err) => console.error('[Webhook] flow.cancelled dispatch error:', err));
+}
+
+// ============================================================================
+// Flow Started (webhook-only — email/in-app handled elsewhere)
+// ============================================================================
+
+/**
+ * Called when a flow run is started.
+ * Dispatches the flow.started webhook event.
+ */
+export async function onFlowStarted(
+  run: { id: string; name: string; organizationId: string; flowId: string; flow?: { name: string } | null }
+): Promise<void> {
+  dispatchWebhooks({
+    flowId: run.flowId,
+    event: 'flow.started',
+    payload: {
+      event: 'flow.started',
+      timestamp: new Date().toISOString(),
+      flow: { id: run.flowId, name: run.flow?.name || run.name },
+      flowRun: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
+      metadata: {},
+    },
+    orgId: run.organizationId,
+    flowRunId: run.id,
+  }).catch((err) => console.error('[Webhook] flow.started dispatch error:', err));
 }
 
 // ============================================================================

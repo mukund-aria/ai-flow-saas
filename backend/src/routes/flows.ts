@@ -330,4 +330,88 @@ router.post(
   })
 );
 
+// ============================================================================
+// POST /api/templates/:id/test-webhook - Send a test webhook payload
+// ============================================================================
+
+router.post(
+  '/:id/test-webhook',
+  asyncHandler(async (req, res) => {
+    const templateId = req.params.id as string;
+    const { url, secret } = req.body as { url?: string; secret?: string };
+
+    if (!url || !secret) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'url and secret are required' },
+      });
+      return;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(url);
+    } catch {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid URL format' },
+      });
+      return;
+    }
+
+    // Get the flow template for context
+    const orgId = req.organizationId;
+    const flow = await db.query.flows.findFirst({
+      where: orgId
+        ? and(eq(flows.id, templateId), eq(flows.organizationId, orgId))
+        : eq(flows.id, templateId),
+    });
+
+    if (!flow) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow not found' },
+      });
+      return;
+    }
+
+    // Build a test payload
+    const { sendWebhook } = await import('../services/webhook.js');
+    const payload = {
+      event: 'flow.started' as const,
+      timestamp: new Date().toISOString(),
+      flow: { id: flow.id, name: flow.name },
+      flowRun: { id: 'test-run-id', name: `${flow.name} - Test`, status: 'IN_PROGRESS' },
+      metadata: { test: true },
+    };
+
+    try {
+      const result = await sendWebhook(
+        { id: 'test', label: 'Test', url, secret, enabled: true, events: {} as any, createdAt: new Date().toISOString() },
+        payload
+      );
+
+      const success = result.status >= 200 && result.status < 300;
+
+      res.json({
+        success,
+        data: {
+          status: result.status,
+          body: result.body.slice(0, 500),
+          payload,
+        },
+      });
+    } catch (err) {
+      res.json({
+        success: false,
+        data: {
+          status: 0,
+          body: (err as Error).message,
+          payload,
+        },
+      });
+    }
+  })
+);
+
 export default router;

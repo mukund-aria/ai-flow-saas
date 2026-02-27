@@ -18,7 +18,8 @@ export type NotificationJobType =
   | 'check-overdue'
   | 'escalation'
   | 'check-stalled'
-  | 'daily-digest';
+  | 'daily-digest'
+  | 'send-webhook';
 
 export interface NotificationJobData {
   type: NotificationJobType;
@@ -26,6 +27,7 @@ export interface NotificationJobData {
   flowRunId?: string;
   userId?: string;
   organizationId?: string;
+  webhookData?: import('./webhook.js').WebhookJobData;
 }
 
 // ============================================================================
@@ -129,6 +131,28 @@ export async function cancelStepJobs(stepExecutionId: string): Promise<void> {
       // Job may have already been processed or removed
     }
   }
+}
+
+/**
+ * Enqueue a webhook delivery job.
+ * Falls back to synchronous dispatch if Redis/BullMQ is unavailable.
+ */
+export async function addWebhookJob(data: import('./webhook.js').WebhookJobData): Promise<void> {
+  if (!notificationQueue) {
+    // No Redis — caller should handle sync fallback
+    throw new Error('Queue not available');
+  }
+
+  await notificationQueue.add(
+    'send-webhook',
+    { type: 'send-webhook', webhookData: data, organizationId: data.organizationId },
+    {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 },
+      removeOnComplete: true,
+      removeOnFail: 100,
+    }
+  );
 }
 
 /**
@@ -236,6 +260,11 @@ async function processNotificationJob(job: Job<NotificationJobData>): Promise<vo
     case 'daily-digest':
       await handleDailyDigest();
       break;
+    case 'send-webhook': {
+      const { handleWebhookJob } = await import('./webhook.js');
+      if (job.data.webhookData) await handleWebhookJob(job.data.webhookData);
+      break;
+    }
     default:
       console.warn(`[Scheduler] Unknown job type: ${type}`);
   }
