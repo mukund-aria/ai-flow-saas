@@ -20,7 +20,9 @@ const ZOOM_STEP = 0.1;
 export function WorkflowPanel({ editMode = false, onStartConfigClick }: WorkflowPanelProps) {
   const workflow = useWorkflowStore((state) => state.workflow);
   const [zoomLevel, setZoomLevel] = useState(1.0);
+  const [isPanning, setIsPanning] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const panStartRef = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null);
 
   const zoomIn = useCallback(() => {
     setZoomLevel((prev) => Math.min(MAX_ZOOM, Math.round((prev + ZOOM_STEP) * 10) / 10));
@@ -32,6 +34,66 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick }: Workflow
 
   const resetZoom = useCallback(() => {
     setZoomLevel(1.0);
+  }, []);
+
+  const fitToView = useCallback(() => {
+    setZoomLevel(1.0);
+    // Scroll to top of the scroll container
+    const container = containerRef.current;
+    if (container) {
+      const scrollEl = container.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+      if (scrollEl) {
+        scrollEl.scrollTop = 0;
+        scrollEl.scrollLeft = 0;
+      }
+    }
+  }, []);
+
+  // Get the scroll viewport element
+  const getScrollViewport = useCallback((): HTMLElement | null => {
+    const container = containerRef.current;
+    if (!container) return null;
+    return container.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+  }, []);
+
+  // Pan handlers — click-drag on canvas background or middle-mouse
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    const isMiddleButton = e.button === 1;
+    const target = e.target as HTMLElement;
+    const isBackground = target.hasAttribute('data-canvas-bg') || target === e.currentTarget;
+
+    if (isMiddleButton || (e.button === 0 && isBackground)) {
+      const scrollEl = getScrollViewport();
+      if (!scrollEl) return;
+      e.preventDefault();
+      setIsPanning(true);
+      panStartRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        scrollLeft: scrollEl.scrollLeft,
+        scrollTop: scrollEl.scrollTop,
+      };
+    }
+  }, [getScrollViewport]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanning || !panStartRef.current) return;
+    const scrollEl = getScrollViewport();
+    if (!scrollEl) return;
+    const dx = e.clientX - panStartRef.current.x;
+    const dy = e.clientY - panStartRef.current.y;
+    scrollEl.scrollLeft = panStartRef.current.scrollLeft - dx;
+    scrollEl.scrollTop = panStartRef.current.scrollTop - dy;
+  }, [isPanning, getScrollViewport]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+    panStartRef.current = null;
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsPanning(false);
+    panStartRef.current = null;
   }, []);
 
   // Ctrl/Cmd + scroll wheel for zoom
@@ -83,7 +145,7 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick }: Workflow
       </button>
       <div className="w-px h-4 bg-gray-200 mx-0.5" />
       <button
-        onClick={resetZoom}
+        onClick={fitToView}
         className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 text-gray-600 transition-colors"
         title="Fit to view"
       >
@@ -100,10 +162,19 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick }: Workflow
   // so the canvas is just the step content
   if (editMode) {
     return (
-      <div ref={containerRef} className="flex flex-col h-full relative">
-        <ScrollArea className="flex-1 bg-dotted-grid min-h-full">
+      <div
+        ref={containerRef}
+        className="flex flex-col h-full relative"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        style={{ cursor: isPanning ? 'grabbing' : undefined }}
+      >
+        <ScrollArea className="flex-1 bg-dotted-grid min-h-full overflow-x-auto">
           <div
-            className="p-6 max-w-3xl mx-auto"
+            data-canvas-bg
+            className="p-6 flex flex-col items-center min-w-fit"
             style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}
           >
             {workflow.steps.length === 0 ? (
@@ -133,11 +204,20 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick }: Workflow
 
   // Read-only mode (AI chat preview) -- keep header for context
   return (
-    <div ref={containerRef} className="flex flex-col h-full relative">
+    <div
+      ref={containerRef}
+      className="flex flex-col h-full relative"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      style={{ cursor: isPanning ? 'grabbing' : undefined }}
+    >
       <WorkflowHeader workflow={workflow} editMode={false} />
-      <ScrollArea className="flex-1 bg-dotted-grid min-h-full">
+      <ScrollArea className="flex-1 bg-dotted-grid min-h-full overflow-x-auto">
         <div
-          className="p-4 max-w-4xl mx-auto"
+          data-canvas-bg
+          className="p-4 flex flex-col items-center min-w-fit"
           style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}
         >
           {/* Flow Start Card */}

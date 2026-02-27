@@ -158,28 +158,36 @@ function MilestoneContainer({
             {/* Branch Layout for steps with paths/outcomes */}
             {isBranchStep ? (
               <div>
+                <div className="flex justify-center">
+                  <StepCard
+                    step={step}
+                    index={globalIndex}
+                    assigneeIndex={assigneeIndex}
+                    editMode={editMode}
+                    assigneePlaceholders={assigneePlaceholders}
+                    stepNumber={String(globalIndex + 1)}
+                  />
+                </div>
+                <BranchLayout
+                  step={step}
+                  stepIndex={globalIndex}
+                  assigneeIndices={assigneeIndices}
+                  allSteps={workflow.steps}
+                  editMode={editMode}
+                  parentNumber={String(globalIndex + 1)}
+                />
+              </div>
+            ) : (
+              <div className="flex justify-center">
                 <StepCard
                   step={step}
                   index={globalIndex}
                   assigneeIndex={assigneeIndex}
                   editMode={editMode}
                   assigneePlaceholders={assigneePlaceholders}
-                />
-                <BranchLayout
-                  step={step}
-                  stepIndex={globalIndex}
-                  assigneeIndices={assigneeIndices}
-                  allSteps={workflow.steps}
+                  stepNumber={String(globalIndex + 1)}
                 />
               </div>
-            ) : (
-              <StepCard
-                step={step}
-                index={globalIndex}
-                assigneeIndex={assigneeIndex}
-                editMode={editMode}
-                assigneePlaceholders={assigneePlaceholders}
-              />
             )}
           </div>
         );

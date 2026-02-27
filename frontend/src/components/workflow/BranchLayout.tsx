@@ -1,5 +1,6 @@
-import { Plus } from 'lucide-react';
+import { Plus, GitFork, LayoutGrid, GitMerge } from 'lucide-react';
 import { StepConnector } from './StepConnector';
+import { StepCard } from './StepCard';
 import { cn } from '@/lib/utils';
 import type { Step, BranchPath, DecisionOutcome } from '@/types';
 
@@ -8,6 +9,12 @@ interface BranchLayoutProps {
   stepIndex: number;
   assigneeIndices: Map<string, number>;
   allSteps?: Step[];
+  /** Nesting depth for step numbering (0 = top level) */
+  depth?: number;
+  /** Parent step number prefix, e.g. "9" so children become "9.1", "9.2" */
+  parentNumber?: string;
+  editMode?: boolean;
+  assigneePlaceholders?: Step['config']['assignee'][];
 }
 
 type PathOrOutcome = BranchPath | DecisionOutcome;
@@ -16,10 +23,28 @@ function getPathId(path: PathOrOutcome): string {
   return 'pathId' in path ? path.pathId : path.outcomeId;
 }
 
-export function BranchLayout({ step, stepIndex, assigneeIndices, allSteps }: BranchLayoutProps) {
+function hasBranchesOrOutcomes(step: Step): boolean {
+  const hasPaths = !!(step.config?.paths && Array.isArray(step.config.paths) && step.config.paths.length > 0);
+  const hasOutcomes = !!(step.config?.outcomes && Array.isArray(step.config.outcomes) && step.config.outcomes.length > 0);
+  return hasPaths || hasOutcomes;
+}
+
+const MAX_DEPTH = 3;
+
+export function BranchLayout({
+  step,
+  stepIndex,
+  assigneeIndices,
+  allSteps,
+  depth = 0,
+  parentNumber,
+  editMode,
+  assigneePlaceholders,
+}: BranchLayoutProps) {
   const paths = step.config?.paths || step.config?.outcomes || [];
-  const isDecision = step.type === 'DECISION';
   const isParallel = step.type === 'PARALLEL_BRANCH';
+  const isDecision = step.type === 'DECISION';
+  const baseNumber = parentNumber || String(stepIndex + 1);
 
   if (paths.length === 0) {
     return null;
@@ -30,15 +55,19 @@ export function BranchLayout({ step, stepIndex, assigneeIndices, allSteps }: Bra
       {/* Branch Split Node */}
       <div className="flex flex-col items-center">
         {/* Diamond connector */}
-        <div className="w-0.5 h-4 bg-gray-300" />
+        <div className="w-[2px] h-4 bg-gray-300" />
         <div className="relative">
           <div
             className={cn(
-              'w-8 h-8 rotate-45 border-2 border-dashed flex items-center justify-center',
+              'w-10 h-10 rotate-45 border-2 border-dashed flex items-center justify-center shadow-sm',
               isParallel ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-white'
             )}
           >
-            <Plus className="w-3 h-3 -rotate-45 text-gray-400" />
+            {step.type === 'SINGLE_CHOICE_BRANCH' ? (
+              <GitFork className="w-4 h-4 -rotate-45 text-gray-500" />
+            ) : (
+              <LayoutGrid className="w-4 h-4 -rotate-45 text-gray-500" />
+            )}
           </div>
         </div>
       </div>
@@ -47,7 +76,7 @@ export function BranchLayout({ step, stepIndex, assigneeIndices, allSteps }: Bra
       <div className="relative flex justify-center">
         {/* Horizontal connecting line */}
         <div
-          className="absolute top-0 h-0.5 bg-gray-300"
+          className="absolute top-0 h-[2px] bg-gray-300"
           style={{
             left: `${100 / (paths.length * 2)}%`,
             right: `${100 / (paths.length * 2)}%`,
@@ -61,12 +90,12 @@ export function BranchLayout({ step, stepIndex, assigneeIndices, allSteps }: Bra
             const pathId = getPathId(path);
 
             return (
-              <div key={pathId} className="flex flex-col items-center min-w-[200px]">
+              <div key={pathId} className="flex flex-col items-center min-w-[280px]">
                 {/* Vertical line from horizontal connector */}
-                <div className="w-0.5 h-6 bg-gray-300" />
+                <div className="w-[2px] h-8 bg-gray-300" />
 
                 {/* Branch Label */}
-                <div className="text-xs text-gray-500 font-medium mb-2">
+                <div className="text-gray-600 text-xs font-medium px-2 py-0.5 mb-2">
                   {path.label || `${isDecision ? 'Outcome' : 'Branch'} ${pathIndex + 1}`}
                 </div>
 
@@ -81,8 +110,8 @@ export function BranchLayout({ step, stepIndex, assigneeIndices, allSteps }: Bra
                     ? assigneeIndices.get(nestedStep.config.assignee) || 0
                     : 0;
 
-                  // Calculate step number as "parentIndex.nestedIndex"
-                  const stepNumber = `${stepIndex + 1}.${nestedIndex + 1}`;
+                  // Build nested step number: "9.1", "9.1.1", etc.
+                  const nestedStepNumber = `${baseNumber}.${nestedIndex + 1}`;
 
                   // GoTo — render as compact gold circle matching target label
                   if (nestedStep.type === 'GOTO') {
@@ -114,17 +143,37 @@ export function BranchLayout({ step, stepIndex, assigneeIndices, allSteps }: Bra
                     );
                   }
 
+                  const nestedHasBranches = hasBranchesOrOutcomes(nestedStep);
+
                   return (
                     <div key={nestedStep.stepId} className="w-full">
                       {/* Connector before step */}
                       {nestedIndex > 0 && <StepConnector showAddButton />}
 
-                      {/* Step Card with branch-specific numbering */}
-                      <BranchStepCard
-                        step={nestedStep}
-                        stepNumber={stepNumber}
-                        assigneeIndex={assigneeIndex}
-                      />
+                      {/* Step Card — same component as main steps */}
+                      <div className="flex justify-center">
+                        <StepCard
+                          step={nestedStep}
+                          index={nestedIndex}
+                          assigneeIndex={assigneeIndex}
+                          stepNumber={nestedStepNumber}
+                          editMode={editMode}
+                        />
+                      </div>
+
+                      {/* Recursive: if this nested step has branches, render them */}
+                      {nestedHasBranches && depth < MAX_DEPTH && (
+                        <BranchLayout
+                          step={nestedStep}
+                          stepIndex={nestedIndex}
+                          assigneeIndices={assigneeIndices}
+                          allSteps={allSteps}
+                          depth={depth + 1}
+                          parentNumber={nestedStepNumber}
+                          editMode={editMode}
+                          assigneePlaceholders={assigneePlaceholders}
+                        />
+                      )}
                     </div>
                   );
                 })}
@@ -134,7 +183,7 @@ export function BranchLayout({ step, stepIndex, assigneeIndices, allSteps }: Bra
 
                 {/* Empty state for branches with no steps */}
                 {pathSteps.length === 0 && (
-                  <div className="w-full p-4 border-2 border-dashed border-gray-200 rounded-lg text-center text-xs text-gray-400">
+                  <div className="w-full p-4 border-2 border-dashed border-gray-300 bg-white/80 rounded-lg py-6 text-center text-xs text-gray-400">
                     No steps yet
                   </div>
                 )}
@@ -148,101 +197,13 @@ export function BranchLayout({ step, stepIndex, assigneeIndices, allSteps }: Bra
       {isParallel && paths.length > 0 && (
         <div className="flex flex-col items-center mt-2">
           <div
-            className="w-8 h-8 rotate-45 border-2 border-dashed border-green-400 bg-green-50 flex items-center justify-center"
+            className="w-10 h-10 rotate-45 border-2 border-dashed border-green-400 bg-green-50 flex items-center justify-center shadow-sm"
           >
-            <Plus className="w-3 h-3 -rotate-45 text-green-500" />
+            <GitMerge className="w-4 h-4 -rotate-45 text-green-500" />
           </div>
-          <div className="w-0.5 h-4 bg-gray-300" />
+          <div className="w-[2px] h-4 bg-gray-300" />
         </div>
       )}
     </div>
-  );
-}
-
-// Simplified step card for branch steps with custom numbering
-interface BranchStepCardProps {
-  step: Step;
-  stepNumber: string;
-  assigneeIndex: number;
-}
-
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { StepIcon } from './StepIcon';
-import { GripVertical } from 'lucide-react';
-import { STEP_TYPE_META, getRoleColor, getRoleInitials } from '@/types';
-
-function BranchStepCard({ step, stepNumber, assigneeIndex }: BranchStepCardProps) {
-  const meta = STEP_TYPE_META[step.type] || {
-    label: step.type,
-    color: '#6b7280',
-    category: 'unknown',
-  };
-
-  return (
-    <Card
-      className={cn(
-        'relative bg-white shadow-sm hover:shadow-md transition-shadow',
-        'border-l-4'
-      )}
-      style={{ borderLeftColor: meta.color }}
-    >
-      <div className="p-3">
-        <div className="flex items-start gap-2">
-          {/* Drag Handle */}
-          <div className="flex items-center mt-1 text-gray-300 cursor-grab active:cursor-grabbing">
-            <GripVertical className="w-4 h-4" />
-          </div>
-
-          {/* Icon */}
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-            style={{ backgroundColor: `${meta.color}15` }}
-          >
-            <StepIcon type={step.type} className="w-3.5 h-3.5" style={{ color: meta.color }} />
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="text-[10px] shrink-0"
-                style={{ borderColor: meta.color, color: meta.color }}
-              >
-                {meta.label}
-              </Badge>
-              <span className="text-xs text-gray-400">Step {stepNumber}</span>
-            </div>
-
-            <h4 className="font-medium text-gray-900 mt-1 text-sm truncate">
-              {step.config.name}
-            </h4>
-
-            {/* Assignee */}
-            {step.config.assignee && (
-              <div className="flex items-center gap-1 mt-1.5">
-                <span className="text-[10px] text-gray-500">Assigned to:</span>
-                <div
-                  className="flex items-center gap-1 px-1 py-0.5 rounded-full text-[10px]"
-                  style={{
-                    backgroundColor: `${getRoleColor(assigneeIndex)}15`,
-                    color: getRoleColor(assigneeIndex),
-                  }}
-                >
-                  <span
-                    className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
-                    style={{ backgroundColor: getRoleColor(assigneeIndex) }}
-                  >
-                    {getRoleInitials(step.config.assignee)}
-                  </span>
-                  <span className="font-medium">{step.config.assignee}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </Card>
   );
 }
