@@ -217,7 +217,7 @@ export function Phase2Card({
           className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100/50 transition-colors"
           onClick={() => setIsSkippedExpanded(!isSkippedExpanded)}
         >
-          <div className="flex items-center gap-2 text-gray-500 text-base">
+          <div className="flex items-center gap-2 text-gray-500 text-sm">
             <SkipForward className="w-4 h-4" />
             <span>Enhancement options skipped</span>
           </div>
@@ -238,12 +238,12 @@ export function Phase2Card({
               {PHASE2_OPTIONS.map((option) => (
                 <div
                   key={option.id}
-                  className="flex items-center gap-3 p-2 rounded-lg bg-gray-100/50"
+                  className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-gray-100/50"
                 >
                   <div className="text-gray-400 shrink-0">{option.icon}</div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base text-gray-500">{option.label}</p>
-                    <p className="text-sm text-gray-400 truncate">{option.description}</p>
+                    <p className="text-sm text-gray-500">{option.label}</p>
+                    <p className="text-xs text-gray-400 truncate">{option.description}</p>
                   </div>
                 </div>
               ))}
@@ -261,12 +261,12 @@ export function Phase2Card({
     <Card className="border-2 border-amber-200 bg-white max-w-lg shadow-lg shadow-amber-100/30 rounded-2xl overflow-hidden">
       <CardHeader className="pb-3 pt-0 px-0">
         <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 border-b border-amber-100 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
-              <Lightbulb className="w-4.5 h-4.5 text-white" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
+              <Lightbulb className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 text-base">What's next?</h3>
+              <h3 className="font-semibold text-gray-900 text-sm">What's next?</h3>
               <p className="text-xs text-amber-600 font-medium">Optional enhancements for {workflowName}</p>
             </div>
           </div>
@@ -282,7 +282,7 @@ export function Phase2Card({
             <div
               key={option.id}
               className={cn(
-                'rounded-xl border transition-all',
+                'rounded-lg border transition-all',
                 isSelected
                   ? 'border-amber-300 bg-amber-50/30 shadow-sm'
                   : 'border-gray-200 bg-gray-50/30 hover:bg-gray-50 hover:border-gray-300'
@@ -290,7 +290,7 @@ export function Phase2Card({
             >
               {/* Option header */}
               <div
-                className="flex items-center gap-3 p-3 cursor-pointer"
+                className="flex items-center gap-2.5 px-3 py-2 cursor-pointer"
                 onClick={() => toggleOption(option.id)}
               >
                 <Checkbox
@@ -302,10 +302,10 @@ export function Phase2Card({
                   {option.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={cn('text-base font-medium', isSelected ? 'text-gray-900' : 'text-gray-700')}>
+                  <p className={cn('text-sm font-medium', isSelected ? 'text-gray-900' : 'text-gray-700')}>
                     {option.label}
                   </p>
-                  <p className="text-sm text-gray-500 truncate">{option.description}</p>
+                  <p className="text-xs text-gray-500 truncate">{option.description}</p>
                 </div>
                 {isSelected && option.hasDetails && (
                   <button
