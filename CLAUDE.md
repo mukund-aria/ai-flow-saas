@@ -194,6 +194,22 @@ The AI builder (original AI Flow Copilot) is integrated into the Home page and F
 
 ---
 
+## AI Builder Design Principles
+
+1. **Quality over speed** — Never compromise AI output quality for performance. Use infrastructure-level optimizations (caching, streaming) not content-level shortcuts (prompt trimming, model downgrading).
+
+2. **Generalized architecture** — No hardcoded heuristics for request type detection or response routing. The AI always gets the full context and decides how to respond. Step type configs, constraints, and playbook are data-driven from YAML files.
+
+3. **Data-driven configuration** — Step types, constraints, and consultation behavior are loaded from YAML config files (`backend/config/`), not hardcoded. Adding a new step type means adding a YAML file, not changing code.
+
+4. **Session-level caching** — Use Anthropic API's `cache_control` to cache the static system prompt across turns in a session. Dynamic context (workflow state) is always fresh.
+
+5. **Scalable prompt architecture** — The system prompt is assembled from modular sections (role, constraints, step types, consultation, defaults). Each section is independently maintainable.
+
+6. **Streaming-first** — All AI responses use SSE streaming for perceived speed. The UI shows thinking indicators while the model processes.
+
+---
+
 ## Key Decisions
 
 | Decision | Choice | Rationale |

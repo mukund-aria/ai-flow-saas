@@ -4,7 +4,7 @@ import { FormFieldsBuilder } from './FormFieldsBuilder';
 import { PDFFormConfigEditor } from './PDFFormConfigEditor';
 import { StepReminderOverride } from './StepReminderOverride';
 import { DDRTextInput } from './DDRTextInput';
-import { Plus, X, GripVertical, Sparkles, ChevronUp, ChevronDown, Info } from 'lucide-react';
+import { Plus, X, GripVertical, Sparkles, ChevronUp, ChevronDown, Info, ExternalLink } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type {
   Step, StepConfig, AssigneePlaceholder, FormField, BranchPath, DecisionOutcome,
@@ -1665,6 +1665,19 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
       {/* Form Fields Builder */}
       {step.type === 'FORM' && (
         <div className="mb-4 pt-3 border-t border-gray-100">
+          {/* Prominent Form Builder button */}
+          <button
+            onClick={() => {
+              const templateId = useWorkflowStore.getState().savedFlowId;
+              if (templateId) {
+                window.location.href = `/templates/${templateId}/form/${step.stepId}`;
+              }
+            }}
+            className="w-full mb-3 flex items-center justify-center gap-2 px-4 py-2.5 bg-violet-50 border border-violet-200 rounded-lg text-violet-700 font-medium text-sm hover:bg-violet-100 transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Open Form Builder
+          </button>
           <FormFieldsBuilder fields={formFields} onChange={setFormFields} />
         </div>
       )}

@@ -32,6 +32,8 @@ import {
   PenTool,
   FileCheck,
   Plug,
+  ArrowRightLeft,
+  Workflow,
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -42,8 +44,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import type { PendingPlan, Step, TriggerConfig, EditOperation, Milestone } from '@/types';
-import { getRoleColor, getRoleInitials } from '@/types';
+import type { PendingPlan, Step, TriggerConfig, EditOperation, Milestone, StepType } from '@/types';
+import { getRoleColor, getRoleInitials, STEP_TYPE_META } from '@/types';
 
 // ============================================================================
 // Change Status Helpers
@@ -252,15 +254,17 @@ function MilestoneGroup({
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-2 mb-3 py-2 px-3 bg-gray-50 rounded-xl border border-gray-100">
-        <Layers className="w-4 h-4 text-gray-500" />
-        <span className="text-base font-semibold text-gray-700">{milestone.name}</span>
-        <span className="text-sm text-gray-500 bg-white px-2 py-0.5 rounded-full border border-gray-200">
+      <div className="flex items-center gap-2.5 mb-3 py-2.5 px-3.5 bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl border border-violet-100/60">
+        <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center">
+          <Layers className="w-3.5 h-3.5 text-violet-600" />
+        </div>
+        <span className="text-sm font-semibold text-gray-800">{milestone.name}</span>
+        <span className="text-xs text-violet-600 bg-white px-2 py-0.5 rounded-full border border-violet-200/60 font-medium">
           {steps.length} step{steps.length !== 1 ? 's' : ''}
         </span>
       </div>
 
-      <div className="ml-4 pl-4 border-l border-gray-200 space-y-2">
+      <div className="ml-4 pl-4 border-l-2 border-violet-200/60 space-y-2">
         {stepsToRender.length > 0 ? (
           stepsToRender.map((step, index) => {
             const globalIndex = globalStartIndex + index;
@@ -586,31 +590,125 @@ export function PlanPreviewCard({ plan, onApprove, onRequestChanges, isPublished
     }
   };
 
+  // Count milestones for stats
+  const milestoneCount = milestones.length;
+
+  // Categorize steps for stats
+  const automationCount = steps.filter(s => {
+    const meta = STEP_TYPE_META[s?.type as StepType];
+    return meta?.category === 'automation';
+  }).length;
+
   return (
     <Card className={cn(
-      "w-full max-w-lg shadow-lg rounded-2xl overflow-hidden",
+      "w-full max-w-lg rounded-2xl overflow-hidden transition-all",
       isPublished
-        ? "border border-green-200 bg-white"
-        : "border border-gray-200 bg-white"
+        ? "border-2 border-green-200 bg-white shadow-lg shadow-green-100/50"
+        : isEdit
+          ? "border-2 border-amber-200 bg-white shadow-lg shadow-amber-100/50"
+          : "border-2 border-violet-200 bg-white shadow-lg shadow-violet-100/50"
     )}>
-      {/* Header - minimal: name + badge */}
-      <CardHeader className="pb-3 border-b border-gray-100 bg-gray-50/50">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-gray-900 text-lg">{workflow?.name || 'New Workflow'}</h3>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {steps.length} steps • {assignees.length} roles
-            </p>
+      {/* Header - gradient with workflow name + badge */}
+      <CardHeader className={cn(
+        "pb-4 border-b",
+        isPublished
+          ? "bg-gradient-to-br from-green-50 to-emerald-50/50 border-green-100"
+          : isEdit
+            ? "bg-gradient-to-br from-amber-50 to-orange-50/50 border-amber-100"
+            : "bg-gradient-to-br from-violet-50 to-indigo-50/50 border-violet-100"
+      )}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className={cn(
+              "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+              isPublished
+                ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                : isEdit
+                  ? "bg-gradient-to-br from-amber-500 to-orange-600"
+                  : "bg-gradient-to-br from-violet-500 to-indigo-600"
+            )}>
+              {isPublished
+                ? <CheckCircle className="w-5 h-5 text-white" />
+                : isEdit
+                  ? <Pencil className="w-5 h-5 text-white" />
+                  : <Workflow className="w-5 h-5 text-white" />
+              }
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-gray-900 text-lg leading-tight truncate">
+                {workflow?.name || 'New Workflow'}
+              </h3>
+              {isPublished ? (
+                <p className="text-sm text-green-600 font-medium mt-0.5">
+                  {isEdit ? 'Changes applied successfully' : 'Workflow created successfully'}
+                </p>
+              ) : (
+                <p className={cn(
+                  "text-sm font-medium mt-0.5",
+                  isEdit ? "text-amber-600" : "text-violet-600"
+                )}>
+                  {isEdit ? 'Review proposed changes' : 'Review workflow design'}
+                </p>
+              )}
+            </div>
           </div>
           {isPublished ? (
-            <Badge variant="default" className="shrink-0 bg-green-600 text-white rounded-full px-3">
+            <Badge variant="default" className="shrink-0 bg-green-600 text-white rounded-full px-3 shadow-sm">
               <CheckCircle className="w-3 h-3 mr-1" />
               {isEdit ? 'Updated' : 'Published'}
             </Badge>
           ) : (
-            <Badge variant="outline" className="shrink-0 text-gray-600 bg-white rounded-full px-3">
-              {isEdit ? 'Edit Preview' : 'Preview'}
+            <Badge variant="outline" className={cn(
+              "shrink-0 rounded-full px-3",
+              isEdit
+                ? "text-amber-700 border-amber-300 bg-amber-50"
+                : "text-violet-700 border-violet-300 bg-violet-50"
+            )}>
+              {isEdit ? 'Edit' : 'New'}
             </Badge>
+          )}
+        </div>
+
+        {/* Stats bar */}
+        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-200/50">
+          <div className="flex items-center gap-1.5 text-sm text-gray-600">
+            <div className="w-5 h-5 rounded-md bg-white/80 flex items-center justify-center border border-gray-200/60">
+              <Layers className="w-3 h-3 text-gray-500" />
+            </div>
+            <span className="font-medium">{steps.length}</span>
+            <span className="text-gray-400">steps</span>
+          </div>
+          <div className="w-px h-4 bg-gray-200/60" />
+          <div className="flex items-center gap-1.5 text-sm text-gray-600">
+            <div className="w-5 h-5 rounded-md bg-white/80 flex items-center justify-center border border-gray-200/60">
+              <Users className="w-3 h-3 text-gray-500" />
+            </div>
+            <span className="font-medium">{assignees.length}</span>
+            <span className="text-gray-400">{assignees.length === 1 ? 'role' : 'roles'}</span>
+          </div>
+          {milestoneCount > 0 && (
+            <>
+              <div className="w-px h-4 bg-gray-200/60" />
+              <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                <div className="w-5 h-5 rounded-md bg-white/80 flex items-center justify-center border border-gray-200/60">
+                  <Layers className="w-3 h-3 text-violet-500" />
+                </div>
+                <span className="font-medium">{milestoneCount}</span>
+                <span className="text-gray-400">{milestoneCount === 1 ? 'phase' : 'phases'}</span>
+              </div>
+            </>
+          )}
+          {automationCount > 0 && (
+            <>
+              <div className="w-px h-4 bg-gray-200/60" />
+              <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                <div className="w-5 h-5 rounded-md bg-white/80 flex items-center justify-center border border-gray-200/60">
+                  <Zap className="w-3 h-3 text-amber-500" />
+                </div>
+                <span className="font-medium">{automationCount}</span>
+                <span className="text-gray-400">auto</span>
+              </div>
+            </>
           )}
         </div>
       </CardHeader>
@@ -629,7 +727,12 @@ export function PlanPreviewCard({ plan, onApprove, onRequestChanges, isPublished
         {showExpandButton && (
           <Button
             variant="outline"
-            className="w-full mt-2 rounded-full border-gray-200 text-gray-600 hover:bg-gray-50"
+            className={cn(
+              "w-full mt-2 rounded-full text-sm font-medium transition-all",
+              isEdit
+                ? "border-amber-200 text-amber-700 hover:bg-amber-50 hover:border-amber-300"
+                : "border-violet-200 text-violet-700 hover:bg-violet-50 hover:border-violet-300"
+            )}
             onClick={() => setDialogOpen(true)}
           >
             <Eye className="w-4 h-4 mr-2" />
@@ -639,15 +742,17 @@ export function PlanPreviewCard({ plan, onApprove, onRequestChanges, isPublished
 
         {/* Edit Operations Summary (for edit mode) */}
         {isEdit && operations.length > 0 && (
-          <div className="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-100">
-            <p className="text-sm font-medium text-gray-600 flex items-center gap-2 mb-2">
-              <Pencil className="w-3.5 h-3.5" />
-              Changes being made:
+          <div className="mt-4 p-3.5 bg-gradient-to-br from-amber-50/80 to-orange-50/40 rounded-xl border border-amber-200/60">
+            <p className="text-sm font-semibold text-amber-800 flex items-center gap-2 mb-2.5">
+              <div className="w-5 h-5 rounded-md bg-amber-100 flex items-center justify-center">
+                <ArrowRightLeft className="w-3 h-3 text-amber-600" />
+              </div>
+              Changes being made
             </p>
-            <ul className="text-sm text-gray-600 space-y-1.5 ml-5">
+            <ul className="text-sm text-gray-700 space-y-1.5 ml-1">
               {summarizeOperations(operations, steps).map((line, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span className="text-gray-400 mt-0.5">•</span>
+                <li key={i} className="flex items-start gap-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
                   {line}
                 </li>
               ))}
@@ -660,15 +765,19 @@ export function PlanPreviewCard({ plan, onApprove, onRequestChanges, isPublished
       <CardFooter className={cn(
         "border-t p-4 flex-col gap-3",
         isPublished
-          ? "border-green-100 bg-green-50/30"
+          ? "border-green-100 bg-gradient-to-b from-green-50/50 to-green-50/20"
           : savedChangeRequest
-            ? "border-blue-100 bg-blue-50/30"
-            : "border-gray-100 bg-gray-50/30"
+            ? "border-blue-100 bg-gradient-to-b from-blue-50/50 to-blue-50/20"
+            : isEdit
+              ? "border-amber-100 bg-gradient-to-b from-amber-50/30 to-transparent"
+              : "border-violet-100 bg-gradient-to-b from-violet-50/30 to-transparent"
       )}>
         {isPublished ? (
-          <div className="flex items-center gap-2 text-green-600">
-            <CheckCircle className="w-4 h-4" />
-            <span className="text-base font-medium">
+          <div className="flex items-center gap-2 text-green-600 py-1">
+            <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+              <CheckCircle className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-sm font-medium">
               {isEdit ? 'Changes applied successfully' : 'Workflow created successfully'}
             </span>
           </div>
@@ -714,7 +823,7 @@ export function PlanPreviewCard({ plan, onApprove, onRequestChanges, isPublished
           </div>
         ) : (
           <>
-            <p className="text-sm text-gray-500 text-center w-full">
+            <p className="text-xs text-gray-500 text-center w-full">
               {isEdit
                 ? 'Apply these changes to your workflow, or request different changes'
                 : 'Approve to create this workflow, or request changes'}
@@ -732,7 +841,12 @@ export function PlanPreviewCard({ plan, onApprove, onRequestChanges, isPublished
               <Button
                 size="sm"
                 onClick={onApprove}
-                className="flex-1 bg-gray-900 hover:bg-gray-800 text-white rounded-full"
+                className={cn(
+                  "flex-1 text-white rounded-full shadow-md transition-all hover:shadow-lg",
+                  isEdit
+                    ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
+                    : "bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+                )}
               >
                 <Check className="w-4 h-4 mr-1.5" />
                 {isEdit ? 'Apply Changes' : 'Proceed & Create!'}
@@ -745,13 +859,48 @@ export function PlanPreviewCard({ plan, onApprove, onRequestChanges, isPublished
       {/* Expanded view dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-          <DialogHeader className="border-b border-gray-100 pb-4 shrink-0">
-            <DialogTitle className="text-xl font-semibold text-gray-900">
-              {workflow?.name || 'New Workflow'}
-            </DialogTitle>
-            <p className="text-sm text-gray-500 mt-1">
-              {totalSteps} steps • {assignees.length} roles
-            </p>
+          <DialogHeader className={cn(
+            "border-b pb-4 shrink-0",
+            isEdit ? "border-amber-100" : "border-violet-100"
+          )}>
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+                isEdit
+                  ? "bg-gradient-to-br from-amber-500 to-orange-600"
+                  : "bg-gradient-to-br from-violet-500 to-indigo-600"
+              )}>
+                {isEdit
+                  ? <Pencil className="w-5 h-5 text-white" />
+                  : <Workflow className="w-5 h-5 text-white" />
+                }
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-semibold text-gray-900">
+                  {workflow?.name || 'New Workflow'}
+                </DialogTitle>
+                <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                  <span className="flex items-center gap-1">
+                    <Layers className="w-3.5 h-3.5" />
+                    {totalSteps} steps
+                  </span>
+                  <span className="text-gray-300">|</span>
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5" />
+                    {assignees.length} roles
+                  </span>
+                  {milestoneCount > 0 && (
+                    <>
+                      <span className="text-gray-300">|</span>
+                      <span className="flex items-center gap-1">
+                        <Layers className="w-3.5 h-3.5" />
+                        {milestoneCount} phases
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
           </DialogHeader>
 
           {/* Scrollable content area */}
@@ -798,15 +947,17 @@ export function PlanPreviewCard({ plan, onApprove, onRequestChanges, isPublished
 
             {/* Edit Operations Summary in dialog */}
             {isEdit && operations.length > 0 && (
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <p className="text-sm font-medium text-gray-600 flex items-center gap-2 mb-2">
-                  <Pencil className="w-3.5 h-3.5" />
-                  Changes being made:
+              <div className="p-3.5 bg-gradient-to-br from-amber-50/80 to-orange-50/40 rounded-xl border border-amber-200/60">
+                <p className="text-sm font-semibold text-amber-800 flex items-center gap-2 mb-2.5">
+                  <div className="w-5 h-5 rounded-md bg-amber-100 flex items-center justify-center">
+                    <ArrowRightLeft className="w-3 h-3 text-amber-600" />
+                  </div>
+                  Changes being made
                 </p>
-                <ul className="text-sm text-gray-600 space-y-1.5 ml-5">
+                <ul className="text-sm text-gray-700 space-y-1.5 ml-1">
                   {summarizeOperations(operations, steps).map((line, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-gray-400 mt-0.5">•</span>
+                    <li key={i} className="flex items-start gap-2.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
                       {line}
                     </li>
                   ))}
@@ -816,15 +967,17 @@ export function PlanPreviewCard({ plan, onApprove, onRequestChanges, isPublished
 
             {/* Assumptions section */}
             {plan.assumptions && plan.assumptions.length > 0 && (
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <p className="text-sm font-medium text-gray-600 flex items-center gap-2 mb-2">
-                  <Lightbulb className="w-3.5 h-3.5" />
-                  I made these assumptions:
+              <div className="p-3.5 bg-gradient-to-br from-blue-50/60 to-indigo-50/30 rounded-xl border border-blue-200/50">
+                <p className="text-sm font-semibold text-blue-800 flex items-center gap-2 mb-2.5">
+                  <div className="w-5 h-5 rounded-md bg-blue-100 flex items-center justify-center">
+                    <Lightbulb className="w-3 h-3 text-blue-600" />
+                  </div>
+                  Assumptions made
                 </p>
-                <ul className="text-sm text-gray-600 space-y-1.5 ml-5">
+                <ul className="text-sm text-gray-700 space-y-1.5 ml-1">
                   {plan.assumptions.map((assumption, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-gray-400 mt-0.5">•</span>
+                    <li key={i} className="flex items-start gap-2.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0" />
                       {assumption}
                     </li>
                   ))}
@@ -892,7 +1045,12 @@ export function PlanPreviewCard({ plan, onApprove, onRequestChanges, isPublished
                       setDialogOpen(false);
                       onApprove();
                     }}
-                    className="flex-1 bg-gray-900 hover:bg-gray-800 text-white rounded-full"
+                    className={cn(
+                      "flex-1 text-white rounded-full shadow-md transition-all hover:shadow-lg",
+                      isEdit
+                        ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
+                        : "bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+                    )}
                   >
                     <Check className="w-4 h-4 mr-1.5" />
                     {isEdit ? 'Apply Changes' : 'Proceed & Create!'}
@@ -915,14 +1073,18 @@ function TriggerSection({ triggerConfig }: { triggerConfig: TriggerConfig }) {
 
   const TriggerIcon = isManual ? Play : isAutomatic ? Zap : Clock;
   const triggerLabel = isManual ? 'Manual Start' : isAutomatic ? 'Automatic Trigger' : 'Scheduled';
+  const triggerColor = isManual ? '#22c55e' : isAutomatic ? '#f59e0b' : '#6366f1';
 
   return (
-    <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+    <div className="p-3 rounded-xl bg-gradient-to-r from-gray-50 to-slate-50 border border-gray-100">
       <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-gray-100">
-          <TriggerIcon className="w-4 h-4 text-gray-500" />
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ backgroundColor: `${triggerColor}12` }}
+        >
+          <TriggerIcon className="w-4 h-4" style={{ color: triggerColor }} />
         </div>
-        <span className="text-base font-medium text-gray-700">{triggerLabel}</span>
+        <span className="text-sm font-semibold text-gray-700">{triggerLabel}</span>
       </div>
 
       {isManual && triggerConfig.initiator && (
@@ -941,7 +1103,7 @@ function TriggerSection({ triggerConfig }: { triggerConfig: TriggerConfig }) {
             {triggerConfig.kickoffFields.map((field, i) => (
               <span
                 key={i}
-                className="inline-block px-2 py-0.5 bg-white border border-gray-200 rounded-full text-sm text-gray-600"
+                className="inline-block px-2 py-0.5 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-600"
               >
                 {field}
               </span>
@@ -1032,6 +1194,8 @@ function BranchStepCard({ step, stepNumber, isLast, assignees, depth, isEditMode
   const config = step?.config || {};
   const paths = config.paths || config.outcomes || [];
   const isDecision = step?.type === 'DECISION';
+  const meta = STEP_TYPE_META[step?.type as StepType];
+  const branchColor = meta?.color || '#f59e0b';
 
   const statusStyles = getChangeStatusStyles(changeStatus, isEditMode);
 
@@ -1040,15 +1204,17 @@ function BranchStepCard({ step, stepNumber, isLast, assignees, depth, isEditMode
       {/* Timeline */}
       <div className="flex flex-col items-center">
         <div
-          className={cn(
-            'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0',
-            'bg-gray-100 text-gray-600 border border-gray-200'
-          )}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 border-2"
+          style={{
+            borderColor: `${branchColor}40`,
+            backgroundColor: `${branchColor}10`,
+            color: branchColor,
+          }}
         >
           {stepNumber}
         </div>
         {(!isLast || expanded) && (
-          <div className="w-px flex-1 bg-gray-200 my-1" />
+          <div className="w-0.5 flex-1 my-1 rounded-full" style={{ backgroundColor: `${branchColor}20` }} />
         )}
       </div>
 
@@ -1056,7 +1222,7 @@ function BranchStepCard({ step, stepNumber, isLast, assignees, depth, isEditMode
       <div className="flex-1 mb-2">
         <div
           className={cn(
-            'p-3 rounded-xl border bg-white cursor-pointer shadow-sm hover:shadow-md transition-shadow',
+            'p-3 rounded-xl border bg-white cursor-pointer shadow-sm hover:shadow-md transition-all',
             'border-gray-100',
             statusStyles
           )}
@@ -1064,35 +1230,52 @@ function BranchStepCard({ step, stepNumber, isLast, assignees, depth, isEditMode
         >
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
-                <GitBranch className="w-4 h-4 text-gray-500" />
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style={{ backgroundColor: `${branchColor}12` }}
+              >
+                <GitBranch className="w-4 h-4" style={{ color: branchColor }} />
               </div>
-              <span className="font-medium text-base text-gray-800 truncate">
-                {step?.title || config.name || step?.type || 'Branch'}
-              </span>
+              <div className="min-w-0">
+                <span className="font-medium text-sm text-gray-800 truncate block">
+                  {step?.title || config.name || step?.type || 'Branch'}
+                </span>
+                {meta && (
+                  <span className="text-[11px] font-medium" style={{ color: `${branchColor}cc` }}>
+                    {meta.label}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               {isEditMode && changeStatus !== 'unchanged' && (
                 <span className={cn(
-                  'text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap',
-                  changeStatus === 'added' && 'bg-green-100 text-green-700',
-                  changeStatus === 'modified' && 'bg-amber-100 text-amber-700',
-                  changeStatus === 'moved' && 'bg-blue-100 text-blue-700',
+                  'text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap border',
+                  changeStatus === 'added' && 'bg-green-50 text-green-700 border-green-200',
+                  changeStatus === 'modified' && 'bg-amber-50 text-amber-700 border-amber-200',
+                  changeStatus === 'moved' && 'bg-blue-50 text-blue-700 border-blue-200',
                 )}>
                   {changeStatus === 'added' ? 'New' : changeStatus === 'modified' ? 'Modified' : 'Moved'}
                 </span>
               )}
-              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+              <span
+                className="text-xs font-medium px-2 py-0.5 rounded-full border"
+                style={{
+                  backgroundColor: `${branchColor}10`,
+                  borderColor: `${branchColor}30`,
+                  color: branchColor,
+                }}
+              >
                 {paths.length} {isDecision ? 'outcomes' : 'paths'}
               </span>
               <ChevronDown className={cn(
-                "w-4 h-4 text-gray-400 transition-transform",
+                "w-4 h-4 text-gray-400 transition-transform duration-200",
                 !expanded && "-rotate-90"
               )} />
             </div>
           </div>
           {config.description && (
-            <p className="text-sm text-gray-500 mt-2 ml-10 line-clamp-2">
+            <p className="text-xs text-gray-500 mt-1.5 ml-[42px] line-clamp-2 leading-relaxed">
               {config.description}
             </p>
           )}
@@ -1100,7 +1283,7 @@ function BranchStepCard({ step, stepNumber, isLast, assignees, depth, isEditMode
 
         {/* Expanded paths */}
         {expanded && paths.length > 0 && (
-          <div className="mt-3 ml-4 border-l border-gray-200 pl-4 space-y-3">
+          <div className="mt-3 ml-4 border-l-2 pl-4 space-y-3" style={{ borderColor: `${branchColor}30` }}>
             {paths.map((path: { pathId?: string; outcomeId?: string; label?: string; steps?: Step[] }, pathIndex: number) => {
               const pathId = path.pathId || path.outcomeId || `path-${pathIndex}`;
               const pathLabel = path.label || `${isDecision ? 'Outcome' : 'Path'} ${pathIndex + 1}`;
@@ -1109,8 +1292,11 @@ function BranchStepCard({ step, stepNumber, isLast, assignees, depth, isEditMode
               return (
                 <div key={pathId}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
-                      <span className="text-xs font-semibold text-gray-600">{pathIndex + 1}</span>
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: `${branchColor}15` }}
+                    >
+                      <span className="text-[10px] font-bold" style={{ color: branchColor }}>{pathIndex + 1}</span>
                     </div>
                     <span className="text-sm font-medium text-gray-700">{pathLabel}</span>
                     <span className="text-xs text-gray-400">
@@ -1164,15 +1350,23 @@ interface StepCardProps {
 function StepCard({ step, stepNumber, isLast, assignees, depth = 0, isEditMode, changeStatus }: StepCardProps) {
   const Icon = STEP_ICONS[step?.type] || Cog;
   const config = step?.config || {};
+  const meta = STEP_TYPE_META[step?.type as StepType];
+  const stepColor = meta?.color || '#6b7280';
 
   // Resolve assignee name from config.assignee or step.assignees.placeholderId
   let resolvedAssignee = config.assignee;
+  let resolvedAssigneeIndex = -1;
   if (!resolvedAssignee && step.assignees) {
     const stepAssignees = step.assignees as { mode?: string; placeholderId?: string };
     if (stepAssignees.placeholderId) {
-      const foundAssignee = assignees.find(a => a.placeholderId === stepAssignees.placeholderId);
-      resolvedAssignee = foundAssignee?.roleName;
+      const foundIndex = assignees.findIndex(a => a.placeholderId === stepAssignees.placeholderId);
+      if (foundIndex >= 0) {
+        resolvedAssignee = assignees[foundIndex].roleName;
+        resolvedAssigneeIndex = foundIndex;
+      }
     }
+  } else if (resolvedAssignee) {
+    resolvedAssigneeIndex = assignees.findIndex(a => a.roleName === resolvedAssignee);
   }
 
   // Resolve description from config or step level
@@ -1186,22 +1380,26 @@ function StepCard({ step, stepNumber, isLast, assignees, depth = 0, isEditMode, 
       <div className="flex flex-col items-center">
         <div
           className={cn(
-            'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0',
-            'bg-gray-100 text-gray-600 border border-gray-200',
+            'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 border-2 transition-colors',
             depth > 0 && 'w-6 h-6 text-[10px]'
           )}
+          style={{
+            borderColor: `${stepColor}40`,
+            backgroundColor: `${stepColor}10`,
+            color: stepColor,
+          }}
         >
           {stepNumber}
         </div>
         {!isLast && (
-          <div className="w-px flex-1 bg-gray-200 my-1" />
+          <div className="w-0.5 flex-1 my-1 rounded-full" style={{ backgroundColor: `${stepColor}20` }} />
         )}
       </div>
 
       {/* Step content */}
       <div
         className={cn(
-          'flex-1 p-3 rounded-xl border bg-white mb-2 shadow-sm hover:shadow-md transition-shadow',
+          'flex-1 p-3 rounded-xl border bg-white mb-2 shadow-sm hover:shadow-md transition-all',
           'border-gray-100',
           depth > 0 && 'p-2.5 rounded-lg',
           statusStyles
@@ -1209,42 +1407,64 @@ function StepCard({ step, stepNumber, isLast, assignees, depth = 0, isEditMode, 
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className={cn(
-              'w-8 h-8 rounded-lg flex items-center justify-center',
-              'bg-gray-50',
-              depth > 0 && 'w-6 h-6 rounded-md'
-            )}>
-              <Icon className={cn('w-4 h-4 text-gray-500', depth > 0 && 'w-3.5 h-3.5')} />
+            <div
+              className={cn(
+                'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                depth > 0 && 'w-6 h-6 rounded-md'
+              )}
+              style={{ backgroundColor: `${stepColor}12` }}
+            >
+              <Icon
+                className={cn('w-4 h-4', depth > 0 && 'w-3.5 h-3.5')}
+                style={{ color: stepColor }}
+              />
             </div>
-            <span className={cn('font-medium text-base text-gray-800 truncate', depth > 0 && 'text-sm')}>
-              {step?.title || config.name || step?.type || 'Step'}
-            </span>
+            <div className="min-w-0">
+              <span className={cn('font-medium text-sm text-gray-800 truncate block', depth > 0 && 'text-xs')}>
+                {step?.title || config.name || step?.type || 'Step'}
+              </span>
+              {meta && depth === 0 && (
+                <span className="text-[11px] font-medium" style={{ color: `${stepColor}cc` }}>
+                  {meta.label}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {isEditMode && changeStatus !== 'unchanged' && (
               <span className={cn(
-                'text-[10px] px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap',
-                changeStatus === 'added' && 'bg-green-100 text-green-700',
-                changeStatus === 'modified' && 'bg-amber-100 text-amber-700',
-                changeStatus === 'moved' && 'bg-blue-100 text-blue-700',
+                'text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap border',
+                changeStatus === 'added' && 'bg-green-50 text-green-700 border-green-200',
+                changeStatus === 'modified' && 'bg-amber-50 text-amber-700 border-amber-200',
+                changeStatus === 'moved' && 'bg-blue-50 text-blue-700 border-blue-200',
               )}>
                 {changeStatus === 'added' ? 'New' : changeStatus === 'modified' ? 'Modified' : 'Moved'}
               </span>
             )}
             {resolvedAssignee && (
               <span
-                className={cn(
-                  "inline-flex items-center px-2 py-1 rounded-full text-sm font-medium shrink-0",
-                  "bg-gray-100 text-gray-600"
-                )}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium shrink-0 border"
+                style={{
+                  backgroundColor: resolvedAssigneeIndex >= 0 ? `${getRoleColor(resolvedAssigneeIndex)}10` : '#f3f4f6',
+                  borderColor: resolvedAssigneeIndex >= 0 ? `${getRoleColor(resolvedAssigneeIndex)}30` : '#e5e7eb',
+                  color: resolvedAssigneeIndex >= 0 ? getRoleColor(resolvedAssigneeIndex) : '#4b5563',
+                }}
               >
+                {resolvedAssigneeIndex >= 0 && (
+                  <span
+                    className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-[7px] font-bold"
+                    style={{ backgroundColor: getRoleColor(resolvedAssigneeIndex) }}
+                  >
+                    {getRoleInitials(resolvedAssignee)}
+                  </span>
+                )}
                 {resolvedAssignee}
               </span>
             )}
           </div>
         </div>
         {resolvedDescription && depth === 0 && (
-          <p className="text-sm text-gray-500 mt-2 ml-10 line-clamp-2">
+          <p className="text-xs text-gray-500 mt-1.5 ml-[42px] line-clamp-2 leading-relaxed">
             {resolvedDescription}
           </p>
         )}

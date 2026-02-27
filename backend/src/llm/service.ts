@@ -23,6 +23,16 @@ import type {
 import type { Flow } from '../models/workflow.js';
 
 // ============================================================================
+// Prompt Caching Types
+// ============================================================================
+
+type SystemContentBlock = {
+  type: 'text';
+  text: string;
+  cache_control?: { type: 'ephemeral' };
+};
+
+// ============================================================================
 // Configuration
 // ============================================================================
 
@@ -216,17 +226,29 @@ export class LLMService {
 
   /**
    * Build system prompt with workflow context
+   *
+   * Returns an array of content blocks for the Anthropic API system parameter.
+   * The static base prompt is marked with cache_control for prompt caching,
+   * while dynamic per-request context is kept in a separate uncached block.
    */
   private buildSystemPromptWithContext(
     currentWorkflow: Flow | null,
     hasPendingPlan: boolean = false,
     pendingPlanName?: string,
     clarificationsPending: boolean = false
-  ): string {
-    let prompt = this.systemPrompt;
+  ): SystemContentBlock[] {
+    // Static base prompt — cached across turns via prompt caching
+    const staticBlock: SystemContentBlock = {
+      type: 'text',
+      text: this.systemPrompt,
+      cache_control: { type: 'ephemeral' },
+    };
+
+    // Dynamic context — changes per request, not cached
+    let dynamicContext = '';
 
     if (currentWorkflow) {
-      prompt += `\n\n# Current Workflow Context
+      dynamicContext += `\n\n# Current Workflow Context
 
 A workflow already exists. When the user requests changes, you should:
 1. Generate "edit" mode responses with patch operations
@@ -234,13 +256,13 @@ A workflow already exists. When the user requests changes, you should:
 
 The current workflow has ${currentWorkflow.steps.length} steps.`;
     } else {
-      prompt += `\n\n# Current Workflow Context
+      dynamicContext += `\n\n# Current Workflow Context
 
 No workflow exists yet. When the user describes a process, generate a "create" mode response with a complete workflow.`;
     }
 
     if (hasPendingPlan) {
-      prompt += `\n\n# IMPORTANT: Pending Plan Awaiting Approval
+      dynamicContext += `\n\n# IMPORTANT: Pending Plan Awaiting Approval
 
 There is a workflow preview ("${pendingPlanName || 'New Workflow'}") waiting for user approval.
 
@@ -260,10 +282,14 @@ Example suggestedActions when there's a pending plan:
 
     // Add context note if clarifications were asked in previous message
     if (clarificationsPending) {
-      prompt += `\n\nNote: You asked clarification questions in your previous message. The user's response follows.`;
+      dynamicContext += `\n\nNote: You asked clarification questions in your previous message. The user's response follows.`;
     }
 
-    return prompt;
+    const blocks: SystemContentBlock[] = [staticBlock];
+    if (dynamicContext) {
+      blocks.push({ type: 'text', text: dynamicContext });
+    }
+    return blocks;
   }
 
   /**

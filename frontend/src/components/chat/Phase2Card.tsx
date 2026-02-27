@@ -170,28 +170,30 @@ export function Phase2Card({
   // Locked state - show what was selected
   if (isLocked && savedSelections) {
     return (
-      <Card className="border-2 border-green-200 bg-green-50/30 max-w-lg">
-        <CardHeader className="pb-2 pt-4">
-          <div className="flex items-center gap-2 text-green-600">
-            <CheckCircle className="w-4 h-4" />
-            <span className="text-base font-medium">Enhancements submitted</span>
+      <Card className="border-2 border-green-200 bg-white max-w-lg shadow-lg shadow-green-100/30 rounded-2xl overflow-hidden">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50/50 border-b border-green-100 px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            </div>
+            <span className="text-sm font-semibold text-green-700">Enhancements submitted</span>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-2 pb-3">
+        </div>
+        <CardContent className="space-y-2.5 p-4">
           {Object.entries(savedSelections).map(([optionId, value]) => {
             const option = PHASE2_OPTIONS.find((o) => o.id === optionId);
             if (!option) return null;
 
             return (
-              <div key={optionId} className="flex items-start gap-2 text-base">
-                <div className="text-green-600 mt-0.5">{option.icon}</div>
-                <div>
-                  <span className="font-medium text-gray-700">{option.label}</span>
+              <div key={optionId} className="flex items-start gap-2.5 p-2.5 bg-green-50/40 rounded-lg border border-green-100/60">
+                <div className="text-green-600 mt-0.5 shrink-0">{option.icon}</div>
+                <div className="min-w-0">
+                  <span className="font-medium text-sm text-gray-700">{option.label}</span>
                   {typeof value === 'string' && value !== 'yes' && (
-                    <p className="text-gray-600 text-sm mt-0.5">{value}</p>
+                    <p className="text-gray-600 text-xs mt-0.5">{value}</p>
                   )}
                   {typeof value === 'object' && (
-                    <div className="text-gray-600 text-sm mt-0.5 space-y-0.5">
+                    <div className="text-gray-600 text-xs mt-0.5 space-y-0.5">
                       {Object.entries(value).map(([fieldId, fieldValue]) => (
                         fieldValue && <p key={fieldId}>• {fieldValue}</p>
                       ))}
@@ -256,20 +258,22 @@ export function Phase2Card({
   }
 
   return (
-    <Card className="border-2 border-amber-200 bg-amber-50/30 max-w-lg">
-      <CardHeader className="pb-2 pt-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-            <Lightbulb className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <h3 className="font-medium text-gray-900 text-lg">What's next?</h3>
-            <p className="text-sm text-gray-500">Optional enhancements for {workflowName}</p>
+    <Card className="border-2 border-amber-200 bg-white max-w-lg shadow-lg shadow-amber-100/30 rounded-2xl overflow-hidden">
+      <CardHeader className="pb-3 pt-0 px-0">
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 border-b border-amber-100 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
+              <Lightbulb className="w-4.5 h-4.5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 text-base">What's next?</h3>
+              <p className="text-xs text-amber-600 font-medium">Optional enhancements for {workflowName}</p>
+            </div>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-2 pb-2">
+      <CardContent className="space-y-2 pb-2 px-4">
         {PHASE2_OPTIONS.map((option) => {
           const isSelected = selectedOptions.has(option.id);
           const isExpanded = expandedOptions.has(option.id);
@@ -278,10 +282,10 @@ export function Phase2Card({
             <div
               key={option.id}
               className={cn(
-                'rounded-lg border transition-all',
+                'rounded-xl border transition-all',
                 isSelected
-                  ? 'border-amber-300 bg-white'
-                  : 'border-gray-200 bg-gray-50/50 hover:bg-gray-50'
+                  ? 'border-amber-300 bg-amber-50/30 shadow-sm'
+                  : 'border-gray-200 bg-gray-50/30 hover:bg-gray-50 hover:border-gray-300'
               )}
             >
               {/* Option header */}
@@ -379,12 +383,16 @@ export function Phase2Card({
         })}
       </CardContent>
 
-      <CardFooter className="pt-2 gap-2">
-        <Button variant="outline" onClick={onSkip} className="flex-1">
+      <CardFooter className="pt-2 gap-2 border-t border-amber-100/50 px-4">
+        <Button variant="outline" onClick={onSkip} className="flex-1 rounded-full border-gray-300">
           <SkipForward className="w-4 h-4 mr-1.5" />
           Skip for now
         </Button>
-        <Button onClick={handleSubmit} disabled={!hasAnySelection} className="flex-1">
+        <Button
+          onClick={handleSubmit}
+          disabled={!hasAnySelection}
+          className="flex-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md"
+        >
           <Send className="w-4 h-4 mr-1.5" />
           Enhance workflow
         </Button>

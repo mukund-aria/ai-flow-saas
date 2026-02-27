@@ -17,23 +17,23 @@ export function SuggestedActions({ actions, onActionClick, pendingPlanId }: Sugg
       case 'approve_plan':
         return {
           icon: <Check className="w-3.5 h-3.5" />,
-          className: 'bg-green-600 hover:bg-green-700 text-white',
+          className: 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-sm shadow-green-200',
         };
       case 'discard_plan':
         return {
           icon: <X className="w-3.5 h-3.5" />,
-          className: 'bg-gray-200 hover:bg-gray-300 text-gray-700',
+          className: 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200',
         };
       case 'edit_plan':
         return {
           icon: <Pencil className="w-3.5 h-3.5" />,
-          className: 'bg-blue-100 hover:bg-blue-200 text-blue-700',
+          className: 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200',
         };
       case 'prompt':
       default:
         return {
           icon: <Send className="w-3.5 h-3.5" />,
-          className: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
+          className: 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200',
         };
     }
   };
@@ -57,7 +57,7 @@ export function SuggestedActions({ actions, onActionClick, pendingPlanId }: Sugg
             key={index}
             onClick={() => onActionClick(action)}
             className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-base font-medium transition-colors',
+              'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all hover:shadow-sm',
               style.className
             )}
           >

@@ -2,7 +2,13 @@
  * Configuration Loader
  *
  * Loads and parses YAML configuration files.
- * Provides access to constraints, defaults, and step type definitions.
+ * Provides access to constraints, defaults, step type definitions,
+ * consultation playbook, UX guidelines, and template catalog.
+ *
+ * Config structure (3 layers):
+ *   1. Technical: constraints.yaml, defaults.yaml, step-types/, triggers.yaml
+ *   2. Consultative: consultation.yaml (stages, inference rules, post-create suggestions)
+ *   3. UX: ux-guidelines.yaml (response formatting, question policy, edit behavior)
  */
 
 import { readFileSync, readdirSync, existsSync } from 'fs';
@@ -11,7 +17,6 @@ import { fileURLToPath } from 'url';
 import { parse as parseYaml } from 'yaml';
 
 // Get the config directory path
-// Use different variable names to avoid conflict with CommonJS globals
 const currentFileUrl = import.meta.url;
 const currentFilePath = fileURLToPath(currentFileUrl);
 const currentDirPath = dirname(currentFilePath);
@@ -100,6 +105,7 @@ export interface StepTypeConfig {
   category: 'HUMAN_ACTION' | 'CONTROL' | 'AUTOMATION';
   displayName: string;
   description: string;
+  deprecated?: boolean;
   schema: {
     fields: Array<{
       name: string;
@@ -149,6 +155,103 @@ export interface StepTypeConfig {
   [key: string]: unknown;
 }
 
+// --- Consultation config types (consultation.yaml) ---
+
+export interface ConsultationStage {
+  stage: string;
+  order: number;
+  keyQuestion: string;
+  explanation?: string;
+  secondaryQuestions?: string[];
+  perStepQuestions?: string[];
+  proactiveReview?: string[];
+  validation?: string[];
+  defaults?: string[];
+  permissions?: Record<string, string>;
+  experienceOptions?: Record<string, string>;
+  availableTypes?: Record<string, string>;
+  [key: string]: unknown;
+}
+
+export interface PostCreateSuggestion {
+  question: string;
+  recommendation: string;
+  subQuestions?: Array<{
+    id: string;
+    text: string;
+    mapsTo: string;
+  }>;
+}
+
+export interface ConsultationConfig {
+  version: string;
+  personality: {
+    role: string;
+    greeting: string;
+    tone: string;
+    style: string[];
+  };
+  stages: ConsultationStage[];
+  inferenceRules: {
+    principle: string;
+    negative: string[];
+    positive: string[];
+  };
+  postCreateSuggestions: PostCreateSuggestion[];
+}
+
+// --- UX Guidelines config types (ux-guidelines.yaml) ---
+
+export interface UXGuidelinesConfig {
+  version: string;
+  scope: {
+    allowed: string[];
+    declineMessage: string;
+    neverDisclose: string[];
+  };
+  questionPolicy: {
+    reworkRiskTest: {
+      askWhen: string[];
+      createWhen: string[];
+    };
+    genericPromptQuestions: string[];
+    neverAskAbout: string[];
+    afterClarification: string[];
+  };
+  quickSuggestions: {
+    rules: string[];
+  };
+  questionTypes: Record<string, { description: string; roleGuidance?: string }>;
+  editClarification: {
+    when: string;
+    clearIntentExamples: string[];
+    neverOfferAsEditOptions: string[];
+  };
+  editStepReferences: {
+    rules: string[];
+  };
+  messageGuidelines: Record<string, string>;
+  proactiveSuggestions: {
+    enabled: boolean;
+    areas: string[];
+    format: string;
+  };
+  assumptions: {
+    instruction: string;
+    guideline: string;
+  };
+  whenConstraintViolated: {
+    action: string;
+    example: string;
+  };
+  whenUnsupported: {
+    action: string;
+    example: string;
+  };
+}
+
+// --- Legacy SE Playbook types (se-playbook.yaml, backward compat) ---
+
 export interface SEPlaybookConfig {
   version: string;
   personality: {
@@ -176,7 +279,6 @@ export interface SEPlaybookConfig {
     askingPolicy: {
       askWhen: string[];
       applyDefaultWhen?: string[];
-      // Primary questions for workflow design (simple strings)
       genericPromptQuestions?: string[];
       neverAskAbout?: string[];
       inferApprovalsFromContext?: string[];
@@ -205,6 +307,24 @@ export interface SEPlaybookConfig {
       example: string;
     };
   };
+}
+
+// --- Template Catalog types ---
+
+export interface TemplateCatalogTemplate {
+  name: string;
+  roles: string[];
+  pattern: string;
+}
+
+export interface TemplateCatalogCategory {
+  name: string;
+  templates: TemplateCatalogTemplate[];
+}
+
+export interface TemplateCatalogConfig {
+  enabled: boolean;
+  categories: TemplateCatalogCategory[];
 }
 
 // ============================================================================
@@ -240,14 +360,29 @@ export function loadDefaults(): DefaultsConfig {
 }
 
 /**
- * Load SE playbook configuration
+ * Load SE playbook configuration (legacy — still used as fallback)
  */
 export function loadSEPlaybook(): SEPlaybookConfig {
   return loadYamlFile<SEPlaybookConfig>('se-playbook.yaml');
 }
 
 /**
- * Load all step type configurations from a directory
+ * Load consultation configuration (new modular structure)
+ */
+export function loadConsultation(): ConsultationConfig {
+  return loadYamlFile<ConsultationConfig>('consultation.yaml');
+}
+
+/**
+ * Load UX guidelines configuration (new modular structure)
+ */
+export function loadUXGuidelines(): UXGuidelinesConfig {
+  return loadYamlFile<UXGuidelinesConfig>('ux-guidelines.yaml');
+}
+
+/**
+ * Load all step type configurations from a directory.
+ * Filters out deprecated step types.
  */
 export function loadStepTypesFromDir(subDir: string): StepTypeConfig[] {
   const dirPath = join(CONFIG_DIR, 'step-types', subDir);
@@ -262,6 +397,10 @@ export function loadStepTypesFromDir(subDir: string): StepTypeConfig[] {
   for (const file of files) {
     try {
       const config = loadYamlFile<StepTypeConfig>(join('step-types', subDir, file));
+      // Skip deprecated step types (e.g., AI_AUTOMATION replaced by specialized types)
+      if (config.deprecated) {
+        continue;
+      }
       stepTypes.push(config);
     } catch (error) {
       console.warn(`Failed to load step type config: ${file}`, error);
@@ -286,26 +425,12 @@ export function loadAllStepTypes(): StepTypeConfig[] {
 // Cached Singleton Access
 // ============================================================================
 
-export interface TemplateCatalogTemplate {
-  name: string;
-  roles: string[];
-  pattern: string;
-}
-
-export interface TemplateCatalogCategory {
-  name: string;
-  templates: TemplateCatalogTemplate[];
-}
-
-export interface TemplateCatalogConfig {
-  enabled: boolean;
-  categories: TemplateCatalogCategory[];
-}
-
 let cachedConstraints: ConstraintsConfig | null = null;
 let cachedDefaults: DefaultsConfig | null = null;
 let cachedStepTypes: StepTypeConfig[] | null = null;
 let cachedPlaybook: SEPlaybookConfig | null = null;
+let cachedConsultation: ConsultationConfig | null = null;
+let cachedUXGuidelines: UXGuidelinesConfig | null = null;
 let cachedTemplateCatalog: TemplateCatalogConfig | null | undefined = undefined;
 
 /**
@@ -329,7 +454,7 @@ export function getDefaults(): DefaultsConfig {
 }
 
 /**
- * Get all step types (cached)
+ * Get all step types (cached, excludes deprecated)
  */
 export function getStepTypes(): StepTypeConfig[] {
   if (!cachedStepTypes) {
@@ -347,7 +472,6 @@ export function getTemplateCatalog(): TemplateCatalogConfig | null {
       const catalog = loadYamlFile<TemplateCatalogConfig>('template-catalog.yaml');
       cachedTemplateCatalog = catalog?.enabled ? catalog : null;
     } catch {
-      // File missing or invalid — gracefully disable template awareness
       cachedTemplateCatalog = null;
     }
   }
@@ -355,13 +479,33 @@ export function getTemplateCatalog(): TemplateCatalogConfig | null {
 }
 
 /**
- * Get SE playbook (cached)
+ * Get SE playbook (cached, legacy)
  */
 export function getPlaybook(): SEPlaybookConfig {
   if (!cachedPlaybook) {
     cachedPlaybook = loadSEPlaybook();
   }
   return cachedPlaybook;
+}
+
+/**
+ * Get consultation config (cached)
+ */
+export function getConsultation(): ConsultationConfig {
+  if (!cachedConsultation) {
+    cachedConsultation = loadConsultation();
+  }
+  return cachedConsultation;
+}
+
+/**
+ * Get UX guidelines (cached)
+ */
+export function getUXGuidelines(): UXGuidelinesConfig {
+  if (!cachedUXGuidelines) {
+    cachedUXGuidelines = loadUXGuidelines();
+  }
+  return cachedUXGuidelines;
 }
 
 /**
@@ -372,6 +516,8 @@ export function clearConfigCache(): void {
   cachedDefaults = null;
   cachedStepTypes = null;
   cachedPlaybook = null;
+  cachedConsultation = null;
+  cachedUXGuidelines = null;
   cachedTemplateCatalog = undefined;
 }
 
@@ -380,9 +526,9 @@ export function clearConfigCache(): void {
  */
 export function reloadConfig(): void {
   clearConfigCache();
-  // Trigger lazy load
   getConstraints();
   getDefaults();
   getStepTypes();
-  getPlaybook();
+  getConsultation();
+  getUXGuidelines();
 }

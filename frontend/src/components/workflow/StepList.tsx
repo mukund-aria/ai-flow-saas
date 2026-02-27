@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Layers, Pencil, Trash2, Check, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Milestone as MilestoneIcon, Pencil, Trash2, Check, X, CheckCircle2 } from 'lucide-react';
 import { StepCard } from './StepCard';
 import { StepConnector } from './StepConnector';
 import { BranchLayout } from './BranchLayout';
@@ -100,6 +100,8 @@ interface MilestoneContainerProps {
   onAddMilestone?: (afterIndex: number) => void;
   assigneePlaceholders: Flow['assigneePlaceholders'];
   workflow: Flow;
+  totalSteps: number;
+  lastStepRef: React.RefObject<HTMLDivElement | null>;
 }
 
 function MilestoneContainer({
@@ -115,6 +117,8 @@ function MilestoneContainer({
   onAddMilestone,
   assigneePlaceholders,
   workflow,
+  totalSteps,
+  lastStepRef,
 }: MilestoneContainerProps) {
   const { updateMilestone, removeMilestone } = useWorkflowStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -128,9 +132,10 @@ function MilestoneContainer({
           ? assigneeIndices.get(step.config.assignee) || 0
           : 0;
         const isBranchStep = hasBranchesOrOutcomes(step);
+        const isLastStepOverall = globalIndex === totalSteps - 1;
 
         return (
-          <div key={step.stepId}>
+          <div key={step.stepId} ref={isLastStepOverall ? lastStepRef : undefined}>
             {/* Connector before step */}
             {(index > 0 || !isFirst) && (
               <div className="relative">
@@ -204,8 +209,8 @@ function MilestoneContainer({
 
   return (
     <div className="relative my-2">
-      <div className="flex items-center gap-2 px-4 py-2 bg-white border border-dashed border-gray-300 rounded-t-lg">
-        <Layers className="w-4 h-4 text-gray-500 shrink-0" />
+      <div className="flex items-center gap-2 px-4 py-2 bg-white border border-solid border-gray-300 border-l-4 border-l-amber-400 rounded-t-lg">
+        <MilestoneIcon className="w-4 h-4 text-amber-500 shrink-0" />
         {isEditing ? (
           <div className="flex items-center gap-1 flex-1 min-w-0">
             <input
@@ -239,7 +244,7 @@ function MilestoneContainer({
           </>
         )}
       </div>
-      <div className="border border-t-0 border-dashed border-gray-300 rounded-b-lg px-4 py-3 bg-gray-50/30">
+      <div className="border border-t-0 border-solid border-gray-300 border-l-4 border-l-amber-400 rounded-b-lg px-4 py-3 bg-amber-50/30">
         {steps.length > 0 ? (
           renderSteps()
         ) : (
@@ -260,6 +265,17 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
   const [addPopoverIndex, setAddPopoverIndex] = useState<number | null>(null);
   const [endPopoverOpen, setEndPopoverOpen] = useState(false);
   const { addStep, addMilestone } = useWorkflowStore();
+
+  // Scroll-to-step on add
+  const prevStepCountRef = useRef(steps.length);
+  const lastStepRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (steps.length > prevStepCountRef.current && lastStepRef.current) {
+      lastStepRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    prevStepCountRef.current = steps.length;
+  }, [steps.length]);
 
   const stepGroups = groupStepsByMilestones(steps, milestones);
 
@@ -301,6 +317,8 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
           onAddMilestone={handleAddMilestone}
           assigneePlaceholders={workflow.assigneePlaceholders || []}
           workflow={workflow}
+          totalSteps={steps.length}
+          lastStepRef={lastStepRef}
         />
       ))}
 
@@ -325,7 +343,8 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
 
       {/* End indicator */}
       <div className="flex items-center justify-center">
-        <div className="px-4 py-1.5 bg-gray-100 rounded-full text-xs text-gray-500 font-medium">
+        <div className="flex items-center gap-1.5 px-4 py-1.5 bg-gray-100 rounded-full text-xs text-gray-500 font-medium shadow-sm border border-gray-200">
+          <CheckCircle2 className="w-3.5 h-3.5 text-gray-400" />
           End of Flow
         </div>
       </div>

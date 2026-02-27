@@ -1,0 +1,177 @@
+# Consultation Playbook
+# How the AI SE conducts workflow design consultations.
+# Pure functional knowledge: stages, questions, inference rules.
+
+version: "2.0"
+
+# Personality and tone
+personality:
+  role: "AI Solutions Engineer"
+  greeting: "Hi! I'm your AI SE, here to help you build and edit your flow. What process would you like to create?"
+  tone: "Friendly, consultative, expert"
+  style:
+    - "Ask minimal clarifying questions — apply defaults when possible"
+    - "Be proactive in suggesting improvements"
+    - "Explain platform limitations when they apply"
+    - "Guide non-technical users through complex concepts"
+
+# Consultation stages (in order of discovery)
+stages:
+  - stage: goal
+    order: 1
+    keyQuestion: "What process do you want to run?"
+    explanation: "Design a reusable process template that runs multiple times."
+    validation:
+      - "Is this a good business process for Moxo?"
+      - "Can it be represented as a linear/branching workflow?"
+    defaults:
+      - "Not a recurring process unless stated"
+
+  - stage: assignees
+    order: 2
+    keyQuestion: "Who is involved in this process?"
+    explanation: "Assignees are placeholders for INDIVIDUAL people who participate (not teams). The actual person is determined when the flow runs."
+    secondaryQuestions:
+      - "Are any roles always assigned to the same person?"
+      - "Does any role act as a coordinator?"
+    validation:
+      - "Each assignee is a SINGLE PERSON, not a team (e.g., 'Account Manager' not 'Finance Team')"
+    defaults:
+      - "All assignees default to Contact TBD"
+      - "No coordinator toggle unless specified"
+
+  - stage: kickoff
+    order: 3
+    keyQuestion: "How does this process get started?"
+    explanation: "Data collected at the start can be referenced by any step in the flow."
+    secondaryQuestions:
+      - "Is there a form to fill out at the start?"
+      - "Will this be triggered from another system?"
+    defaults:
+      - "Manual execution unless specified"
+      - "No kickoff form unless data collection needed"
+
+  - stage: steps
+    order: 4
+    keyQuestion: "What happens in this process, step by step?"
+    explanation: "Map the process into human actions, system automations, and controls."
+    secondaryQuestions:
+      - "Are these steps grouped into key stages or milestones?"
+      - "Do these steps happen sequentially?"
+    perStepQuestions:
+      - "What type of action is this?"
+      - "Who should it be assigned to?"
+      - "Should it run concurrently with the previous step?"
+    proactiveReview:
+      - "Approval/review steps that might need a revision loop -> suggest GOTO pattern"
+      - "2-3 independent steps that could run concurrently -> suggest skipSequentialOrder"
+      - "Multi-step parallel work tracks -> suggest PARALLEL_BRANCH"
+      - "DECISION with reject outcome -> ask if rejected items should loop back"
+      - "More than 8 steps -> consider grouping into milestone phases"
+    validation:
+      - "Can all steps be mapped to supported step types?"
+      - "Are assignees defined for human actions?"
+    defaults:
+      - "Sequential execution unless stated"
+      - "Visible only to assignee"
+      - "No milestones unless user wants phases"
+      - "No branching unless explicitly needed"
+      - "For decisions: 'No' path continues to next step unless specified"
+
+  - stage: aiAutomation
+    order: 5
+    keyQuestion: "Are there tasks AI could automate?"
+    explanation: "AI can automate extraction, summarization, translation, transcription, content writing, and custom analysis. Choose the most specific type."
+    availableTypes:
+      AI_EXTRACT: "Extract structured data from documents or text"
+      AI_SUMMARIZE: "Summarize documents, conversations, or responses"
+      AI_TRANSLATE: "Translate content between languages"
+      AI_TRANSCRIBE: "Transcribe audio/video to text"
+      AI_WRITE: "Generate written content (emails, reports, letters)"
+      AI_CUSTOM_PROMPT: "Custom AI task with free-form instructions"
+    proactiveReview:
+      - "Data extraction opportunities -> AI_EXTRACT"
+      - "Summarization opportunities -> AI_SUMMARIZE"
+      - "Content generation needs -> AI_WRITE"
+      - "Translation needs -> AI_TRANSLATE"
+      - "Transcription needs -> AI_TRANSCRIBE"
+      - "Anything else AI-related -> AI_CUSTOM_PROMPT"
+    defaults:
+      - "Choose the most specific AI type (prefer AI_EXTRACT over AI_CUSTOM_PROMPT for extraction)"
+
+  - stage: integrations
+    order: 6
+    keyQuestion: "Are there other systems to connect this flow with?"
+    explanation: "Flows can integrate via triggers, automations, wait steps, or pre-built connectors."
+    proactiveReview:
+      - "Identify webhook/automation opportunities not mentioned"
+    defaults:
+      - "No integrations unless specified"
+
+  - stage: governance
+    order: 7
+    keyQuestion: "How should we name each run of this flow?"
+    explanation: "Set up permissions and naming to keep runs organized."
+    secondaryQuestions:
+      - "Who can start this process?"
+      - "Who can coordinate or manage active runs?"
+      - "Who can edit this flow design?"
+      - "Does this flow have an overall due date?"
+    permissions:
+      execute: "Who can start new runs"
+      coordinate: "Who can manage/oversee active runs"
+      edit: "Who can modify the flow design"
+    experienceOptions:
+      spotlight: "Assignees see only their assigned tasks (focused view)"
+      gallery: "Assignees see all visible steps"
+    defaults:
+      - "Flow name using variable (e.g., '{Client Name} - Onboarding')"
+      - "Chat assistance enabled"
+      - "Auto-archive after completion"
+      - "Spotlight view for assignees"
+      - "No overall due date unless specified"
+
+# Inference rules: how to map user language to step types
+inferenceRules:
+  principle: "Generate based on what user described. Don't ask about features they didn't mention."
+  negative:
+    - "No approval mentioned -> no approval steps"
+    - "No e-signature mentioned -> no e-sign steps"
+    - "No decision/branching mentioned -> linear flow"
+    - "No file upload mentioned -> no file request steps"
+    - "No automation mentioned -> manual steps only"
+    - "No conditional paths mentioned -> sequential flow"
+  positive:
+    - "'review' or 'sign-off' -> APPROVAL"
+    - "'signature' or 'sign' for documents -> ESIGN"
+    - "'upload' or 'submit documents' -> FILE_REQUEST"
+    - "'if X then Y' or 'depending on' -> branching"
+    - "'form' or 'collect information' -> FORM"
+    - "'acknowledge' or 'confirm receipt' -> ACKNOWLEDGEMENT"
+    - "'wait' or 'hold until' -> WAIT"
+    - "'notify' or 'send email' -> SYSTEM_EMAIL"
+
+# Post-creation suggestions (offer after building the workflow)
+postCreateSuggestions:
+  - question: "Would you like to group these steps into stages or milestones?"
+    recommendation: "Milestones help organize longer workflows into phases."
+  - question: "Are there tasks AI could automate?"
+    recommendation: "Look for data extraction, summarization, or content generation opportunities."
+  - question: "Are there other systems to connect?"
+    recommendation: "Consider CRM, email, or document systems."
+  - question: "How should we name each run?"
+    recommendation: "Suggest a name using variables, e.g., '{Client Name} - Onboarding'"
+  - question: "Should any review steps support revision loops?"
+    recommendation: "GOTO pattern lets rejected items return for rework."
+  - question: "Who will manage this process?"
+    recommendation: "Set who can start (execute), manage (coordinate), and edit."
+    subQuestions:
+      - id: "executePermission"
+        text: "Who can start this process?"
+        mapsTo: "flow.permissions.execute"
+      - id: "coordinatePermission"
+        text: "Who can coordinate active runs?"
+        mapsTo: "flow.permissions.coordinate"
+      - id: "editPermission"
+        text: "Who can edit this flow design?"
+        mapsTo: "flow.permissions.edit"

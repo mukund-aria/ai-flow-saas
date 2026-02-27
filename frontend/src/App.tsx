@@ -44,6 +44,7 @@ import {
   OrgSetupPage,
   TeamPage,
   AssigneeTaskPage,
+  FormBuilderPage,
 } from '@/pages';
 import { TemplateDetailPage } from '@/pages/TemplateDetailPage';
 
@@ -150,6 +151,7 @@ function AppRoutes() {
         <Route path="templates" element={<FlowsPage />} />
         <Route path="templates/new" element={<FlowBuilderPage />} />
         <Route path="templates/:id" element={<FlowBuilderPage />} />
+        <Route path="templates/:id/form/:stepId" element={<FormBuilderPage />} />
         <Route path="templates/:id/detail" element={<TemplateDetailPage />} />
         <Route path="flows" element={<FlowRunsPage />} />
         <Route path="flows/:id" element={<FlowRunDetailPage />} />

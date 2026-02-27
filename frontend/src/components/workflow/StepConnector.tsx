@@ -21,12 +21,15 @@ export function StepConnector({ showAddButton = false, onAdd, dropId }: StepConn
         isOver ? 'py-2' : ''
       }`}
     >
-      {/* Dashed vertical line */}
-      <div className={`w-0 h-5 border-l-2 border-dashed ${isOver ? 'border-violet-400' : 'border-gray-300'}`} />
+      {/* Top endpoint dot */}
+      <div className={`w-1 h-1 rounded-full ${isOver ? 'bg-violet-400' : 'bg-gray-300'}`} />
+
+      {/* Solid vertical line */}
+      <div className={`w-[2px] h-6 ${isOver ? 'bg-violet-400' : 'bg-gray-300'}`} />
 
       {/* Drop indicator when dragging from palette */}
       {isOver && (
-        <div className="px-3 py-1 rounded-full bg-violet-100 text-violet-600 text-xs font-medium border-2 border-dashed border-violet-400 animate-in fade-in duration-150">
+        <div className="px-3 py-1 rounded-full bg-violet-100 text-violet-600 text-xs font-medium border-2 border-dashed border-violet-400 animate-in fade-in duration-200">
           Drop here
         </div>
       )}
@@ -35,14 +38,17 @@ export function StepConnector({ showAddButton = false, onAdd, dropId }: StepConn
       {showAddButton && !isOver && (
         <button
           onClick={onAdd}
-          className="w-7 h-7 rounded-full border-2 border-dashed border-gray-300 bg-white flex items-center justify-center opacity-40 group-hover:opacity-100 group-hover:border-violet-400 group-hover:text-violet-500 transition-all hover:bg-violet-50 hover:shadow-sm"
+          className="w-8 h-8 rounded-full border-2 border-solid border-gray-300 bg-white flex items-center justify-center opacity-50 group-hover:opacity-100 group-hover:border-violet-400 group-hover:text-violet-500 transition-all hover:bg-violet-50 hover:shadow-sm hover:scale-110"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
       )}
 
-      {/* Dashed vertical line (bottom segment) */}
-      <div className={`w-0 h-5 border-l-2 border-dashed ${isOver ? 'border-violet-400' : 'border-gray-300'}`} />
+      {/* Solid vertical line (bottom segment) */}
+      <div className={`w-[2px] h-6 ${isOver ? 'bg-violet-400' : 'bg-gray-300'}`} />
+
+      {/* Bottom endpoint dot */}
+      <div className={`w-1 h-1 rounded-full ${isOver ? 'bg-violet-400' : 'bg-gray-300'}`} />
     </div>
   );
 }

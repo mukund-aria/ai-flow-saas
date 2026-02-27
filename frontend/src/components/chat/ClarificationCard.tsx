@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Send, CheckCircle, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
 import { SelectionInput, TextWithFileInput, QuickSuggestionChips } from './clarification';
 import type { Clarification, ClarificationAnswer } from '@/types';
 
@@ -364,26 +364,32 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
     const isFirstStep = currentStep === 0;
 
     return (
-      <Card className="border-2 border-violet-200 bg-violet-50/30 max-w-md">
-        <CardContent className="pt-4 pb-2">
+      <Card className="border-2 border-violet-200 bg-white max-w-md shadow-lg shadow-violet-100/30 rounded-2xl overflow-hidden">
+        <div className="bg-gradient-to-br from-violet-50 to-indigo-50/50 border-b border-violet-100 px-4 pt-4 pb-3">
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm">
+              <HelpCircle className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">A few quick questions</p>
+              <p className="text-xs text-violet-600 font-medium">Question {currentStep + 1} of {questions.length}</p>
+            </div>
+          </div>
           {/* Step indicators */}
           {renderStepIndicators()}
+        </div>
 
-          {/* Step counter */}
-          <div className="text-xs text-gray-500 text-center mb-3">
-            Question {currentStep + 1} of {questions.length}
-          </div>
-
+        <CardContent className="pt-4 pb-2">
           {/* Current question */}
           <div className="min-h-[120px]">
-            <label className="block text-base font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
               {currentQuestion.text}
             </label>
             {renderQuestionInput(currentQuestion)}
           </div>
         </CardContent>
 
-        <CardFooter className="pt-2 flex gap-2">
+        <CardFooter className="pt-2 flex gap-2 border-t border-violet-100/50">
           {/* Back button - only show if not first step */}
           {!isFirstStep && (
             <Button
@@ -401,7 +407,7 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
             <Button
               onClick={handleSubmit}
               disabled={!hasAnyValidAnswer}
-              className="flex-1"
+              className="flex-1 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md"
             >
               <Send className="w-4 h-4 mr-2" />
               Submit Answers
@@ -409,7 +415,7 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
           ) : (
             <Button
               onClick={() => setCurrentStep((prev) => prev + 1)}
-              className="flex-1"
+              className="flex-1 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md"
             >
               Next
               <ChevronRight className="w-4 h-4 ml-2" />
@@ -428,10 +434,18 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
     const isFirstStep = currentStep === 0;
 
     return (
-      <Card className="border-2 border-green-200 bg-green-50/30 max-w-md">
-        <CardContent className="pt-4 pb-2">
+      <Card className="border-2 border-green-200 bg-white max-w-md shadow-lg shadow-green-100/30 rounded-2xl overflow-hidden">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50/50 border-b border-green-100 px-4 pt-3 pb-3">
+          {/* Submitted header */}
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            </div>
+            <span className="text-sm font-semibold text-green-700">Answers submitted</span>
+          </div>
+
           {/* Step indicators */}
-          <div className="flex items-center justify-center gap-1.5 mb-4">
+          <div className="flex items-center justify-center gap-1.5">
             {questions.map((q, index) => {
               const isCurrent = index === currentStep;
               return (
@@ -446,31 +460,27 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
               );
             })}
           </div>
+        </div>
 
-          {/* Submitted header */}
-          <div className="flex items-center justify-center gap-2 text-green-600 pb-2 mb-3 border-b border-green-200">
-            <CheckCircle className="w-4 h-4" />
-            <span className="text-sm font-medium">Answers submitted</span>
-          </div>
-
+        <CardContent className="pt-4 pb-2">
           {/* Current question */}
           <div className="min-h-[80px]">
-            <p className="text-base font-medium text-gray-700 mb-2">
+            <p className="text-sm font-medium text-gray-700 mb-2">
               {currentQuestion.text}
             </p>
-            <p className="text-base text-gray-600 whitespace-pre-wrap">
+            <p className="text-sm text-gray-600 whitespace-pre-wrap bg-green-50/50 rounded-lg p-2.5 border border-green-100">
               {answer || <span className="text-gray-400 italic">No answer provided</span>}
             </p>
           </div>
         </CardContent>
 
-        <CardFooter className="pt-2 flex gap-2">
+        <CardFooter className="pt-2 flex gap-2 border-t border-green-100/50">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setCurrentStep((prev) => prev - 1)}
             disabled={isFirstStep}
-            className="px-3"
+            className="px-3 rounded-full"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -478,7 +488,7 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
             variant="outline"
             onClick={() => setCurrentStep((prev) => prev + 1)}
             disabled={isLastStep}
-            className="flex-1"
+            className="flex-1 rounded-full"
           >
             {isLastStep ? 'Done' : 'Next'}
             {!isLastStep && <ChevronRight className="w-4 h-4 ml-2" />}
@@ -497,23 +507,26 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
 
     // Single question locked layout
     return (
-      <Card className="border-2 border-green-200 bg-green-50/30 max-w-md">
-        <CardContent className="space-y-3 pt-4 pb-3">
-          {/* Submitted header */}
-          <div className="flex items-center gap-2 text-green-600 pb-2 border-b border-green-200">
-            <CheckCircle className="w-4 h-4" />
-            <span className="text-base font-medium">Answers submitted</span>
+      <Card className="border-2 border-green-200 bg-white max-w-md shadow-lg shadow-green-100/30 rounded-2xl overflow-hidden">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50/50 border-b border-green-100 px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center">
+              <CheckCircle className="w-4 h-4 text-green-600" />
+            </div>
+            <span className="text-sm font-semibold text-green-700">Answers submitted</span>
           </div>
+        </div>
 
+        <CardContent className="space-y-3 pt-4 pb-4">
           {/* Show questions with answers */}
           {questions.map((question, index) => {
             const answer = savedAnswers?.[question.id];
             return (
-              <div key={question.id} className="space-y-2">
-                <p className="text-base font-medium text-gray-700">
+              <div key={question.id} className="space-y-1.5">
+                <p className="text-sm font-medium text-gray-700">
                   {index + 1}. {question.text}
                 </p>
-                <p className="text-base text-gray-600 pl-4 whitespace-pre-wrap">
+                <p className="text-sm text-gray-600 whitespace-pre-wrap bg-green-50/50 rounded-lg p-2.5 border border-green-100 ml-4">
                   {answer || <span className="text-gray-400 italic">No answer provided</span>}
                 </p>
               </div>
@@ -531,11 +544,23 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
 
   // Default single question layout
   return (
-    <Card className="border-2 border-violet-200 bg-violet-50/30 max-w-md">
-      <CardContent className="space-y-8 pt-4 pb-2">
+    <Card className="border-2 border-violet-200 bg-white max-w-md shadow-lg shadow-violet-100/30 rounded-2xl overflow-hidden">
+      <div className="bg-gradient-to-br from-violet-50 to-indigo-50/50 border-b border-violet-100 px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm">
+            <HelpCircle className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-800">Quick question</p>
+            <p className="text-xs text-violet-600 font-medium">Help me design this right</p>
+          </div>
+        </div>
+      </div>
+
+      <CardContent className="space-y-6 pt-4 pb-2">
         {questions.map((question, index) => (
           <div key={question.id}>
-            <label className="block text-base font-medium text-gray-700 mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
               {index + 1}. {question.text}
             </label>
             {renderQuestionInput(question)}
@@ -543,11 +568,11 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
         ))}
       </CardContent>
 
-      <CardFooter className="pt-2">
+      <CardFooter className="pt-2 border-t border-violet-100/50">
         <Button
           onClick={handleSubmit}
           disabled={!hasAnyValidAnswer}
-          className="w-full"
+          className="w-full rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md"
         >
           <Send className="w-4 h-4 mr-2" />
           Submit Answers

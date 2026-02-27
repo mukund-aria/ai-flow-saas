@@ -7,7 +7,7 @@
  */
 
 import { useLocation, useNavigate, useSearchParams, useParams } from 'react-router-dom';
-import { Loader2, Sparkles, PenLine, Settings, X, Play } from 'lucide-react';
+import { Loader2, Sparkles, PenLine, Settings, X, Play, PanelLeftClose, PanelLeftOpen, MessageSquare } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { ChatContainer } from '@/components/chat/ChatContainer';
 import { WorkflowPanel } from '@/components/workflow/WorkflowPanel';
@@ -35,6 +35,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { STEP_TYPE_META } from '@/types';
 import { StepIcon } from '@/components/workflow/StepIcon';
+import { HelpWidget } from '@/components/ui/HelpWidget';
 
 type BuilderMode = 'ai' | 'manual';
 
@@ -64,6 +65,38 @@ export function FlowBuilderPage() {
   const [builderMode, setBuilderMode] = useState<BuilderMode>(modeParam === 'manual' ? 'manual' : 'ai');
   const [showAIChat, setShowAIChat] = useState(builderMode === 'ai');
 
+  // Resizable AI panel state
+  const [chatWidthPercent, setChatWidthPercent] = useState(38);
+  const [isResizing, setIsResizing] = useState(false);
+  const [isChatCollapsed, setIsChatCollapsed] = useState(false);
+
+  // Resize handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const percent = (e.clientX / window.innerWidth) * 100;
+      setChatWidthPercent(Math.min(60, Math.max(20, percent)));
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
   // Check if we have a prompt from navigation state (from Home page)
   const initialPrompt = (location.state as { prompt?: string })?.prompt;
   const fromPreview = searchParams.get('fromPreview') === 'true';
@@ -84,10 +117,15 @@ export function FlowBuilderPage() {
     }
   };
 
-  // Start a new chat when component mounts
+  // Start a new chat when component mounts or template changes
   useEffect(() => {
     startNewChat();
-  }, []);
+  }, [templateId, startNewChat]);
+
+  // Reset template loaded ref when templateId changes
+  useEffect(() => {
+    templateLoadedRef.current = false;
+  }, [templateId]);
 
   // Load existing template if we have an :id param
   useEffect(() => {
@@ -227,6 +265,30 @@ export function FlowBuilderPage() {
       }
     };
   }, [workflow, builderMode, autoSave]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+
+      const isMod = e.metaKey || e.ctrlKey;
+
+      if (isMod && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        useWorkflowStore.getState().undo();
+      } else if (isMod && (e.key === 'Z' || e.key === 'y')) {
+        e.preventDefault();
+        useWorkflowStore.getState().redo();
+      } else if (e.key === 'Escape') {
+        setShowSettings(false);
+        setShowStartConfig(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Handle publish
   const handlePublish = async () => {
@@ -531,23 +593,63 @@ export function FlowBuilderPage() {
           </>
         )}
         {builderMode === 'ai' ? (
-          <>
-            {/* AI mode: Chat panel + Canvas */}
+          <div className={`flex flex-1 overflow-hidden ${isResizing ? 'select-none' : ''}`}>
+            {/* AI mode: Chat panel + Resizable Divider + Canvas */}
             <div
-              className={`border-r border-gray-200 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${
-                showAIChat ? 'w-1/2 opacity-100' : 'w-0 opacity-0'
-              }`}
+              className={`border-r border-gray-200 flex flex-col overflow-hidden ${
+                !isResizing ? 'transition-all duration-300 ease-in-out' : ''
+              } ${isChatCollapsed ? 'opacity-0' : 'opacity-100'}`}
+              style={{ width: isChatCollapsed ? '0%' : `${chatWidthPercent}%` }}
             >
-              {showAIChat && <ChatContainer />}
+              {!isChatCollapsed && <ChatContainer />}
             </div>
+
+            {/* Draggable Divider */}
+            {!isChatCollapsed && (
+              <div
+                className="relative flex-shrink-0 group cursor-col-resize"
+                style={{ width: '5px' }}
+                onMouseDown={handleMouseDown}
+              >
+                <div className="absolute inset-0 bg-border w-px mx-auto" />
+                {/* Grip indicator */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-1 h-1 rounded-full bg-gray-400" />
+                  <div className="w-1 h-1 rounded-full bg-gray-400" />
+                  <div className="w-1 h-1 rounded-full bg-gray-400" />
+                </div>
+                {/* Collapse/Expand Toggle */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsChatCollapsed(true);
+                  }}
+                  className="absolute top-3 left-1/2 -translate-x-1/2 z-10 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-gray-600 hover:shadow opacity-0 group-hover:opacity-100 transition-all"
+                  title="Collapse AI chat"
+                >
+                  <PanelLeftClose className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
             <div
-              className={`bg-gray-50 overflow-auto transition-all duration-300 ease-in-out ${
-                showAIChat ? 'w-1/2' : 'w-full'
-              }`}
+              className={`bg-gray-50 overflow-auto ${!isResizing ? 'transition-all duration-300 ease-in-out' : ''}`}
+              style={{ width: isChatCollapsed ? '100%' : `${100 - chatWidthPercent}%` }}
             >
               <WorkflowPanel />
+
+              {/* Floating "Open AI Chat" button when collapsed */}
+              {isChatCollapsed && (
+                <button
+                  onClick={() => setIsChatCollapsed(false)}
+                  className="fixed bottom-6 left-6 z-20 flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-full shadow-lg hover:bg-violet-700 hover:shadow-xl transition-all"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="text-sm font-medium">Open AI Chat</span>
+                </button>
+              )}
             </div>
-          </>
+          </div>
         ) : (
           /* Manual mode: Shared DndContext for palette drag + step reorder */
           <DndContext
@@ -578,6 +680,9 @@ export function FlowBuilderPage() {
           </DndContext>
         )}
       </div>
+
+      {/* Help Widget */}
+      <HelpWidget />
     </div>
   );
 }

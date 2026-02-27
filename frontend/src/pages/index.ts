@@ -20,3 +20,4 @@ export { OrgSelectPage } from './OrgSelectPage';
 export { OrgSetupPage } from './OrgSetupPage';
 export { TeamPage } from './TeamPage';
 export { AssigneeTaskPage } from './AssigneeTaskPage';
+export { FormBuilderPage } from './FormBuilderPage';
