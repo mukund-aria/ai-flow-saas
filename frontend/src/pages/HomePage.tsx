@@ -26,6 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { getAttentionItems, type AttentionItem, type TrackingStatus } from '@/lib/api';
 import { useOnboardingStore } from '@/stores/onboardingStore';
+import { useAttentionSettings, filterByAttentionSettings } from '@/hooks/useAttentionSettings';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -154,6 +155,7 @@ const SETUP_STEPS = [
 export function HomePage() {
   const navigate = useNavigate();
   const onboarding = useOnboardingStore();
+  const { settings: attentionSettings } = useAttentionSettings();
 
   const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -167,8 +169,9 @@ export function HomePage() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Show top 5 attention items
-  const displayItems = attentionItems.slice(0, 5);
+  // Apply attention settings filter, then show top 5
+  const filteredItems = filterByAttentionSettings(attentionItems, attentionSettings);
+  const displayItems = filteredItems.slice(0, 5);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -338,9 +341,9 @@ export function HomePage() {
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-red-500" />
               <h2 className="text-base font-semibold text-gray-900">Attention Needed</h2>
-              {attentionItems.length > 0 && (
+              {filteredItems.length > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                  {attentionItems.length}
+                  {filteredItems.length}
                 </span>
               )}
             </div>
@@ -389,6 +392,13 @@ export function HomePage() {
                       </div>
                       <div className="text-xs text-gray-500 mt-0.5">
                         {item.flow.name}
+                        {/* Show "Waiting for" when not the user's turn */}
+                        {!item.reasons.some((r) => r.type === 'YOUR_TURN') &&
+                          item.currentStepAssignee && (
+                            <span className="text-gray-400 ml-1.5">
+                              &middot; Waiting for: {item.currentStepAssignee.name}
+                            </span>
+                          )}
                       </div>
                     </div>
 

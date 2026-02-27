@@ -48,15 +48,40 @@ router.get(
           },
         },
         stepExecutions: {
-          columns: { id: true },
+          columns: {
+            id: true,
+            stepIndex: true,
+            status: true,
+            assignedToUserId: true,
+            assignedToContactId: true,
+          },
+          with: {
+            assignedToUser: { columns: { id: true, name: true } },
+            assignedToContact: { columns: { id: true, name: true } },
+          },
         },
       },
     });
 
-    const runsWithTotalSteps = allRuns.map(run => ({
-      ...run,
-      totalSteps: (run as any).stepExecutions?.length || 0,
-    }));
+    const runsWithTotalSteps = allRuns.map(run => {
+      const stepExecs = (run as any).stepExecutions || [];
+      const totalSteps = stepExecs.length;
+
+      // Compute currentStepAssignee from first active step
+      const activeStep = stepExecs.find(
+        (se: any) => se.status === 'IN_PROGRESS' || se.status === 'WAITING_FOR_ASSIGNEE'
+      );
+      let currentStepAssignee = null;
+      if (activeStep?.assignedToContact) {
+        currentStepAssignee = { id: activeStep.assignedToContact.id, name: activeStep.assignedToContact.name, type: 'contact' as const };
+      } else if (activeStep?.assignedToUser) {
+        currentStepAssignee = { id: activeStep.assignedToUser.id, name: activeStep.assignedToUser.name, type: 'user' as const };
+      }
+
+      // Strip stepExecutions array from response to keep payload small
+      const { stepExecutions: _se, ...rest } = run as any;
+      return { ...rest, totalSteps, currentStepAssignee };
+    });
 
     res.json({
       success: true,

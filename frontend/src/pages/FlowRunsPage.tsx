@@ -1,91 +1,40 @@
 /**
- * Flow Runs Page
+ * Flow Runs Page — Coordinator Command Center
  *
- * Lists all active and completed workflow instances.
- * Shows progress, status, tracking badges, and allows filtering.
- * Supports "Attention Needed" and "Where I'm Involved" filter modes.
+ * Features:
+ * - 4 filter dropdowns: Flows, Templates, Statuses, Contacts
+ * - "Needs Attention" toggle pill with count badge
+ * - Attention Settings gear popover
+ * - Enhanced row items with context badges, progress bars, kebab menus
+ * - URL sync for deep linking
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Search,
   PlayCircle,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
   Loader2,
-  XCircle,
+  MoreVertical,
+  AlertCircle,
 } from 'lucide-react';
-import { listFlows, getAttentionItems, type Flow, type AttentionItem, type TrackingStatus } from '@/lib/api';
+import {
+  listFlows,
+  getAttentionItems,
+  listTemplates,
+  listContacts,
+  cancelFlow,
+  type Flow,
+  type AttentionItem,
+  type Template,
+  type Contact,
+} from '@/lib/api';
+import { FilterDropdown } from '@/components/ui/filter-dropdown';
+import { AttentionSettingsPopover } from '@/components/flows/AttentionSettingsPopover';
+import { useAttentionSettings, filterByAttentionSettings } from '@/hooks/useAttentionSettings';
 
-function getStatusIcon(status: Flow['status']) {
-  switch (status) {
-    case 'IN_PROGRESS':
-      return <PlayCircle className="w-4 h-4 text-blue-500" />;
-    case 'COMPLETED':
-      return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-    case 'PAUSED':
-      return <Clock className="w-4 h-4 text-amber-500" />;
-    case 'CANCELLED':
-      return <XCircle className="w-4 h-4 text-red-500" />;
-    default:
-      return <AlertCircle className="w-4 h-4 text-gray-400" />;
-  }
-}
-
-function getStatusBadge(status: Flow['status']) {
-  const baseClasses = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full';
-
-  switch (status) {
-    case 'IN_PROGRESS':
-      return (
-        <span className={`${baseClasses} bg-blue-100 text-blue-700`}>
-          {getStatusIcon(status)}
-          In Progress
-        </span>
-      );
-    case 'COMPLETED':
-      return (
-        <span className={`${baseClasses} bg-green-100 text-green-700`}>
-          {getStatusIcon(status)}
-          Completed
-        </span>
-      );
-    case 'PAUSED':
-      return (
-        <span className={`${baseClasses} bg-amber-100 text-amber-700`}>
-          {getStatusIcon(status)}
-          Paused
-        </span>
-      );
-    case 'CANCELLED':
-      return (
-        <span className={`${baseClasses} bg-red-100 text-red-700`}>
-          {getStatusIcon(status)}
-          Cancelled
-        </span>
-      );
-    default:
-      return (
-        <span className={`${baseClasses} bg-gray-100 text-gray-700`}>
-          {status}
-        </span>
-      );
-  }
-}
-
-function getTrackingBadge(status: TrackingStatus) {
-  const baseClasses = 'inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-full';
-  switch (status) {
-    case 'ON_TRACK':
-      return <span className={`${baseClasses} bg-green-50 text-green-700`}>On Track</span>;
-    case 'AT_RISK':
-      return <span className={`${baseClasses} bg-amber-50 text-amber-700`}>At Risk</span>;
-    case 'OFF_TRACK':
-      return <span className={`${baseClasses} bg-red-50 text-red-700`}>Off Track</span>;
-  }
-}
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString);
@@ -100,42 +49,204 @@ function formatTimeAgo(dateString: string): string {
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
 
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
+
+// ---------------------------------------------------------------------------
+// Context Badge Helpers
+// ---------------------------------------------------------------------------
+
+function getContextBadges(
+  run: Flow,
+  attentionData: AttentionItem | undefined
+) {
+  const badges: React.ReactNode[] = [];
+  const reasons = attentionData?.reasons.map((r) => r.type) || [];
+
+  // Terminal states
+  if (run.status === 'COMPLETED') {
+    badges.push(
+      <span key="completed" className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-100 text-green-700">
+        Completed
+      </span>
+    );
+    return badges;
+  }
+  if (run.status === 'CANCELLED') {
+    badges.push(
+      <span key="cancelled" className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-700">
+        Cancelled
+      </span>
+    );
+    return badges;
+  }
+
+  // Attention-based badges (can stack)
+  if (reasons.includes('YOUR_TURN')) {
+    badges.push(
+      <span key="your-turn" className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-green-100 text-green-700">
+        Your turn
+      </span>
+    );
+  } else if (run.currentStepAssignee) {
+    // Not your turn — show who it's waiting for
+    badges.push(
+      <span key="waiting" className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border border-gray-300 text-gray-600 bg-white">
+        Waiting for: {run.currentStepAssignee.name}
+      </span>
+    );
+  }
+
+  if (reasons.includes('STEP_OVERDUE')) {
+    badges.push(
+      <span key="action-overdue" className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-100 text-orange-700">
+        Action overdue
+      </span>
+    );
+  }
+  if (reasons.includes('FLOW_OVERDUE')) {
+    badges.push(
+      <span key="overdue" className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-700">
+        Overdue
+      </span>
+    );
+  }
+  if (reasons.includes('ESCALATED')) {
+    badges.push(
+      <span key="escalated" className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-100 text-orange-700">
+        Escalated
+      </span>
+    );
+  }
+  if (reasons.includes('STALLED')) {
+    badges.push(
+      <span key="stalled" className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-700">
+        Stalled
+      </span>
+    );
+  }
+  if (reasons.includes('AUTOMATION_FAILED')) {
+    badges.push(
+      <span key="failed" className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-700">
+        Failed
+      </span>
+    );
+  }
+
+  return badges;
+}
+
+// ---------------------------------------------------------------------------
+// Kebab Menu
+// ---------------------------------------------------------------------------
+
+function KebabMenu({ run, onCancel }: { run: Flow; onCancel: (id: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isOpen]);
+
+  const navigate = useNavigate();
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="p-1 rounded hover:bg-gray-200 transition-colors text-gray-400 hover:text-gray-600"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-50 min-w-[140px]">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+              navigate(`/flows/${run.id}`);
+            }}
+            className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            View flow
+          </button>
+          {run.status === 'IN_PROGRESS' && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(false);
+                onCancel(run.id);
+              }}
+              className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+            >
+              Cancel flow
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 export function FlowRunsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Data
   const [runs, setRuns] = useState<Flow[]>([]);
   const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [contactsList, setContactsList] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Read initial filter from URL search params
-  const filterParam = searchParams.get('filter');
-  const [statusFilter, setStatusFilter] = useState<string>(
-    filterParam === 'attention' ? 'ATTENTION' : filterParam === 'involved' ? 'INVOLVED' : 'all'
+  // Attention settings
+  const { settings: attentionSettings, updateSetting, resetToDefaults } = useAttentionSettings();
+
+  // Filter state — read from URL on mount
+  const [flowFilter, setFlowFilter] = useState(searchParams.get('flow') || 'all');
+  const [templateFilter, setTemplateFilter] = useState(searchParams.get('template') || 'all');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all');
+  const [contactFilter, setContactFilter] = useState(searchParams.get('contact') || 'all');
+  const [needsAttention, setNeedsAttention] = useState(
+    searchParams.get('attention') === '1' || searchParams.get('filter') === 'attention'
   );
 
-  // Build attention run IDs lookup for tracking status
-  const attentionRunIds = new Set(attentionItems.map((a) => a.flowRun.id));
+  // Lookup maps
   const attentionByRunId = new Map(attentionItems.map((a) => [a.flowRun.id, a]));
+  const filteredAttention = filterByAttentionSettings(attentionItems, attentionSettings);
+  const filteredAttentionRunIds = new Set(filteredAttention.map((a) => a.flowRun.id));
 
-  // Fetch flows and attention data on mount
+  // Fetch all data on mount
   useEffect(() => {
     async function fetchData() {
       try {
         setIsLoading(true);
-        const [flowData, attention] = await Promise.all([
+        const [flowData, attention, tmpl, cts] = await Promise.all([
           listFlows(),
           getAttentionItems().catch(() => [] as AttentionItem[]),
+          listTemplates().catch(() => [] as Template[]),
+          listContacts().catch(() => [] as Contact[]),
         ]);
         setRuns(flowData);
         setAttentionItems(attention);
+        setTemplates(tmpl);
+        setContactsList(cts);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load flows');
@@ -146,38 +257,121 @@ export function FlowRunsPage() {
     fetchData();
   }, []);
 
-  // Update URL when filter changes
-  const handleFilterChange = (newFilter: string) => {
-    setStatusFilter(newFilter);
-    if (newFilter === 'ATTENTION') {
-      setSearchParams({ filter: 'attention' });
-    } else if (newFilter === 'INVOLVED') {
-      setSearchParams({ filter: 'involved' });
-    } else if (newFilter !== 'all') {
-      setSearchParams({ filter: newFilter });
-    } else {
-      setSearchParams({});
+  // Sync filters to URL
+  const syncURL = useCallback(
+    (updates: Record<string, string | boolean>) => {
+      const merged = {
+        flow: flowFilter,
+        template: templateFilter,
+        status: statusFilter,
+        contact: contactFilter,
+        attention: needsAttention,
+        ...updates,
+      };
+
+      const params: Record<string, string> = {};
+      if (merged.flow !== 'all') params.flow = merged.flow as string;
+      if (merged.template !== 'all') params.template = merged.template as string;
+      if (merged.status !== 'all') params.status = merged.status as string;
+      if (merged.contact !== 'all') params.contact = merged.contact as string;
+      if (merged.attention) params.attention = '1';
+
+      setSearchParams(params, { replace: true });
+    },
+    [flowFilter, templateFilter, statusFilter, contactFilter, needsAttention, setSearchParams]
+  );
+
+  const updateFilter = (key: string, value: string) => {
+    switch (key) {
+      case 'flow': setFlowFilter(value); break;
+      case 'template': setTemplateFilter(value); break;
+      case 'status': setStatusFilter(value); break;
+      case 'contact': setContactFilter(value); break;
+    }
+    syncURL({ [key]: value });
+  };
+
+  const toggleAttention = () => {
+    const next = !needsAttention;
+    setNeedsAttention(next);
+    syncURL({ attention: next });
+  };
+
+  const handleCancel = async (id: string) => {
+    try {
+      await cancelFlow(id);
+      // Refresh data
+      const [flowData, attention] = await Promise.all([
+        listFlows(),
+        getAttentionItems().catch(() => [] as AttentionItem[]),
+      ]);
+      setRuns(flowData);
+      setAttentionItems(attention);
+    } catch {
+      // ignore
     }
   };
 
-  const filteredRuns = runs.filter((run) => {
-    const matchesSearch =
-      run.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (run.flow?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+  // Build filter options
+  const flowFilterOptions = [
+    { value: 'involved', label: 'Where I\'m Involved' },
+  ];
 
-    let matchesStatus = true;
-    if (statusFilter === 'ATTENTION') {
-      matchesStatus = attentionRunIds.has(run.id);
-    } else if (statusFilter === 'INVOLVED') {
-      // "Where I'm Involved" — the attention API already scopes to involved runs
-      // so we include attention runs plus all runs (the API returns involved runs)
-      // For now, show attention items as a proxy for involvement
-      matchesStatus = attentionRunIds.has(run.id);
-    } else if (statusFilter !== 'all') {
-      matchesStatus = run.status === statusFilter;
+  const templateFilterOptions = templates.map((t) => ({
+    value: t.id,
+    label: t.name,
+  }));
+
+  const statusFilterOptions = [
+    { value: 'YOUR_TURN', label: 'Your Turn' },
+    { value: 'OVERDUE', label: 'Overdue' },
+    { value: 'IN_PROGRESS', label: 'In Progress' },
+    { value: 'COMPLETED', label: 'Completed' },
+    { value: 'PAUSED', label: 'Paused' },
+    { value: 'CANCELLED', label: 'Cancelled' },
+  ];
+
+  const contactFilterOptions = contactsList.map((c) => ({
+    value: c.id,
+    label: c.name,
+  }));
+
+  // Apply all filters (AND together)
+  const filteredRuns = runs.filter((run) => {
+    // Flow filter
+    if (flowFilter === 'involved') {
+      if (!filteredAttentionRunIds.has(run.id)) return false;
     }
 
-    return matchesSearch && matchesStatus;
+    // Template filter
+    if (templateFilter !== 'all') {
+      if (run.flow?.id !== templateFilter && (run as any).flowId !== templateFilter) return false;
+    }
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'YOUR_TURN') {
+        const attn = attentionByRunId.get(run.id);
+        if (!attn || !attn.reasons.some((r) => r.type === 'YOUR_TURN')) return false;
+      } else if (statusFilter === 'OVERDUE') {
+        const attn = attentionByRunId.get(run.id);
+        if (!attn || !attn.reasons.some((r) => r.type === 'STEP_OVERDUE' || r.type === 'FLOW_OVERDUE')) return false;
+      } else {
+        if (run.status !== statusFilter) return false;
+      }
+    }
+
+    // Contact filter
+    if (contactFilter !== 'all') {
+      if (run.currentStepAssignee?.id !== contactFilter) return false;
+    }
+
+    // Needs attention toggle
+    if (needsAttention) {
+      if (!filteredAttentionRunIds.has(run.id)) return false;
+    }
+
+    return true;
   });
 
   // Loading state
@@ -207,106 +401,157 @@ export function FlowRunsPage() {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Flows</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {runs.length} flow{runs.length !== 1 ? 's' : ''}
-        </p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Flows{' '}
+            <span className="text-lg font-normal text-gray-400 ml-1">
+              {runs.length}
+            </span>
+          </h1>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search flows..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-          />
-        </div>
-        <select
+      {/* Filter Bar */}
+      <div className="flex items-center gap-2 mb-6 flex-wrap">
+        {/* Left: Filter dropdowns */}
+        <FilterDropdown
+          allLabel="All Flows"
+          value={flowFilter}
+          options={flowFilterOptions}
+          onChange={(v) => updateFilter('flow', v)}
+        />
+        <FilterDropdown
+          allLabel="All Templates"
+          value={templateFilter}
+          options={templateFilterOptions}
+          onChange={(v) => updateFilter('template', v)}
+          searchable
+        />
+        <FilterDropdown
+          allLabel="All Statuses"
           value={statusFilter}
-          onChange={(e) => handleFilterChange(e.target.value)}
-          className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+          options={statusFilterOptions}
+          onChange={(v) => updateFilter('status', v)}
+        />
+        <FilterDropdown
+          allLabel="All Contacts"
+          value={contactFilter}
+          options={contactFilterOptions}
+          onChange={(v) => updateFilter('contact', v)}
+          searchable
+        />
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Right: Needs Attention toggle + Settings gear */}
+        <button
+          onClick={toggleAttention}
+          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+            needsAttention
+              ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+              : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+          }`}
         >
-          <option value="all">All Status</option>
-          <option value="ATTENTION">Attention Needed</option>
-          <option value="INVOLVED">Where I'm Involved</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="COMPLETED">Completed</option>
-          <option value="PAUSED">Paused</option>
-          <option value="CANCELLED">Cancelled</option>
-        </select>
+          <span className={`w-2 h-2 rounded-full ${needsAttention ? 'bg-red-500' : 'bg-gray-400'}`} />
+          Needs Attention
+          {filteredAttention.length > 0 && (
+            <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-semibold ${
+              needsAttention ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-700'
+            }`}>
+              {filteredAttention.length}
+            </span>
+          )}
+        </button>
+
+        <AttentionSettingsPopover
+          settings={attentionSettings}
+          onUpdate={updateSetting}
+          onReset={resetToDefaults}
+        />
       </div>
 
       {/* Run List */}
       {filteredRuns.length > 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
           {filteredRuns.map((run) => {
+            const attentionData = attentionByRunId.get(run.id);
+            const hasAttention = filteredAttentionRunIds.has(run.id);
+            const completedSteps = attentionData
+              ? attentionData.completedSteps
+              : run.status === 'COMPLETED'
+              ? run.totalSteps
+              : run.currentStepIndex;
             const progressPercent = run.totalSteps > 0
-              ? (run.currentStepIndex / run.totalSteps) * 100
+              ? (completedSteps / run.totalSteps) * 100
               : 0;
 
-            // Look up tracking status from attention data
-            const attentionData = attentionByRunId.get(run.id);
+            const badges = getContextBadges(run, attentionData);
 
             return (
               <div
                 key={run.id}
-                className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                className="px-4 py-3.5 hover:bg-gray-50 cursor-pointer transition-colors"
                 onClick={() => navigate(`/flows/${run.id}`)}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4">
+                  {/* Icon with notification dot */}
+                  <div className="relative flex-shrink-0">
                     <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
                       <PlayCircle className="w-5 h-5 text-blue-600" />
                     </div>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{run.name}</h3>
-                      <p className="text-sm text-gray-500">
-                        {run.flow?.name || 'Unknown Template'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    {/* Tracking badge for in-progress runs */}
-                    {run.status === 'IN_PROGRESS' && attentionData && (
-                      getTrackingBadge(attentionData.trackingStatus)
+                    {hasAttention && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white" />
                     )}
-
-                    {/* Status Badge */}
-                    {getStatusBadge(run.status)}
-
-                    {/* Progress */}
-                    <div className="w-32">
-                      <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                        <span>Progress</span>
-                        <span className="font-medium">
-                          {run.currentStepIndex}/{run.totalSteps}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            run.status === 'COMPLETED'
-                              ? 'bg-green-500'
-                              : run.status === 'CANCELLED'
-                              ? 'bg-red-400'
-                              : 'bg-violet-500'
-                          }`}
-                          style={{ width: `${progressPercent}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Time */}
-                    <span className="text-sm text-gray-400 w-24 text-right">
-                      {formatTimeAgo(run.startedAt)}
-                    </span>
                   </div>
+
+                  {/* Name + Template */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-gray-900 text-sm truncate">
+                      {run.name}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">
+                      {run.flow?.name || 'Unknown Template'}
+                    </p>
+                  </div>
+
+                  {/* Context badges */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
+                    {badges}
+                  </div>
+
+                  {/* Progress */}
+                  <div className="w-36 flex-shrink-0">
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                      <span>
+                        {run.status === 'IN_PROGRESS' ? 'In progress' : run.status === 'COMPLETED' ? 'Completed' : run.status === 'CANCELLED' ? 'Cancelled' : run.status}:
+                      </span>
+                      <span className="font-medium">
+                        {completedSteps} of {run.totalSteps}
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          run.status === 'COMPLETED'
+                            ? 'bg-green-500'
+                            : run.status === 'CANCELLED'
+                            ? 'bg-red-400'
+                            : 'bg-violet-500'
+                        }`}
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Time */}
+                  <span className="text-xs text-gray-400 flex-shrink-0 w-16 text-right">
+                    {formatTimeAgo(run.startedAt)}
+                  </span>
+
+                  {/* Kebab menu */}
+                  <KebabMenu run={run} onCancel={handleCancel} />
                 </div>
               </div>
             );
@@ -316,20 +561,24 @@ export function FlowRunsPage() {
         /* Empty State */
         <div className="text-center py-16">
           <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-4">
-            <PlayCircle className="w-8 h-8 text-gray-400" />
+            {needsAttention ? (
+              <AlertCircle className="w-8 h-8 text-gray-400" />
+            ) : (
+              <PlayCircle className="w-8 h-8 text-gray-400" />
+            )}
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {statusFilter === 'ATTENTION'
+            {needsAttention
               ? 'No items need attention'
-              : statusFilter === 'INVOLVED'
-              ? 'No flows where you are involved'
+              : statusFilter !== 'all'
+              ? 'No flows match this filter'
               : 'No flows yet'}
           </h3>
           <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-            {statusFilter === 'ATTENTION'
+            {needsAttention
               ? 'All your flows are on track. Check back later.'
-              : statusFilter === 'INVOLVED'
-              ? 'Start or get assigned to a flow to see it here.'
+              : statusFilter !== 'all'
+              ? 'Try adjusting your filters to see more results.'
               : 'Flows are live instances of your workflow templates. Publish a template, then start a flow to see progress here.'}
           </p>
         </div>

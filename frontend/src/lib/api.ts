@@ -317,6 +317,7 @@ export interface Flow {
   completedAt?: string;
   flow?: { id: string; name: string };
   startedBy?: { id: string; name: string; email: string };
+  currentStepAssignee?: { id: string; name: string; type: 'user' | 'contact' } | null;
   stepExecutions?: Array<{
     id: string;
     stepId: string;
@@ -511,6 +512,7 @@ export interface AttentionItem {
   trackingStatus: TrackingStatus;
   totalSteps: number;
   completedSteps: number;
+  currentStepAssignee?: { id: string; name: string; type: 'user' | 'contact' } | null;
 }
 
 /**

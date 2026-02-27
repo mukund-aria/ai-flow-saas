@@ -53,6 +53,7 @@ export interface AttentionItem {
   trackingStatus: TrackingStatus;
   totalSteps: number;
   completedSteps: number;
+  currentStepAssignee: { id: string; name: string; type: 'user' | 'contact' } | null;
 }
 
 // ============================================================================
@@ -100,9 +101,14 @@ router.get(
             stepIndex: true,
             status: true,
             assignedToUserId: true,
+            assignedToContactId: true,
             startedAt: true,
             dueAt: true,
             escalatedAt: true,
+          },
+          with: {
+            assignedToUser: { columns: { id: true, name: true } },
+            assignedToContact: { columns: { id: true, name: true } },
           },
         },
       },
@@ -195,6 +201,19 @@ router.get(
         now
       );
 
+      // Compute currentStepAssignee from first active step
+      const activeStep = stepExecs.find(
+        (se: any) => se.status === 'IN_PROGRESS' || se.status === 'WAITING_FOR_ASSIGNEE'
+      );
+      let currentStepAssignee: AttentionItem['currentStepAssignee'] = null;
+      if ((activeStep as any)?.assignedToContact) {
+        const c = (activeStep as any).assignedToContact;
+        currentStepAssignee = { id: c.id, name: c.name, type: 'contact' };
+      } else if ((activeStep as any)?.assignedToUser) {
+        const u = (activeStep as any).assignedToUser;
+        currentStepAssignee = { id: u.id, name: u.name, type: 'user' };
+      }
+
       attentionItems.push({
         flowRun: {
           id: run.id,
@@ -212,6 +231,7 @@ router.get(
         trackingStatus,
         totalSteps,
         completedSteps,
+        currentStepAssignee,
       });
     }
 
