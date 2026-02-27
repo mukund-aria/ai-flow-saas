@@ -71,6 +71,18 @@ const defaultSettings: FlowNotificationSettings = {
   channelIntegrations: defaultChannelIntegrations,
 };
 
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className="relative group">
+      <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-52 px-2.5 py-1.5 text-[11px] leading-snug text-white bg-gray-800 rounded-lg shadow-lg z-50 pointer-events-none">
+        {text}
+        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+      </span>
+    </span>
+  );
+}
+
 function DeliverySelect({ value, onChange }: { value: DeliveryChannel; onChange: (v: DeliveryChannel) => void }) {
   return (
     <div className="flex items-center gap-2 mt-2">
@@ -79,16 +91,13 @@ function DeliverySelect({ value, onChange }: { value: DeliveryChannel; onChange:
         value={value}
         onChange={(e) => onChange(e.target.value as DeliveryChannel)}
         className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white text-gray-700"
-        title={value === 'AUTO' ? 'Push notification if enabled. Otherwise email or SMS when the user is offline.' : undefined}
       >
-        <option value="AUTO" title="Push notification if enabled. Otherwise email or SMS when the user is offline.">Auto</option>
+        <option value="AUTO">Auto</option>
         <option value="EMAIL_OR_SMS">Email or SMS</option>
         <option value="EMAIL_AND_SMS">Email and SMS</option>
       </select>
       {value === 'AUTO' && (
-        <span className="text-[10px] text-gray-400" title="Push notification if enabled. Otherwise email or SMS when the user is offline.">
-          <Info className="w-3 h-3 inline text-gray-400 cursor-help" />
-        </span>
+        <InfoTooltip text="Push notification if enabled. Otherwise email or SMS when the user is offline." />
       )}
     </div>
   );

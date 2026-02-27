@@ -512,7 +512,7 @@ export function FlowBuilderPage() {
               className="absolute inset-0 bg-black/10 z-30"
               onClick={() => setShowSettings(false)}
             />
-            <div className="absolute right-0 top-0 bottom-0 w-[480px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto animate-in slide-in-from-right duration-200">
+            <div className="absolute right-0 top-0 bottom-0 w-[580px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto animate-in slide-in-from-right duration-200">
               <FlowSettingsPanel onClose={() => setShowSettings(false)} />
             </div>
           </>
