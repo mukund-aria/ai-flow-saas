@@ -41,7 +41,7 @@ if (isProduction) {
   }
 }
 
-// Redis session store (optional - uses in-memory if REDIS_URL not set)
+// Persistent session store: Redis > PostgreSQL > in-memory
 let sessionStore: session.Store | undefined;
 if (process.env.REDIS_URL) {
   try {
@@ -49,10 +49,28 @@ if (process.env.REDIS_URL) {
     const { Redis } = await import('ioredis');
     const redisClient = new Redis(process.env.REDIS_URL);
     sessionStore = new RedisStore({ client: redisClient });
-    console.log('Redis session store configured');
+    console.log('Session store: Redis');
   } catch (err) {
-    console.warn('Failed to configure Redis session store, using in-memory:', err);
+    console.warn('Failed to configure Redis session store:', err);
   }
+}
+if (!sessionStore && process.env.DATABASE_URL) {
+  try {
+    const pgSession = (await import('connect-pg-simple')).default;
+    const pg = await import('pg');
+    const pool = new pg.default.Pool({ connectionString: process.env.DATABASE_URL });
+    sessionStore = new (pgSession(session))({
+      pool,
+      tableName: 'user_sessions',
+      createTableIfMissing: true,
+    });
+    console.log('Session store: PostgreSQL');
+  } catch (err) {
+    console.warn('Failed to configure PostgreSQL session store:', err);
+  }
+}
+if (!sessionStore) {
+  console.warn('Session store: in-memory (sessions will be lost on restart)');
 }
 
 const app = express();
