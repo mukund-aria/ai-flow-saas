@@ -3,13 +3,33 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StepIcon } from './StepIcon';
 import { StepConfigPanel } from './StepConfigPanel';
-import { GripVertical, GitBranch, Pencil, Trash2, Copy, Columns2 } from 'lucide-react';
+import { GripVertical, GitBranch, Pencil, Trash2, Copy, Columns2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type { Step, AssigneePlaceholder } from '@/types';
 import { STEP_TYPE_META, getRoleColor, getRoleInitials } from '@/types';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+
+// Steps that auto-complete or have no assignee don't need one
+const NO_ASSIGNEE_TYPES = new Set([
+  'SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH',
+  'GOTO', 'GOTO_DESTINATION', 'TERMINATE', 'WAIT', 'SUB_FLOW',
+  'SYSTEM_WEBHOOK', 'SYSTEM_EMAIL', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE',
+  'BUSINESS_RULE',
+  'AI_CUSTOM_PROMPT', 'AI_EXTRACT', 'AI_SUMMARIZE', 'AI_TRANSCRIBE', 'AI_TRANSLATE', 'AI_WRITE',
+  'INTEGRATION_AIRTABLE', 'INTEGRATION_CLICKUP', 'INTEGRATION_DROPBOX',
+  'INTEGRATION_GMAIL', 'INTEGRATION_GOOGLE_DRIVE', 'INTEGRATION_GOOGLE_SHEETS', 'INTEGRATION_WRIKE',
+]);
+
+function getStepWarnings(step: Step): string[] {
+  const warnings: string[] = [];
+  if (!step.config.name) warnings.push('Missing step name');
+  if (!NO_ASSIGNEE_TYPES.has(step.type) && !step.config.assignee) {
+    warnings.push('No assignee');
+  }
+  return warnings;
+}
 
 interface StepCardProps {
   step: Step;
@@ -88,6 +108,8 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
     Array.isArray(step.config.outcomes) &&
     step.config.outcomes.length > 0;
   const isComplex = hasBranches || hasOutcomes;
+  const warnings = getStepWarnings(step);
+  const hasWarnings = warnings.length > 0;
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -108,7 +130,7 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
     <div ref={setNodeRef} style={style}>
       <Card
         className={cn(
-          'relative bg-white shadow-sm hover:shadow-md transition-all group overflow-hidden',
+          'relative bg-white shadow hover:shadow-lg rounded-xl transition-all duration-200 group overflow-hidden',
           editMode && 'cursor-pointer',
           isDragging && 'opacity-50 shadow-lg ring-2 ring-violet-300',
         )}
@@ -116,23 +138,30 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
       >
         {/* Colored header band */}
         <div
-          className="flex items-center gap-2 px-3 py-1.5"
+          className="flex items-center gap-2 px-4 py-2 rounded-t-xl"
           style={{ backgroundColor: meta.color }}
         >
           <StepIcon type={step.type} className="w-3.5 h-3.5 text-white" />
-          <span className="text-xs font-semibold text-white tracking-wide">
+          <span className="text-xs font-semibold text-white tracking-wide uppercase">
             {meta.label}
           </span>
-          {step.config.skipSequentialOrder && (
-            <span title="Skip sequential order"><Columns2 className="w-3 h-3 text-white/80 ml-auto" /></span>
-          )}
-          {isComplex && (
-            <GitBranch className="w-3 h-3 text-white/80 ml-auto" />
-          )}
+          <div className="flex items-center gap-1.5 ml-auto">
+            {step.config.skipSequentialOrder && (
+              <span title="Skip sequential order"><Columns2 className="w-3 h-3 text-white/80" /></span>
+            )}
+            {isComplex && (
+              <GitBranch className="w-3 h-3 text-white/80" />
+            )}
+            {hasWarnings && (
+              <span title={warnings.join(', ')}>
+                <AlertCircle className="w-3.5 h-3.5 text-red-200 drop-shadow-sm" />
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Card body */}
-        <div className="p-3">
+        <div className="p-3" style={{ backgroundColor: `${meta.color}08` }}>
           <div className="flex items-start gap-2">
             {/* Drag Handle */}
             {editMode && (
@@ -149,12 +178,12 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
             {/* Content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-medium text-gray-400">
+                <span className="bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
                   Step {index + 1}
                 </span>
               </div>
 
-              <h4 className="font-medium text-gray-900 mt-0.5 truncate text-sm">
+              <h4 className="font-semibold text-gray-800 mt-0.5 truncate text-sm">
                 {step.config.name || (editMode ? 'Click to configure...' : 'Untitled Step')}
               </h4>
 
@@ -174,7 +203,7 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
               {/* Assignee */}
               {step.config.assignee && (
                 <div className="flex items-center gap-1.5 mt-2">
-                  <span className="text-[11px] text-gray-400">Assigned to:</span>
+                  <span className="text-[11px] text-gray-600">Assigned to:</span>
                   <div
                     className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs"
                     style={{

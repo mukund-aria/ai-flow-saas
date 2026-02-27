@@ -22,9 +22,9 @@ export function WelcomeMessage({ onSelectExample }: WelcomeMessageProps) {
       {/* Content */}
       <div className="flex-1 max-w-[85%]">
         {/* Greeting bubble */}
-        <div className="inline-block px-4 py-2 rounded-2xl bg-gray-100 text-gray-900 rounded-bl-md">
-          <p className="text-base">
-            Hi! I'm your AI Solutions Engineer. Tell me about the business process you want to automate and I'll help design a workflow for you.
+        <div className="inline-block px-4 py-3 rounded-2xl bg-gray-100 text-gray-900 rounded-bl-md">
+          <p className="text-base leading-relaxed">
+            Hi! Tell me about the process you'd like to automate and I'll design a workflow for you.
           </p>
         </div>
 

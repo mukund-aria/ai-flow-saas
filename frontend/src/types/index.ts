@@ -838,17 +838,17 @@ export interface SessionState {
 // ============================================================================
 
 export const STEP_TYPE_META: Record<StepType, { label: string; color: string; category: string }> = {
-  // Human Actions
+  // Human Actions — each type gets a distinctive color for quick visual identification
   FORM: { label: 'Form', color: '#22c55e', category: 'human' },
-  QUESTIONNAIRE: { label: 'Questionnaire', color: '#22c55e', category: 'human' },
-  FILE_REQUEST: { label: 'File Request', color: '#22c55e', category: 'human' },
-  TODO: { label: 'To-Do', color: '#22c55e', category: 'human' },
+  QUESTIONNAIRE: { label: 'Questionnaire', color: '#10b981', category: 'human' },
+  FILE_REQUEST: { label: 'File Request', color: '#14b8a6', category: 'human' },
+  TODO: { label: 'To-Do', color: '#3b82f6', category: 'human' },
   APPROVAL: { label: 'Approval', color: '#3b82f6', category: 'human' },
   ACKNOWLEDGEMENT: { label: 'Acknowledgement', color: '#ec4899', category: 'human' },
-  ESIGN: { label: 'E-Sign', color: '#8b5cf6', category: 'human' },
-  DECISION: { label: 'Decision', color: '#8b5cf6', category: 'human' },
-  CUSTOM_ACTION: { label: 'Custom Action', color: '#6b7280', category: 'human' },
-  WEB_APP: { label: 'Web App', color: '#6b7280', category: 'human' },
+  ESIGN: { label: 'E-Sign', color: '#ef4444', category: 'human' },
+  DECISION: { label: 'Decision', color: '#f59e0b', category: 'human' },
+  CUSTOM_ACTION: { label: 'Custom Action', color: '#6366f1', category: 'human' },
+  WEB_APP: { label: 'Web App', color: '#0ea5e9', category: 'human' },
   PDF_FORM: { label: 'PDF Form', color: '#22c55e', category: 'human' },
 
   // Control Flow

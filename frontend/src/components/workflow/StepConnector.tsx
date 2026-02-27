@@ -22,10 +22,10 @@ export function StepConnector({ showAddButton = false, onAdd, dropId }: StepConn
       }`}
     >
       {/* Top endpoint dot */}
-      <div className={`w-1 h-1 rounded-full ${isOver ? 'bg-violet-400' : 'bg-gray-300'}`} />
+      <div className={`w-1 h-1 rounded-full ${isOver ? 'bg-violet-400' : 'bg-gray-400'}`} />
 
       {/* Solid vertical line */}
-      <div className={`w-[2px] h-6 ${isOver ? 'bg-violet-400' : 'bg-gray-300'}`} />
+      <div className={`w-[2px] h-6 ${isOver ? 'bg-violet-400' : 'bg-gray-400'}`} />
 
       {/* Drop indicator when dragging from palette */}
       {isOver && (
@@ -45,10 +45,10 @@ export function StepConnector({ showAddButton = false, onAdd, dropId }: StepConn
       )}
 
       {/* Solid vertical line (bottom segment) */}
-      <div className={`w-[2px] h-6 ${isOver ? 'bg-violet-400' : 'bg-gray-300'}`} />
+      <div className={`w-[2px] h-6 ${isOver ? 'bg-violet-400' : 'bg-gray-400'}`} />
 
       {/* Bottom endpoint dot */}
-      <div className={`w-1 h-1 rounded-full ${isOver ? 'bg-violet-400' : 'bg-gray-300'}`} />
+      <div className={`w-1 h-1 rounded-full ${isOver ? 'bg-violet-400' : 'bg-gray-400'}`} />
     </div>
   );
 }

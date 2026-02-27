@@ -44,7 +44,8 @@
     "postgres": "^3.4.8",
     "resend": "^4.1.2",
     "uuid": "^13.0.0",
-    "yaml": "^2.8.2"
+    "yaml": "^2.8.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

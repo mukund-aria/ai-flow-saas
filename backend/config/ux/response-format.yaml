@@ -1,0 +1,200 @@
+# Response Format Configuration
+# Defines how the AI structures responses using tools.
+# Extracted from hardcoded prompt-generator content for maintainability.
+
+version: "1.0"
+
+# Available tools and their descriptions
+tools:
+  - name: create_workflow
+    description: "Design a complete workflow"
+  - name: ask_clarification
+    description: "Request more information TO CREATE OR EDIT a workflow"
+  - name: edit_workflow
+    description: "Modify an existing workflow"
+  - name: reject_request
+    description: "Request cannot be fulfilled due to platform constraints"
+  - name: respond
+    description: "Informational questions, explanations, general conversation"
+
+# When to use respond vs ask_clarification
+respondVsClarify:
+  useRespond:
+    - "Asking a QUESTION about the current workflow"
+    - "Asking for EXPLANATION of what you did"
+    - "Making a COMMENT or observation"
+    - "Asking about YOUR CAPABILITIES"
+    - "Any message that is NOT a request to create or modify"
+  useClarify:
+    - "User wants to CREATE but request is vague"
+    - "User wants to EDIT but you need specifics"
+    - "You genuinely need information TO TAKE AN ACTION"
+
+# When to ask vs create directly
+askVsCreate:
+  askExamples:
+    - trigger: "I need an invoice approval process"
+      followUp: "Who's involved? What thresholds?"
+    - trigger: "Help me with onboarding"
+      followUp: "Client or employee? Who participates?"
+  createWhen:
+    - "User described concrete steps, roles, or process flow"
+    - "User has answered your clarifying questions"
+
+# Recognizing clarification answers
+clarificationRecognition:
+  instruction: |
+    When you see Q&A pairs like:
+    **Q: Who is involved?**
+    A: Account manager and client
+
+    You MUST:
+    1. Extract the information
+    2. IMMEDIATELY use create_workflow
+    3. Do NOT use ask_clarification again
+
+# Avoid redundant questions
+avoidRedundantQuestions:
+  - "Do NOT re-ask about things you can infer"
+  - "If they mentioned 'manager approves', you know there's an approval point"
+  - "Prefer 2-3 focused questions over 4-5 that overlap"
+
+# Clarification question type examples
+questionTypeExamples:
+  text: |
+    { "id": "q_roles", "text": "Who is involved?", "placeholder": "e.g., Client, Account Manager..." }
+  textWithFile: |
+    { "id": "q_steps", "text": "What are the key steps?", "inputType": "text_with_file", "placeholder": "Describe steps or upload a diagram" }
+  selection: |
+    {
+      "id": "q_kickoff",
+      "text": "How does this process get started?",
+      "inputType": "selection",
+      "options": [
+        { "optionId": "manual", "label": "Manual Start", "description": "Someone clicks to start", "icon": "MousePointerClick" },
+        { "optionId": "automatic", "label": "Triggered by Another System", "description": "Started via webhook", "icon": "Zap" }
+      ]
+    }
+  availableIcons:
+    - MousePointerClick
+    - Zap
+    - FileText
+
+# Branch nesting structure (critical structural guidance with JSON examples)
+branchNesting:
+  rule: "Steps with conditional paths (SINGLE_CHOICE_BRANCH, MULTI_CHOICE_BRANCH, PARALLEL_BRANCH, DECISION) MUST nest steps INSIDE paths/outcomes."
+  wrongExample: |
+    { "steps": [
+      { "stepId": "s1", "type": "FORM", "config": { "name": "Expense Form" } },
+      { "stepId": "s2", "type": "SINGLE_CHOICE_BRANCH", "config": { "name": "Amount Routing", "paths": [] } },
+      { "stepId": "s3", "type": "APPROVAL", "config": { "name": "Manager Approval" } }
+    ]}
+  correctExample: |
+    { "steps": [
+      { "stepId": "s1", "type": "FORM", "config": { "name": "Expense Form" } },
+      { "stepId": "s2", "type": "SINGLE_CHOICE_BRANCH", "config": { "name": "Amount Routing", "paths": [
+        { "pathId": "p_small", "label": "Under $5K", "condition": { "type": "EQUALS", "left": "{Step 1 / Category}", "right": "Small" },
+          "steps": [{ "stepId": "s2a", "type": "APPROVAL", "config": { "name": "Manager Approval", "assignee": "Manager" } }] },
+        { "pathId": "p_large", "label": "$5K+", "condition": { "type": "ELSE" },
+          "steps": [{ "stepId": "s2b", "type": "APPROVAL", "config": { "name": "Director Approval", "assignee": "Director" } }] }
+      ]}},
+      { "stepId": "s3", "type": "SYSTEM_EMAIL", "config": { "name": "Confirmation" } }
+    ]}
+  singleChoiceBranch:
+    pathCount: "2-3 paths"
+    conditionFields: "condition or conditions (up to 10, combined with conditionLogic: ALL|ANY)"
+    conditionTypes:
+      - EQUALS
+      - NOT_EQUALS
+      - CONTAINS
+      - NOT_CONTAINS
+      - NOT_EMPTY
+      - ELSE
+  multiChoiceBranch:
+    description: "All paths with true conditions execute simultaneously. Use when criteria are not mutually exclusive."
+  decisionExample: |
+    { "stepId": "s3", "type": "DECISION", "config": { "name": "Review Decision", "assignee": "Manager", "outcomes": [
+      { "outcomeId": "approve", "label": "Approve", "steps": [{ "type": "SYSTEM_EMAIL", "config": { "name": "Approval Notice" } }] },
+      { "outcomeId": "reject", "label": "Reject", "steps": [{ "type": "SYSTEM_EMAIL", "config": { "name": "Rejection Notice" } }] }
+    ]}}
+
+# Concurrent execution patterns
+concurrentExecution:
+  skipSequentialOrder:
+    description: "For 2-3 concurrent individual steps"
+    example: |
+      { "steps": [
+        { "stepId": "s1", "type": "FORM", "config": { "name": "Application", "assignee": "Applicant" } },
+        { "stepId": "s2", "type": "FILE_REQUEST", "config": { "name": "Background Check", "assignee": "HR", "skipSequentialOrder": true } },
+        { "stepId": "s3", "type": "TODO", "config": { "name": "IT Setup", "assignee": "IT", "skipSequentialOrder": true } },
+        { "stepId": "s4", "type": "APPROVAL", "config": { "name": "Final Approval", "assignee": "Manager" } }
+      ]}
+    note: "Steps 2+3 run concurrently after step 1. Step 4 waits for both."
+  parallelBranch:
+    description: "For multi-step parallel tracks"
+  decisionTree:
+    - "2-3 individual concurrent steps -> skipSequentialOrder"
+    - "Multi-step parallel tracks -> PARALLEL_BRANCH"
+    - "Conditional routing (automated) -> SINGLE_CHOICE_BRANCH"
+    - "Conditional routing (human) -> DECISION"
+
+# GOTO revision loops
+gotoRevisionLoops:
+  example: |
+    { "steps": [
+      { "stepId": "s1", "type": "GOTO_DESTINATION", "config": { "name": "Review Start", "destinationLabel": "Point A" } },
+      { "stepId": "s2", "type": "FILE_REQUEST", "config": { "name": "Upload Document", "assignee": "Client" } },
+      { "stepId": "s3", "type": "DECISION", "config": { "name": "Review", "assignee": "Reviewer", "outcomes": [
+        { "outcomeId": "approve", "label": "Approve", "steps": [{ "type": "SYSTEM_EMAIL", "config": { "name": "Approved" } }] },
+        { "outcomeId": "reject", "label": "Revise", "steps": [{ "type": "GOTO", "config": { "name": "Back", "targetGotoDestinationId": "s1" } }] }
+      ]}}
+    ]}
+  rules:
+    - "GOTO only inside DECISION or SINGLE_CHOICE_BRANCH"
+    - "GOTO_DESTINATION must be on main path"
+
+# Milestones
+milestones:
+  description: "Group steps into phases. Each milestone has name and afterStepId."
+  example: |
+    { "milestones": [
+      { "milestoneId": "m_1", "name": "Collection", "afterStepId": "s0" },
+      { "milestoneId": "m_2", "name": "Review", "afterStepId": "s3" }
+    ]}
+  rules:
+    - "Milestones cannot be inside branches"
+    - "For 8+ step workflows, suggest phases"
+
+# Step-specific config fields
+stepSpecificConfig:
+  FORM: "formFields array (fieldId, label, type, required, options)"
+  QUESTIONNAIRE: "questions array (questionId, question, answerType, choices)"
+  FILE_REQUEST: "fileRequest (maxFiles, allowedTypes, instructions)"
+  ESIGN: "esign (documentName, signingOrder)"
+  AI_TYPES: "aiAutomation (actionType, prompt, inputFields, outputFields)"
+  SYSTEM_EMAIL: "systemEmail (to, subject, body — all support DDR)"
+  SYSTEM_WEBHOOK: "systemWebhook (url, method, headers, payload)"
+  PDF_FORM: "pdfForm (documentUrl, fields array)"
+  SUB_FLOW: "subFlow (flowTemplateId, assigneeMappings, variableMappings)"
+  WAIT: "waitType (DURATION|DATE|CONDITION), waitDuration"
+  TERMINATE: "terminateStatus (COMPLETED|CANCELLED)"
+  GOTO: "targetGotoDestinationId"
+  GOTO_DESTINATION: "destinationLabel"
+
+# Due date types
+dueDates:
+  types:
+    RELATIVE:
+      description: "X time after step starts"
+      example: '{ "type": "RELATIVE", "value": 3, "unit": "DAYS" }'
+    FIXED:
+      description: "Specific date"
+      example: '{ "type": "FIXED", "date": "2026-04-15" }'
+    BEFORE_FLOW_DUE:
+      description: "X before deadline"
+      example: '{ "type": "BEFORE_FLOW_DUE", "value": 5, "unit": "DAYS" }'
+  flowLevel: "RELATIVE and FIXED only. Use RELATIVE for reusable templates."
+  validUnits:
+    - HOURS
+    - DAYS
+    - WEEKS

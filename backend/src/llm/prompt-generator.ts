@@ -2,12 +2,17 @@
  * System Prompt Generator
  *
  * Assembles the system prompt from modular configuration files:
- *   1. Technical: constraints, step types, defaults, triggers
- *   2. Consultative: consultation stages, inference rules, post-create suggestions
- *   3. UX: response formatting, question policy, edit behavior
+ *   1. Technical:      constraints, step types, defaults
+ *   2. Consultative:   consultation stages, inference rules, post-create suggestions
+ *   3. UX:             response format, question policy, edit behavior
  *
- * The public API (generateSystemPrompt, generateWorkflowContext, generateStepTypeGuidance)
- * is unchanged.
+ * All content is now data-driven from YAML configs. No hardcoded prompt text
+ * lives in this file — it only handles assembly and formatting.
+ *
+ * Public API (unchanged):
+ *   - generateSystemPrompt()
+ *   - generateWorkflowContext()
+ *   - generateStepTypeGuidance()
  */
 
 import {
@@ -16,12 +21,14 @@ import {
   getDefaults,
   getConsultation,
   getUXGuidelines,
+  getResponseFormat,
   getTemplateCatalog,
   type ConstraintsConfig,
   type StepTypeConfig,
   type DefaultsConfig,
   type ConsultationConfig,
   type UXGuidelinesConfig,
+  type ResponseFormatConfig,
   type TemplateCatalogConfig,
 } from '../config/loader.js';
 
@@ -43,6 +50,7 @@ export function generateSystemPrompt(metadata?: SessionMetadata): string {
   const defaults = getDefaults();
   const consultation = getConsultation();
   const ux = getUXGuidelines();
+  const responseFormat = getResponseFormat();
   const templateCatalog = getTemplateCatalog();
 
   const templateSection = templateCatalog
@@ -55,12 +63,12 @@ export function generateSystemPrompt(metadata?: SessionMetadata): string {
 
   return [
     generateRoleSection(consultation, ux),
-    generateOutputFormatSection(ux),
+    generateOutputFormatSection(responseFormat, ux),
     generateConstraintsSection(constraints),
     generateStepTypesSection(stepTypes),
     generateConsultationSection(consultation),
     generateDefaultsSection(defaults),
-    generateDueDateTypesSection(),
+    generateDueDateTypesSection(responseFormat),
     generateBehaviorSection(consultation, ux),
   ].join('\n\n') + templateSection + clarificationNote;
 }
@@ -102,189 +110,171 @@ If asked, redirect to workflow design.`;
 }
 
 // ============================================================================
-// Section Generators — Output Format (UX)
+// Section Generators — Output Format (from response-format.yaml)
 // ============================================================================
 
-function generateOutputFormatSection(ux: UXGuidelinesConfig): string {
+function generateOutputFormatSection(rf: ResponseFormatConfig, ux: UXGuidelinesConfig): string {
+  // Tools list
+  const toolsList = rf.tools
+    .map((t, i) => `${i + 1}. **${t.name}** — ${t.description}`)
+    .join('\n');
+
+  // respond vs clarify
+  const useRespondList = rf.respondVsClarify.useRespond
+    .map(item => `- ${item}`)
+    .join('\n');
+  const useClarifyList = rf.respondVsClarify.useClarify
+    .map(item => `- ${item}`)
+    .join('\n');
+
+  // ask vs create
+  const askExamples = rf.askVsCreate.askExamples
+    .map(ex => `- "${ex.trigger}" -> ${ex.followUp}`)
+    .join('\n');
+  const createWhen = rf.askVsCreate.createWhen
+    .map(item => `- ${item}`)
+    .join('\n');
+
+  // redundant questions
+  const redundantList = rf.avoidRedundantQuestions
+    .map(item => `- ${item}`)
+    .join('\n');
+
+  // question type examples
+  const textType = ux.questionTypes['text'] as { description: string; roleGuidance?: string } | undefined;
+  const roleGuidance = textType?.roleGuidance
+    ? `For role questions: ${textType.roleGuidance}`
+    : '';
+
+  // branch nesting
+  const bn = rf.branchNesting;
+  const conditionTypes = bn.singleChoiceBranch.conditionTypes.join(', ');
+
+  // concurrent execution
+  const ce = rf.concurrentExecution;
+  const decisionTree = ce.decisionTree
+    .map(item => `- ${item}`)
+    .join('\n');
+
+  // GOTO
+  const gotoRules = rf.gotoRevisionLoops.rules
+    .map(r => `- ${r}`)
+    .join('\n');
+
+  // Milestones
+  const milestoneRules = rf.milestones.rules
+    .map(r => `- ${r}`)
+    .join('\n');
+
+  // Step-specific config
+  const stepConfigList = Object.entries(rf.stepSpecificConfig)
+    .map(([key, val]) => `- **${key}**: ${val}`)
+    .join('\n');
+
   return `# Response Format — Using Tools
 
 You MUST use one of the provided tools to respond. NEVER respond with plain text only.
 
 ## Available Tools
 
-1. **create_workflow** — Design a complete workflow
-2. **ask_clarification** — Request more information TO CREATE OR EDIT a workflow
-3. **edit_workflow** — Modify an existing workflow
-4. **reject_request** — Request cannot be fulfilled due to platform constraints
-5. **respond** — Informational questions, explanations, general conversation
+${toolsList}
 
 ## respond vs ask_clarification
 
 **USE respond** when the user is:
-- Asking a QUESTION about the current workflow
-- Asking for EXPLANATION of what you did
-- Making a COMMENT or observation
-- Asking about YOUR CAPABILITIES
-- Any message that is NOT a request to create or modify
+${useRespondList}
 
 **USE ask_clarification** ONLY when:
-- User wants to CREATE but request is vague
-- User wants to EDIT but you need specifics
-- You genuinely need information TO TAKE AN ACTION
+${useClarifyList}
 
 ## When to Ask vs Create
 
 **ASK** when request is vague or missing key details:
-- "I need an invoice approval process" -> Who's involved? What thresholds?
-- "Help me with onboarding" -> Client or employee? Who participates?
+${askExamples}
 
 **CREATE** when you have enough specifics:
-- User described concrete steps, roles, or process flow
-- User has answered your clarifying questions
+${createWhen}
 
 ## Recognizing Clarification Answers
 
-When you see Q&A pairs like:
-**Q: Who is involved?**
-A: Account manager and client
-
-You MUST:
-1. Extract the information
-2. IMMEDIATELY use create_workflow
-3. Do NOT use ask_clarification again
+${rf.clarificationRecognition.instruction.trim()}
 
 ## Avoid Redundant Questions
 
-- Do NOT re-ask about things you can infer
-- If they mentioned "manager approves", you know there's an approval point
-- Prefer 2-3 focused questions over 4-5 that overlap
+${redundantList}
 
 ## Clarification Question Types
 
 ### Text (default) — open-ended
-${ux.questionTypes.text.roleGuidance ? `For role questions: ${ux.questionTypes.text.roleGuidance}` : ''}
+${roleGuidance}
 
-Example: { "id": "q_roles", "text": "Who is involved?", "placeholder": "e.g., Client, Account Manager..." }
+Example: ${rf.questionTypeExamples.text.trim()}
 
 ### Text with File Upload — process questions
-Example: { "id": "q_steps", "text": "What are the key steps?", "inputType": "text_with_file", "placeholder": "Describe steps or upload a diagram" }
+Example: ${rf.questionTypeExamples.textWithFile.trim()}
 
 ### Selection — platform-specific options
 Example:
-{
-  "id": "q_kickoff",
-  "text": "How does this process get started?",
-  "inputType": "selection",
-  "options": [
-    { "optionId": "manual", "label": "Manual Start", "description": "Someone clicks to start", "icon": "MousePointerClick" },
-    { "optionId": "automatic", "label": "Triggered by Another System", "description": "Started via webhook", "icon": "Zap" }
-  ]
-}
+${rf.questionTypeExamples.selection.trim()}
 
-Available icons: MousePointerClick, Zap, FileText
+Available icons: ${rf.questionTypeExamples.availableIcons.join(', ')}
 
 ## Branch Steps — Nesting Structure
 
-Steps with conditional paths (SINGLE_CHOICE_BRANCH, MULTI_CHOICE_BRANCH, PARALLEL_BRANCH, DECISION) MUST nest steps INSIDE paths/outcomes.
+${bn.rule}
 
 ### WRONG — steps at top level:
 \`\`\`json
-{ "steps": [
-  { "stepId": "s1", "type": "FORM", "config": { "name": "Expense Form" } },
-  { "stepId": "s2", "type": "SINGLE_CHOICE_BRANCH", "config": { "name": "Amount Routing", "paths": [] } },
-  { "stepId": "s3", "type": "APPROVAL", "config": { "name": "Manager Approval" } }
-]}
+${bn.wrongExample.trim()}
 \`\`\`
 
 ### CORRECT — steps nested inside paths:
-SINGLE_CHOICE_BRANCH: 2-3 paths, each with \`condition\` or \`conditions\` (up to 10, combined with \`conditionLogic\`: ALL|ANY).
-Condition types: EQUALS, NOT_EQUALS, CONTAINS, NOT_CONTAINS, NOT_EMPTY, ELSE.
+SINGLE_CHOICE_BRANCH: ${bn.singleChoiceBranch.pathCount}, each with \`condition\` or \`conditions\` (up to 10, combined with \`conditionLogic\`: ALL|ANY).
+Condition types: ${conditionTypes}.
 
 \`\`\`json
-{ "steps": [
-  { "stepId": "s1", "type": "FORM", "config": { "name": "Expense Form" } },
-  { "stepId": "s2", "type": "SINGLE_CHOICE_BRANCH", "config": { "name": "Amount Routing", "paths": [
-    { "pathId": "p_small", "label": "Under $5K", "condition": { "type": "EQUALS", "left": "{Step 1 / Category}", "right": "Small" },
-      "steps": [{ "stepId": "s2a", "type": "APPROVAL", "config": { "name": "Manager Approval", "assignee": "Manager" } }] },
-    { "pathId": "p_large", "label": "$5K+", "condition": { "type": "ELSE" },
-      "steps": [{ "stepId": "s2b", "type": "APPROVAL", "config": { "name": "Director Approval", "assignee": "Director" } }] }
-  ]}},
-  { "stepId": "s3", "type": "SYSTEM_EMAIL", "config": { "name": "Confirmation" } }
-]}
+${bn.correctExample.trim()}
 \`\`\`
 
 ### MULTI_CHOICE_BRANCH
-All paths with true conditions execute simultaneously. Use when criteria are not mutually exclusive.
+${bn.multiChoiceBranch.description}
 
 ### DECISION — uses "outcomes" instead of "paths":
 \`\`\`json
-{ "stepId": "s3", "type": "DECISION", "config": { "name": "Review Decision", "assignee": "Manager", "outcomes": [
-  { "outcomeId": "approve", "label": "Approve", "steps": [{ "type": "SYSTEM_EMAIL", "config": { "name": "Approval Notice" } }] },
-  { "outcomeId": "reject", "label": "Reject", "steps": [{ "type": "SYSTEM_EMAIL", "config": { "name": "Rejection Notice" } }] }
-]}}
+${bn.decisionExample.trim()}
 \`\`\`
 
 ## Concurrent Execution Patterns
 
-### skipSequentialOrder — 2-3 concurrent individual steps
+### skipSequentialOrder — ${ce.skipSequentialOrder.description}
 \`\`\`json
-{ "steps": [
-  { "stepId": "s1", "type": "FORM", "config": { "name": "Application", "assignee": "Applicant" } },
-  { "stepId": "s2", "type": "FILE_REQUEST", "config": { "name": "Background Check", "assignee": "HR", "skipSequentialOrder": true } },
-  { "stepId": "s3", "type": "TODO", "config": { "name": "IT Setup", "assignee": "IT", "skipSequentialOrder": true } },
-  { "stepId": "s4", "type": "APPROVAL", "config": { "name": "Final Approval", "assignee": "Manager" } }
-]}
+${ce.skipSequentialOrder.example.trim()}
 \`\`\`
-Steps 2+3 run concurrently after step 1. Step 4 waits for both.
+${ce.skipSequentialOrder.note}
 
-### PARALLEL_BRANCH — multi-step parallel tracks
+### PARALLEL_BRANCH — ${ce.parallelBranch.description}
 
 ### Decision tree:
-- 2-3 individual concurrent steps -> skipSequentialOrder
-- Multi-step parallel tracks -> PARALLEL_BRANCH
-- Conditional routing (automated) -> SINGLE_CHOICE_BRANCH
-- Conditional routing (human) -> DECISION
+${decisionTree}
 
 ## GOTO Revision Loops
 
 \`\`\`json
-{ "steps": [
-  { "stepId": "s1", "type": "GOTO_DESTINATION", "config": { "name": "Review Start", "destinationLabel": "Point A" } },
-  { "stepId": "s2", "type": "FILE_REQUEST", "config": { "name": "Upload Document", "assignee": "Client" } },
-  { "stepId": "s3", "type": "DECISION", "config": { "name": "Review", "assignee": "Reviewer", "outcomes": [
-    { "outcomeId": "approve", "label": "Approve", "steps": [{ "type": "SYSTEM_EMAIL", "config": { "name": "Approved" } }] },
-    { "outcomeId": "reject", "label": "Revise", "steps": [{ "type": "GOTO", "config": { "name": "Back", "targetGotoDestinationId": "s1" } }] }
-  ]}}
-]}
+${rf.gotoRevisionLoops.example.trim()}
 \`\`\`
-GOTO only inside DECISION or SINGLE_CHOICE_BRANCH. GOTO_DESTINATION must be on main path.
+${gotoRules}
 
 ## Milestones
 
-Group steps into phases. Each milestone has name and afterStepId.
+${rf.milestones.description}
 \`\`\`json
-{ "milestones": [
-  { "milestoneId": "m_1", "name": "Collection", "afterStepId": "s0" },
-  { "milestoneId": "m_2", "name": "Review", "afterStepId": "s3" }
-]}
+${rf.milestones.example.trim()}
 \`\`\`
-Milestones cannot be inside branches. For 8+ step workflows, suggest phases.
+${milestoneRules}
 
 ## Step-Specific Config
 
-- **FORM**: formFields array (fieldId, label, type, required, options)
-- **QUESTIONNAIRE**: questions array (questionId, question, answerType, choices)
-- **FILE_REQUEST**: fileRequest (maxFiles, allowedTypes, instructions)
-- **ESIGN**: esign (documentName, signingOrder)
-- **AI types**: aiAutomation (actionType, prompt, inputFields, outputFields)
-- **SYSTEM_EMAIL**: systemEmail (to, subject, body — all support DDR)
-- **SYSTEM_WEBHOOK**: systemWebhook (url, method, headers, payload)
-- **PDF_FORM**: pdfForm (documentUrl, fields array)
-- **SUB_FLOW**: subFlow (flowTemplateId, assigneeMappings, variableMappings)
-- **WAIT**: waitType (DURATION|DATE|CONDITION), waitDuration
-- **TERMINATE**: terminateStatus (COMPLETED|CANCELLED)
-- **GOTO**: targetGotoDestinationId
-- **GOTO_DESTINATION**: destinationLabel`;
+${stepConfigList}`;
 }
 
 // ============================================================================
@@ -394,14 +384,19 @@ Apply unless user specifies otherwise:
 - **Experience:** Default Spotlight (focused task view). Alternative: Gallery (all visible steps).`;
 }
 
-function generateDueDateTypesSection(): string {
+function generateDueDateTypesSection(rf: ResponseFormatConfig): string {
+  const typeEntries = Object.entries(rf.dueDates.types)
+    .map(([name, cfg]) => {
+      const { example, description } = cfg as { example: string; description: string };
+      return `- **${name}**: \`${example}\` — ${description}`;
+    })
+    .join('\n');
+
   return `## Due Dates
 
-- **RELATIVE**: \`{ "type": "RELATIVE", "value": 3, "unit": "DAYS" }\` — X time after step starts
-- **FIXED**: \`{ "type": "FIXED", "date": "2026-04-15" }\` — specific date
-- **BEFORE_FLOW_DUE**: \`{ "type": "BEFORE_FLOW_DUE", "value": 5, "unit": "DAYS" }\` — X before deadline
+${typeEntries}
 
-Flow-level: RELATIVE and FIXED only. Use RELATIVE for reusable templates. Valid units: HOURS, DAYS, WEEKS.`;
+Flow-level: ${rf.dueDates.flowLevel} Valid units: ${rf.dueDates.validUnits.join(', ')}.`;
 }
 
 // ============================================================================

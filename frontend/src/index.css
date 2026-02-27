@@ -211,9 +211,10 @@ body {
    Custom Utilities
    ============================================================================ */
 
-/* Dotted grid background (Moxo style) */
+/* Dotted grid background — warm canvas like Moxo production */
 .bg-dotted-grid {
-  background-image: radial-gradient(circle, #d4d4d8 1px, transparent 1px);
+  background-color: #fafaf8;
+  background-image: radial-gradient(circle, #d6d3d1 0.8px, transparent 0.8px);
   background-size: 20px 20px;
 }
 
