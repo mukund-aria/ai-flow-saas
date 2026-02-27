@@ -555,16 +555,39 @@ export function FlowRunDetailPage() {
               {step.name}
             </h3>
             {getStepStatusBadge(step.status)}
+            {step.status === 'COMPLETED' && step.resultData && (
+              <span className="text-xs text-gray-400 ml-1">
+                {step.type === 'FORM' ? `${Object.keys(step.resultData).filter(k => k !== '_meta').length} fields submitted` :
+                 step.type === 'APPROVAL' ? (step.resultData.decision === 'APPROVED' ? '\u2713 Approved' : '\u2717 Rejected') :
+                 step.type === 'FILE_REQUEST' ? `${step.resultData.filesUploaded || 0} files uploaded` :
+                 step.type === 'QUESTIONNAIRE' ? `${Object.keys((step.resultData as any).answers || step.resultData).length} answers` :
+                 null}
+              </span>
+            )}
           </div>
 
           {/* Assignee */}
           {step.assignee && (
             <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
-              <User className="w-3.5 h-3.5" />
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center text-[10px] font-bold text-violet-700">
+                {step.assignee.name.charAt(0).toUpperCase()}
+              </div>
               <span>{step.assignee.name}</span>
               {step.assignee.type === 'contact' && (
                 <span className="text-xs text-gray-400">(external)</span>
               )}
+            </div>
+          )}
+
+          {/* Due date */}
+          {step.dueAt && (
+            <div className={cn(
+              'flex items-center gap-1 mt-0.5 text-xs',
+              new Date(step.dueAt) < new Date() ? 'text-red-500' :
+              new Date(step.dueAt).getTime() - Date.now() < 2 * 86400000 ? 'text-amber-500' : 'text-gray-400'
+            )}>
+              <Calendar className="w-3 h-3" />
+              <span>Due {formatTimeAgo(step.dueAt)}</span>
             </div>
           )}
         </div>
@@ -604,7 +627,11 @@ export function FlowRunDetailPage() {
                 <Bell className="w-3 h-3" />
               )}
               Remind
-              {step.reminderCount ? ` (${step.reminderCount})` : ''}
+              {step.reminderCount ? (
+                <span className="ml-1 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-amber-100 text-amber-700 rounded-full">
+                  {step.reminderCount}
+                </span>
+              ) : null}
             </Button>
           )}
 

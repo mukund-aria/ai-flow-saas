@@ -25,6 +25,8 @@ import { listContacts, startFlow, getTemplate } from '@/lib/api';
 import type { Contact } from '@/lib/api';
 import { getRoleColor, getRoleInitials } from '@/types';
 import type { AssigneePlaceholder, KickoffConfig, FormField } from '@/types';
+import { cn } from '@/lib/utils';
+import { FlowPreviewTimeline } from './FlowPreviewTimeline';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -428,6 +430,17 @@ export function ExecuteFlowDialog({
     return kickoffConfig.kickoffFormFields;
   }, [kickoffConfig]);
 
+  const stepsPerRole = useMemo(() => {
+    if (!fullDefinition) return {};
+    const steps = (fullDefinition.steps as Array<{ config?: { assignee?: string } }>) || [];
+    const counts: Record<string, number> = {};
+    steps.forEach(s => {
+      const role = s.config?.assignee;
+      if (role) counts[role] = (counts[role] || 0) + 1;
+    });
+    return counts;
+  }, [fullDefinition]);
+
   const hasRoles = assigneePlaceholders.length > 0;
   const hasKickoffForm = kickoffFields.length > 0;
   const [roleAssignments, setRoleAssignments] = useState<
@@ -438,6 +451,7 @@ export function ExecuteFlowDialog({
   const [runName, setRunName] = useState('');
   const [executing, setExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showFlowPreview, setShowFlowPreview] = useState(false);
 
   // ---- Effects ----
 
@@ -670,7 +684,10 @@ export function ExecuteFlowDialog({
                           {placeholder.description}
                         </p>
                       )}
-                      <div className="ml-8">
+                      <p className="text-xs text-gray-400 ml-8">
+                        Assigned to {stepsPerRole[placeholder.roleName] || 0} steps
+                      </p>
+                      <div className="ml-8 mt-1.5">
                         <ContactDropdown
                           contacts={contacts}
                           value={roleAssignments[placeholder.roleName] ?? null}
@@ -680,6 +697,11 @@ export function ExecuteFlowDialog({
                           placeholder={`Select contact for ${placeholder.roleName}...`}
                         />
                       </div>
+                      {!roleAssignments[placeholder.roleName] && (stepsPerRole[placeholder.roleName] || 0) > 0 && (
+                        <p className="text-xs text-amber-500 mt-1 ml-8">
+                          This role has {stepsPerRole[placeholder.roleName]} steps that won't be assigned
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -710,6 +732,31 @@ export function ExecuteFlowDialog({
                   />
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Flow Preview Section */}
+          {!definitionLoading && fullDefinition && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowFlowPreview(!showFlowPreview)}
+                className="flex items-center gap-2 w-full text-left"
+              >
+                <ChevronDown className={cn('w-4 h-4 text-gray-400 transition-transform', !showFlowPreview && '-rotate-90')} />
+                <h3 className="text-sm font-semibold text-gray-900">Flow Preview</h3>
+                <span className="text-xs text-gray-400">
+                  {((fullDefinition.steps as any[]) || []).length} steps
+                </span>
+              </button>
+              {showFlowPreview && (
+                <div className="mt-3 ml-6">
+                  <FlowPreviewTimeline
+                    steps={(fullDefinition.steps as Array<{ stepId: string; type: string; config?: { name?: string; assignee?: string } }>) || []}
+                    assigneePlaceholders={assigneePlaceholders}
+                  />
+                </div>
+              )}
             </div>
           )}
 

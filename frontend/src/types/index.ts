@@ -406,6 +406,10 @@ export interface FileRequestConfig {
   maxFiles?: number;
   allowedTypes?: string[];
   instructions?: string;
+  aiReview?: {
+    enabled: boolean;
+    criteria?: string;
+  };
 }
 
 // ============================================================================
@@ -932,6 +936,28 @@ export const STEP_TYPE_META: Record<StepType, { label: string; color: string; ca
   INTEGRATION_GOOGLE_SHEETS: { label: 'Google Sheets', color: '#34A853', category: 'automation' },
   INTEGRATION_WRIKE: { label: 'Wrike', color: '#08CF65', category: 'automation' },
 };
+
+// ============================================================================
+// Assignee Portal Types
+// ============================================================================
+
+export interface JourneyStep {
+  stepIndex: number;
+  stepName: string;
+  stepType: string;
+  status: 'COMPLETED' | 'IN_PROGRESS' | 'PENDING';
+  isCurrentStep: boolean;
+  assignedToMe: boolean;
+  completedAt?: string;
+  resultData?: Record<string, unknown>;
+}
+
+export interface ActivityEvent {
+  id: string;
+  type: 'step_started' | 'step_completed' | 'reminder_sent' | 'message_received';
+  description: string;
+  timestamp: string;
+}
 
 // ============================================================================
 // Role Colors

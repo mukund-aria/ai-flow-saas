@@ -20,6 +20,17 @@ export async function createMagicLink(stepExecutionId: string, expiresInHours = 
   return link.token;
 }
 
+export interface JourneyStep {
+  stepIndex: number;
+  stepName: string;
+  stepType: string;
+  status: 'COMPLETED' | 'IN_PROGRESS' | 'PENDING';
+  isCurrentStep: boolean;
+  assignedToMe: boolean;
+  completedAt?: string;
+  resultData?: Record<string, unknown>;
+}
+
 export interface TaskContext {
   token: string;
   flowName: string;
@@ -41,6 +52,7 @@ export interface TaskContext {
   options?: any[];
   expired: boolean;
   completed: boolean;
+  journeySteps?: JourneyStep[];
 }
 
 export async function validateMagicLink(token: string): Promise<TaskContext | null> {
@@ -85,6 +97,12 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
     }
   }
 
+  // Get all step executions for this run to build journey
+  const allStepExecs = await db.query.stepExecutions.findMany({
+    where: eq(stepExecutions.flowRunId, stepExec.flowRunId),
+    orderBy: (se, { asc }) => [asc(se.stepIndex)],
+  });
+
   // Get step details from flow definition
   const definition = run.flow?.definition as any;
   const steps = definition?.steps || [];
@@ -108,6 +126,35 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
     milestoneName = milestones[0]?.name;
   }
 
+  // Build journey steps array
+  const currentContactId = stepExec.assignedToContactId;
+  const currentUserId = stepExec.assignedToUserId;
+  const journeySteps: JourneyStep[] = steps.map((defStep: any, idx: number) => {
+    const exec = allStepExecs.find((se) => se.stepId === defStep.stepId);
+    const isAssignedToMe = exec
+      ? (currentContactId ? exec.assignedToContactId === currentContactId : false) ||
+        (currentUserId ? exec.assignedToUserId === currentUserId : false)
+      : false;
+
+    const journeyStep: JourneyStep = {
+      stepIndex: idx,
+      stepName: defStep.config?.name || `Step ${idx + 1}`,
+      stepType: defStep.type || 'TODO',
+      status: exec?.status === 'COMPLETED' ? 'COMPLETED' :
+              exec?.status === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'PENDING',
+      isCurrentStep: idx === stepIndex,
+      assignedToMe: isAssignedToMe,
+      completedAt: exec?.completedAt?.toISOString(),
+    };
+
+    // Only include result data for steps assigned to the requesting contact
+    if (isAssignedToMe && exec?.status === 'COMPLETED' && exec.resultData) {
+      journeyStep.resultData = exec.resultData as Record<string, unknown>;
+    }
+
+    return journeyStep;
+  });
+
   return {
     token,
     flowName: run.flow?.name || 'Unknown Flow',
@@ -129,5 +176,6 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
     options: step?.config?.options,
     expired: new Date() > link.expiresAt,
     completed: !!link.usedAt || stepExec.status === 'COMPLETED',
+    journeySteps,
   };
 }

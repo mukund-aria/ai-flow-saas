@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, magicLinks, stepExecutions, flowRuns, contacts, flowRunConversations, flowRunMessages } from '../db/index.js';
+import { db, magicLinks, stepExecutions, flowRuns, contacts, flowRunConversations, flowRunMessages, auditLogs } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { validateMagicLink } from '../services/magic-link.js';
@@ -120,6 +120,28 @@ router.post(
       .set({ usedAt: new Date() })
       .where(eq(magicLinks.id, link.id));
 
+    // Trigger AI review if configured
+    let aiReviewPending = false;
+    const run0 = await db.query.flowRuns.findFirst({
+      where: eq(flowRuns.id, stepExec.flowRunId),
+      with: { flow: true },
+    });
+    if (run0) {
+      const def = run0.flow?.definition as any;
+      const stepDef = def?.steps?.find((s: any) => s.stepId === stepExec.stepId);
+      if (stepDef?.config?.fileRequest?.aiReview?.enabled && resultData?.fileNames?.length) {
+        aiReviewPending = true;
+        // Fire and forget - don't block step completion
+        import('../services/ai-review.js').then(({ reviewFiles }) => {
+          reviewFiles(
+            stepExec.id,
+            resultData.fileNames as string[],
+            stepDef.config.fileRequest.aiReview.criteria
+          ).catch(err => console.error('AI review error:', err));
+        });
+      }
+    }
+
     // Advance the flow run to the next step
     const run = await db.query.flowRuns.findFirst({
       where: eq(flowRuns.id, stepExec.flowRunId),
@@ -213,7 +235,138 @@ router.post(
       data: {
         message: 'Task completed successfully',
         nextTaskToken,
+        aiReviewPending,
       },
+    });
+  })
+);
+
+// ============================================================================
+// GET /api/public/task/:token/ai-review - Get AI review status
+// ============================================================================
+
+router.get(
+  '/:token/ai-review',
+  asyncHandler(async (req, res) => {
+    const token = req.params.token as string;
+
+    const link = await db.query.magicLinks.findFirst({
+      where: eq(magicLinks.token, token),
+      with: { stepExecution: true },
+    });
+
+    if (!link) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Task not found' },
+      });
+      return;
+    }
+
+    const stepExec = link.stepExecution;
+    if (!stepExec) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Step not found' },
+      });
+      return;
+    }
+
+    const resultData = (stepExec.resultData as Record<string, unknown>) || {};
+    const aiReview = resultData._aiReview as { status: string; feedback: string; issues?: string[]; reviewedAt: string } | undefined;
+
+    if (!aiReview) {
+      res.json({
+        success: true,
+        data: { status: 'PENDING' },
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: aiReview,
+    });
+  })
+);
+
+// ============================================================================
+// GET /api/public/task/:token/activity - Get activity events for this flow run
+// ============================================================================
+
+router.get(
+  '/:token/activity',
+  asyncHandler(async (req, res) => {
+    const token = req.params.token as string;
+
+    const link = await db.query.magicLinks.findFirst({
+      where: eq(magicLinks.token, token),
+      with: { stepExecution: true },
+    });
+
+    if (!link || new Date() > link.expiresAt) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Invalid or expired link' },
+      });
+      return;
+    }
+
+    const stepExec = link.stepExecution;
+    if (!stepExec) {
+      res.json({ success: true, data: [] });
+      return;
+    }
+
+    // Query audit logs for this flow run
+    const logs = await db.query.auditLogs.findMany({
+      where: eq(auditLogs.flowRunId, stepExec.flowRunId),
+      orderBy: (log, { desc }) => [desc(log.createdAt)],
+      limit: 50,
+    });
+
+    // Map audit log actions to activity event types and descriptions
+    const events = logs.map(log => {
+      const details = (log.details || {}) as Record<string, unknown>;
+      let type = 'step_completed';
+      let description = log.action;
+
+      switch (log.action) {
+        case 'STEP_STARTED':
+          type = 'step_started';
+          description = `Step ${(details.stepIndex as number ?? 0) + 1} started`;
+          break;
+        case 'ASSIGNEE_TASK_COMPLETED':
+          type = 'step_completed';
+          description = `Step ${(details.stepIndex as number ?? 0) + 1} completed`;
+          break;
+        case 'REMINDER_SENT':
+          type = 'reminder_sent';
+          description = 'Reminder sent';
+          break;
+        case 'FLOW_STARTED':
+          type = 'step_started';
+          description = 'Flow started';
+          break;
+        case 'FLOW_COMPLETED':
+          type = 'step_completed';
+          description = 'Flow completed';
+          break;
+        default:
+          description = log.action.replace(/_/g, ' ').toLowerCase();
+      }
+
+      return {
+        id: log.id,
+        type,
+        description,
+        timestamp: log.createdAt.toISOString(),
+      };
+    });
+
+    res.json({
+      success: true,
+      data: events,
     });
   })
 );
