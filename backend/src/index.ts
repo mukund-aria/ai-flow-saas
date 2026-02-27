@@ -56,9 +56,14 @@ if (process.env.REDIS_URL) {
 }
 if (!sessionStore && process.env.DATABASE_URL) {
   try {
-    const pgSession = (await import('connect-pg-simple')).default;
-    const pg = await import('pg');
-    const pool = new pg.default.Pool({ connectionString: process.env.DATABASE_URL });
+    const pgSessionModule = await import('connect-pg-simple');
+    const pgSession = pgSessionModule.default ?? pgSessionModule;
+    const pgModule = await import('pg');
+    const Pool = pgModule.default?.Pool ?? pgModule.Pool;
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: isProduction ? { rejectUnauthorized: false } : false,
+    });
     sessionStore = new (pgSession(session))({
       pool,
       tableName: 'user_sessions',
