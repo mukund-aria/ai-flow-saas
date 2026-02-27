@@ -168,9 +168,9 @@ export function FlowBuilderPage() {
       });
   }, [templateId]);
 
-  // Initialize empty workflow in manual mode on mount (only for new templates)
+  // Initialize empty workflow on mount (only for new templates)
   useEffect(() => {
-    if (builderMode === 'manual' && !workflow && !templateId) {
+    if (!workflow && !templateId) {
       initEmptyWorkflow();
     }
   }, []);

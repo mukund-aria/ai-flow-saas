@@ -108,13 +108,13 @@ export function SelectionCard({
           : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
       )}
     >
-      <div className="p-3">
-        <div className="flex items-start gap-3">
+      <div className="px-3 py-2.5">
+        <div className="flex items-start gap-2.5">
           {/* Icon */}
           {IconComponent && (
             <div
               className={cn(
-                'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                'w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5',
                 isSelected ? 'bg-violet-100' : 'bg-gray-100'
               )}
             >
