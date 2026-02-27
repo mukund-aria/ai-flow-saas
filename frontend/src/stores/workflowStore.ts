@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Flow, Step, StepType, StepConfig, KickoffConfig, FlowSettings, FlowPermissions, FlowDueDates, PendingProposal } from '@/types';
+import type { Flow, Step, StepType, StepConfig, KickoffConfig, FlowSettings, FlowPermissions, FlowDueDates, PendingProposal, AssigneePlaceholder } from '@/types';
 
 const MAX_HISTORY = 50;
 
@@ -33,6 +33,7 @@ interface WorkflowStore {
   // Assignee management
   addAssigneePlaceholder: (roleName: string, description?: string) => void;
   removeAssigneePlaceholder: (placeholderId: string) => void;
+  updateAssigneePlaceholder: (placeholderId: string, updates: Partial<Omit<AssigneePlaceholder, 'placeholderId'>>) => void;
   updateFlowMetadata: (updates: Partial<Pick<Flow, 'name' | 'description' | 'workspaceNameTemplate'>>) => void;
   updateNotificationSettings: (notifications: Record<string, unknown>) => void;
   // New: Kickoff, Settings, Permissions
@@ -221,10 +222,11 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => {
 
       pushHistory();
 
-      const placeholder = {
+      const placeholder: AssigneePlaceholder = {
         placeholderId: `role-${Date.now()}-${++stepCounter}`,
         roleName,
         description,
+        roleOptions: { coordinatorToggle: false, allowViewAllActions: false },
       };
 
       set({
@@ -257,6 +259,34 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => {
             ? { ...s, config: { ...s.config, assignee: undefined } }
             : s
         );
+      }
+
+      set({ workflow: { ...workflow, assigneePlaceholders, steps } });
+    },
+
+    updateAssigneePlaceholder: (placeholderId, updates) => {
+      const { workflow } = get();
+      if (!workflow) return;
+
+      pushHistory();
+
+      const assigneePlaceholders = (workflow.assigneePlaceholders || []).map(a =>
+        a.placeholderId === placeholderId ? { ...a, ...updates } : a
+      );
+
+      // If roleName changed, update step assignee references
+      let steps = workflow.steps;
+      if (updates.roleName) {
+        const oldPlaceholder = (workflow.assigneePlaceholders || []).find(
+          a => a.placeholderId === placeholderId
+        );
+        if (oldPlaceholder) {
+          steps = steps.map(s =>
+            s.config.assignee === oldPlaceholder.roleName
+              ? { ...s, config: { ...s.config, assignee: updates.roleName } }
+              : s
+          );
+        }
       }
 
       set({ workflow: { ...workflow, assigneePlaceholders, steps } });

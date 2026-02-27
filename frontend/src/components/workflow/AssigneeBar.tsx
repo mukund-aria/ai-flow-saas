@@ -6,16 +6,29 @@
  */
 
 import { useState } from 'react';
-import { Plus, X, UserCheck, PlayCircle, FileText, RefreshCw } from 'lucide-react';
+import { Plus, X, UserCheck, PlayCircle, FileText, RefreshCw, UserPlus, Variable, GitBranch, Shield, Eye } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { getRoleColor, getRoleInitials } from '@/types';
 import type { ResolutionType } from '@/types';
 
-const RESOLUTION_ICONS: Partial<Record<ResolutionType, typeof UserCheck>> = {
+const RESOLUTION_ICONS: Record<ResolutionType, typeof UserCheck> = {
+  CONTACT_TBD: UserPlus,
   FIXED_CONTACT: UserCheck,
   WORKSPACE_INITIALIZER: PlayCircle,
   KICKOFF_FORM_FIELD: FileText,
+  FLOW_VARIABLE: Variable,
+  RULES: GitBranch,
   ROUND_ROBIN: RefreshCw,
+};
+
+const RESOLUTION_LABELS: Record<ResolutionType, string> = {
+  CONTACT_TBD: 'Contact TBD',
+  FIXED_CONTACT: 'Fixed Contact',
+  WORKSPACE_INITIALIZER: 'Flow Starter',
+  KICKOFF_FORM_FIELD: 'From Kickoff',
+  FLOW_VARIABLE: 'From Variable',
+  RULES: 'Rules',
+  ROUND_ROBIN: 'Round Robin',
 };
 
 export function AssigneeBar() {
@@ -53,8 +66,11 @@ export function AssigneeBar() {
 
       {/* Assignee avatars */}
       {assignees.map((assignee, index) => {
-        const resType = assignee.resolution?.type;
-        const ResIcon = resType ? RESOLUTION_ICONS[resType] : undefined;
+        const resType = assignee.resolution?.type || 'CONTACT_TBD';
+        const ResIcon = RESOLUTION_ICONS[resType];
+        const resLabel = RESOLUTION_LABELS[resType];
+        const isCoordinator = assignee.roleOptions?.coordinatorToggle;
+        const canViewAll = assignee.roleOptions?.allowViewAllActions;
 
         return (
           <div
@@ -67,9 +83,18 @@ export function AssigneeBar() {
             >
               {getRoleInitials(assignee.roleName)}
             </span>
-            <span className="text-xs font-medium text-gray-700">{assignee.roleName}</span>
+            <div className="flex flex-col leading-none">
+              <span className="text-xs font-medium text-gray-700">{assignee.roleName}</span>
+              <span className="text-[9px] text-gray-400">{resLabel}</span>
+            </div>
             {ResIcon && (
               <ResIcon className="w-3 h-3 text-gray-400" />
+            )}
+            {isCoordinator && (
+              <Shield className="w-3 h-3 text-violet-500" title="This assignee is a coordinator" />
+            )}
+            {canViewAll && (
+              <Eye className="w-3 h-3 text-blue-500" title="This assignee can view all user actions" />
             )}
             <button
               onClick={() => removeAssigneePlaceholder(assignee.placeholderId)}

@@ -27,55 +27,79 @@ interface ResolutionTypeEditorProps {
   kickoff?: KickoffConfig;
 }
 
-const RESOLUTION_OPTIONS: {
+interface ResolutionOption {
   type: ResolutionType;
   label: string;
   description: string;
   icon: typeof Users;
-}[] = [
+}
+
+interface ResolutionGroup {
+  label: string;
+  options: ResolutionOption[];
+}
+
+const RESOLUTION_GROUPS: ResolutionGroup[] = [
   {
-    type: 'CONTACT_TBD',
-    label: 'Contact (TBD)',
-    description: 'Assigned when flow starts',
-    icon: Users,
+    label: 'Direct',
+    options: [
+      {
+        type: 'CONTACT_TBD',
+        label: 'Contact (TBD)',
+        description: 'Assigned when flow starts',
+        icon: Users,
+      },
+      {
+        type: 'FIXED_CONTACT',
+        label: 'Fixed Contact',
+        description: 'Always the same person',
+        icon: UserCheck,
+      },
+    ],
   },
   {
-    type: 'FIXED_CONTACT',
-    label: 'Fixed Contact',
-    description: 'Always the same person',
-    icon: UserCheck,
+    label: 'From data sources',
+    options: [
+      {
+        type: 'WORKSPACE_INITIALIZER',
+        label: 'Flow Starter',
+        description: 'Person who starts this flow',
+        icon: PlayCircle,
+      },
+      {
+        type: 'KICKOFF_FORM_FIELD',
+        label: 'From Kickoff Form',
+        description: 'Read from a kickoff form field',
+        icon: FileText,
+      },
+      {
+        type: 'FLOW_VARIABLE',
+        label: 'From Variable',
+        description: 'Read from a flow variable',
+        icon: Variable,
+      },
+    ],
   },
   {
-    type: 'WORKSPACE_INITIALIZER',
-    label: 'Flow Starter',
-    description: 'Person who starts this flow',
-    icon: PlayCircle,
-  },
-  {
-    type: 'KICKOFF_FORM_FIELD',
-    label: 'From Kickoff Form',
-    description: 'Read from a kickoff form field',
-    icon: FileText,
-  },
-  {
-    type: 'FLOW_VARIABLE',
-    label: 'From Variable',
-    description: 'Read from a flow variable',
-    icon: Variable,
-  },
-  {
-    type: 'RULES',
-    label: 'Rules',
-    description: 'Based on conditions',
-    icon: GitBranch,
-  },
-  {
-    type: 'ROUND_ROBIN',
-    label: 'Round Robin',
-    description: 'Rotate among contacts',
-    icon: RefreshCw,
+    label: 'Advanced logic',
+    options: [
+      {
+        type: 'RULES',
+        label: 'Rules',
+        description: 'Based on conditions',
+        icon: GitBranch,
+      },
+      {
+        type: 'ROUND_ROBIN',
+        label: 'Round Robin',
+        description: 'Rotate among contacts',
+        icon: RefreshCw,
+      },
+    ],
   },
 ];
+
+const ALL_RESOLUTION_OPTIONS = RESOLUTION_GROUPS.flatMap(g => g.options);
 
 export function ResolutionTypeEditor({
   resolution,
@@ -84,7 +108,7 @@ export function ResolutionTypeEditor({
 }: ResolutionTypeEditorProps) {
   const [newEmail, setNewEmail] = useState('');
 
-  const selectedOption = RESOLUTION_OPTIONS.find(
+  const selectedOption = ALL_RESOLUTION_OPTIONS.find(
     (opt) => opt.type === resolution.type
   );
 
@@ -164,10 +188,14 @@ export function ResolutionTypeEditor({
             onChange={(e) => handleTypeChange(e.target.value as ResolutionType)}
             className="w-full appearance-none px-3 py-2 pl-9 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 cursor-pointer"
           >
-            {RESOLUTION_OPTIONS.map((opt) => (
-              <option key={opt.type} value={opt.type}>
-                {opt.label} - {opt.description}
-              </option>
+            {RESOLUTION_GROUPS.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.options.map((opt) => (
+                  <option key={opt.type} value={opt.type}>
+                    {opt.label} — {opt.description}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
           {/* Icon overlay */}

@@ -8,10 +8,10 @@
  */
 
 import { useState } from 'react';
-import { Plus, X, UserPlus, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, X, UserPlus, Users, ChevronDown, ChevronUp, Shield, Eye } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { getRoleColor, getRoleInitials } from '@/types';
-import type { Resolution } from '@/types';
+import type { Resolution, RoleOptions } from '@/types';
 import { ResolutionTypeEditor } from './ResolutionTypeEditor';
 
 const RESOLUTION_LABELS: Record<string, string> = {
@@ -25,7 +25,7 @@ const RESOLUTION_LABELS: Record<string, string> = {
 };
 
 export function AssigneeManager() {
-  const { workflow, addAssigneePlaceholder, removeAssigneePlaceholder, setWorkflow } = useWorkflowStore();
+  const { workflow, addAssigneePlaceholder, removeAssigneePlaceholder, updateAssigneePlaceholder, setWorkflow } = useWorkflowStore();
   const [newRoleName, setNewRoleName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
@@ -121,13 +121,19 @@ export function AssigneeManager() {
               </button>
             </div>
 
-            {/* Resolution type editor */}
+            {/* Resolution type editor + Advanced options */}
             {expandedRole === assignee.placeholderId && (
-              <div className="px-3 py-3 border-t border-gray-100 bg-white">
+              <div className="px-3 py-3 border-t border-gray-100 bg-white space-y-3">
                 <ResolutionTypeEditor
                   resolution={assignee.resolution || { type: 'CONTACT_TBD' }}
                   onChange={(resolution) => handleResolutionChange(assignee.placeholderId, resolution)}
                   kickoff={workflow.kickoff}
+                />
+
+                {/* Advanced (Optional) section */}
+                <AdvancedRoleOptions
+                  roleOptions={assignee.roleOptions || { coordinatorToggle: false, allowViewAllActions: false }}
+                  onChange={(roleOptions) => updateAssigneePlaceholder(assignee.placeholderId, { roleOptions })}
                 />
               </div>
             )}
@@ -145,7 +151,7 @@ export function AssigneeManager() {
         )}
       </div>
 
-      {/* Add role input */}
+      {/* Add role input - inline */}
       {isAdding && (
         <div className="flex items-center gap-2 mt-2">
           <input
@@ -170,6 +176,92 @@ export function AssigneeManager() {
           >
             Cancel
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Advanced Role Options (Collapsible)
+// ============================================================================
+
+function AdvancedRoleOptions({
+  roleOptions,
+  onChange,
+}: {
+  roleOptions: RoleOptions;
+  onChange: (options: RoleOptions) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(
+    roleOptions.coordinatorToggle || roleOptions.allowViewAllActions
+  );
+
+  return (
+    <div className="border border-gray-100 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between w-full px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        <span>Advanced (Optional)</span>
+        {isOpen ? (
+          <ChevronUp className="w-3.5 h-3.5" />
+        ) : (
+          <ChevronDown className="w-3.5 h-3.5" />
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="px-3 pb-3 space-y-3">
+          {/* Coordinator toggle */}
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <div className="relative mt-0.5">
+              <input
+                type="checkbox"
+                checked={roleOptions.coordinatorToggle}
+                onChange={(e) =>
+                  onChange({ ...roleOptions, coordinatorToggle: e.target.checked })
+                }
+                className="sr-only peer"
+              />
+              <div className="w-8 h-[18px] bg-gray-200 peer-checked:bg-violet-600 rounded-full transition-colors" />
+              <div className="absolute left-0.5 top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow-sm peer-checked:translate-x-[14px] transition-transform" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                <Shield className="w-3.5 h-3.5 text-gray-400" />
+                Coordinator
+              </div>
+              <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">
+                Grant "Coordinate" permission to allow the assignee to monitor progress and manage actions.
+              </p>
+            </div>
+          </label>
+
+          {/* Allow viewing other assignee's actions toggle */}
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <div className="relative mt-0.5">
+              <input
+                type="checkbox"
+                checked={roleOptions.allowViewAllActions}
+                onChange={(e) =>
+                  onChange({ ...roleOptions, allowViewAllActions: e.target.checked })
+                }
+                className="sr-only peer"
+              />
+              <div className="w-8 h-[18px] bg-gray-200 peer-checked:bg-violet-600 rounded-full transition-colors" />
+              <div className="absolute left-0.5 top-0.5 w-3.5 h-3.5 bg-white rounded-full shadow-sm peer-checked:translate-x-[14px] transition-transform" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                <Eye className="w-3.5 h-3.5 text-gray-400" />
+                Allow viewing other assignee's actions
+              </div>
+              <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">
+                Once enabled, the assignee can see all user actions, helping them track the current progress of the flow.
+              </p>
+            </div>
+          </label>
         </div>
       )}
     </div>

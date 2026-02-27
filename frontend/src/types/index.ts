@@ -306,11 +306,6 @@ export interface Step {
   description?: string;
   milestoneId?: string;
   order?: number;
-  // Backend assignee reference (different from config.assignee string)
-  assignees?: {
-    mode?: string;
-    placeholderId?: string;
-  };
 }
 
 export type StepType =
@@ -607,11 +602,17 @@ export interface Milestone {
   afterStepId: string;
 }
 
+export interface RoleOptions {
+  coordinatorToggle: boolean;
+  allowViewAllActions: boolean;
+}
+
 export interface AssigneePlaceholder {
   placeholderId: string;
   roleName: string;
   description?: string;
   resolution?: Resolution;
+  roleOptions?: RoleOptions;
 }
 
 export interface Parameter {

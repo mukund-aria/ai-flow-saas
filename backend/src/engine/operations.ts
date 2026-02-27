@@ -36,6 +36,9 @@ import type {
   RemoveMilestoneOperation,
   UpdateMilestoneOperation,
   UpdateFlowNameOperation,
+  AddAssigneePlaceholderOperation,
+  RemoveAssigneePlaceholderOperation,
+  UpdateAssigneePlaceholderOperation,
 } from '../models/operations.js';
 import { isBranchStep, isDecisionStep } from '../models/steps.js';
 import {
@@ -159,6 +162,14 @@ function applyOperation(flow: Flow, operation: Operation): OperationResult {
       // Flow metadata operations
       case 'UPDATE_FLOW_NAME':
         return applyUpdateFlowName(flow, operation);
+
+      // Assignee placeholder operations
+      case 'ADD_ASSIGNEE_PLACEHOLDER':
+        return applyAddAssigneePlaceholder(flow, operation);
+      case 'REMOVE_ASSIGNEE_PLACEHOLDER':
+        return applyRemoveAssigneePlaceholder(flow, operation);
+      case 'UPDATE_ASSIGNEE_PLACEHOLDER':
+        return applyUpdateAssigneePlaceholder(flow, operation);
 
       default:
         return {
@@ -829,5 +840,95 @@ function applyUpdateFlowName(
   op: UpdateFlowNameOperation
 ): OperationResult {
   flow.name = op.name;
+  return { success: true, operation: op };
+}
+
+// ============================================================================
+// Assignee Placeholder Operations
+// ============================================================================
+
+function applyAddAssigneePlaceholder(
+  flow: Flow,
+  op: AddAssigneePlaceholderOperation
+): OperationResult {
+  const placeholderId = op.placeholder.placeholderId || `role-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+  // Check for duplicate name
+  if (flow.assigneePlaceholders.some(p => p.name === op.placeholder.name)) {
+    return {
+      success: false,
+      operation: op,
+      error: `Assignee placeholder with name "${op.placeholder.name}" already exists`,
+    };
+  }
+
+  flow.assigneePlaceholders.push({
+    placeholderId,
+    name: op.placeholder.name,
+    resolution: op.placeholder.resolution || { type: 'CONTACT_TBD' },
+    roleOptions: op.placeholder.roleOptions || {
+      coordinatorToggle: false,
+      allowViewAllActions: false,
+    },
+  });
+
+  return { success: true, operation: op };
+}
+
+function applyRemoveAssigneePlaceholder(
+  flow: Flow,
+  op: RemoveAssigneePlaceholderOperation
+): OperationResult {
+  const index = flow.assigneePlaceholders.findIndex(
+    p => p.placeholderId === op.placeholderId
+  );
+  if (index === -1) {
+    return {
+      success: false,
+      operation: op,
+      error: `Assignee placeholder not found: ${op.placeholderId}`,
+    };
+  }
+
+  flow.assigneePlaceholders.splice(index, 1);
+
+  return { success: true, operation: op };
+}
+
+function applyUpdateAssigneePlaceholder(
+  flow: Flow,
+  op: UpdateAssigneePlaceholderOperation
+): OperationResult {
+  const placeholder = flow.assigneePlaceholders.find(
+    p => p.placeholderId === op.placeholderId
+  );
+  if (!placeholder) {
+    return {
+      success: false,
+      operation: op,
+      error: `Assignee placeholder not found: ${op.placeholderId}`,
+    };
+  }
+
+  if (op.updates.name !== undefined) {
+    // Check for duplicate name (excluding self)
+    if (flow.assigneePlaceholders.some(
+      p => p.name === op.updates.name && p.placeholderId !== op.placeholderId
+    )) {
+      return {
+        success: false,
+        operation: op,
+        error: `Assignee placeholder with name "${op.updates.name}" already exists`,
+      };
+    }
+    placeholder.name = op.updates.name;
+  }
+  if (op.updates.resolution !== undefined) {
+    placeholder.resolution = op.updates.resolution;
+  }
+  if (op.updates.roleOptions !== undefined) {
+    placeholder.roleOptions = { ...placeholder.roleOptions, ...op.updates.roleOptions };
+  }
+
   return { success: true, operation: op };
 }

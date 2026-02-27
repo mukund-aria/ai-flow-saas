@@ -6,6 +6,7 @@
  */
 
 import type { Step, BranchPath, DecisionOutcome, BranchCondition, TerminateStatus } from './steps.js';
+import type { AssigneePlaceholder, Resolution, RoleOptions } from './assignees.js';
 
 // ============================================================================
 // Operation Types
@@ -246,6 +247,35 @@ export interface UpdateFlowNameOperation {
 }
 
 // ============================================================================
+// Assignee Placeholder Operations
+// ============================================================================
+
+export interface AddAssigneePlaceholderOperation {
+  op: 'ADD_ASSIGNEE_PLACEHOLDER';
+  placeholder: {
+    placeholderId?: string;
+    name: string;
+    resolution?: Resolution;
+    roleOptions?: RoleOptions;
+  };
+}
+
+export interface RemoveAssigneePlaceholderOperation {
+  op: 'REMOVE_ASSIGNEE_PLACEHOLDER';
+  placeholderId: string;
+}
+
+export interface UpdateAssigneePlaceholderOperation {
+  op: 'UPDATE_ASSIGNEE_PLACEHOLDER';
+  placeholderId: string;
+  updates: {
+    name?: string;
+    resolution?: Resolution;
+    roleOptions?: RoleOptions;
+  };
+}
+
+// ============================================================================
 // Union Type for All Operations
 // ============================================================================
 
@@ -281,7 +311,11 @@ export type Operation =
   | RemoveMilestoneOperation
   | UpdateMilestoneOperation
   // Flow metadata
-  | UpdateFlowNameOperation;
+  | UpdateFlowNameOperation
+  // Assignee placeholders
+  | AddAssigneePlaceholderOperation
+  | RemoveAssigneePlaceholderOperation
+  | UpdateAssigneePlaceholderOperation;
 
 // ============================================================================
 // Operation Result

@@ -179,13 +179,36 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
             },
             assigneePlaceholders: {
               type: 'array',
-              description: 'Roles involved in the workflow',
+              description: 'Roles involved in the workflow. Each role resolves to a contact at runtime.',
               items: {
                 type: 'object',
                 properties: {
                   placeholderId: { type: 'string' },
                   roleName: { type: 'string', description: 'Name of the role (e.g., "Client", "Manager")' },
-                  description: { type: 'string', description: 'Description of who fills this role' }
+                  description: { type: 'string', description: 'Description of who fills this role' },
+                  resolution: {
+                    type: 'object',
+                    description: 'How this role resolves to a contact. Defaults to CONTACT_TBD if omitted.',
+                    properties: {
+                      type: {
+                        type: 'string',
+                        enum: ['CONTACT_TBD', 'FIXED_CONTACT', 'WORKSPACE_INITIALIZER', 'KICKOFF_FORM_FIELD', 'FLOW_VARIABLE', 'ROUND_ROBIN'],
+                        description: 'Resolution strategy. CONTACT_TBD = assigned at start, WORKSPACE_INITIALIZER = person who starts the flow, FIXED_CONTACT = always same person'
+                      },
+                      email: { type: 'string', description: 'For FIXED_CONTACT: the contact email' },
+                      fieldKey: { type: 'string', description: 'For KICKOFF_FORM_FIELD: the form field key' },
+                      variableKey: { type: 'string', description: 'For FLOW_VARIABLE: the variable key' },
+                      emails: { type: 'array', items: { type: 'string' }, description: 'For ROUND_ROBIN: list of email addresses to rotate' }
+                    }
+                  },
+                  roleOptions: {
+                    type: 'object',
+                    description: 'Permission options for this role. Defaults to both false if omitted.',
+                    properties: {
+                      coordinatorToggle: { type: 'boolean', description: 'Grant coordinator permission to monitor progress and manage actions' },
+                      allowViewAllActions: { type: 'boolean', description: 'Allow viewing other assignee actions' }
+                    }
+                  }
                 },
                 required: ['roleName']
               }
@@ -392,8 +415,28 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                 type: 'object',
                 description: 'Assignee placeholder definition (for ADD_ASSIGNEE_PLACEHOLDER)',
                 properties: {
-                  name: { type: 'string', description: 'Display name for the role (e.g., "Manager", "Reviewer")' }
-                }
+                  placeholderId: { type: 'string', description: 'Optional unique ID for the placeholder' },
+                  name: { type: 'string', description: 'Display name for the role (e.g., "Manager", "Reviewer")' },
+                  resolution: {
+                    type: 'object',
+                    description: 'How this role resolves to a contact. Defaults to CONTACT_TBD.',
+                    properties: {
+                      type: { type: 'string', enum: ['CONTACT_TBD', 'FIXED_CONTACT', 'WORKSPACE_INITIALIZER', 'KICKOFF_FORM_FIELD', 'FLOW_VARIABLE', 'ROUND_ROBIN'] },
+                      email: { type: 'string' },
+                      fieldKey: { type: 'string' },
+                      variableKey: { type: 'string' },
+                      emails: { type: 'array', items: { type: 'string' } }
+                    }
+                  },
+                  roleOptions: {
+                    type: 'object',
+                    properties: {
+                      coordinatorToggle: { type: 'boolean' },
+                      allowViewAllActions: { type: 'boolean' }
+                    }
+                  }
+                },
+                required: ['name']
               },
               placeholderId: { type: 'string', description: 'Placeholder ID (for REMOVE/UPDATE_ASSIGNEE_PLACEHOLDER)' },
               name: { type: 'string', description: 'New name (for UPDATE_FLOW_NAME)' },
