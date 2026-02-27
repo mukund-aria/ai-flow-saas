@@ -2,8 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, CheckCircle } from 'lucide-react';
-import { SelectionInput, TextWithFileInput } from './clarification';
+import { Send, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SelectionInput, TextWithFileInput, QuickSuggestionChips } from './clarification';
 import type { Clarification, ClarificationAnswer } from '@/types';
 
 // Auto-growing textarea for simple text answers
@@ -45,9 +45,17 @@ interface ClarificationCardProps {
   savedAnswers?: Record<string, string>;
 }
 
+// Use stepper layout for 2+ questions
+const shouldUseStepperLayout = (questions: Clarification[]): boolean => {
+  return questions.length >= 2;
+};
+
 export function ClarificationCard({ questions, onSubmit, isLocked = false, savedAnswers }: ClarificationCardProps) {
   // Enhanced answer state - keyed by question ID
   const [answers, setAnswers] = useState<Record<string, ClarificationAnswer>>({});
+
+  // Current step for stepper layout
+  const [currentStep, setCurrentStep] = useState(0);
 
   // Initialize answer objects for each question
   useEffect(() => {
@@ -155,6 +163,7 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
   // Check if at least one question has a valid answer
   const hasAnyValidAnswer = questions.some((q) => hasValidAnswer(q, answers[q.id]));
 
+
   // Format answers for submission
   const handleSubmit = () => {
     if (!hasAnyValidAnswer) return;
@@ -221,34 +230,85 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
     onSubmit(formattedAnswers, questions);
   };
 
+  // Check if a question is about steps/process (to show special suggestion)
+  const isStepsQuestion = (questionId: string, questionText: string): boolean => {
+    const idPatterns = ['step', 'process', 'workflow', 'procedure'];
+    const textPatterns = ['step', 'process', 'walk me through', 'what happens'];
+    const idLower = questionId.toLowerCase();
+    const textLower = questionText.toLowerCase();
+    return idPatterns.some(p => idLower.includes(p)) ||
+           textPatterns.some(p => textLower.includes(p));
+  };
+
+  // Get suggestions with special "let AI decide" option appended for steps questions
+  const getSuggestionsForQuestion = (question: Clarification): string[] => {
+    const aiSuggestions = question.quickSuggestions || [];
+    if (isStepsQuestion(question.id, question.text)) {
+      return [...aiSuggestions, 'Let AI decide'];
+    }
+    return aiSuggestions;
+  };
+
   // Render input based on question type
   const renderQuestionInput = (question: Clarification) => {
     const answer = answers[question.id] || { questionId: question.id };
     const inputType = question.inputType || 'text';
+    const suggestions = getSuggestionsForQuestion(question);
+
+    // Handler for quick suggestion clicks - appends comma-separated values
+    const handleSuggestionClick = (suggestion: string) => {
+      const currentValue = answer.textValue || '';
+      if (currentValue.trim() === '') {
+        // First selection - just set the value
+        updateTextValue(question.id, suggestion);
+      } else {
+        // Append with comma separation (avoid duplicates)
+        const existingValues = currentValue.split(',').map(v => v.trim().toLowerCase());
+        if (!existingValues.includes(suggestion.toLowerCase())) {
+          updateTextValue(question.id, `${currentValue}, ${suggestion}`);
+        }
+      }
+    };
 
     switch (inputType) {
       case 'text':
         return (
-          <AutoGrowTextarea
-            value={answer.textValue || ''}
-            onChange={(value) => updateTextValue(question.id, value)}
-            placeholder={question.placeholder || 'Type your answer... (optional)'}
-          />
+          <>
+            <AutoGrowTextarea
+              value={answer.textValue || ''}
+              onChange={(value) => updateTextValue(question.id, value)}
+              placeholder={question.placeholder || 'Type your answer... (optional)'}
+            />
+            {suggestions.length > 0 && (
+              <QuickSuggestionChips
+                suggestions={suggestions}
+                onSuggestionClick={handleSuggestionClick}
+              />
+            )}
+          </>
         );
 
       case 'text_with_file':
         return (
-          <TextWithFileInput
-            textValue={answer.textValue || ''}
-            onTextChange={(value) => updateTextValue(question.id, value)}
-            placeholder={question.placeholder || 'Type your answer...'}
-            fileUploadConfig={question.fileUpload}
-            file={answer.file}
-            filePreviewUrl={answer.filePreviewUrl}
-            onFileChange={(file, previewUrl) =>
-              updateFile(question.id, file, previewUrl)
-            }
-          />
+          <>
+            <TextWithFileInput
+              textValue={answer.textValue || ''}
+              onTextChange={(value) => updateTextValue(question.id, value)}
+              placeholder={question.placeholder || 'Type your answer...'}
+              fileUploadConfig={question.fileUpload}
+              file={answer.file}
+              filePreviewUrl={answer.filePreviewUrl}
+              onFileChange={(file, previewUrl) =>
+                updateFile(question.id, file, previewUrl)
+              }
+            />
+            {suggestions.length > 0 && (
+              <QuickSuggestionChips
+                suggestions={suggestions}
+                onSuggestionClick={handleSuggestionClick}
+              />
+            )}
+          </>
         );
 
       case 'selection':
@@ -270,8 +330,172 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
     }
   };
 
+  // Determine if stepper layout should be used
+  const useStepper = shouldUseStepperLayout(questions);
+
+  // Step indicators (dots)
+  const renderStepIndicators = () => (
+    <div className="flex items-center justify-center gap-1.5 mb-4">
+      {questions.map((q, index) => {
+        const isAnswered = hasValidAnswer(q, answers[q.id]);
+        const isCurrent = index === currentStep;
+        return (
+          <button
+            key={q.id}
+            onClick={() => setCurrentStep(index)}
+            className={`w-2 h-2 rounded-full transition-all ${
+              isCurrent
+                ? 'w-6 bg-violet-500'
+                : isAnswered
+                ? 'bg-violet-400'
+                : 'bg-gray-300 hover:bg-gray-400'
+            }`}
+            aria-label={`Go to question ${index + 1}`}
+          />
+        );
+      })}
+    </div>
+  );
+
+  // Render stepper layout - one question at a time
+  const renderStepperLayout = () => {
+    const currentQuestion = questions[currentStep];
+    const isLastStep = currentStep === questions.length - 1;
+    const isFirstStep = currentStep === 0;
+
+    return (
+      <Card className="border-2 border-violet-200 bg-violet-50/30 max-w-md">
+        <CardContent className="pt-4 pb-2">
+          {/* Step indicators */}
+          {renderStepIndicators()}
+
+          {/* Step counter */}
+          <div className="text-xs text-gray-500 text-center mb-3">
+            Question {currentStep + 1} of {questions.length}
+          </div>
+
+          {/* Current question */}
+          <div className="min-h-[120px]">
+            <label className="block text-base font-medium text-gray-700 mb-3">
+              {currentQuestion.text}
+            </label>
+            {renderQuestionInput(currentQuestion)}
+          </div>
+        </CardContent>
+
+        <CardFooter className="pt-2 flex gap-2">
+          {/* Back button - only show if not first step */}
+          {!isFirstStep && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentStep((prev) => prev - 1)}
+              className="px-3 text-gray-500 hover:text-gray-700"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+          )}
+
+          {/* Next / Submit button */}
+          {isLastStep ? (
+            <Button
+              onClick={handleSubmit}
+              disabled={!hasAnyValidAnswer}
+              className="flex-1"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Submit Answers
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setCurrentStep((prev) => prev + 1)}
+              className="flex-1"
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+    );
+  };
+
+  // Render stepper locked layout for read-only state
+  const renderStepperLockedLayout = () => {
+    const currentQuestion = questions[currentStep];
+    const answer = savedAnswers?.[currentQuestion.id];
+    const isLastStep = currentStep === questions.length - 1;
+    const isFirstStep = currentStep === 0;
+
+    return (
+      <Card className="border-2 border-green-200 bg-green-50/30 max-w-md">
+        <CardContent className="pt-4 pb-2">
+          {/* Step indicators */}
+          <div className="flex items-center justify-center gap-1.5 mb-4">
+            {questions.map((q, index) => {
+              const isCurrent = index === currentStep;
+              return (
+                <button
+                  key={q.id}
+                  onClick={() => setCurrentStep(index)}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    isCurrent ? 'w-6 bg-green-500' : 'bg-green-300 hover:bg-green-400'
+                  }`}
+                  aria-label={`View question ${index + 1}`}
+                />
+              );
+            })}
+          </div>
+
+          {/* Submitted header */}
+          <div className="flex items-center justify-center gap-2 text-green-600 pb-2 mb-3 border-b border-green-200">
+            <CheckCircle className="w-4 h-4" />
+            <span className="text-sm font-medium">Answers submitted</span>
+          </div>
+
+          {/* Current question */}
+          <div className="min-h-[80px]">
+            <p className="text-base font-medium text-gray-700 mb-2">
+              {currentQuestion.text}
+            </p>
+            <p className="text-base text-gray-600 whitespace-pre-wrap">
+              {answer || <span className="text-gray-400 italic">No answer provided</span>}
+            </p>
+          </div>
+        </CardContent>
+
+        <CardFooter className="pt-2 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentStep((prev) => prev - 1)}
+            disabled={isFirstStep}
+            className="px-3"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentStep((prev) => prev + 1)}
+            disabled={isLastStep}
+            className="flex-1"
+          >
+            {isLastStep ? 'Done' : 'Next'}
+            {!isLastStep && <ChevronRight className="w-4 h-4 ml-2" />}
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  };
+
   // Locked state: show read-only answers
   if (isLocked) {
+    // Stepper locked layout
+    if (useStepper) {
+      return renderStepperLockedLayout();
+    }
+
+    // Single question locked layout
     return (
       <Card className="border-2 border-green-200 bg-green-50/30 max-w-md">
         <CardContent className="space-y-3 pt-4 pb-3">
@@ -300,12 +524,18 @@ export function ClarificationCard({ questions, onSubmit, isLocked = false, saved
     );
   }
 
+  // Stepper layout for 2+ questions
+  if (useStepper) {
+    return renderStepperLayout();
+  }
+
+  // Default single question layout
   return (
     <Card className="border-2 border-violet-200 bg-violet-50/30 max-w-md">
       <CardContent className="space-y-8 pt-4 pb-2">
         {questions.map((question, index) => (
-          <div key={question.id} className="space-y-5">
-            <label className="text-base font-medium text-gray-700">
+          <div key={question.id}>
+            <label className="block text-base font-medium text-gray-700 mb-4">
               {index + 1}. {question.text}
             </label>
             {renderQuestionInput(question)}

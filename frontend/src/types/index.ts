@@ -269,7 +269,15 @@ export interface Step {
   stepId: string;
   type: StepType;
   config: StepConfig;
+  title?: string;  // Backend uses this for step name
+  description?: string;
+  milestoneId?: string;
   order?: number;
+  // Backend assignee reference (different from config.assignee string)
+  assignees?: {
+    mode?: string;
+    placeholderId?: string;
+  };
 }
 
 export type StepType =
@@ -627,6 +635,7 @@ export interface Message {
   clarificationAnswers?: Record<string, string>;  // Answers to clarification questions
   clarificationsLocked?: boolean;  // Whether the clarification card is locked (submitted)
   rejection?: Rejection;
+  savedChangeRequest?: string;  // Locked display of submitted change request
   suggestedActions?: SuggestedAction[];  // For 'respond' mode - quick actions
   error?: string;
   attachment?: MessageAttachment;
@@ -654,14 +663,27 @@ export interface PendingPlan {
  * Edit operation for patch-based workflow updates
  */
 export interface EditOperation {
-  op: 'ADD_STEP_AFTER' | 'ADD_STEP_BEFORE' | 'REMOVE_STEP' | 'UPDATE_STEP' | 'MOVE_STEP' | 'ADD_PATH_STEP_AFTER' | 'ADD_PATH_STEP_BEFORE' | 'UPDATE_FLOW_METADATA';
+  op:
+    | 'ADD_STEP_AFTER' | 'ADD_STEP_BEFORE' | 'REMOVE_STEP' | 'UPDATE_STEP' | 'MOVE_STEP'
+    | 'ADD_PATH_STEP_AFTER' | 'ADD_PATH_STEP_BEFORE'
+    | 'UPDATE_FLOW_METADATA' | 'UPDATE_FLOW_NAME'
+    | 'ADD_ASSIGNEE_PLACEHOLDER' | 'REMOVE_ASSIGNEE_PLACEHOLDER' | 'UPDATE_ASSIGNEE_PLACEHOLDER'
+    | 'ADD_MILESTONE' | 'REMOVE_MILESTONE' | 'UPDATE_MILESTONE';
   stepId?: string;
   afterStepId?: string;
   beforeStepId?: string;
   branchStepId?: string;
   pathId?: string;
-  step?: Partial<Step>;
+  step?: Partial<Step> & { title?: string };  // Include title for new schema
   updates?: Record<string, unknown>;
+  // Assignee placeholder operations
+  placeholder?: { name: string; placeholderId?: string };
+  placeholderId?: string;
+  // Milestone operations
+  milestone?: { name: string; milestoneId?: string; sequence?: number };
+  milestoneId?: string;
+  // Flow name
+  name?: string;
 }
 
 // ============================================================================
@@ -730,6 +752,9 @@ export interface Clarification {
   text: string;
   /** Input type - defaults to 'text' for backward compatibility */
   inputType?: ClarificationInputType;
+
+  /** Quick suggestion chips shown below text inputs */
+  quickSuggestions?: string[];
 
   // For inputType: 'text' (default)
   /** Placeholder text for text input */

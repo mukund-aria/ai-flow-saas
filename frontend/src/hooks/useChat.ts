@@ -63,6 +63,13 @@ export function useChat() {
                 mode?: string;
                 clarifications?: Clarification[];
                 clarificationsLocked?: boolean;
+                pendingPlan?: {
+                  planId: string;
+                  workflow: Flow;
+                  message: string;
+                  mode: 'create' | 'edit';
+                };
+                planPublished?: boolean;
               }) => ({
                 id: m.id,
                 role: m.role,
@@ -71,6 +78,8 @@ export function useChat() {
                 mode: m.mode as Message['mode'],
                 clarifications: m.clarifications,
                 clarificationsLocked: m.clarificationsLocked,
+                pendingPlan: m.pendingPlan,
+                planPublished: m.planPublished,
               })
             );
             loadMessages(loadedMessages);
@@ -470,17 +479,20 @@ export function useChat() {
     async (changes: string) => {
       if (!changes.trim()) return;
 
-      // Lock any existing plan cards (mark them as needing revision)
+      // Lock any existing plan cards and save the change request text
       const msgs = useChatStore.getState().messages;
       msgs.forEach((msg) => {
         if (msg.pendingPlan && !msg.planPublished) {
-          updateMessage(msg.id, { planPublished: false });
+          updateMessage(msg.id, { savedChangeRequest: changes.trim() });
         }
       });
 
-      // Send the change request as a regular message
+      // Send the change request (hidden - already displayed in the card)
       // The AI will generate a new preview based on the changes
-      await sendMessage(`Please make these changes to the workflow: ${changes}`);
+      await sendMessage(`Please make these changes to the workflow: ${changes}`, undefined, {
+        hideUserMessage: true,
+        thinkingStatus: 'editing',
+      });
     },
     [sendMessage, updateMessage]
   );

@@ -211,6 +211,7 @@ export function MessageItem({
               onApprove={() => onApprovePlan?.(message.pendingPlan!.planId)}
               onRequestChanges={onRequestChanges}
               isPublished={message.planPublished}
+              savedChangeRequest={message.savedChangeRequest}
             />
           </div>
         )}

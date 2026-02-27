@@ -3,6 +3,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, Paperclip, X, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useChatStore } from '@/stores/chatStore';
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
+import { VoiceButton } from './VoiceButton';
 import type { MessageAttachment } from '@/types';
 
 interface ChatInputProps {
@@ -23,6 +25,41 @@ export function ChatInput({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Speech recognition
+  const {
+    isListening,
+    transcript,
+    interimTranscript,
+    error: speechError,
+    isSupported: isSpeechSupported,
+    startListening,
+    stopListening,
+    reset: resetSpeech,
+  } = useSpeechRecognition();
+
+  // Append transcript to message when speech recognition produces results
+  useEffect(() => {
+    if (transcript) {
+      setMessage(prev => {
+        // Add space if there's existing text that doesn't end with whitespace
+        const needsSpace = prev.length > 0 && !/\s$/.test(prev);
+        return prev + (needsSpace ? ' ' : '') + transcript;
+      });
+      // Reset the transcript after appending to prevent re-appending
+      resetSpeech();
+      textareaRef.current?.focus();
+    }
+  }, [transcript, resetSpeech]);
+
+  // Handle voice button click
+  const handleVoiceClick = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
 
   // Listen for prefill messages from suggested actions
   const prefillMessage = useChatStore((state) => state.prefillMessage);
@@ -182,19 +219,36 @@ export function ChatInput({
         {/* Textarea - Borderless, integrated */}
         <Textarea
           ref={textareaRef}
-          value={message}
+          value={isListening ? message + (interimTranscript ? (message ? ' ' : '') + interimTranscript : '') : message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={pendingFile ? 'Add context about this diagram (optional)...' : placeholder}
-          disabled={disabled}
+          placeholder={
+            isListening
+              ? 'Listening...'
+              : pendingFile
+                ? 'Add context about this diagram (optional)...'
+                : placeholder
+          }
+          disabled={disabled || isListening}
           className={cn(
             'flex-1 min-h-[40px] max-h-[200px] resize-none overflow-y-auto',
             'bg-transparent border-0 shadow-none focus-visible:ring-0',
             'text-gray-700 placeholder:text-gray-400',
-            'py-2 px-1'
+            'py-2 px-1',
+            isListening && 'text-gray-500 italic'
           )}
           rows={1}
         />
+
+        {/* Voice Input Button - Only show if supported */}
+        {isSpeechSupported && (
+          <VoiceButton
+            isListening={isListening}
+            error={speechError}
+            onClick={handleVoiceClick}
+            disabled={disabled}
+          />
+        )}
 
         {/* Send Button - Circular with dynamic color */}
         <button
