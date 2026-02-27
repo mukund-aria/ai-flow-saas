@@ -8,6 +8,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { generateSystemPrompt, generateWorkflowContext } from './prompt-generator.js';
 import { AI_RESPONSE_TOOLS, toolNameToMode } from './tools.js';
+import { lookupGalleryTemplate } from '../data/template-lookup.js';
 import type {
   AIResponse,
   LLMResult,
@@ -118,6 +119,80 @@ export class LLMService {
         };
       }
 
+      // ── Agentic Tool Loop: handle lookup_template ──
+      if (toolUseBlock.name === 'lookup_template') {
+        const lookupInput = toolUseBlock.input as { templateName: string; category?: string };
+        const template = lookupGalleryTemplate(lookupInput.templateName, lookupInput.category);
+        const toolResultContent = template
+          ? JSON.stringify(template, null, 2)
+          : `No template found matching "${lookupInput.templateName}"${lookupInput.category ? ` in category "${lookupInput.category}"` : ''}. Proceed with creating the workflow from scratch based on the user's description.`;
+
+        // Build continuation messages with tool_result
+        const continuationMessages: Anthropic.MessageParam[] = [
+          ...messages,
+          { role: 'assistant', content: response.content },
+          {
+            role: 'user',
+            content: [{
+              type: 'tool_result',
+              tool_use_id: toolUseBlock.id,
+              content: toolResultContent,
+            }],
+          },
+        ];
+
+        // Second API call — the AI now has the template details
+        const followUpResponse = await this.client.messages.create({
+          model: this.model,
+          max_tokens: options.maxTokens ?? DEFAULT_MAX_TOKENS,
+          temperature: options.temperature ?? DEFAULT_TEMPERATURE,
+          system: systemWithContext,
+          messages: continuationMessages,
+          tools: AI_RESPONSE_TOOLS,
+          tool_choice: { type: 'any' },
+        });
+
+        const followUpToolUse = followUpResponse.content.find(block => block.type === 'tool_use');
+
+        if (!followUpToolUse || followUpToolUse.type !== 'tool_use') {
+          return {
+            success: false,
+            error: 'No tool use in follow-up response after template lookup',
+            usage: {
+              inputTokens: response.usage.input_tokens + followUpResponse.usage.input_tokens,
+              outputTokens: response.usage.output_tokens + followUpResponse.usage.output_tokens,
+            },
+          };
+        }
+
+        // If the follow-up also calls lookup_template, fall back (max 1 lookup per turn)
+        if (followUpToolUse.name === 'lookup_template') {
+          return {
+            success: false,
+            error: 'Template lookup loop detected - falling back',
+            usage: {
+              inputTokens: response.usage.input_tokens + followUpResponse.usage.input_tokens,
+              outputTokens: response.usage.output_tokens + followUpResponse.usage.output_tokens,
+            },
+          };
+        }
+
+        const followUpMode = toolNameToMode(followUpToolUse.name);
+        const followUpInput = followUpToolUse.input as Record<string, unknown>;
+        const followUpRawContent = JSON.stringify(followUpInput, null, 2);
+        const followUpAiResponse = this.buildAIResponseFromToolUse(followUpMode, followUpInput);
+
+        return {
+          success: true,
+          response: followUpAiResponse,
+          rawContent: followUpRawContent,
+          usage: {
+            inputTokens: response.usage.input_tokens + followUpResponse.usage.input_tokens,
+            outputTokens: response.usage.output_tokens + followUpResponse.usage.output_tokens,
+          },
+        };
+      }
+
       // Convert tool use to AIResponse format
       const mode = toolNameToMode(toolUseBlock.name);
       const toolInput = toolUseBlock.input as Record<string, unknown>;
@@ -148,7 +223,7 @@ export class LLMService {
    * Build AIResponse from tool_use input
    */
   private buildAIResponseFromToolUse(
-    mode: 'create' | 'edit' | 'clarify' | 'reject' | 'respond',
+    mode: 'create' | 'edit' | 'clarify' | 'reject' | 'respond' | 'lookup_template',
     toolInput: Record<string, unknown>
   ): AIResponse {
     switch (mode) {
@@ -187,6 +262,14 @@ export class LLMService {
           mode: 'respond',
           message: toolInput.message as string,
           suggestedActions: toolInput.suggestedActions as RespondResponse['suggestedActions'],
+        } as RespondResponse;
+
+      case 'lookup_template':
+        // This should never be reached — lookup_template is handled by the agentic loop
+        // before buildAIResponseFromToolUse is called. Fallback to a respond message.
+        return {
+          mode: 'respond',
+          message: 'I looked up a template but encountered an unexpected state. Please try again.',
         } as RespondResponse;
     }
   }
@@ -643,6 +726,97 @@ ${currentWorkflow
           usage: {
             inputTokens: finalMessage.usage.input_tokens,
             outputTokens: finalMessage.usage.output_tokens,
+          },
+        };
+      }
+
+      // ── Agentic Tool Loop: handle lookup_template in streaming ──
+      if (toolUseBlock.name === 'lookup_template') {
+        yield { type: 'thinking', status: 'Loading template details...' };
+
+        const lookupInput = toolUseBlock.input as { templateName: string; category?: string };
+        const template = lookupGalleryTemplate(lookupInput.templateName, lookupInput.category);
+        const toolResultContent = template
+          ? JSON.stringify(template, null, 2)
+          : `No template found matching "${lookupInput.templateName}"${lookupInput.category ? ` in category "${lookupInput.category}"` : ''}. Proceed with creating the workflow from scratch based on the user's description.`;
+
+        // Build continuation messages with tool_result
+        const continuationMessages: Anthropic.MessageParam[] = [
+          ...messages,
+          { role: 'assistant', content: finalMessage.content },
+          {
+            role: 'user',
+            content: [{
+              type: 'tool_result',
+              tool_use_id: toolUseBlock.id,
+              content: toolResultContent,
+            }],
+          },
+        ];
+
+        yield { type: 'thinking', status: 'Adapting template to your needs...' };
+
+        // Second streaming API call — the AI now has the template details
+        const followUpStream = this.client.messages.stream({
+          model: this.model,
+          max_tokens: options.maxTokens ?? DEFAULT_MAX_TOKENS,
+          temperature: options.temperature ?? DEFAULT_TEMPERATURE,
+          system: systemWithContext,
+          messages: continuationMessages,
+          tools: AI_RESPONSE_TOOLS,
+          tool_choice: { type: 'any' },
+        });
+
+        // Process follow-up stream events
+        let followUpToolInputJson = '';
+        for await (const event of followUpStream) {
+          if (event.type === 'content_block_start' && event.content_block.type === 'tool_use') {
+            yield { type: 'thinking', status: 'Designing workflow...' };
+          } else if (event.type === 'content_block_delta' && event.delta.type === 'input_json_delta') {
+            followUpToolInputJson += event.delta.partial_json;
+            yield { type: 'content', chunk: '' };
+          }
+        }
+
+        const followUpFinalMessage = await followUpStream.finalMessage();
+        const followUpToolUse = followUpFinalMessage.content.find(block => block.type === 'tool_use');
+
+        if (!followUpToolUse || followUpToolUse.type !== 'tool_use') {
+          return {
+            success: false,
+            rawContent: followUpToolInputJson,
+            error: 'No tool use in follow-up response after template lookup',
+            usage: {
+              inputTokens: finalMessage.usage.input_tokens + followUpFinalMessage.usage.input_tokens,
+              outputTokens: finalMessage.usage.output_tokens + followUpFinalMessage.usage.output_tokens,
+            },
+          };
+        }
+
+        // If the follow-up also calls lookup_template, fall back (max 1 lookup per turn)
+        if (followUpToolUse.name === 'lookup_template') {
+          return {
+            success: false,
+            error: 'Template lookup loop detected - falling back',
+            usage: {
+              inputTokens: finalMessage.usage.input_tokens + followUpFinalMessage.usage.input_tokens,
+              outputTokens: finalMessage.usage.output_tokens + followUpFinalMessage.usage.output_tokens,
+            },
+          };
+        }
+
+        const followUpMode = toolNameToMode(followUpToolUse.name);
+        const followUpInput = followUpToolUse.input as Record<string, unknown>;
+        const followUpRawContent = JSON.stringify(followUpInput, null, 2);
+        const followUpAiResponse = this.buildAIResponseFromToolUse(followUpMode, followUpInput);
+
+        return {
+          success: true,
+          response: followUpAiResponse,
+          rawContent: followUpRawContent,
+          usage: {
+            inputTokens: finalMessage.usage.input_tokens + followUpFinalMessage.usage.input_tokens,
+            outputTokens: finalMessage.usage.output_tokens + followUpFinalMessage.usage.output_tokens,
           },
         };
       }

@@ -131,6 +131,19 @@ stages:
       - "Spotlight view for assignees"
       - "No overall due date unless specified"
 
+# Template lookup guidance
+templateLookup:
+  principle: >
+    When you identify a matching template pattern, call lookup_template FIRST to get the full
+    step definitions. Then adapt those definitions to the user's specific needs in create_workflow.
+    This gives you realistic form fields, descriptions, and configurations to start from.
+  rules:
+    - "If the user describes a process that closely matches a known template pattern, look it up before creating"
+    - "Adapt the template to the user's specific context — don't blindly copy every step"
+    - "Use the template's form fields and descriptions as a starting point, customizing labels and options"
+    - "If the template has roles that don't match the user's description, rename or merge them"
+    - "If no template matches, create the workflow from scratch as usual"
+
 # Inference rules: how to map user language to step types
 inferenceRules:
   principle: "Generate based on what user described. Don't ask about features they didn't mention."

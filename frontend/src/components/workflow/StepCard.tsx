@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { StepIcon } from './StepIcon';
 import { StepConfigPanel } from './StepConfigPanel';
+import { ChangeStatusBadge } from './ChangeStatusBadge';
 import { GripVertical, Pencil, Trash2, Copy, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type { Step, AssigneePlaceholder } from '@/types';
+import type { StepChangeStatus } from '@/lib/proposal-utils';
 import { STEP_TYPE_META, getRoleColor, getRoleInitials } from '@/types';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -38,9 +40,11 @@ interface StepCardProps {
   assigneePlaceholders?: AssigneePlaceholder[];
   /** Display string like "1", "9.1", "9.2.1" for nested numbering */
   stepNumber?: string;
+  /** Change status from proposal mode diff */
+  changeStatus?: StepChangeStatus;
 }
 
-export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePlaceholders = [], stepNumber }: StepCardProps) {
+export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePlaceholders = [], stepNumber, changeStatus }: StepCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const { removeStep, updateStep, duplicateStep } = useWorkflowStore();
 
@@ -70,7 +74,7 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
   // GoTo Destination — render as compact gold marker
   if (step.type === 'GOTO_DESTINATION') {
     return (
-      <div ref={setNodeRef} style={style}>
+      <div ref={setNodeRef} style={style} className={cn(changeStatus === 'unchanged' && 'opacity-60')}>
         <div
           className={cn(
             'flex items-center gap-2 py-1.5 px-2 group',
@@ -131,9 +135,16 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
           isAutomation && 'border-dashed border-gray-300',
           editMode && 'cursor-pointer',
           isDragging && 'opacity-50 shadow-lg ring-2 ring-violet-300',
+          changeStatus === 'unchanged' && 'opacity-60',
+          changeStatus === 'added' && 'ring-1 ring-green-200',
+          changeStatus === 'modified' && 'ring-1 ring-amber-200',
+          changeStatus === 'moved' && 'ring-1 ring-blue-200',
         )}
         style={{
-          borderLeftColor: isAutomation ? '#9ca3af' : meta.color,
+          borderLeftColor: changeStatus === 'added' ? '#22c55e'
+            : changeStatus === 'modified' ? '#f59e0b'
+            : changeStatus === 'moved' ? '#3b82f6'
+            : isAutomation ? '#9ca3af' : meta.color,
         }}
         onClick={editMode ? () => setIsEditing(!isEditing) : undefined}
       >
@@ -158,6 +169,9 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
           <StepIcon type={step.type} className="w-3.5 h-3.5 shrink-0" style={{ color: meta.color }} />
           <span className="text-xs font-medium text-gray-600 truncate">{meta.label}</span>
           <div className="flex items-center gap-1.5 ml-auto shrink-0">
+            {changeStatus && changeStatus !== 'unchanged' && (
+              <ChangeStatusBadge status={changeStatus} />
+            )}
             {hasWarnings && (
               <span title={warnings.join(', ')}>
                 <AlertCircle className="w-3 h-3 text-amber-500" />

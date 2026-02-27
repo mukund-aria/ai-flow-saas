@@ -6,19 +6,25 @@ import { FlowStartCard } from './FlowStartCard';
 import { StepList } from './StepList';
 import { StepConnector } from './StepConnector';
 import { EmptyWorkflow } from './EmptyWorkflow';
+import { ProposalBanner } from './ProposalBanner';
 import { useWorkflowStore } from '@/stores/workflowStore';
 
 interface WorkflowPanelProps {
   editMode?: boolean;
   onStartConfigClick?: () => void;
+  onApproveProposal?: () => void;
+  onRequestProposalChanges?: (changes: string) => void;
 }
 
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 1.5;
 const ZOOM_STEP = 0.1;
 
-export function WorkflowPanel({ editMode = false, onStartConfigClick }: WorkflowPanelProps) {
+export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveProposal, onRequestProposalChanges }: WorkflowPanelProps) {
   const workflow = useWorkflowStore((state) => state.workflow);
+  const pendingProposal = useWorkflowStore((state) => state.pendingProposal);
+  const proposalViewMode = useWorkflowStore((state) => state.proposalViewMode);
+  const setProposalViewMode = useWorkflowStore((state) => state.setProposalViewMode);
   const [zoomLevel, setZoomLevel] = useState(1.0);
   const [isPanning, setIsPanning] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -153,6 +159,68 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick }: Workflow
       </button>
     </div>
   );
+
+  // Proposal mode — show proposed or current workflow with ProposalBanner
+  if (pendingProposal && !editMode) {
+    const isEdit = pendingProposal.plan.mode === 'edit';
+    const displayWorkflow =
+      isEdit && proposalViewMode === 'current'
+        ? workflow // Show current workflow
+        : pendingProposal.plan.workflow; // Show proposed workflow
+
+    const changeMap =
+      isEdit && proposalViewMode === 'proposed'
+        ? pendingProposal.changeStatusMap // Show change badges on proposed view
+        : undefined;
+
+    if (!displayWorkflow) {
+      return <EmptyWorkflow editMode={editMode} />;
+    }
+
+    return (
+      <div
+        ref={containerRef}
+        className="flex flex-col h-full relative"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        style={{ cursor: isPanning ? 'grabbing' : undefined }}
+      >
+        <ScrollArea className="flex-1 bg-dotted-grid min-h-full overflow-x-auto">
+          <div
+            data-canvas-bg
+            className="p-4 flex flex-col items-center min-w-fit"
+            style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}
+          >
+            <ProposalBanner
+              proposal={pendingProposal}
+              viewMode={proposalViewMode}
+              onToggleView={() =>
+                setProposalViewMode(proposalViewMode === 'proposed' ? 'current' : 'proposed')
+              }
+              onApprove={() => onApproveProposal?.()}
+              onRequestChanges={(changes) => onRequestProposalChanges?.(changes)}
+            />
+
+            {/* Flow Start Card */}
+            <FlowStartCard workflow={displayWorkflow} />
+
+            {/* Connector */}
+            <StepConnector />
+
+            {/* Step List */}
+            <StepList
+              workflow={displayWorkflow}
+              editMode={false}
+              proposalChangeMap={changeMap}
+            />
+          </div>
+        </ScrollArea>
+        {zoomControls}
+      </div>
+    );
+  }
 
   if (!workflow) {
     return <EmptyWorkflow editMode={editMode} />;

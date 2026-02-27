@@ -5,7 +5,8 @@ import { StepConnector } from './StepConnector';
 import { BranchLayout } from './BranchLayout';
 import { AddStepPopover } from './AddStepPopover';
 import { useWorkflowStore } from '@/stores/workflowStore';
-import type { Flow, Milestone, Step, StepType } from '@/types';
+import type { Flow, Milestone, Step, StepType, ChangeInfo } from '@/types';
+import { getStepChangeStatus } from '@/lib/proposal-utils';
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -14,6 +15,8 @@ import {
 interface StepListProps {
   workflow: Flow;
   editMode?: boolean;
+  /** Change info map for proposal mode diff badges */
+  proposalChangeMap?: Map<string, ChangeInfo>;
 }
 
 // Check if a step has branches or outcomes (nested steps)
@@ -102,6 +105,7 @@ interface MilestoneContainerProps {
   workflow: Flow;
   totalSteps: number;
   lastStepRef: React.RefObject<HTMLDivElement | null>;
+  proposalChangeMap?: Map<string, ChangeInfo>;
 }
 
 function MilestoneContainer({
@@ -119,6 +123,7 @@ function MilestoneContainer({
   workflow,
   totalSteps,
   lastStepRef,
+  proposalChangeMap,
 }: MilestoneContainerProps) {
   const { updateMilestone, removeMilestone } = useWorkflowStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -166,6 +171,7 @@ function MilestoneContainer({
                     editMode={editMode}
                     assigneePlaceholders={assigneePlaceholders}
                     stepNumber={String(globalIndex + 1)}
+                    changeStatus={proposalChangeMap ? getStepChangeStatus(step, proposalChangeMap) : undefined}
                   />
                 </div>
                 <BranchLayout
@@ -175,6 +181,7 @@ function MilestoneContainer({
                   allSteps={workflow.steps}
                   editMode={editMode}
                   parentNumber={String(globalIndex + 1)}
+                  proposalChangeMap={proposalChangeMap}
                 />
               </div>
             ) : (
@@ -186,6 +193,7 @@ function MilestoneContainer({
                   editMode={editMode}
                   assigneePlaceholders={assigneePlaceholders}
                   stepNumber={String(globalIndex + 1)}
+                  changeStatus={proposalChangeMap ? getStepChangeStatus(step, proposalChangeMap) : undefined}
                 />
               </div>
             )}
@@ -267,7 +275,7 @@ function MilestoneContainer({
 // Main StepList Component
 // ============================================================================
 
-export function StepList({ workflow, editMode = false }: StepListProps) {
+export function StepList({ workflow, editMode = false, proposalChangeMap }: StepListProps) {
   const steps = workflow.steps;
   const milestones = workflow.milestones || [];
   const [addPopoverIndex, setAddPopoverIndex] = useState<number | null>(null);
@@ -327,6 +335,7 @@ export function StepList({ workflow, editMode = false }: StepListProps) {
           workflow={workflow}
           totalSteps={steps.length}
           lastStepRef={lastStepRef}
+          proposalChangeMap={proposalChangeMap}
         />
       ))}
 

@@ -44,7 +44,7 @@ export function FlowBuilderPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { sendMessage, startNewChat } = useChat();
+  const { sendMessage, startNewChat, handleApprovePlan, handleRequestChanges } = useChat();
   const { workflow, savedFlowId, savedFlowStatus, isSaving, setSavedFlow, setWorkflow, setSaving, initEmptyWorkflow, updateFlowMetadata } = useWorkflowStore();
   const { previewWorkflow, clearPreview } = usePreviewStore();
   const { completeBuildTemplate } = useOnboardingStore();
@@ -110,6 +110,11 @@ export function FlowBuilderPage() {
       next.set('mode', mode);
       return next;
     });
+
+    // Clear proposal when switching to manual mode
+    if (mode === 'manual') {
+      useWorkflowStore.getState().clearProposal();
+    }
 
     // Initialize empty workflow when switching to manual mode if none exists
     if (mode === 'manual' && !workflow) {
@@ -636,7 +641,15 @@ export function FlowBuilderPage() {
               className={`bg-gray-50 overflow-auto ${!isResizing ? 'transition-all duration-300 ease-in-out' : ''}`}
               style={{ width: isChatCollapsed ? '100%' : `${100 - chatWidthPercent}%` }}
             >
-              <WorkflowPanel />
+              <WorkflowPanel
+                onApproveProposal={() => {
+                  const proposal = useWorkflowStore.getState().pendingProposal;
+                  if (proposal) {
+                    handleApprovePlan(proposal.plan.planId);
+                  }
+                }}
+                onRequestProposalChanges={handleRequestChanges}
+              />
 
               {/* Floating "Open AI Chat" button when collapsed */}
               {isChatCollapsed && (

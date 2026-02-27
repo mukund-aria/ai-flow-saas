@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Flow, Step, StepType, StepConfig, KickoffConfig, FlowSettings, FlowPermissions, FlowDueDates } from '@/types';
+import type { Flow, Step, StepType, StepConfig, KickoffConfig, FlowSettings, FlowPermissions, FlowDueDates, PendingProposal } from '@/types';
 
 const MAX_HISTORY = 50;
 
@@ -47,6 +47,13 @@ interface WorkflowStore {
   // Undo/Redo actions
   undo: () => void;
   redo: () => void;
+  // Proposal state (right-panel proposal mode)
+  pendingProposal: PendingProposal | null;
+  proposalViewMode: 'proposed' | 'current';
+  setPendingProposal: (proposal: PendingProposal | null) => void;
+  setProposalViewMode: (mode: 'proposed' | 'current') => void;
+  approveProposal: () => Flow | null;
+  clearProposal: () => void;
 }
 
 let stepCounter = 0;
@@ -92,10 +99,12 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => {
     future: [],
     canUndo: false,
     canRedo: false,
+    pendingProposal: null,
+    proposalViewMode: 'proposed' as const,
 
     setWorkflow: (workflow) => set({ workflow, isLoading: false, past: [], future: [], canUndo: false, canRedo: false }),
 
-    clearWorkflow: () => set({ workflow: null, savedFlowId: null, savedFlowStatus: null, past: [], future: [], canUndo: false, canRedo: false }),
+    clearWorkflow: () => set({ workflow: null, savedFlowId: null, savedFlowStatus: null, past: [], future: [], canUndo: false, canRedo: false, pendingProposal: null, proposalViewMode: 'proposed' as const }),
 
     setLoading: (loading) => set({ isLoading: loading }),
 
@@ -400,6 +409,28 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => {
         },
       });
     },
+
+    setPendingProposal: (proposal) => set({ pendingProposal: proposal, proposalViewMode: 'proposed' as const }),
+
+    setProposalViewMode: (mode) => set({ proposalViewMode: mode }),
+
+    approveProposal: () => {
+      const { pendingProposal } = get();
+      if (!pendingProposal) return null;
+      const approvedWorkflow = pendingProposal.plan.workflow;
+      set({
+        workflow: approvedWorkflow,
+        pendingProposal: null,
+        proposalViewMode: 'proposed' as const,
+        past: [],
+        future: [],
+        canUndo: false,
+        canRedo: false,
+      });
+      return approvedWorkflow;
+    },
+
+    clearProposal: () => set({ pendingProposal: null, proposalViewMode: 'proposed' as const }),
 
     undo: () => {
       const { past, workflow } = get();

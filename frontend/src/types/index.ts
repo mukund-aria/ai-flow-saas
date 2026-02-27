@@ -229,9 +229,42 @@ export interface TeamsIntegrationSettings {
   enabled: boolean;
 }
 
+// ============================================================================
+// Outgoing Webhook Types
+// ============================================================================
+
+export type WebhookEventType =
+  | 'flow.started' | 'step.completed' | 'flow.completed'
+  | 'flow.cancelled' | 'step.overdue' | 'step.escalated' | 'chat.message';
+
+export interface WebhookEventConfig {
+  flowStarted: boolean;
+  stepCompleted: boolean;
+  flowCompleted: boolean;
+  flowCancelled: boolean;
+  stepOverdue: boolean;
+  stepEscalated: boolean;
+  chatMessage: boolean;
+}
+
+export interface WebhookEndpointConfig {
+  id: string;
+  label: string;
+  url: string;
+  secret: string;
+  enabled: boolean;
+  events: WebhookEventConfig;
+  createdAt: string;
+}
+
+export interface WebhookIntegrationSettings {
+  endpoints: WebhookEndpointConfig[];
+}
+
 export interface ChannelIntegrations {
   slack: SlackIntegrationSettings;
   teams?: TeamsIntegrationSettings;
+  webhooks?: WebhookIntegrationSettings;
 }
 
 // ============================================================================
@@ -790,6 +823,23 @@ export interface ClarificationAnswer {
 export interface Rejection {
   reason: string;
   suggestion?: string;
+}
+
+// ============================================================================
+// Proposal Types (for right-panel proposal mode)
+// ============================================================================
+
+export type StepChangeStatus = 'added' | 'modified' | 'moved' | 'unchanged';
+
+export interface ChangeInfo {
+  status: StepChangeStatus;
+  title?: string;
+}
+
+export interface PendingProposal {
+  plan: PendingPlan;
+  changeStatusMap: Map<string, ChangeInfo>;
+  operationSummary: string[];
 }
 
 export interface MessageAttachment {

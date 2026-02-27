@@ -1,7 +1,7 @@
 import { User, AlertCircle, Sparkles, FileText, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Message, Clarification, SuggestedAction } from '@/types';
-import { PlanPreviewCard } from './PlanPreviewCard';
+import { PlanSummaryCard } from './PlanSummaryCard';
 import { ClarificationCard } from './ClarificationCard';
 import { RejectCard } from './RejectCard';
 import { Phase2Card } from './Phase2Card';
@@ -203,10 +203,10 @@ export function MessageItem({
           </div>
         )}
 
-        {/* Plan Preview Card */}
+        {/* Plan Summary Card */}
         {message.pendingPlan && (message.planPublished || onApprovePlan) && (
           <div className="mt-3">
-            <PlanPreviewCard
+            <PlanSummaryCard
               plan={message.pendingPlan}
               onApprove={() => onApprovePlan?.(message.pendingPlan!.planId)}
               onRequestChanges={onRequestChanges}

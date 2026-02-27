@@ -444,6 +444,24 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
     }
   },
   {
+    name: 'lookup_template',
+    description: 'Look up the full step-by-step definition of a template from the gallery. Use this BEFORE calling create_workflow when you want to base a workflow on a known template pattern. Returns detailed step definitions, form fields, descriptions, and roles that you should adapt to the user\'s specific needs.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        templateName: {
+          type: 'string',
+          description: 'The name of the template to look up (from the Template Pattern Library). Partial match supported.',
+        },
+        category: {
+          type: 'string',
+          description: 'Optional category to narrow the search (e.g., "client-onboarding", "banking-financial")',
+        },
+      },
+      required: ['templateName'],
+    },
+  },
+  {
     name: 'respond',
     description: 'Respond conversationally to the user WITHOUT taking any workflow action. Use this for: answering questions about the current workflow, explaining what you did, providing information, or general conversation. Do NOT use ask_clarification for informational questions - use this instead. IMPORTANT: If there is a pending workflow preview waiting for approval, include approve/edit actions so the user can act directly from your response.',
     input_schema: {
@@ -483,7 +501,7 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
 /**
  * Map tool names to response modes
  */
-export function toolNameToMode(toolName: string): 'create' | 'edit' | 'clarify' | 'reject' | 'respond' {
+export function toolNameToMode(toolName: string): 'create' | 'edit' | 'clarify' | 'reject' | 'respond' | 'lookup_template' {
   switch (toolName) {
     case 'create_workflow':
       return 'create';
@@ -495,6 +513,8 @@ export function toolNameToMode(toolName: string): 'create' | 'edit' | 'clarify' 
       return 'reject';
     case 'respond':
       return 'respond';
+    case 'lookup_template':
+      return 'lookup_template';
     default:
       throw new Error(`Unknown tool name: ${toolName}`);
   }
@@ -503,7 +523,7 @@ export function toolNameToMode(toolName: string): 'create' | 'edit' | 'clarify' 
 /**
  * Map response modes to tool names (for instruction prompts)
  */
-export function modeToToolName(mode: 'create' | 'edit' | 'clarify' | 'reject' | 'respond'): string {
+export function modeToToolName(mode: 'create' | 'edit' | 'clarify' | 'reject' | 'respond' | 'lookup_template'): string {
   switch (mode) {
     case 'create':
       return 'create_workflow';
@@ -515,5 +535,7 @@ export function modeToToolName(mode: 'create' | 'edit' | 'clarify' | 'reject' | 
       return 'reject_request';
     case 'respond':
       return 'respond';
+    case 'lookup_template':
+      return 'lookup_template';
   }
 }

@@ -5,6 +5,7 @@ import { useWorkflowStore } from '@/stores/workflowStore';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { streamMessage, publishPlan, uploadFile, getSession, createTemplate } from '@/lib/api';
 import { getUserFriendlyError } from '@/lib/friendly-errors';
+import { isSmallEdit, buildChangeStatusMap, summarizeOperations } from '@/lib/proposal-utils';
 import type { PendingPlan, Flow, MessageAttachment, Message, Clarification, SuggestedAction } from '@/types';
 
 export function useChat() {
@@ -87,6 +88,23 @@ export function useChat() {
 
           if (session?.workflow && !workflow) {
             setWorkflow(session.workflow);
+          }
+
+          // Reconstruct proposal for unpublished pending plans
+          const unpublishedPlan = loadedMessages.find(
+            (m: Message) => m.pendingPlan && !m.planPublished
+          )?.pendingPlan;
+          if (unpublishedPlan && !isSmallEdit(unpublishedPlan)) {
+            const changeStatusMap = buildChangeStatusMap(unpublishedPlan.operations || []);
+            const operationSummary = summarizeOperations(
+              unpublishedPlan.operations || [],
+              unpublishedPlan.workflow.steps || []
+            );
+            useWorkflowStore.getState().setPendingProposal({
+              plan: unpublishedPlan,
+              changeStatusMap,
+              operationSummary,
+            });
           }
         } catch (e) {
           // Session may have expired - clear it and start fresh
@@ -238,6 +256,17 @@ export function useChat() {
                 // Create message with pendingPlan in one go - use actual mode
                 assistantMessageId = addAssistantMessage('', workflowMode);
                 setMessagePendingPlan(assistantMessageId, plan);
+
+                // Push to right-panel proposal for large edits / creates
+                if (!isSmallEdit(plan)) {
+                  const changeStatusMap = buildChangeStatusMap(plan.operations || []);
+                  const operationSummary = summarizeOperations(plan.operations || [], plan.workflow.steps || []);
+                  useWorkflowStore.getState().setPendingProposal({
+                    plan,
+                    changeStatusMap,
+                    operationSummary,
+                  });
+                }
               } else if (!data.isPreview) {
                 // Directly published (preview=false)
                 assistantMessageId = addAssistantMessage(data.message, workflowMode);
@@ -413,7 +442,11 @@ export function useChat() {
       try {
         const result = await publishPlan(currentSessionId, planId);
         if (result.success) {
-          setWorkflow(result.workflow);
+          // Use approveProposal if there's a pending proposal, otherwise set directly
+          const approvedWorkflow = useWorkflowStore.getState().approveProposal();
+          if (!approvedWorkflow) {
+            setWorkflow(result.workflow);
+          }
           setPendingPlan(null);
           // Lock the plan card instead of removing it
           const msgs = useChatStore.getState().messages;
@@ -479,6 +512,9 @@ export function useChat() {
     async (changes: string) => {
       if (!changes.trim()) return;
 
+      // Clear proposal from right panel
+      useWorkflowStore.getState().clearProposal();
+
       // Lock any existing plan cards and save the change request text
       const msgs = useChatStore.getState().messages;
       msgs.forEach((msg) => {
@@ -536,6 +572,7 @@ export function useChat() {
     clearMessages();
     setCurrentSession(null);
     setWorkflow(null);
+    useWorkflowStore.getState().clearProposal();
     // Reset the history loading ref so future sessions can load history
     historyLoadedRef.current = null;
   }, [clearMessages, setCurrentSession, setWorkflow]);

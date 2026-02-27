@@ -2,7 +2,8 @@ import { Plus, GitFork, LayoutGrid, GitMerge } from 'lucide-react';
 import { StepConnector } from './StepConnector';
 import { StepCard } from './StepCard';
 import { cn } from '@/lib/utils';
-import type { Step, BranchPath, DecisionOutcome } from '@/types';
+import type { Step, BranchPath, DecisionOutcome, ChangeInfo } from '@/types';
+import { getStepChangeStatus } from '@/lib/proposal-utils';
 
 interface BranchLayoutProps {
   step: Step;
@@ -15,6 +16,8 @@ interface BranchLayoutProps {
   parentNumber?: string;
   editMode?: boolean;
   assigneePlaceholders?: Step['config']['assignee'][];
+  /** Change info map for proposal mode diff badges */
+  proposalChangeMap?: Map<string, ChangeInfo>;
 }
 
 type PathOrOutcome = BranchPath | DecisionOutcome;
@@ -40,6 +43,7 @@ export function BranchLayout({
   parentNumber,
   editMode,
   assigneePlaceholders,
+  proposalChangeMap,
 }: BranchLayoutProps) {
   const paths = step.config?.paths || step.config?.outcomes || [];
   const isParallel = step.type === 'PARALLEL_BRANCH';
@@ -158,6 +162,7 @@ export function BranchLayout({
                           assigneeIndex={assigneeIndex}
                           stepNumber={nestedStepNumber}
                           editMode={editMode}
+                          changeStatus={proposalChangeMap ? getStepChangeStatus(nestedStep, proposalChangeMap) : undefined}
                         />
                       </div>
 
@@ -172,6 +177,7 @@ export function BranchLayout({
                           parentNumber={nestedStepNumber}
                           editMode={editMode}
                           assigneePlaceholders={assigneePlaceholders}
+                          proposalChangeMap={proposalChangeMap}
                         />
                       )}
                     </div>
