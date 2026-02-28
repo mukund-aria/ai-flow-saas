@@ -36,9 +36,10 @@ const SCENES = [
   },
 ];
 
-const SCENE_DURATION = 9000;
-const FINAL_FRAME_DURATION = 4000;
-const INITIAL_DELAY = 1500;
+const SCENE_DURATION = 0;      // Walkthrough disabled — skip straight to success
+const FINAL_FRAME_DURATION = 2000;  // Brief "ready!" screen before redirect
+const INITIAL_DELAY = 0;
+const SKIP_WALKTHROUGH = true; // Skip animated walkthrough, show brief success + redirect
 
 // ============================================================================
 // Scene 1: Build — AI prompt + flow generation
@@ -324,7 +325,7 @@ const SCENE_ANIMATIONS = [BuildAnimation, ExecuteAnimation, CoordinateAnimation,
 export function OrgSetupPage() {
   const navigate = useNavigate();
   const [sceneIndex, setSceneIndex] = useState(0);
-  const [isFinal, setIsFinal] = useState(false);
+  const [isFinal, setIsFinal] = useState(SKIP_WALKTHROUGH);
   const [showScenes, setShowScenes] = useState(false);
   // Track transition state: 'enter' | 'exit' | null
   const [transition, setTransition] = useState<'enter' | 'exit' | null>(null);
@@ -332,6 +333,7 @@ export function OrgSetupPage() {
 
   // Brief pause showing only the title before scene content appears
   useEffect(() => {
+    if (SKIP_WALKTHROUGH) return;
     const delay = setTimeout(() => {
       setShowScenes(true);
       setTransition('enter');
@@ -341,7 +343,7 @@ export function OrgSetupPage() {
 
   // Advance scenes with exit → enter transition
   useEffect(() => {
-    if (!showScenes) return;
+    if (SKIP_WALKTHROUGH || !showScenes) return;
     const timer = setInterval(() => {
       if (sceneIndex >= SCENES.length - 1) {
         clearInterval(timer);
@@ -361,6 +363,7 @@ export function OrgSetupPage() {
 
   // Show final frame after last scene
   useEffect(() => {
+    if (SKIP_WALKTHROUGH) return;
     if (sceneIndex === SCENES.length - 1 && showScenes) {
       const timeout = setTimeout(() => setIsFinal(true), SCENE_DURATION);
       return () => clearTimeout(timeout);
@@ -379,7 +382,7 @@ export function OrgSetupPage() {
   const currentStep = isFinal ? totalSteps : sceneIndex + 1;
   const progress = showScenes ? (currentStep / totalSteps) * 100 : 5;
 
-  // Final frame
+  // Final frame (also the only frame when SKIP_WALKTHROUGH is true)
   if (isFinal) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">

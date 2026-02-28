@@ -37,6 +37,9 @@ router.use('/organizations', organizationsRouter);
 // Team management (needs org-scope for most routes, but accept-invite is public-ish)
 router.use('/team', teamRouter);
 
+// Analyze API (no org-scope needed — pure computation, no DB access)
+router.use('/analyze', analyzeRouter);
+
 // Apply org-scope to all data-scoped routes below
 router.use(orgScope);
 
@@ -93,9 +96,6 @@ router.use('/integrations', integrationsRouter);
 
 // Gallery API (curated template gallery with import)
 router.use('/gallery', galleryRouter);
-
-// Analyze API (workflow analysis rules engine)
-router.use('/analyze', analyzeRouter);
 
 // Flows API (workflow execution — active instances)
 // Note: POST /api/templates/:templateId/flows is handled by runsRouter
