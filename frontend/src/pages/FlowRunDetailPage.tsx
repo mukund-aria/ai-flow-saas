@@ -15,7 +15,6 @@ import {
   Clock,
   XCircle,
   AlertCircle,
-  User,
   Bell,
   ChevronDown,
   ChevronRight,

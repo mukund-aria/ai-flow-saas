@@ -132,7 +132,7 @@ export function SchedulesPage() {
   // New schedule form state
   const [formFlowId, setFormFlowId] = useState('');
   const [formName, setFormName] = useState('');
-  const [formPreset, setFormPreset] = useState(CRON_PRESETS[0].value);
+  const [formPreset, setFormPreset] = useState<string>(CRON_PRESETS[0].value);
   const [formCustomCron, setFormCustomCron] = useState('');
   const [formTimezone, setFormTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
   const [creating, setCreating] = useState(false);

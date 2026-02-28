@@ -10,14 +10,14 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
-  X, ChevronUp, ChevronDown, Search, Plus, Trash2, Check,
+  X, ChevronUp, ChevronDown, Search, Plus, Trash2,
   UserPlus, UserCheck, PlayCircle, FileText,
   Variable, GitBranch, RefreshCw, Database,
   Shield, UserCircle,
 } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { getRoleColor, getRoleInitials } from '@/types';
-import type { AssigneePlaceholder, ResolutionType, Resolution, FormField, FlowVariable, RoleType } from '@/types';
+import type { ResolutionType, Resolution, FormField, FlowVariable } from '@/types';
 import { listContacts } from '@/lib/api';
 import type { Contact } from '@/lib/api';
 

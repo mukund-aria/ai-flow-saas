@@ -23,7 +23,7 @@ export async function generateOTP(email: string): Promise<
   const normalizedEmail = email.toLowerCase().trim();
 
   // Check whitelist
-  if (!isEmailAllowed(normalizedEmail)) {
+  if (!(await isEmailAllowed(normalizedEmail))) {
     return { success: false, error: 'Email not authorized' };
   }
 

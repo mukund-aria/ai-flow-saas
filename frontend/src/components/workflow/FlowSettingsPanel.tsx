@@ -6,7 +6,7 @@ import { AssigneeExperienceEditor } from './AssigneeExperienceEditor';
 import { FlowNotificationSettingsPanel } from './FlowNotificationSettings';
 import { EmbedConfig } from './EmbedConfig';
 import { listTeamMembers, type TeamMember } from '@/lib/api';
-import type { FlowDueDates, FlowDue, DueUnit } from '@/types';
+import type { FlowDueDates, DueUnit } from '@/types';
 
 interface FlowSettingsPanelProps {
   onClose: () => void;

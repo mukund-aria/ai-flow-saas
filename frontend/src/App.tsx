@@ -21,10 +21,15 @@
  * - /settings : Settings
  */
 
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { AssigneeAuthProvider } from '@/contexts/AssigneeAuthContext';
 import { CoordinatorLayout } from '@/layouts/CoordinatorLayout';
+import { AdminLayout } from '@/layouts/AdminLayout';
+import { AdminDashboard } from '@/pages/admin/AdminDashboard';
+import { AdminOrgDetail } from '@/pages/admin/AdminOrgDetail';
+import { AdminSettings } from '@/pages/admin/AdminSettings';
 // import { PublicLayout } from '@/layouts/PublicLayout';
 import {
   HomePage,
@@ -97,6 +102,47 @@ function OnboardingGuard({ children }: { children: React.ReactNode }) {
   // Redirect to onboarding if user needs it (in production)
   if (!import.meta.env.DEV && user?.needsOnboarding) {
     return <Navigate to="/onboarding" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// ============================================================================
+// Admin Route Guard
+// ============================================================================
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [isSysadmin, setIsSysadmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // In dev mode, bypass sysadmin check
+    if (import.meta.env.DEV) {
+      setIsSysadmin(true);
+      return;
+    }
+
+    if (!isAuthenticated) return;
+
+    fetch(`${API_BASE}/admin/me`, { credentials: 'include' })
+      .then(res => {
+        setIsSysadmin(res.ok);
+      })
+      .catch(() => setIsSysadmin(false));
+  }, [isAuthenticated]);
+
+  if (isLoading || isSysadmin === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600" />
+      </div>
+    );
+  }
+
+  if (!isSysadmin) {
+    return <Navigate to="/home" replace />;
   }
 
   return <>{children}</>;
@@ -176,6 +222,22 @@ function AppRoutes() {
         <Route path="integrations" element={<IntegrationsPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="team" element={<TeamPage />} />
+      </Route>
+
+      {/* Admin Portal */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path="orgs/:id" element={<AdminOrgDetail />} />
+        <Route path="settings" element={<AdminSettings />} />
       </Route>
 
       {/* Catch-all redirect */}

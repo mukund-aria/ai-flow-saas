@@ -66,7 +66,7 @@ export function CompletedStepSummary({ stepType, resultData, formFields, complet
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-gray-500">{resultData.filesUploaded || 0} files uploaded</p>
+              <p className="text-sm text-gray-500">{String(resultData.filesUploaded || 0)} files uploaded</p>
             )}
           </div>
         );
@@ -115,7 +115,7 @@ export function CompletedStepSummary({ stepType, resultData, formFields, complet
           <div className="space-y-2">
             <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Signature</p>
             <p className="text-lg font-serif italic text-gray-800">{String(resultData.signature ?? '')}</p>
-            {resultData.signedAt && (
+            {typeof resultData.signedAt === 'string' && (
               <p className="text-xs text-gray-400">
                 Signed {new Date(resultData.signedAt as string).toLocaleDateString()}
               </p>

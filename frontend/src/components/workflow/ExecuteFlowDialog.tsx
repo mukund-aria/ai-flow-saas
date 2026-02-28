@@ -796,11 +796,8 @@ export function ExecuteFlowDialog({
                           id: m.id,
                           name: m.name,
                           email: m.email,
-                          type: m.role as string,
+                          type: m.role as Contact['type'],
                           status: 'ACTIVE' as const,
-                          organizationId: '',
-                          createdAt: '',
-                          updatedAt: '',
                         }))
                       : contacts;
 

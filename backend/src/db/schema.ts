@@ -41,6 +41,8 @@ export const organizations = pgTable('organizations', {
     faviconUrl?: string;
     emailFooter?: string;
   }>(),
+  isActive: boolean('is_active').default(true).notNull(),
+  deletedAt: timestamp('deleted_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -501,6 +503,18 @@ export const sandboxFlows = pgTable('sandbox_flows', {
   claimedByUserId: text('claimed_by_user_id'),
   claimedAt: timestamp('claimed_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// System Config (Platform-level settings managed by sysadmins)
+// ============================================================================
+
+export const systemConfig = pgTable('system_config', {
+  id: text('id').primaryKey().default('global'),
+  allowedEmails: text('allowed_emails'),
+  globalFlags: jsonb('global_flags').$type<Record<string, unknown>>(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  updatedBy: text('updated_by'),
 });
 
 // ============================================================================

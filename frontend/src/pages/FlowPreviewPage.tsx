@@ -22,7 +22,6 @@ export function FlowPreviewPage() {
   const { status, workflow, error, sessionId, sendPrompt } = usePreviewChat();
 
   const [sandboxFlowId, setSandboxFlowId] = useState<string | null>(null);
-  const [savingToSandbox, setSavingToSandbox] = useState(false);
   const savedRef = useRef(false);
 
   // Send prompt on mount
@@ -38,7 +37,6 @@ export function FlowPreviewPage() {
     savedRef.current = true;
 
     const save = async () => {
-      setSavingToSandbox(true);
       try {
         const result = await saveSandboxFlow({
           name: workflow.name || 'Untitled Flow',
@@ -51,8 +49,6 @@ export function FlowPreviewPage() {
       } catch (err) {
         console.error('[Preview] Failed to save sandbox flow:', err);
         // Non-fatal — fall back to PreviewCTA without sandbox features
-      } finally {
-        setSavingToSandbox(false);
       }
     };
 

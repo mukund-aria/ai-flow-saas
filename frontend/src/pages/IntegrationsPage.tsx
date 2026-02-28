@@ -146,7 +146,7 @@ interface ConfigDialogProps {
   onTest?: (id: string) => void;
 }
 
-function ConfigDialog({ integration, onSave, onClose, onTest }: ConfigDialogProps) {
+function ConfigDialog({ integration, onSave, onClose }: ConfigDialogProps) {
   const [type, setType] = useState(integration?.type || 'SLACK_WEBHOOK');
   const [name, setName] = useState(integration?.name || '');
   const [webhookUrl, setWebhookUrl] = useState((integration?.config?.webhookUrl as string) || '');

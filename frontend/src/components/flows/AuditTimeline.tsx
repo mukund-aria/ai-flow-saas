@@ -161,7 +161,7 @@ export function AuditTimeline({ runId }: AuditTimelineProps) {
 
           {!isLoading && !error && entries.length > 0 && (
             <div className="px-6 py-4 space-y-0">
-              {entries.map((entry, index) => {
+              {entries.map((entry) => {
                 const config = ACTION_CONFIG[entry.action] || {
                   label: () => entry.action.toLowerCase().replace(/_/g, ' '),
                   icon: Activity,

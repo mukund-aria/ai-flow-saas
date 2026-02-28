@@ -348,10 +348,11 @@ router.delete(
       return;
     }
 
-    // Hard delete the contact
-    // Note: In production, you might want to soft delete by setting status to INACTIVE
-    // or check if the contact is assigned to any active flow runs before deleting
-    await db.delete(contacts).where(eq(contacts.id, id));
+    // Soft delete: set status to INACTIVE
+    await db
+      .update(contacts)
+      .set({ status: 'INACTIVE', updatedAt: new Date() })
+      .where(eq(contacts.id, id));
 
     res.json({
       success: true,

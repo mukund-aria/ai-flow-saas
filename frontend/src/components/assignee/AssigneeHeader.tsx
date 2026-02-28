@@ -26,8 +26,6 @@ interface AssigneeHeaderProps {
 export function AssigneeHeader({ runName, flowName, contactName, onToggleChat, branding }: AssigneeHeaderProps) {
   const primaryColor = branding?.primaryColor || '#7c3aed';
   const accentColor = branding?.accentColor || '#4f46e5';
-  const displayName = branding?.companyName || runName;
-
   return (
     <header className="bg-white border-b border-gray-200 px-4 py-3">
       <div className="max-w-3xl mx-auto flex items-center justify-between">

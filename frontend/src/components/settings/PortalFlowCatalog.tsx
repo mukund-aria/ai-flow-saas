@@ -13,8 +13,9 @@ import {
   updatePortalFlow,
   removePortalFlow,
   listTemplates,
+  type Template,
 } from '@/lib/api';
-import type { PortalFlow, Template } from '@/types';
+import type { PortalFlow } from '@/types';
 
 interface PortalFlowCatalogProps {
   portalId: string;

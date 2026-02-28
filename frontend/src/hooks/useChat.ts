@@ -53,9 +53,10 @@ export function useChat() {
         try {
           const session = await getSession(currentSessionId);
 
+          let loadedMessages: Message[] = [];
           if (session?.messages?.length > 0) {
             // Convert session messages to Message format
-            const loadedMessages: Message[] = session.messages.map(
+            loadedMessages = session.messages.map(
               (m: {
                 id: string;
                 role: 'user' | 'assistant';

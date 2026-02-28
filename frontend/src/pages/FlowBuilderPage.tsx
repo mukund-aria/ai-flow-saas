@@ -7,7 +7,7 @@
  */
 
 import { useLocation, useNavigate, useSearchParams, useParams } from 'react-router-dom';
-import { Loader2, Sparkles, PenLine, Settings, X, Play, PanelLeftClose, PanelLeftOpen, MessageSquare } from 'lucide-react';
+import { Loader2, Sparkles, PenLine, Settings, X, Play, PanelLeftClose, MessageSquare } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { ChatContainer } from '@/components/chat/ChatContainer';
 import { WorkflowPanel } from '@/components/workflow/WorkflowPanel';
@@ -65,8 +65,6 @@ export function FlowBuilderPage() {
   // Builder mode from URL search params
   const modeParam = searchParams.get('mode') as BuilderMode | null;
   const [builderMode, setBuilderMode] = useState<BuilderMode>(modeParam === 'manual' ? 'manual' : 'ai');
-  const [showAIChat, setShowAIChat] = useState(builderMode === 'ai');
-
   // Workflow analysis state
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const analysisTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,7 +108,6 @@ export function FlowBuilderPage() {
   // Sync builderMode with URL
   const handleModeChange = (mode: BuilderMode) => {
     setBuilderMode(mode);
-    setShowAIChat(mode === 'ai');
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('mode', mode);
@@ -168,7 +165,6 @@ export function FlowBuilderPage() {
         // Default to manual mode when editing existing template
         if (!modeParam) {
           setBuilderMode('manual');
-          setShowAIChat(false);
         }
       })
       .catch((err) => {

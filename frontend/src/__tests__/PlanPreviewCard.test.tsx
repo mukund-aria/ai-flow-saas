@@ -10,7 +10,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { PlanPreviewCard } from '@/components/chat/PlanPreviewCard';
+import { PlanSummaryCard as PlanPreviewCard } from '@/components/chat/PlanSummaryCard';
 import {
   VALID_PENDING_PLAN,
   PENDING_PLAN_NO_ASSUMPTIONS,

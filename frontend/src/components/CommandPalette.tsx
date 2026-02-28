@@ -8,7 +8,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, FileText, Users, Play, BarChart3, ArrowRight } from 'lucide-react';
-import { search, SearchResults } from '@/lib/api';
+import { search, type SearchResults } from '@/lib/api';
 
 const RECENT_KEY = 'command-palette-recent';
 const MAX_RECENT = 5;

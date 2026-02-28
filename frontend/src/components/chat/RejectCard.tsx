@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { XCircle, Lightbulb, ArrowRight } from 'lucide-react';
+import { XCircle, Lightbulb } from 'lucide-react';
 
 interface RejectCardProps {
   reason: string;

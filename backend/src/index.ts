@@ -17,6 +17,8 @@ import dotenv from 'dotenv';
 import apiRoutes from './routes/index.js';
 import { errorHandler } from './middleware/index.js';
 import { passport, configurePassport, authRoutes, requireAuth } from './auth/index.js';
+import { requireSysadmin } from './middleware/sysadmin.js';
+import adminRouter from './routes/admin.js';
 import publicChatRouter, { publicChatLimiter } from './routes/public-chat.js';
 import publicTaskRouter from './routes/public-task.js';
 import publicStartRouter from './routes/public-start.js';
@@ -139,6 +141,16 @@ app.use(passport.session());
 
 // Auth routes (no authentication required)
 app.use('/auth', authRoutes);
+
+// ============================================================================
+// Admin Routes (sysadmin only)
+// ============================================================================
+
+if (isProduction) {
+  app.use('/api/admin', requireAuth, requireSysadmin, adminRouter);
+} else {
+  app.use('/api/admin', adminRouter);
+}
 
 // ============================================================================
 // Health Endpoint (minimal info, no auth required for uptime monitoring)

@@ -121,10 +121,10 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
               <ResIcon className="w-3 h-3 text-gray-400 shrink-0" />
             )}
             {isCoordinator && (
-              <Shield className="w-3 h-3 text-violet-500 shrink-0" title="Coordinator" />
+              <Shield className="w-3 h-3 text-violet-500 shrink-0" aria-label="Coordinator" />
             )}
             {canViewAll && (
-              <Eye className="w-3 h-3 text-blue-500 shrink-0" title="Can view all actions" />
+              <Eye className="w-3 h-3 text-blue-500 shrink-0" aria-label="Can view all actions" />
             )}
             <button
               onClick={(e) => { e.stopPropagation(); removeAssigneePlaceholder(assignee.placeholderId); }}

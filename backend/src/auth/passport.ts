@@ -73,7 +73,7 @@ export function configurePassport(): void {
         }
 
         // Check if email is in whitelist (if whitelist is configured)
-        if (!isEmailAllowed(email)) {
+        if (!(await isEmailAllowed(email))) {
           console.log(`Auth denied for email: ${email} (not in whitelist)`);
           return done(null, false, { message: 'Email not authorized' });
         }

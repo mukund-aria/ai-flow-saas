@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Loader2, CheckCircle, Upload, Layers } from 'lucide-react';
+import { Loader2, CheckCircle, Layers } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -50,14 +50,11 @@ export function BrandingSettings() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [original, setOriginal] = useState<BrandingConfig>({});
-
   useEffect(() => {
     if (!orgId) return;
     fetchBranding(orgId)
       .then((data) => {
         setBranding(data);
-        setOriginal(data);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -75,7 +72,6 @@ export function BrandingSettings() {
     try {
       const result = await saveBranding(orgId, branding);
       setBranding(result);
-      setOriginal(result);
       setDirty(false);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);

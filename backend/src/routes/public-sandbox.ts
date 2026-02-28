@@ -14,6 +14,7 @@ import {
   getSandboxFlow,
   materializeSandboxFlowForTest,
 } from '../services/sandbox.js';
+import { isEmailAllowed } from '../auth/email-whitelist.js';
 
 const router = Router();
 
@@ -140,6 +141,18 @@ router.post(
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Invalid email address',
+        },
+      });
+      return;
+    }
+
+    // Check email whitelist
+    if (!(await isEmailAllowed(contactEmail))) {
+      res.status(403).json({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Email not authorized for sandbox testing',
         },
       });
       return;
