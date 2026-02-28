@@ -36,10 +36,9 @@ const SCENES = [
   },
 ];
 
-const SCENE_DURATION = 0;      // Walkthrough disabled — skip straight to success
-const FINAL_FRAME_DURATION = 2000;  // Brief "ready!" screen before redirect
-const INITIAL_DELAY = 0;
-const SKIP_WALKTHROUGH = true; // Skip animated walkthrough, show brief success + redirect
+const SCENE_DURATION = 3000;       // 3s per scene × 4 = 12s of content
+const FINAL_FRAME_DURATION = 2000; // 2s "ready!" screen
+const INITIAL_DELAY = 800;         // Brief pause before first scene (~15s total)
 
 // ============================================================================
 // Scene 1: Build — AI prompt + flow generation
@@ -325,7 +324,7 @@ const SCENE_ANIMATIONS = [BuildAnimation, ExecuteAnimation, CoordinateAnimation,
 export function OrgSetupPage() {
   const navigate = useNavigate();
   const [sceneIndex, setSceneIndex] = useState(0);
-  const [isFinal, setIsFinal] = useState(SKIP_WALKTHROUGH);
+  const [isFinal, setIsFinal] = useState(false);
   const [showScenes, setShowScenes] = useState(false);
   // Track transition state: 'enter' | 'exit' | null
   const [transition, setTransition] = useState<'enter' | 'exit' | null>(null);
@@ -333,7 +332,6 @@ export function OrgSetupPage() {
 
   // Brief pause showing only the title before scene content appears
   useEffect(() => {
-    if (SKIP_WALKTHROUGH) return;
     const delay = setTimeout(() => {
       setShowScenes(true);
       setTransition('enter');
@@ -343,7 +341,7 @@ export function OrgSetupPage() {
 
   // Advance scenes with exit → enter transition
   useEffect(() => {
-    if (SKIP_WALKTHROUGH || !showScenes) return;
+    if (!showScenes) return;
     const timer = setInterval(() => {
       if (sceneIndex >= SCENES.length - 1) {
         clearInterval(timer);
@@ -363,7 +361,6 @@ export function OrgSetupPage() {
 
   // Show final frame after last scene
   useEffect(() => {
-    if (SKIP_WALKTHROUGH) return;
     if (sceneIndex === SCENES.length - 1 && showScenes) {
       const timeout = setTimeout(() => setIsFinal(true), SCENE_DURATION);
       return () => clearTimeout(timeout);
