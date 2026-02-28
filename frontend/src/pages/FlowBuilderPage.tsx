@@ -15,6 +15,7 @@ import { AssigneeBar } from '@/components/workflow/AssigneeBar';
 import { StepPalette } from '@/components/workflow/StepPalette';
 import { FlowSettingsPanel } from '@/components/workflow/FlowSettingsPanel';
 import { FlowStartConfigPanel } from '@/components/workflow/FlowStartConfigPanel';
+import { RoleConfigPanel } from '@/components/workflow/RoleConfigPanel';
 import { useChat } from '@/hooks/useChat';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { usePreviewStore } from '@/stores/previewStore';
@@ -56,6 +57,7 @@ export function FlowBuilderPage() {
   const [nameValue, setNameValue] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [showStartConfig, setShowStartConfig] = useState(false);
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const previewLoadedRef = useRef(false);
   const templateLoadedRef = useRef(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -288,6 +290,7 @@ export function FlowBuilderPage() {
       } else if (e.key === 'Escape') {
         setShowSettings(false);
         setShowStartConfig(false);
+        setSelectedRoleId(null);
       }
     };
 
@@ -568,7 +571,16 @@ export function FlowBuilderPage() {
       </div>
 
       {/* Assignee Bar - always visible when workflow exists */}
-      {workflow && <AssigneeBar />}
+      {workflow && (
+        <AssigneeBar
+          selectedRoleId={selectedRoleId}
+          onRoleClick={(id) => {
+            setSelectedRoleId(prev => prev === id ? null : id);
+            setShowSettings(false);
+            setShowStartConfig(false);
+          }}
+        />
+      )}
 
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden relative">
@@ -594,6 +606,22 @@ export function FlowBuilderPage() {
             />
             <div className="absolute right-0 top-0 bottom-0 w-[400px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-y-auto animate-in slide-in-from-right duration-200">
               <FlowStartConfigPanel onClose={() => setShowStartConfig(false)} />
+            </div>
+          </>
+        )}
+
+        {/* Role Config Panel Slide-over */}
+        {selectedRoleId && (
+          <>
+            <div
+              className="absolute inset-0 bg-black/10 z-30"
+              onClick={() => setSelectedRoleId(null)}
+            />
+            <div className="absolute right-0 top-0 bottom-0 w-[400px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-hidden animate-in slide-in-from-right duration-200">
+              <RoleConfigPanel
+                placeholderId={selectedRoleId}
+                onClose={() => setSelectedRoleId(null)}
+              />
             </div>
           </>
         )}

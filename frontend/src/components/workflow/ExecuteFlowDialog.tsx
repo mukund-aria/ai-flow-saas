@@ -16,6 +16,12 @@ import {
   Users,
   FileText,
   AlertCircle,
+  Lock,
+  Zap,
+  FileInput,
+  Variable,
+  RefreshCw,
+  GitBranch,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -511,7 +517,11 @@ export function ExecuteFlowDialog({
       if (meContact) {
         const assignments: Record<string, string | null> = {};
         assigneePlaceholders.forEach((p) => {
-          assignments[p.roleName] = meContact.id;
+          // Only assign CONTACT_TBD roles — others are auto-resolved
+          const resType = p.resolution?.type;
+          if (!resType || resType === 'CONTACT_TBD') {
+            assignments[p.roleName] = meContact.id;
+          }
         });
         setRoleAssignments(assignments);
       }
@@ -645,8 +655,8 @@ export function ExecuteFlowDialog({
                 Map each role to a contact who will complete the assigned tasks.
               </p>
 
-              {/* Assign all to me */}
-              {contacts.length > 0 && (
+              {/* Assign all to me — only show when there are CONTACT_TBD roles */}
+              {contacts.length > 0 && assigneePlaceholders.some((p) => !p.resolution?.type || p.resolution.type === 'CONTACT_TBD') && (
                 <label className="flex items-center gap-2 mb-4 px-3 py-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                   <Checkbox
                     checked={assignAllToMe}
@@ -666,44 +676,88 @@ export function ExecuteFlowDialog({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {assigneePlaceholders.map((placeholder, index) => (
-                    <div key={placeholder.placeholderId}>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-                          style={{ backgroundColor: getRoleColor(index) }}
-                        >
-                          {getRoleInitials(placeholder.roleName)}
-                        </span>
-                        <span className="text-sm font-medium text-gray-700">
-                          {placeholder.roleName}
-                        </span>
-                      </div>
-                      {placeholder.description && (
-                        <p className="text-xs text-gray-400 mb-1.5 ml-8">
-                          {placeholder.description}
+                  {assigneePlaceholders.map((placeholder, index) => {
+                    const resolutionType = placeholder.resolution?.type;
+                    const isManual = !resolutionType || resolutionType === 'CONTACT_TBD';
+
+                    // Determine the read-only label and icon for auto-resolved roles
+                    let autoResolvedIcon: React.ReactNode = null;
+                    let autoResolvedLabel = '';
+                    if (!isManual) {
+                      switch (resolutionType) {
+                        case 'FIXED_CONTACT':
+                          autoResolvedIcon = <Lock className="w-4 h-4 text-gray-400 shrink-0" />;
+                          autoResolvedLabel = `Fixed: ${placeholder.resolution?.email ?? 'assigned'}`;
+                          break;
+                        case 'WORKSPACE_INITIALIZER':
+                          autoResolvedIcon = <Zap className="w-4 h-4 text-gray-400 shrink-0" />;
+                          autoResolvedLabel = 'Assigned to flow starter (you)';
+                          break;
+                        case 'KICKOFF_FORM_FIELD':
+                          autoResolvedIcon = <FileInput className="w-4 h-4 text-gray-400 shrink-0" />;
+                          autoResolvedLabel = `From kickoff form: ${placeholder.resolution?.fieldKey ?? 'field'}`;
+                          break;
+                        case 'FLOW_VARIABLE':
+                          autoResolvedIcon = <Variable className="w-4 h-4 text-gray-400 shrink-0" />;
+                          autoResolvedLabel = `From variable: ${placeholder.resolution?.variableKey ?? 'variable'}`;
+                          break;
+                        case 'ROUND_ROBIN':
+                          autoResolvedIcon = <RefreshCw className="w-4 h-4 text-gray-400 shrink-0" />;
+                          autoResolvedLabel = 'Round-robin: auto-assigned';
+                          break;
+                        case 'RULES':
+                          autoResolvedIcon = <GitBranch className="w-4 h-4 text-gray-400 shrink-0" />;
+                          autoResolvedLabel = 'Determined by rules';
+                          break;
+                      }
+                    }
+
+                    return (
+                      <div key={placeholder.placeholderId}>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                            style={{ backgroundColor: getRoleColor(index) }}
+                          >
+                            {getRoleInitials(placeholder.roleName)}
+                          </span>
+                          <span className="text-sm font-medium text-gray-700">
+                            {placeholder.roleName}
+                          </span>
+                        </div>
+                        {placeholder.description && (
+                          <p className="text-xs text-gray-400 mb-1.5 ml-8">
+                            {placeholder.description}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-400 ml-8">
+                          Assigned to {stepsPerRole[placeholder.roleName] || 0} steps
                         </p>
-                      )}
-                      <p className="text-xs text-gray-400 ml-8">
-                        Assigned to {stepsPerRole[placeholder.roleName] || 0} steps
-                      </p>
-                      <div className="ml-8 mt-1.5">
-                        <ContactDropdown
-                          contacts={contacts}
-                          value={roleAssignments[placeholder.roleName] ?? null}
-                          onChange={(contactId) =>
-                            handleRoleAssignment(placeholder.roleName, contactId)
-                          }
-                          placeholder={`Select contact for ${placeholder.roleName}...`}
-                        />
+                        <div className="ml-8 mt-1.5">
+                          {isManual ? (
+                            <ContactDropdown
+                              contacts={contacts}
+                              value={roleAssignments[placeholder.roleName] ?? null}
+                              onChange={(contactId) =>
+                                handleRoleAssignment(placeholder.roleName, contactId)
+                              }
+                              placeholder={`Select contact for ${placeholder.roleName}...`}
+                            />
+                          ) : (
+                            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
+                              {autoResolvedIcon}
+                              <span>{autoResolvedLabel}</span>
+                            </div>
+                          )}
+                        </div>
+                        {isManual && !roleAssignments[placeholder.roleName] && (stepsPerRole[placeholder.roleName] || 0) > 0 && (
+                          <p className="text-xs text-amber-500 mt-1 ml-8">
+                            This role has {stepsPerRole[placeholder.roleName]} steps that won't be assigned
+                          </p>
+                        )}
                       </div>
-                      {!roleAssignments[placeholder.roleName] && (stepsPerRole[placeholder.roleName] || 0) > 0 && (
-                        <p className="text-xs text-amber-500 mt-1 ml-8">
-                          This role has {stepsPerRole[placeholder.roleName]} steps that won't be assigned
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

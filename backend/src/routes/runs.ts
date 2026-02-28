@@ -11,6 +11,7 @@ import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
 import { onStepActivated, onStepCompleted, onFlowCompleted, onFlowCancelled, onFlowStarted, updateFlowActivity, computeFlowDueAt } from '../services/execution.js';
+import { getNextStepExecutions } from '../services/step-advancement.js';
 
 const router = Router();
 
@@ -298,6 +299,41 @@ router.post(
       return;
     }
 
+    // Validate kickoff form data if required
+    const kickoffConfig = (definition as any)?.kickoff;
+    if (kickoffConfig?.kickoffFormEnabled && kickoffConfig?.kickoffFormFields) {
+      const fields = kickoffConfig.kickoffFormFields as Array<{
+        fieldId: string;
+        label: string;
+        type: string;
+        required?: boolean;
+      }>;
+      const data = (kickoffData || {}) as Record<string, unknown>;
+      const errors: string[] = [];
+
+      for (const field of fields) {
+        // Skip display-only fields
+        if (field.type === 'HEADING' || field.type === 'PARAGRAPH') continue;
+
+        if (field.required) {
+          const val = data[field.fieldId];
+          if (val === undefined || val === null || val === '') {
+            errors.push(`"${field.label}" is required`);
+          } else if (Array.isArray(val) && val.length === 0) {
+            errors.push(`"${field.label}" is required`);
+          }
+        }
+      }
+
+      if (errors.length > 0) {
+        res.status(400).json({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: `Kickoff form validation failed: ${errors.join(', ')}` },
+        });
+        return;
+      }
+    }
+
     // Use authenticated user context (set by requireAuth + orgScope middleware in production)
     let userId = req.user?.id;
     let resolvedOrgId = orgId;
@@ -348,12 +384,30 @@ router.post(
       })
       .returning();
 
-    // Resolve role assignments: build map from role name -> contact ID
-    const resolvedRoles: Record<string, string> = {};
+    // Resolve assignee placeholders using the resolution service
+    const assigneePlaceholders = (definition as any)?.assigneePlaceholders || [];
+    const { resolveAssignees } = await import('../services/assignee-resolution.js');
+
+    // Flow variables convention: flow variables are stored as a nested object
+    // inside kickoffData under the key "flowVariables". This allows them to be
+    // persisted alongside kickoff form data and accessed for DDR resolution and
+    // assignee resolution. The frontend does not currently send flowVariables in
+    // kickoffData -- this is a TODO for when flow variables UI is implemented.
+    const resolvedAssignees = await resolveAssignees(assigneePlaceholders, {
+      organizationId: resolvedOrgId,
+      startedByUserId: userId,
+      roleAssignments: roleAssignments as Record<string, string> | undefined,
+      kickoffData: kickoffData as Record<string, unknown> | undefined,
+      flowVariables: (kickoffData as any)?.flowVariables as Record<string, unknown> | undefined,
+      flowId: flow.id,
+    });
+
+    // Also support legacy direct roleAssignments for backward compat
+    const legacyRoles: Record<string, string> = {};
     if (roleAssignments && typeof roleAssignments === 'object') {
       for (const [roleName, contactId] of Object.entries(roleAssignments as Record<string, string>)) {
         if (contactId && typeof contactId === 'string') {
-          resolvedRoles[roleName] = contactId;
+          legacyRoles[roleName] = contactId;
         }
       }
     }
@@ -362,9 +416,25 @@ router.post(
     const stepExecutionValues = steps.map((step, index) => {
       const stepDef = step as any;
       const assigneeRole = stepDef.config?.assignee || stepDef.assignee;
-      const contactId = assigneeRole ? resolvedRoles[assigneeRole] : undefined;
-      // Support both `stepId` (gallery templates) and `id` field names
       const resolvedStepId = stepDef.stepId || stepDef.id || `step-${index}`;
+
+      let assignedToContactId: string | null = null;
+      let assignedToUserId: string | null = null;
+
+      if (assigneeRole) {
+        // Try the new resolution service first
+        const resolved = resolvedAssignees[assigneeRole];
+        if (resolved?.contactId) {
+          assignedToContactId = resolved.contactId;
+        } else if (resolved?.userId) {
+          assignedToUserId = resolved.userId;
+        } else if (legacyRoles[assigneeRole]) {
+          // Fall back to legacy direct assignment
+          assignedToContactId = legacyRoles[assigneeRole];
+        } else if (assigneeRole === '__coordinator__') {
+          assignedToUserId = userId;
+        }
+      }
 
       return {
         flowRunId: newRun.id,
@@ -372,8 +442,8 @@ router.post(
         stepIndex: index,
         status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
         startedAt: index === 0 ? new Date() : null,
-        assignedToContactId: contactId || null,
-        assignedToUserId: (!contactId && assigneeRole === '__coordinator__') ? userId : null,
+        assignedToContactId,
+        assignedToUserId,
       };
     });
 
@@ -547,9 +617,19 @@ router.post(
     await onStepCompleted(stepExecution, run);
     await updateFlowActivity(runId);
 
-    // Check if there's a next step
+    // Determine the next step(s) using the step advancement service
     const currentIndex = stepExecution.stepIndex;
-    const nextStepExecution = run.stepExecutions.find((se) => se.stepIndex === currentIndex + 1);
+    const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
+    const stepDefs = (definition?.steps || []) as any[];
+    const nextStepIds = getNextStepExecutions(
+      stepExecution as any,
+      run.stepExecutions as any[],
+      stepDefs,
+      resultData
+    );
+    const nextStepExecution = nextStepIds.length > 0
+      ? run.stepExecutions.find(se => se.id === nextStepIds[0])
+      : undefined;
 
     if (nextStepExecution) {
       // Start the next step
@@ -562,7 +642,6 @@ router.post(
         .where(eq(stepExecutions.id, nextStepExecution.id));
 
       // Schedule notification jobs for the next step
-      const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>>; dueDates?: { flowDue?: Record<string, unknown> } } | null;
       const nextStepDef = definition?.steps?.find((s: any) => (s.stepId || s.id) === nextStepExecution.stepId);
       const nextStepDue = (nextStepDef as any)?.due || (nextStepDef as any)?.config?.due;
       // Pass flow-level dueAt so BEFORE_FLOW_DUE steps can be computed
@@ -592,7 +671,7 @@ router.post(
       await db
         .update(flowRuns)
         .set({
-          currentStepIndex: currentIndex + 1,
+          currentStepIndex: nextStepExecution.stepIndex,
         })
         .where(eq(flowRuns.id, runId));
     } else {

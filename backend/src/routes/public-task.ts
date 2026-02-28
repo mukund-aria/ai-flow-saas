@@ -12,6 +12,7 @@ import { asyncHandler } from '../middleware/async-handler.js';
 import { validateMagicLink } from '../services/magic-link.js';
 import { logAction } from '../services/audit.js';
 import { onStepActivated, onStepCompleted, onFlowCompleted, updateFlowActivity } from '../services/execution.js';
+import { getNextStepExecutions } from '../services/step-advancement.js';
 
 const router = Router();
 
@@ -153,14 +154,27 @@ router.post(
       },
     });
 
+    // Track the next step ID for the "next task token" logic below
+    let resolvedNextStep: { id: string; assignedToContactId: string | null; stepIndex: number } | undefined;
+
     if (run) {
       // Notify: step completed (cancel jobs, notify coordinator)
       await onStepCompleted(stepExec, run);
       await updateFlowActivity(run.id);
 
-      const nextStep = run.stepExecutions.find(
-        se => se.stepIndex === stepExec.stepIndex + 1
+      // Determine the next step(s) using the step advancement service
+      const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
+      const stepDefs = (definition?.steps || []) as any[];
+      const nextStepIds = getNextStepExecutions(
+        stepExec as any,
+        run.stepExecutions as any[],
+        stepDefs,
+        resultData
       );
+      const nextStep = nextStepIds.length > 0
+        ? run.stepExecutions.find(se => se.id === nextStepIds[0])
+        : undefined;
+      resolvedNextStep = nextStep;
 
       if (nextStep) {
         // Start the next step
@@ -169,12 +183,12 @@ router.post(
           .where(eq(stepExecutions.id, nextStep.id));
 
         // Schedule notification jobs for the next step
-        const definition = run.flow?.definition as { steps?: Array<{ id: string; due?: { value: number; unit: string } }> } | null;
-        const nextStepDef = definition?.steps?.find(s => s.id === nextStep.stepId);
-        await onStepActivated(nextStep.id, nextStepDef?.due, run.flow?.definition as Record<string, unknown>);
+        const nextStepDef = definition?.steps?.find((s: any) => (s.stepId || s.id) === nextStep.stepId);
+        const nextStepDue = (nextStepDef as any)?.due || (nextStepDef as any)?.config?.due;
+        await onStepActivated(nextStep.id, nextStepDue, run.flow?.definition as Record<string, unknown>);
 
         await db.update(flowRuns)
-          .set({ currentStepIndex: stepExec.stepIndex + 1 })
+          .set({ currentStepIndex: nextStep.stepIndex })
           .where(eq(flowRuns.id, run.id));
 
         // If next step has a contact assignee, create magic link and send email
@@ -215,18 +229,13 @@ router.post(
 
     // Check if the next step is assigned to the same contact - return its magic link token
     let nextTaskToken: string | null = null;
-    if (run) {
-      const nextStep = run.stepExecutions.find(
-        se => se.stepIndex === stepExec.stepIndex + 1
-      );
-      if (nextStep && nextStep.assignedToContactId === stepExec.assignedToContactId) {
-        // Find or create magic link for the next step
-        const existingLink = await db.query.magicLinks.findFirst({
-          where: eq(magicLinks.stepExecutionId, nextStep.id),
-        });
-        if (existingLink && !existingLink.usedAt && new Date() < existingLink.expiresAt) {
-          nextTaskToken = existingLink.token;
-        }
+    if (resolvedNextStep && resolvedNextStep.assignedToContactId === stepExec.assignedToContactId) {
+      // Find or create magic link for the next step
+      const existingLink = await db.query.magicLinks.findFirst({
+        where: eq(magicLinks.stepExecutionId, resolvedNextStep.id),
+      });
+      if (existingLink && !existingLink.usedAt && new Date() < existingLink.expiresAt) {
+        nextTaskToken = existingLink.token;
       }
     }
 

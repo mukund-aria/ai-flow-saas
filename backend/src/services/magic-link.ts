@@ -5,8 +5,9 @@
  */
 
 import { db } from '../db/client.js';
-import { magicLinks, stepExecutions, flowRuns, flows, contacts, users } from '../db/schema.js';
+import { magicLinks, stepExecutions, flowRuns, flows, contacts, users, organizations } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { resolveDDR, type DDRContext } from './ddr-resolver.js';
 
 export async function createMagicLink(stepExecutionId: string, expiresInHours = 168): Promise<string> {
   const expiresAt = new Date();
@@ -155,27 +156,125 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
     return journeyStep;
   });
 
+  // ---------------------------------------------------------------------------
+  // Build DDR context and resolve tokens in text fields
+  // ---------------------------------------------------------------------------
+
+  // 1. kickoffData — directly from the flow run
+  const kickoffData = (run.kickoffData as Record<string, unknown>) || undefined;
+
+  // 2. roleAssignments — resolve contactIds to { name, email, contactId }
+  let ddrRoleAssignments: DDRContext['roleAssignments'];
+  const rawRoleAssignments = run.roleAssignments as Record<string, string> | null;
+  if (rawRoleAssignments && typeof rawRoleAssignments === 'object') {
+    ddrRoleAssignments = {};
+    for (const [roleName, contactId] of Object.entries(rawRoleAssignments)) {
+      if (!contactId) continue;
+      const roleContact = await db.query.contacts.findFirst({
+        where: eq(contacts.id, contactId),
+      });
+      if (roleContact) {
+        ddrRoleAssignments[roleName] = {
+          name: roleContact.name,
+          email: roleContact.email,
+          contactId: roleContact.id,
+        };
+      }
+    }
+  }
+
+  // 3. stepOutputs — map completed step names to their resultData
+  const ddrStepOutputs: Record<string, Record<string, unknown>> = {};
+  for (const exec of allStepExecs) {
+    if (exec.status !== 'COMPLETED' || !exec.resultData) continue;
+    const defStep = steps.find((s: any) => s.stepId === exec.stepId);
+    const name = defStep?.config?.name;
+    if (name) {
+      ddrStepOutputs[name] = exec.resultData as Record<string, unknown>;
+    }
+  }
+
+  // 4. workspace — from the organization
+  let ddrWorkspace: DDRContext['workspace'];
+  if (run.organizationId) {
+    const org = await db.query.organizations.findFirst({
+      where: eq(organizations.id, run.organizationId),
+    });
+    if (org) {
+      ddrWorkspace = { name: org.name, id: org.id };
+    }
+  }
+
+  const ddrContext: DDRContext = {
+    kickoffData,
+    roleAssignments: ddrRoleAssignments,
+    stepOutputs: ddrStepOutputs,
+    workspace: ddrWorkspace,
+  };
+
+  // Helper: resolve DDR tokens in a string, returning undefined if input is undefined
+  const resolve = (text: string | undefined): string | undefined => {
+    if (!text) return text;
+    return resolveDDR(text, ddrContext);
+  };
+
+  // Resolve DDR tokens in form field labels and descriptions
+  const resolvedFormFields = step?.config?.formFields
+    ? (step.config.formFields as any[]).map((field: any) => ({
+        ...field,
+        label: resolve(field.label) ?? field.label,
+        description: resolve(field.description),
+        placeholder: resolve(field.placeholder),
+      }))
+    : undefined;
+
+  // Resolve DDR tokens in questionnaire questions
+  const resolvedQuestionnaire = step?.config?.questionnaire
+    ? {
+        ...step.config.questionnaire,
+        questions: (step.config.questionnaire as any).questions?.map((q: any) => ({
+          ...q,
+          text: resolve(q.text) ?? q.text,
+          description: resolve(q.description),
+        })),
+      }
+    : undefined;
+
+  // Resolve DDR tokens in file request description
+  const resolvedFileRequest = step?.config?.fileRequest
+    ? {
+        ...step.config.fileRequest,
+        description: resolve((step.config.fileRequest as any).description),
+      }
+    : undefined;
+
+  // Resolve DDR tokens in journey step names
+  const resolvedJourneySteps = journeySteps.map((js) => ({
+    ...js,
+    stepName: resolve(js.stepName) ?? js.stepName,
+  }));
+
   return {
     token,
     flowName: run.flow?.name || 'Unknown Flow',
     runName: run.name,
-    stepName: step?.config?.name || 'Task',
-    stepDescription: step?.config?.description,
+    stepName: resolve(step?.config?.name) || 'Task',
+    stepDescription: resolve(step?.config?.description),
     stepType: step?.type || 'FORM',
     stepIndex: stepIndex >= 0 ? stepIndex + 1 : undefined,
     totalSteps: steps.length,
     milestoneName,
     contactName,
     contactEmail,
-    formFields: step?.config?.formFields,
-    questionnaire: step?.config?.questionnaire,
+    formFields: resolvedFormFields,
+    questionnaire: resolvedQuestionnaire,
     esign: step?.config?.esign,
-    fileRequest: step?.config?.fileRequest,
+    fileRequest: resolvedFileRequest,
     pdfForm: step?.config?.pdfForm,
     outcomes: step?.config?.outcomes,
     options: step?.config?.options,
     expired: new Date() > link.expiresAt,
     completed: !!link.usedAt || stepExec.status === 'COMPLETED',
-    journeySteps,
+    journeySteps: resolvedJourneySteps,
   };
 }
