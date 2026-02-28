@@ -10,7 +10,7 @@ import { Lock } from 'lucide-react';
 import { getStepTypeIcon, getStepTypeLabel, getInitials } from './utils';
 import { StepTypeRenderer } from './step-types';
 import { CompletedStepSummary } from './CompletedStepSummary';
-import type { JourneyStep } from '@/types';
+import type { JourneyStep, AIPrepareResult } from '@/types';
 
 interface TaskContext {
   stepType: string;
@@ -51,6 +51,7 @@ interface StepCardProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   token?: string;
   aiReviewPending?: boolean;
+  aiPrepareResult?: AIPrepareResult | null;
   error?: string;
 }
 
@@ -69,6 +70,7 @@ export function StepCard({
   fileInputRef,
   token,
   aiReviewPending,
+  aiPrepareResult,
   error,
 }: StepCardProps) {
   const stepName = journeyStep?.stepName ?? task.stepName;
@@ -131,6 +133,7 @@ export function StepCard({
               fileInputRef={fileInputRef}
               token={token}
               aiReviewPending={aiReviewPending}
+              aiPrepareResult={aiPrepareResult}
             />
           ) : null}
         </div>

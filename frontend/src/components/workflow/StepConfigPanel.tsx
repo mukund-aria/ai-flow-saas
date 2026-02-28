@@ -1368,6 +1368,121 @@ function DueDateEditor({
 }
 
 // ============================================================================
+// AI Assignee Config Section
+// ============================================================================
+
+function AIAssigneeConfigSection({
+  stepType,
+  aiPrepare,
+  aiAdvise,
+  aiReview,
+  onAiPrepareChange,
+  onAiAdviseChange,
+  onAiReviewChange,
+}: {
+  stepType: string;
+  aiPrepare: { enabled: boolean; prompt?: string };
+  aiAdvise: { enabled: boolean; prompt?: string };
+  aiReview: { enabled: boolean; criteria?: string };
+  onAiPrepareChange: (config: { enabled: boolean; prompt?: string }) => void;
+  onAiAdviseChange: (config: { enabled: boolean; prompt?: string }) => void;
+  onAiReviewChange: (config: { enabled: boolean; criteria?: string }) => void;
+}) {
+  const showPrepare = stepType === 'FORM';
+  const showAdvise = ['DECISION', 'APPROVAL', 'FORM', 'FILE_REQUEST'].includes(stepType);
+  const showReview = ['FORM', 'FILE_REQUEST', 'QUESTIONNAIRE'].includes(stepType);
+
+  if (!showPrepare && !showAdvise && !showReview) return null;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-1">
+        <Sparkles className="w-4 h-4 text-violet-500" />
+        <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider">AI Assistants</h4>
+      </div>
+
+      {showPrepare && (
+        <div className="border border-violet-100 rounded-lg p-3 bg-violet-50/30">
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <span className="text-sm font-medium text-gray-700">AI Prepare</span>
+              <p className="text-[11px] text-gray-500">Pre-fill form fields from prior step data</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={aiPrepare.enabled}
+              onChange={(e) => onAiPrepareChange({ ...aiPrepare, enabled: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+            />
+          </label>
+          {aiPrepare.enabled && (
+            <textarea
+              value={aiPrepare.prompt || ''}
+              onChange={(e) => onAiPrepareChange({ ...aiPrepare, prompt: e.target.value || undefined })}
+              placeholder="Optional: Add instructions for AI preparation (e.g., 'Use the client name from step 1 to fill the Name field')"
+              rows={2}
+              className="mt-2 w-full px-2.5 py-1.5 border border-violet-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none bg-white"
+            />
+          )}
+        </div>
+      )}
+
+      {showAdvise && (
+        <div className="border border-violet-100 rounded-lg p-3 bg-violet-50/30">
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <span className="text-sm font-medium text-gray-700">AI Advise</span>
+              <p className="text-[11px] text-gray-500">Show AI recommendation before assignee acts</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={aiAdvise.enabled}
+              onChange={(e) => onAiAdviseChange({ ...aiAdvise, enabled: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+            />
+          </label>
+          {aiAdvise.enabled && (
+            <textarea
+              value={aiAdvise.prompt || ''}
+              onChange={(e) => onAiAdviseChange({ ...aiAdvise, prompt: e.target.value || undefined })}
+              placeholder="Optional: Add context for AI recommendations (e.g., 'Consider budget constraints and timeline')"
+              rows={2}
+              className="mt-2 w-full px-2.5 py-1.5 border border-violet-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none bg-white"
+            />
+          )}
+        </div>
+      )}
+
+      {showReview && (
+        <div className="border border-violet-100 rounded-lg p-3 bg-violet-50/30">
+          <label className="flex items-center justify-between cursor-pointer">
+            <div>
+              <span className="text-sm font-medium text-gray-700">AI Review</span>
+              <p className="text-[11px] text-gray-500">Validate submission before completing step</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={aiReview.enabled}
+              onChange={(e) => onAiReviewChange({ ...aiReview, enabled: e.target.checked })}
+              className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+            />
+          </label>
+          {aiReview.enabled && (
+            <textarea
+              value={aiReview.criteria || ''}
+              onChange={(e) => onAiReviewChange({ ...aiReview, criteria: e.target.value || undefined })}
+              placeholder="Optional: Specify review criteria (e.g., 'Ensure all financial fields are filled and amounts are reasonable')"
+              rows={2}
+              className="mt-2 w-full px-2.5 py-1.5 border border-violet-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none bg-white"
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
 // Main StepConfigPanel
 // ============================================================================
 
@@ -1500,6 +1615,17 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
   );
   const [availableTemplates, setAvailableTemplates] = useState<Array<{ id: string; name: string }>>([]);
 
+  // AI Assignee configs
+  const [aiPrepare, setAiPrepare] = useState<{ enabled: boolean; prompt?: string }>(
+    step.config.aiPrepare || { enabled: false }
+  );
+  const [aiAdvise, setAiAdvise] = useState<{ enabled: boolean; prompt?: string }>(
+    step.config.aiAdvise || { enabled: false }
+  );
+  const [aiReview, setAiReview] = useState<{ enabled: boolean; criteria?: string }>(
+    step.config.aiReview || { enabled: false }
+  );
+
   // Fetch available templates for SUB_FLOW selector
   useEffect(() => {
     if (isSubFlow) {
@@ -1630,6 +1756,13 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
 
     if (step.type === 'GOTO') {
       updates.targetStepId = targetStepId || undefined;
+    }
+
+    // AI Assignee configs (for human action steps)
+    if (isHumanAction) {
+      updates.aiPrepare = aiPrepare;
+      updates.aiAdvise = aiAdvise;
+      updates.aiReview = aiReview;
     }
 
     // Skip condition
@@ -2099,6 +2232,21 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
           <p className="text-xs text-gray-500">
             This is a destination marker. Go To steps inside branches can jump back to this point.
           </p>
+        </div>
+      )}
+
+      {/* AI Assistants */}
+      {['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'ACKNOWLEDGEMENT', 'ESIGN', 'DECISION'].includes(step.type) && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <AIAssigneeConfigSection
+            stepType={step.type}
+            aiPrepare={aiPrepare}
+            aiAdvise={aiAdvise}
+            aiReview={aiReview}
+            onAiPrepareChange={setAiPrepare}
+            onAiAdviseChange={setAiAdvise}
+            onAiReviewChange={setAiReview}
+          />
         </div>
       )}
 

@@ -124,6 +124,42 @@ router.post(
       return;
     }
 
+    // Check for AI Review before completing step
+    let aiReviewPending = false;
+    const run0 = await db.query.flowRuns.findFirst({
+      where: eq(flowRuns.id, stepExec.flowRunId),
+      with: { flow: true },
+    });
+    if (run0) {
+      const def = run0.flow?.definition as any;
+      const stepDef = def?.steps?.find((s: any) => s.stepId === stepExec.stepId);
+
+      // New AI Review system (synchronous, works on FORM/FILE_REQUEST/QUESTIONNAIRE)
+      if (stepDef?.config?.aiReview?.enabled) {
+        const { runAIReview } = await import('../services/ai-assignee.js');
+        const reviewResult = await runAIReview(stepExec.id, stepDef, resultData || {});
+        if (reviewResult.status === 'REVISION_NEEDED') {
+          res.json({
+            success: true,
+            data: { revisionNeeded: true, feedback: reviewResult.feedback, issues: reviewResult.issues },
+          });
+          return;
+        }
+      }
+
+      // Legacy file-request AI review (fire and forget)
+      if (stepDef?.config?.fileRequest?.aiReview?.enabled && resultData?.fileNames?.length) {
+        aiReviewPending = true;
+        import('../services/ai-review.js').then(({ reviewFiles }) => {
+          reviewFiles(
+            stepExec.id,
+            resultData.fileNames as string[],
+            stepDef.config.fileRequest.aiReview.criteria
+          ).catch(err => console.error('AI review error:', err));
+        });
+      }
+    }
+
     // Mark the step as completed
     await db.update(stepExecutions)
       .set({
@@ -137,28 +173,6 @@ router.post(
     await db.update(magicLinks)
       .set({ usedAt: new Date() })
       .where(eq(magicLinks.id, link.id));
-
-    // Trigger AI review if configured
-    let aiReviewPending = false;
-    const run0 = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, stepExec.flowRunId),
-      with: { flow: true },
-    });
-    if (run0) {
-      const def = run0.flow?.definition as any;
-      const stepDef = def?.steps?.find((s: any) => s.stepId === stepExec.stepId);
-      if (stepDef?.config?.fileRequest?.aiReview?.enabled && resultData?.fileNames?.length) {
-        aiReviewPending = true;
-        // Fire and forget - don't block step completion
-        import('../services/ai-review.js').then(({ reviewFiles }) => {
-          reviewFiles(
-            stepExec.id,
-            resultData.fileNames as string[],
-            stepDef.config.fileRequest.aiReview.criteria
-          ).catch(err => console.error('AI review error:', err));
-        });
-      }
-    }
 
     // Advance the flow run to the next step
     const run = await db.query.flowRuns.findFirst({
@@ -648,6 +662,111 @@ router.post(
       success: true,
       data: fileRecord,
     });
+  })
+);
+
+// ============================================================================
+// GET /api/public/task/:token/ai-results - Get AI results for a step
+// ============================================================================
+
+router.get(
+  '/:token/ai-results',
+  asyncHandler(async (req, res) => {
+    const token = req.params.token as string;
+
+    const link = await db.query.magicLinks.findFirst({
+      where: eq(magicLinks.token, token),
+      with: { stepExecution: true },
+    });
+
+    if (!link) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Task not found' },
+      });
+      return;
+    }
+
+    const resultData = (link.stepExecution?.resultData as Record<string, unknown>) || {};
+    res.json({
+      success: true,
+      data: {
+        aiPrepare: resultData._aiPrepare || null,
+        aiAdvise: resultData._aiAdvise || null,
+        aiReview: resultData._aiReview || null,
+      },
+    });
+  })
+);
+
+// ============================================================================
+// POST /api/public/task/:token/form-chat - AI form chat (SSE)
+// ============================================================================
+
+// Simple in-memory rate limiter for form chat
+const formChatRateLimit = new Map<string, { count: number; resetAt: number }>();
+
+router.post(
+  '/:token/form-chat',
+  asyncHandler(async (req, res) => {
+    const token = req.params.token as string;
+    const { message, history } = req.body;
+
+    // Rate limiting: 20 requests per minute per token
+    const now = Date.now();
+    const rateEntry = formChatRateLimit.get(token);
+    if (rateEntry && rateEntry.resetAt > now) {
+      if (rateEntry.count >= 20) {
+        res.status(429).json({
+          success: false,
+          error: { code: 'RATE_LIMITED', message: 'Too many requests. Please wait a moment.' },
+        });
+        return;
+      }
+      rateEntry.count++;
+    } else {
+      formChatRateLimit.set(token, { count: 1, resetAt: now + 60000 });
+    }
+
+    // Validate magic link
+    const link = await db.query.magicLinks.findFirst({
+      where: eq(magicLinks.token, token),
+      with: { stepExecution: true },
+    });
+
+    if (!link || new Date() > link.expiresAt) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Invalid or expired link' },
+      });
+      return;
+    }
+
+    const stepExec = link.stepExecution;
+    if (!stepExec) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Step not found' },
+      });
+      return;
+    }
+
+    if (!message || typeof message !== 'string') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Message is required' },
+      });
+      return;
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+
+    const { handleFormChat } = await import('../services/ai-assignee.js');
+    await handleFormChat(stepExec.id, message, history || [], stepExec.flowRunId, res);
   })
 );
 

@@ -19,7 +19,10 @@ import { CompletionDialog } from '@/components/assignee/CompletionDialog';
 import { JourneyPanel } from '@/components/assignee/JourneyPanel';
 import { NeedHelpButton } from '@/components/assignee/NeedHelpButton';
 import { ActivitySection } from '@/components/assignee/ActivitySection';
-import type { JourneyStep } from '@/types';
+import { AIAdviseCard } from '@/components/assignee/AIAdviseCard';
+import { AIReviewFeedback } from '@/components/assignee/AIReviewFeedback';
+import { FormChatAssistant } from '@/components/assignee/FormChatAssistant';
+import type { JourneyStep, AIPrepareResult, AIAdviseResult, AIReviewResult } from '@/types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -73,6 +76,13 @@ export function AssigneeTaskPage() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // AI results state
+  const [aiResults, setAiResults] = useState<{
+    aiPrepare: AIPrepareResult | null;
+    aiAdvise: AIAdviseResult | null;
+    aiReview: AIReviewResult | null;
+  }>({ aiPrepare: null, aiAdvise: null, aiReview: null });
+
   // Journey & navigation state
   const [isJourneyOpen, setIsJourneyOpen] = useState(false);
   const [viewingStepIndex, setViewingStepIndex] = useState<number | null>(null);
@@ -94,6 +104,58 @@ export function AssigneeTaskPage() {
       .finally(() => setIsLoading(false));
   }, [token]);
 
+  // Poll for AI results
+  useEffect(() => {
+    if (!token || completionState.completed) return;
+
+    let attempts = 0;
+    const maxAttempts = 10; // 30 seconds at 3s intervals
+    let cancelled = false;
+
+    const poll = async () => {
+      if (cancelled) return;
+      try {
+        const res = await fetch(`${API_BASE}/public/task/${token}/ai-results`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data) {
+            setAiResults(data.data);
+
+            // Pre-populate form data from AI Prepare
+            if (data.data.aiPrepare?.status === 'COMPLETED' && data.data.aiPrepare.prefilledFields) {
+              setFormData(prev => {
+                const merged = { ...prev };
+                for (const [key, value] of Object.entries(data.data.aiPrepare.prefilledFields)) {
+                  if (!merged[key]) { // Don't overwrite user edits
+                    merged[key] = value as string;
+                  }
+                }
+                return merged;
+              });
+            }
+
+            // Stop polling if all expected results are in
+            if (data.data.aiPrepare || data.data.aiAdvise) return;
+          }
+        }
+      } catch {
+        // Silently retry
+      }
+
+      attempts++;
+      if (attempts < maxAttempts && !cancelled) {
+        setTimeout(poll, 3000);
+      }
+    };
+
+    // Start polling after a brief delay to let the backend process
+    const timer = setTimeout(poll, 1000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [token, completionState.completed]);
+
   const handleSubmit = async (resultData?: Record<string, unknown>) => {
     if (!token) return;
     setIsSubmitting(true);
@@ -105,6 +167,19 @@ export function AssigneeTaskPage() {
       });
       if (res.ok) {
         const data = await res.json();
+        if (data.data?.revisionNeeded) {
+          // AI Review requested revision
+          setAiResults(prev => ({
+            ...prev,
+            aiReview: {
+              status: 'REVISION_NEEDED',
+              feedback: data.data.feedback,
+              issues: data.data.issues,
+              reviewedAt: new Date().toISOString(),
+            },
+          }));
+          return; // Don't show completion dialog
+        }
         setCompletionState({
           completed: true,
           nextTaskToken: data.data?.nextTaskToken,
@@ -228,6 +303,12 @@ export function AssigneeTaskPage() {
       {/* Main Content */}
       <div className="flex-1 px-4 pb-8">
         <div className="max-w-xl mx-auto">
+          {aiResults.aiAdvise && aiResults.aiAdvise.status === 'COMPLETED' && (
+            <AIAdviseCard result={aiResults.aiAdvise} />
+          )}
+          {aiResults.aiReview && aiResults.aiReview.status === 'REVISION_NEEDED' && (
+            <AIReviewFeedback result={aiResults.aiReview} />
+          )}
           <StepCard
             task={task}
             mode={getStepMode()}
@@ -243,6 +324,7 @@ export function AssigneeTaskPage() {
             fileInputRef={fileInputRef}
             token={token}
             aiReviewPending={completionState.aiReviewPending}
+            aiPrepareResult={aiResults.aiPrepare}
             error={error}
           />
 
@@ -271,6 +353,15 @@ export function AssigneeTaskPage() {
       />
 
       <NeedHelpButton />
+
+      {/* Form Chat Assistant - AI help for form fields */}
+      {token && task.stepType === 'FORM' && !completionState.completed && (
+        <FormChatAssistant
+          token={token}
+          stepName={task.stepName}
+          formFieldLabels={(task.formFields || []).map(f => f.label)}
+        />
+      )}
 
       {/* Chat Panel */}
       {token && <FlowRunChatPanel mode="assignee" token={token} />}

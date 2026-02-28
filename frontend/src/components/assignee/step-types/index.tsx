@@ -27,6 +27,7 @@ import { PdfFormStep } from './PdfFormStep';
 import { CustomActionStep } from './CustomActionStep';
 import { WebAppStep } from './WebAppStep';
 import { GenericStep } from './GenericStep';
+import type { AIPrepareResult } from '@/types';
 
 interface TaskContext {
   stepType: string;
@@ -79,6 +80,7 @@ interface StepTypeRendererProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   token?: string;
   aiReviewPending?: boolean;
+  aiPrepareResult?: AIPrepareResult | null;
 }
 
 export function StepTypeRenderer({
@@ -94,6 +96,7 @@ export function StepTypeRenderer({
   fileInputRef,
   token,
   aiReviewPending,
+  aiPrepareResult,
 }: StepTypeRendererProps) {
   if (task.stepType === 'FORM' && task.formFields && task.formFields.length > 0) {
     return (
@@ -103,6 +106,7 @@ export function StepTypeRenderer({
         onChange={onFormChange}
         onSubmit={() => onSubmit(formData)}
         isSubmitting={isSubmitting}
+        aiPrepareResult={aiPrepareResult}
       />
     );
   }

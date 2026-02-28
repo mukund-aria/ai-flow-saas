@@ -384,6 +384,10 @@ export interface StepConfig {
   subFlow?: SubFlowConfig;
   // Integration config
   integration?: IntegrationConfig;
+  // AI Assignee configs
+  aiPrepare?: { enabled: boolean; prompt?: string };
+  aiAdvise?: { enabled: boolean; prompt?: string };
+  aiReview?: { enabled: boolean; criteria?: string };
 }
 
 export interface QuestionnaireConfig {
@@ -531,6 +535,40 @@ export interface IntegrationConfig {
     isDynamic: boolean;
   }>;
   config: Record<string, unknown>;
+}
+
+// ============================================================================
+// AI Assignee Result Types
+// ============================================================================
+
+export interface AIPrepareResult {
+  status: 'COMPLETED' | 'FAILED';
+  prefilledFields: Record<string, string>;
+  confidence?: Record<string, number>;
+  reasoning?: string;
+  preparedAt: string;
+}
+
+export interface AIAdviseResult {
+  status: 'COMPLETED' | 'FAILED';
+  recommendation: string;
+  reasoning: string;
+  supportingData?: Record<string, unknown>;
+  advisedAt: string;
+}
+
+export interface AIReviewResult {
+  status: 'APPROVED' | 'REVISION_NEEDED';
+  feedback: string;
+  issues?: string[];
+  reviewedAt: string;
+}
+
+export interface AIFlowSummary {
+  summary: string;
+  keyDecisions: Array<{ step: string; decision: string }>;
+  timeline: Array<{ step: string; duration: string }>;
+  generatedAt: string;
 }
 
 export interface StepOption {

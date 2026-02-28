@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, flows, flowRuns, stepExecutions, users, organizations, contacts, magicLinks, auditLogs, FlowRunStatus } from '../db/index.js';
+import { db, flows, flowRuns, stepExecutions, users, organizations, contacts, magicLinks, auditLogs, userOrganizations, FlowRunStatus } from '../db/index.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
@@ -24,6 +24,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const { status, flowId } = req.query;
     const orgId = req.organizationId;
+    const userId = req.user?.id;
 
     // Build query conditions with org scoping
     const conditions = [];
@@ -39,6 +40,8 @@ router.get(
           columns: {
             id: true,
             name: true,
+            templateCoordinatorIds: true,
+            definition: true,
           },
         },
         startedBy: {
@@ -64,7 +67,81 @@ router.get(
       },
     });
 
-    const runsWithTotalSteps = allRuns.map(run => {
+    // Determine user's org role for access filtering
+    let isAdmin = false;
+    if (userId && orgId) {
+      const membership = await db.query.userOrganizations.findFirst({
+        where: and(
+          eq(userOrganizations.userId, userId),
+          eq(userOrganizations.organizationId, orgId)
+        ),
+      });
+      isAdmin = membership?.role === 'ADMIN';
+    }
+
+    // Filter runs based on coordinator/assignee role model:
+    // - Admins: see all runs (no filtering)
+    // - Template Coordinators: see all runs of templates where they're listed
+    // - Flow Coordinators: see runs where they're assigned to a coordinator role
+    // - Started by: see runs they started
+    // - Not assigned: don't see the run
+    const filteredRuns = (userId && !isAdmin)
+      ? allRuns.filter(run => {
+          const flow = run.flow as any;
+
+          // (a) User started this run
+          if (run.startedById === userId) return true;
+
+          // (b) User is a template coordinator for this template
+          const templateCoordinatorIds: string[] = flow?.templateCoordinatorIds || [];
+          if (templateCoordinatorIds.includes(userId)) return true;
+
+          // (c) User is assigned to a coordinator role on this run
+          const definition = flow?.definition as any;
+          const assigneePlaceholders: Array<{ roleName: string; roleType?: string; roleOptions?: { coordinatorToggle?: boolean } }> =
+            definition?.assigneePlaceholders || [];
+          const roleAssignments: Record<string, string> = (run.roleAssignments as Record<string, string>) || {};
+
+          // Find coordinator role names (explicit roleType='coordinator' OR legacy coordinatorToggle)
+          const coordinatorRoleNames = new Set(
+            assigneePlaceholders
+              .filter(p =>
+                p.roleType === 'coordinator' || p.roleOptions?.coordinatorToggle
+              )
+              .map(p => p.roleName)
+          );
+
+          // Check if user is assigned to any coordinator role via step executions
+          const stepExecs = (run as any).stepExecutions || [];
+          const isCoordinatorOnRun = stepExecs.some((se: any) =>
+            se.assignedToUserId === userId
+          ) && (() => {
+            // Check if any of the user's assigned steps belong to a coordinator role
+            const defSteps = definition?.steps || [];
+            for (const se of stepExecs) {
+              if (se.assignedToUserId !== userId) continue;
+              const defStep = defSteps.find((s: any) => (s.stepId || s.id) === se.stepId);
+              const stepRole = defStep?.config?.assignee;
+              if (stepRole && coordinatorRoleNames.has(stepRole)) return true;
+            }
+            return false;
+          })();
+
+          if (isCoordinatorOnRun) return true;
+
+          // (d) Check roleAssignments map for coordinator roles assigned to this user
+          // roleAssignments maps roleName -> userId/contactId
+          for (const [roleName, assignedId] of Object.entries(roleAssignments)) {
+            if (assignedId === userId && coordinatorRoleNames.has(roleName)) {
+              return true;
+            }
+          }
+
+          return false;
+        })
+      : allRuns;
+
+    const runsWithTotalSteps = filteredRuns.map(run => {
       const stepExecs = (run as any).stepExecutions || [];
       const totalSteps = stepExecs.length;
 
@@ -88,9 +165,10 @@ router.get(
           }
         : null;
 
-      // Strip stepExecutions array from response to keep payload small
+      // Strip stepExecutions and large flow fields from response to keep payload small
       const { stepExecutions: _se, ...rest } = run as any;
-      return { ...rest, totalSteps, currentStepAssignee, currentStep };
+      const { definition: _def, templateCoordinatorIds: _tc, ...flowSlim } = rest.flow || {};
+      return { ...rest, flow: flowSlim, totalSteps, currentStepAssignee, currentStep };
     });
 
     res.json({
@@ -614,6 +692,29 @@ router.post(
       return;
     }
 
+    // AI Review interception: check before marking step as completed
+    const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
+    const stepDefs = (definition?.steps || []) as any[];
+    const currentStepDef = stepDefs.find((s: any) => (s.stepId || s.id) === stepExecution.stepId);
+    if (currentStepDef?.config?.aiReview?.enabled) {
+      const { runAIReview } = await import('../services/ai-assignee.js');
+      const reviewResult = await runAIReview(stepExecution.id, currentStepDef, resultData || {});
+      if (reviewResult.status === 'REVISION_NEEDED') {
+        // Revert step to IN_PROGRESS with feedback
+        await db.update(stepExecutions)
+          .set({
+            status: 'IN_PROGRESS',
+            completedAt: null,
+          })
+          .where(eq(stepExecutions.id, stepExecution.id));
+        res.json({
+          success: true,
+          data: { revisionNeeded: true, feedback: reviewResult.feedback, issues: reviewResult.issues },
+        });
+        return;
+      }
+    }
+
     // Mark the step as completed
     await db
       .update(stepExecutions)
@@ -630,8 +731,6 @@ router.post(
 
     // Determine the next step(s) using the step advancement service
     const currentIndex = stepExecution.stepIndex;
-    const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
-    const stepDefs = (definition?.steps || []) as any[];
     const nextStepIds = getNextStepExecutions(
       stepExecution as any,
       run.stepExecutions as any[],
@@ -1259,6 +1358,92 @@ router.post(
       success: true,
       data: { message: 'Step reassigned successfully' },
     });
+  })
+);
+
+// ============================================================================
+// GET /api/flows/:id/summary - Get AI-generated flow run summary
+// ============================================================================
+
+router.get(
+  '/:id/summary',
+  asyncHandler(async (req, res) => {
+    const runId = req.params.id as string;
+    const orgId = req.organizationId;
+
+    const run = await db.query.flowRuns.findFirst({
+      where: orgId
+        ? and(eq(flowRuns.id, runId), eq(flowRuns.organizationId, orgId))
+        : eq(flowRuns.id, runId),
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Run not found' },
+      });
+      return;
+    }
+
+    const existingData = (run.kickoffData as Record<string, unknown>) || {};
+    if (existingData._aiSummary) {
+      res.json({ success: true, data: existingData._aiSummary });
+      return;
+    }
+
+    // Generate on first request if flow is completed
+    if (run.status === 'COMPLETED') {
+      const { generateFlowSummary } = await import('../services/ai-assignee.js');
+      const summary = await generateFlowSummary(run.id);
+      res.json({ success: true, data: summary });
+      return;
+    }
+
+    res.json({ success: true, data: null });
+  })
+);
+
+// ============================================================================
+// POST /api/flows/:id/ai-chat - AI chat for flow run (SSE)
+// ============================================================================
+
+router.post(
+  '/:id/ai-chat',
+  asyncHandler(async (req, res) => {
+    const runId = req.params.id as string;
+    const { message, history } = req.body;
+    const orgId = req.organizationId;
+
+    const run = await db.query.flowRuns.findFirst({
+      where: orgId
+        ? and(eq(flowRuns.id, runId), eq(flowRuns.organizationId, orgId))
+        : eq(flowRuns.id, runId),
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Run not found' },
+      });
+      return;
+    }
+
+    if (!message || typeof message !== 'string') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Message is required' },
+      });
+      return;
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+
+    const { handleAIChat } = await import('../services/ai-assignee.js');
+    await handleAIChat(run.id, message, history || [], res);
   })
 );
 

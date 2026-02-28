@@ -5,8 +5,9 @@
  */
 
 import { Loader2 } from 'lucide-react';
-import { CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AIPrepareNotice } from '@/components/assignee/AIPrepareNotice';
+import type { AIPrepareResult } from '@/types';
 
 interface FormField {
   fieldId: string;
@@ -22,16 +23,25 @@ interface FormStepProps {
   onChange: (fieldId: string, value: string) => void;
   onSubmit: () => void;
   isSubmitting: boolean;
+  aiPrepareResult?: AIPrepareResult | null;
 }
 
-export function FormStep({ formFields, formData, onChange, onSubmit, isSubmitting }: FormStepProps) {
+export function FormStep({ formFields, formData, onChange, onSubmit, isSubmitting, aiPrepareResult }: FormStepProps) {
   return (
     <div className="space-y-4">
+      {aiPrepareResult && aiPrepareResult.status === 'COMPLETED' && (
+        <AIPrepareNotice result={aiPrepareResult} fieldCount={formFields.length} />
+      )}
       {formFields.map(field => (
         <div key={field.fieldId}>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             {field.label}
             {field.required && <span className="text-red-500 ml-1">*</span>}
+            {aiPrepareResult?.prefilledFields?.[field.fieldId] && (
+              <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-100 text-violet-600">
+                AI
+              </span>
+            )}
           </label>
           {field.type === 'TEXT_MULTI_LINE' || field.type === 'textarea' ? (
             <textarea

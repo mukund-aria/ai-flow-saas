@@ -126,6 +126,39 @@ export async function onStepActivated(
       await scheduleEscalation(stepExecutionId, escalationAt);
     }
   }
+
+  // Trigger AI Prepare and AI Advise (fire-and-forget)
+  try {
+    if (flowDefinition) {
+      const stepDefs = (flowDefinition as any)?.steps || [];
+      const stepExec = await db.query.stepExecutions.findFirst({
+        where: eq(stepExecutions.id, stepExecutionId),
+      });
+      if (stepExec) {
+        const stepDef = stepDefs.find((s: any) => (s.stepId || s.id) === stepExec.stepId);
+        if (stepDef) {
+          const { runAIPrepare, runAIAdvise } = await import('./ai-assignee.js');
+          // AI Prepare for FORM steps
+          if (stepDef.config?.aiPrepare?.enabled && stepDef.type === 'FORM') {
+            runAIPrepare(stepExecutionId, stepDef, stepExec.flowRunId).catch(err =>
+              console.error('[AI Prepare] Error:', err)
+            );
+          }
+          // AI Advise for applicable step types
+          if (stepDef.config?.aiAdvise?.enabled) {
+            const adviseTypes = ['DECISION', 'APPROVAL', 'FORM', 'FILE_REQUEST'];
+            if (adviseTypes.includes(stepDef.type)) {
+              runAIAdvise(stepExecutionId, stepDef, stepExec.flowRunId).catch(err =>
+                console.error('[AI Advise] Error:', err)
+              );
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[AI Assignee] Failed to trigger AI agents:', err);
+  }
 }
 
 // ============================================================================
@@ -259,6 +292,14 @@ export async function onFlowCompleted(
         console.error('[SubFlow] Failed to propagate completion:', err)
       );
     }
+  } catch {}
+
+  // Trigger AI Summary generation (fire-and-forget)
+  try {
+    const { generateFlowSummary } = await import('./ai-assignee.js');
+    generateFlowSummary(run.id).catch(err =>
+      console.error('[AI Summary] Error:', err)
+    );
   } catch {}
 }
 
