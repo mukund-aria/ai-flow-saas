@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Minus, Plus, Maximize2 } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { WorkflowHeader } from './WorkflowHeader';
 import { FlowStartCard } from './FlowStartCard';
 import { StepList } from './StepList';
@@ -20,15 +19,32 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 1.5;
 const ZOOM_STEP = 0.1;
 
+/** Interactive elements that should NOT trigger panning */
+const INTERACTIVE_TAGS = new Set(['BUTTON', 'INPUT', 'TEXTAREA', 'SELECT', 'A', 'LABEL']);
+
+function isInteractiveTarget(target: HTMLElement): boolean {
+  let el: HTMLElement | null = target;
+  while (el) {
+    if (INTERACTIVE_TAGS.has(el.tagName)) return true;
+    if (el.getAttribute('role') === 'button') return true;
+    if (el.getAttribute('draggable') === 'true') return true;
+    if (el.hasAttribute('data-no-pan')) return true;
+    if (el.hasAttribute('data-canvas-root')) break;
+    el = el.parentElement;
+  }
+  return false;
+}
+
 export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveProposal, onRequestProposalChanges }: WorkflowPanelProps) {
   const workflow = useWorkflowStore((state) => state.workflow);
   const pendingProposal = useWorkflowStore((state) => state.pendingProposal);
   const proposalViewMode = useWorkflowStore((state) => state.proposalViewMode);
   const setProposalViewMode = useWorkflowStore((state) => state.setProposalViewMode);
   const [zoomLevel, setZoomLevel] = useState(1.0);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const panStartRef = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null);
+  const panStartRef = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
 
   const zoomIn = useCallback(() => {
     setZoomLevel((prev) => Math.min(MAX_ZOOM, Math.round((prev + ZOOM_STEP) * 10) / 10));
@@ -40,57 +56,40 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
 
   const resetZoom = useCallback(() => {
     setZoomLevel(1.0);
+    setPanOffset({ x: 0, y: 0 });
   }, []);
 
   const fitToView = useCallback(() => {
     setZoomLevel(1.0);
-    // Scroll to top of the scroll container
-    const container = containerRef.current;
-    if (container) {
-      const scrollEl = container.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
-      if (scrollEl) {
-        scrollEl.scrollTop = 0;
-        scrollEl.scrollLeft = 0;
-      }
-    }
+    setPanOffset({ x: 0, y: 0 });
   }, []);
 
-  // Get the scroll viewport element
-  const getScrollViewport = useCallback((): HTMLElement | null => {
-    const container = containerRef.current;
-    if (!container) return null;
-    return container.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
-  }, []);
-
-  // Pan handlers — click-drag on canvas background or middle-mouse
+  // Pan handlers — click-drag anywhere on canvas (except interactive elements)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     const isMiddleButton = e.button === 1;
-    const target = e.target as HTMLElement;
-    const isBackground = target.hasAttribute('data-canvas-bg') || target === e.currentTarget;
+    const isLeftClick = e.button === 0;
 
-    if (isMiddleButton || (e.button === 0 && isBackground)) {
-      const scrollEl = getScrollViewport();
-      if (!scrollEl) return;
+    if (isMiddleButton || (isLeftClick && !isInteractiveTarget(e.target as HTMLElement))) {
       e.preventDefault();
       setIsPanning(true);
       panStartRef.current = {
         x: e.clientX,
         y: e.clientY,
-        scrollLeft: scrollEl.scrollLeft,
-        scrollTop: scrollEl.scrollTop,
+        offsetX: panOffset.x,
+        offsetY: panOffset.y,
       };
     }
-  }, [getScrollViewport]);
+  }, [panOffset]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isPanning || !panStartRef.current) return;
-    const scrollEl = getScrollViewport();
-    if (!scrollEl) return;
     const dx = e.clientX - panStartRef.current.x;
     const dy = e.clientY - panStartRef.current.y;
-    scrollEl.scrollLeft = panStartRef.current.scrollLeft - dx;
-    scrollEl.scrollTop = panStartRef.current.scrollTop - dy;
-  }, [isPanning, getScrollViewport]);
+    setPanOffset({
+      x: panStartRef.current.offsetX + dx,
+      y: panStartRef.current.offsetY + dy,
+    });
+  }, [isPanning]);
 
   const handleMouseUp = useCallback(() => {
     setIsPanning(false);
@@ -160,6 +159,9 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
     </div>
   );
 
+  const canvasTransform = `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoomLevel})`;
+  const canvasCursor = isPanning ? 'grabbing' : 'grab';
+
   // Proposal mode — show proposed or current workflow with ProposalBanner
   if (pendingProposal && !editMode) {
     const isEdit = pendingProposal.plan.mode === 'edit';
@@ -180,43 +182,41 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
     return (
       <div
         ref={containerRef}
-        className="flex flex-col h-full relative"
+        data-canvas-root
+        className="flex-1 h-full relative overflow-hidden bg-dotted-grid"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
-        style={{ cursor: isPanning ? 'grabbing' : undefined }}
+        style={{ cursor: canvasCursor }}
       >
-        <ScrollArea className="flex-1 bg-dotted-grid min-h-full overflow-x-auto">
-          <div
-            data-canvas-bg
-            className="p-4 flex flex-col items-center min-w-fit"
-            style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}
-          >
-            <ProposalBanner
-              proposal={pendingProposal}
-              viewMode={proposalViewMode}
-              onToggleView={() =>
-                setProposalViewMode(proposalViewMode === 'proposed' ? 'current' : 'proposed')
-              }
-              onApprove={() => onApproveProposal?.()}
-              onRequestChanges={(changes) => onRequestProposalChanges?.(changes)}
-            />
+        <div
+          className="p-4 flex flex-col items-center min-w-fit"
+          style={{ transform: canvasTransform, transformOrigin: 'top center' }}
+        >
+          <ProposalBanner
+            proposal={pendingProposal}
+            viewMode={proposalViewMode}
+            onToggleView={() =>
+              setProposalViewMode(proposalViewMode === 'proposed' ? 'current' : 'proposed')
+            }
+            onApprove={() => onApproveProposal?.()}
+            onRequestChanges={(changes) => onRequestProposalChanges?.(changes)}
+          />
 
-            {/* Flow Start Card */}
-            <FlowStartCard workflow={displayWorkflow} />
+          {/* Flow Start Card */}
+          <FlowStartCard workflow={displayWorkflow} />
 
-            {/* Connector */}
-            <StepConnector />
+          {/* Connector */}
+          <StepConnector />
 
-            {/* Step List */}
-            <StepList
-              workflow={displayWorkflow}
-              editMode={false}
-              proposalChangeMap={changeMap}
-            />
-          </div>
-        </ScrollArea>
+          {/* Step List */}
+          <StepList
+            workflow={displayWorkflow}
+            editMode={false}
+            proposalChangeMap={changeMap}
+          />
+        </div>
         {zoomControls}
       </div>
     );
@@ -232,39 +232,37 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
     return (
       <div
         ref={containerRef}
-        className="flex flex-col h-full relative"
+        data-canvas-root
+        className="flex-1 h-full relative overflow-hidden bg-dotted-grid"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
-        style={{ cursor: isPanning ? 'grabbing' : undefined }}
+        style={{ cursor: canvasCursor }}
       >
-        <ScrollArea className="flex-1 bg-dotted-grid min-h-full overflow-x-auto">
-          <div
-            data-canvas-bg
-            className="p-6 flex flex-col items-center min-w-fit"
-            style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}
-          >
-            {workflow.steps.length === 0 ? (
-              <EmptyWorkflow editMode={editMode} />
-            ) : (
-              <>
-                {/* Flow Start Card */}
-                <FlowStartCard
-                  workflow={workflow}
-                  editMode
-                  onConfigClick={onStartConfigClick}
-                />
+        <div
+          className="p-6 flex flex-col items-center min-w-fit"
+          style={{ transform: canvasTransform, transformOrigin: 'top center' }}
+        >
+          {workflow.steps.length === 0 ? (
+            <EmptyWorkflow editMode={editMode} />
+          ) : (
+            <>
+              {/* Flow Start Card */}
+              <FlowStartCard
+                workflow={workflow}
+                editMode
+                onConfigClick={onStartConfigClick}
+              />
 
-                {/* Connector */}
-                <StepConnector />
+              {/* Connector */}
+              <StepConnector />
 
-                {/* Step List */}
-                <StepList workflow={workflow} editMode={editMode} />
-              </>
-            )}
-          </div>
-        </ScrollArea>
+              {/* Step List */}
+              <StepList workflow={workflow} editMode={editMode} />
+            </>
+          )}
+        </div>
         {zoomControls}
       </div>
     );
@@ -274,19 +272,19 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
   return (
     <div
       ref={containerRef}
+      data-canvas-root
       className="flex flex-col h-full relative"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
-      style={{ cursor: isPanning ? 'grabbing' : undefined }}
+      style={{ cursor: canvasCursor }}
     >
       <WorkflowHeader workflow={workflow} editMode={false} />
-      <ScrollArea className="flex-1 bg-dotted-grid min-h-full overflow-x-auto">
+      <div className="flex-1 overflow-hidden bg-dotted-grid relative">
         <div
-          data-canvas-bg
           className="p-4 flex flex-col items-center min-w-fit"
-          style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}
+          style={{ transform: canvasTransform, transformOrigin: 'top center' }}
         >
           {/* Flow Start Card */}
           <FlowStartCard workflow={workflow} />
@@ -297,7 +295,7 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
           {/* Step List */}
           <StepList workflow={workflow} editMode={false} />
         </div>
-      </ScrollArea>
+      </div>
       {zoomControls}
     </div>
   );
