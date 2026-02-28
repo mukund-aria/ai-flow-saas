@@ -331,6 +331,33 @@ const TemplateCatalogSchema = z.object({
   })),
 });
 
+const AnalysisRuleConditionSchema = z.object({
+  has_step_types: z.array(z.string()).optional(),
+  missing_step_types: z.array(z.string()).optional(),
+  min_steps: z.number().optional(),
+  missing_milestones: z.boolean().optional(),
+  missing_naming_convention: z.boolean().optional(),
+  always: z.boolean().optional(),
+});
+
+const AnalysisRuleSchema = z.object({
+  id: z.string(),
+  category: z.string(),
+  priority: z.enum(['high', 'medium', 'low', 'lowest']),
+  condition: AnalysisRuleConditionSchema,
+  suggestion: z.object({
+    prompt: z.string(),
+    hint: z.string().optional(),
+  }),
+  surfaces: z.array(z.string()),
+  enhancement_default: z.boolean().optional(),
+});
+
+const AnalysisRulesSchema = z.object({
+  version: z.string(),
+  rules: z.array(AnalysisRuleSchema),
+});
+
 // ============================================================================
 // Exported Types (inferred from Zod schemas)
 // ============================================================================
@@ -344,6 +371,9 @@ export type ConsultationConfig = z.infer<typeof ConsultationSchema>;
 export type UXGuidelinesConfig = z.infer<typeof UXGuidelinesSchema>;
 export type ResponseFormatConfig = z.infer<typeof ResponseFormatSchema>;
 export type TemplateCatalogConfig = z.infer<typeof TemplateCatalogSchema>;
+export type AnalysisRuleCondition = z.infer<typeof AnalysisRuleConditionSchema>;
+export type AnalysisRule = z.infer<typeof AnalysisRuleSchema>;
+export type AnalysisRulesConfig = z.infer<typeof AnalysisRulesSchema>;
 
 // Also export sub-types needed by other modules
 export type TemplateCatalogTemplate = TemplateCatalogConfig['categories'][number]['templates'][number];
@@ -417,6 +447,13 @@ export function loadResponseFormat(): ResponseFormatConfig {
 }
 
 /**
+ * Load analysis rules configuration (consultative layer)
+ */
+export function loadAnalysisRules(): AnalysisRulesConfig {
+  return loadYamlFile('consultative/analysis-rules.yaml', AnalysisRulesSchema);
+}
+
+/**
  * Load all step type configurations from a directory (technical layer).
  * Filters out deprecated step types.
  */
@@ -471,6 +508,7 @@ let cachedConsultation: ConsultationConfig | null = null;
 let cachedUXGuidelines: UXGuidelinesConfig | null = null;
 let cachedResponseFormat: ResponseFormatConfig | null = null;
 let cachedTemplateCatalog: TemplateCatalogConfig | null | undefined = undefined;
+let cachedAnalysisRules: AnalysisRulesConfig | null = null;
 
 export function getConstraints(): ConstraintsConfig {
   if (!cachedConstraints) {
@@ -514,6 +552,13 @@ export function getResponseFormat(): ResponseFormatConfig {
   return cachedResponseFormat;
 }
 
+export function getAnalysisRules(): AnalysisRulesConfig {
+  if (!cachedAnalysisRules) {
+    cachedAnalysisRules = loadAnalysisRules();
+  }
+  return cachedAnalysisRules;
+}
+
 /**
  * Get template catalog (cached, returns null if file missing or disabled)
  */
@@ -540,6 +585,7 @@ export function clearConfigCache(): void {
   cachedUXGuidelines = null;
   cachedResponseFormat = null;
   cachedTemplateCatalog = undefined;
+  cachedAnalysisRules = null;
 }
 
 /**
@@ -553,4 +599,5 @@ export function reloadConfig(): void {
   getConsultation();
   getUXGuidelines();
   getResponseFormat();
+  getAnalysisRules();
 }

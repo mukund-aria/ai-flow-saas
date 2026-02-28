@@ -1,10 +1,10 @@
 import { User, AlertCircle, Sparkles, FileText, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Message, Clarification, SuggestedAction } from '@/types';
+import type { Message, Clarification, SuggestedAction, AnalysisResult } from '@/types';
 import { PlanSummaryCard } from './PlanSummaryCard';
 import { ClarificationCard } from './ClarificationCard';
 import { RejectCard } from './RejectCard';
-import { Phase2Card } from './Phase2Card';
+import { EnhancementCard } from './EnhancementCard';
 import { SuggestedActions } from './SuggestedActions';
 
 // Simple markdown rendering for common elements
@@ -102,10 +102,11 @@ interface MessageItemProps {
   onApprovePlan?: (planId: string) => void;
   onRequestChanges?: (changes: string) => void;
   onAnswerClarification?: (answers: Record<string, string>, questions: Clarification[]) => void;
-  onPhase2Submit?: (messageId: string, selections: Record<string, string | Record<string, string>>) => void;
-  onPhase2Skip?: (messageId: string) => void;
+  onEnhancementSubmit?: (messageId: string, selections: Record<string, string | Record<string, string>>) => void;
+  onEnhancementSkip?: (messageId: string) => void;
   onSuggestedAction?: (action: SuggestedAction) => void;
   pendingPlanId?: string;  // ID of pending plan from any message in the conversation
+  analysis?: AnalysisResult | null;
 }
 
 export function MessageItem({
@@ -113,10 +114,11 @@ export function MessageItem({
   onApprovePlan,
   onRequestChanges,
   onAnswerClarification,
-  onPhase2Submit,
-  onPhase2Skip,
+  onEnhancementSubmit,
+  onEnhancementSkip,
   onSuggestedAction,
   pendingPlanId,
+  analysis,
 }: MessageItemProps) {
   const isUser = message.role === 'user';
 
@@ -238,16 +240,17 @@ export function MessageItem({
           </div>
         )}
 
-        {/* Phase 2 Enhancements */}
-        {message.phase2 && (
+        {/* Enhancements */}
+        {message.enhancement && (
           <div className="mt-3">
-            <Phase2Card
-              workflowName={message.phase2.workflowName}
-              onSubmit={(selections) => onPhase2Submit?.(message.id, selections)}
-              onSkip={() => onPhase2Skip?.(message.id)}
-              isLocked={message.phase2.isLocked}
-              wasSkipped={message.phase2.wasSkipped}
-              savedSelections={message.phase2.selections}
+            <EnhancementCard
+              workflowName={message.enhancement.workflowName}
+              onSubmit={(selections) => onEnhancementSubmit?.(message.id, selections)}
+              onSkip={() => onEnhancementSkip?.(message.id)}
+              isLocked={message.enhancement.isLocked}
+              wasSkipped={message.enhancement.wasSkipped}
+              savedSelections={message.enhancement.selections}
+              analysis={analysis}
             />
           </div>
         )}

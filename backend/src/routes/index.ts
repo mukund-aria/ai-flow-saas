@@ -26,6 +26,7 @@ import eventsRouter from './events.js';
 import integrationsRouter from './integrations.js';
 import embedRouter from './embed.js';
 import galleryRouter from './gallery.js';
+import analyzeRouter from './analyze.js';
 import { orgScope } from '../middleware/org-scope.js';
 
 const router = Router();
@@ -92,6 +93,9 @@ router.use('/integrations', integrationsRouter);
 
 // Gallery API (curated template gallery with import)
 router.use('/gallery', galleryRouter);
+
+// Analyze API (workflow analysis rules engine)
+router.use('/analyze', analyzeRouter);
 
 // Flows API (workflow execution — active instances)
 // Note: POST /api/templates/:templateId/flows is handled by runsRouter

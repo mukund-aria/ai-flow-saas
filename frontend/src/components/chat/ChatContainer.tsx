@@ -1,13 +1,15 @@
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { useChat } from '@/hooks/useChat';
+import type { AnalysisResult } from '@/types';
 
 interface ChatContainerProps {
   hasWorkflow?: boolean;
   workflowName?: string;
+  analysis?: AnalysisResult | null;
 }
 
-export function ChatContainer({ hasWorkflow, workflowName }: ChatContainerProps = {}) {
+export function ChatContainer({ hasWorkflow, workflowName, analysis }: ChatContainerProps = {}) {
   const {
     messages,
     isStreaming,
@@ -19,8 +21,8 @@ export function ChatContainer({ hasWorkflow, workflowName }: ChatContainerProps 
     handleApprovePlan,
     handleRequestChanges,
     handleAnswerClarification,
-    handlePhase2Submit,
-    handlePhase2Skip,
+    handleEnhancementSubmit,
+    handleEnhancementSkip,
     handleSuggestedAction,
     cancelGeneration,
   } = useChat();
@@ -37,12 +39,13 @@ export function ChatContainer({ hasWorkflow, workflowName }: ChatContainerProps 
         onApprovePlan={handleApprovePlan}
         onRequestChanges={handleRequestChanges}
         onAnswerClarification={handleAnswerClarification}
-        onPhase2Submit={handlePhase2Submit}
-        onPhase2Skip={handlePhase2Skip}
+        onEnhancementSubmit={handleEnhancementSubmit}
+        onEnhancementSkip={handleEnhancementSkip}
         onSendMessage={sendMessage}
         onSuggestedAction={handleSuggestedAction}
         hasWorkflow={hasWorkflow}
         workflowName={workflowName}
+        analysis={analysis}
       />
 
       {/* Input */}

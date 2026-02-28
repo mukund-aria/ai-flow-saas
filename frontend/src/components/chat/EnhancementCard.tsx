@@ -17,10 +17,10 @@ import {
   SkipForward,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useWorkflowStore } from '@/stores/workflowStore';
+import type { AnalysisResult } from '@/types';
 
-// Phase 2 enhancement options
-interface Phase2Option {
+// Enhancement options
+interface EnhancementOption {
   id: string;
   label: string;
   description: string;
@@ -36,7 +36,7 @@ interface Phase2Option {
   }[];
 }
 
-const PHASE2_OPTIONS: Phase2Option[] = [
+const ENHANCEMENT_OPTIONS: EnhancementOption[] = [
   {
     id: 'milestones',
     label: 'Organize into stages',
@@ -91,70 +91,51 @@ const PHASE2_OPTIONS: Phase2Option[] = [
   },
 ];
 
-interface Phase2CardProps {
+interface EnhancementCardProps {
   workflowName: string;
   onSubmit: (selectedOptions: Record<string, string | Record<string, string>>) => void;
   onSkip: () => void;
   isLocked?: boolean;
   wasSkipped?: boolean;
   savedSelections?: Record<string, string | Record<string, string>>;
+  analysis?: AnalysisResult | null;
 }
 
-/**
- * Generate contextual hints based on the current workflow shape
- */
-function useWorkflowHints() {
-  const workflow = useWorkflowStore((s) => s.workflow);
-
-  return useMemo(() => {
-    if (!workflow) return {};
-
-    const stepCount = workflow.steps?.length ?? 0;
-    const hasForm = workflow.steps?.some((s) => s.type === 'FORM' || s.type === 'QUESTIONNAIRE');
-    const hasApproval = workflow.steps?.some((s) => s.type === 'APPROVAL');
-    const hasFileRequest = workflow.steps?.some((s) => s.type === 'FILE_REQUEST');
-    const hasMilestones = (workflow.milestones?.length ?? 0) > 0;
-
-    const hints: Record<string, string> = {};
-    const recommended = new Set<string>();
-
-    // Milestones hint
-    if (stepCount >= 5 && !hasMilestones) {
-      hints.milestones = `Your flow has ${stepCount} steps — organizing into stages makes progress easier to track.`;
-      recommended.add('milestones');
-    } else if (hasMilestones) {
-      hints.milestones = 'Already organized into stages. You can adjust them here.';
-    }
-
-    // AI hint
-    if (hasForm || hasFileRequest) {
-      hints.aiAutomation = 'Forms and file uploads can be enhanced with AI extraction or summarization.';
-    }
-
-    // Naming hint
-    if (hasForm) {
-      hints.naming = 'Use a form field to auto-name each run (e.g., "{Client Name} - Onboarding").';
-      recommended.add('naming');
-    }
-
-    // Permissions hint
-    if (hasApproval) {
-      hints.permissions = 'Approval steps work best with clear permission roles.';
-    }
-
-    return { hints, recommended };
-  }, [workflow]);
-}
-
-export function Phase2Card({
+export function EnhancementCard({
   workflowName,
   onSubmit,
   onSkip,
   isLocked = false,
   wasSkipped = false,
   savedSelections,
-}: Phase2CardProps) {
-  const { hints, recommended } = useWorkflowHints();
+  analysis,
+}: EnhancementCardProps) {
+  // Derive hints and recommendations from analysis suggestions
+  const { hints, recommended } = useMemo(() => {
+    if (!analysis?.suggestions) {
+      return { hints: {} as Record<string, string>, recommended: new Set<string>() };
+    }
+
+    const enhancementSuggestions = analysis.suggestions.filter(
+      (s) => s.surfaces.includes('enhancement')
+    );
+
+    const h: Record<string, string> = {};
+    const r = new Set<string>();
+
+    for (const suggestion of enhancementSuggestions) {
+      // Map suggestion IDs to enhancement option IDs
+      const optionId = mapSuggestionToOption(suggestion.id);
+      if (optionId && suggestion.hint) {
+        h[optionId] = suggestion.hint;
+      }
+      if (optionId && suggestion.enhancementDefault) {
+        r.add(optionId);
+      }
+    }
+
+    return { hints: h, recommended: r };
+  }, [analysis]);
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(() => {
     // Pre-select recommended options
     return new Set(recommended);
@@ -197,7 +178,7 @@ export function Phase2Card({
     const result: Record<string, string | Record<string, string>> = {};
 
     selectedOptions.forEach((optionId) => {
-      const option = PHASE2_OPTIONS.find((o) => o.id === optionId);
+      const option = ENHANCEMENT_OPTIONS.find((o) => o.id === optionId);
       if (!option) return;
 
       if (option.subFields) {
@@ -226,7 +207,7 @@ export function Phase2Card({
         </div>
         <CardContent className="space-y-2 p-3">
           {Object.entries(savedSelections).map(([optionId, value]) => {
-            const option = PHASE2_OPTIONS.find((o) => o.id === optionId);
+            const option = ENHANCEMENT_OPTIONS.find((o) => o.id === optionId);
             if (!option) return null;
 
             return (
@@ -278,7 +259,7 @@ export function Phase2Card({
           <CardContent className="pt-0 pb-3 border-t border-gray-200">
             <p className="text-sm text-gray-400 mb-2">These options were available:</p>
             <div className="space-y-1.5">
-              {PHASE2_OPTIONS.map((option) => (
+              {ENHANCEMENT_OPTIONS.map((option) => (
                 <div
                   key={option.id}
                   className="flex items-center gap-2 px-2 py-1 rounded-lg bg-gray-100/50"
@@ -307,7 +288,7 @@ export function Phase2Card({
       </div>
 
       <CardContent className="space-y-1.5 py-3 px-3">
-        {PHASE2_OPTIONS.map((option) => {
+        {ENHANCEMENT_OPTIONS.map((option) => {
           const isSelected = selectedOptions.has(option.id);
           const isExpanded = expandedOptions.has(option.id);
           const isRecommended = recommended?.has(option.id);
@@ -442,4 +423,16 @@ export function Phase2Card({
       </CardFooter>
     </Card>
   );
+}
+
+/** Map analysis rule IDs to enhancement option IDs */
+function mapSuggestionToOption(suggestionId: string): string | null {
+  const mapping: Record<string, string> = {
+    add_milestones: 'milestones',
+    add_ai_extraction: 'aiAutomation',
+    add_ai_summary: 'aiAutomation',
+    add_notifications: 'integrations',
+    set_naming: 'naming',
+  };
+  return mapping[suggestionId] ?? null;
 }

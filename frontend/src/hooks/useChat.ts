@@ -27,7 +27,7 @@ export function useChat() {
     setMessagePendingPlan,
     setMessageClarifications,
     setMessageRejection,
-    setMessagePhase2,
+    setMessageEnhancement,
     setPrefillMessage,
     clearMessages,
     loadMessages,
@@ -495,13 +495,13 @@ export function useChat() {
           // Message 2: Enhancement options (only if user hasn't dismissed them this session)
           const { enhancementsDismissed } = useChatStore.getState();
           if (!enhancementsDismissed) {
-            const phase2MessageId = addAssistantMessage(
+            const enhancementMessageId = addAssistantMessage(
               `Would you like me to enhance this workflow with any of these options?`,
               'create'
             );
 
-            // Attach Phase 2 data to the second message
-            setMessagePhase2(phase2MessageId, {
+            // Attach enhancement data to the second message
+            setMessageEnhancement(enhancementMessageId, {
               workflowName,
               isLocked: false,
             });
@@ -512,7 +512,7 @@ export function useChat() {
         addAssistantMessage(friendlyMessage, 'respond');
       }
     },
-    [currentSessionId, setWorkflow, setPendingPlan, updateMessage, addAssistantMessage, setMessagePhase2, setSaving, setSavedFlow]
+    [currentSessionId, setWorkflow, setPendingPlan, updateMessage, addAssistantMessage, setMessageEnhancement, setSaving, setSavedFlow]
   );
 
   const handleRequestChanges = useCallback(
@@ -584,15 +584,15 @@ export function useChat() {
     historyLoadedRef.current = null;
   }, [clearMessages, setCurrentSession, setWorkflow]);
 
-  const handlePhase2Submit = useCallback(
+  const handleEnhancementSubmit = useCallback(
     async (messageId: string, selections: Record<string, string | Record<string, string>>) => {
-      // Lock the Phase 2 card with the selections
+      // Lock the enhancement card with the selections
       const msgs = useChatStore.getState().messages;
-      const phase2Msg = msgs.find((m) => m.id === messageId);
-      if (phase2Msg?.phase2) {
+      const enhancementMsg = msgs.find((m) => m.id === messageId);
+      if (enhancementMsg?.enhancement) {
         updateMessage(messageId, {
-          phase2: {
-            ...phase2Msg.phase2,
+          enhancement: {
+            ...enhancementMsg.enhancement,
             isLocked: true,
             selections,
           },
@@ -639,15 +639,15 @@ export function useChat() {
     [sendMessage, updateMessage]
   );
 
-  const handlePhase2Skip = useCallback(
+  const handleEnhancementSkip = useCallback(
     (messageId: string) => {
-      // Lock the Phase 2 card as skipped
+      // Lock the enhancement card as skipped
       const msgs = useChatStore.getState().messages;
-      const phase2Msg = msgs.find((m) => m.id === messageId);
-      if (phase2Msg?.phase2) {
+      const enhancementMsg = msgs.find((m) => m.id === messageId);
+      if (enhancementMsg?.enhancement) {
         updateMessage(messageId, {
-          phase2: {
-            ...phase2Msg.phase2,
+          enhancement: {
+            ...enhancementMsg.enhancement,
             isLocked: true,
             wasSkipped: true,
           },
@@ -731,8 +731,8 @@ export function useChat() {
     handleApprovePlan,
     handleRequestChanges,
     handleAnswerClarification,
-    handlePhase2Submit,
-    handlePhase2Skip,
+    handleEnhancementSubmit,
+    handleEnhancementSkip,
     handleSuggestedAction,
     cancelGeneration,
     startNewChat,

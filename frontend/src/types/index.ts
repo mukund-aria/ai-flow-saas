@@ -739,15 +739,38 @@ export interface Message {
   suggestedActions?: SuggestedAction[];  // For 'respond' mode - quick actions
   error?: string;
   attachment?: MessageAttachment;
-  // Phase 2 enhancements (post-creation)
-  phase2?: Phase2Data;
+  // Enhancement data (post-creation)
+  enhancement?: EnhancementData;
 }
 
-export interface Phase2Data {
+export interface EnhancementData {
   workflowName: string;
   isLocked?: boolean;
   wasSkipped?: boolean;
   selections?: Record<string, string | Record<string, string>>;
+}
+
+// ============================================================================
+// Workflow Analysis Types
+// ============================================================================
+
+export interface AnalysisSuggestion {
+  id: string;
+  category: string;
+  priority: string;
+  prompt: string;
+  hint?: string;
+  surfaces: string[];
+  enhancementDefault?: boolean;
+}
+
+export interface AnalysisResult {
+  suggestions: AnalysisSuggestion[];
+  shape: {
+    stepCount: number;
+    stepTypes: string[];
+    hasMilestones: boolean;
+  };
 }
 
 export interface PendingPlan {

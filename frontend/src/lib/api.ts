@@ -1154,6 +1154,24 @@ export async function verifyOTP(email: string, code: string): Promise<{ success:
 }
 
 // ============================================================================
+// Workflow Analysis
+// ============================================================================
+
+export async function analyzeWorkflow(workflow: Record<string, unknown>): Promise<{
+  success: boolean;
+  data?: { suggestions: Array<{ id: string; category: string; priority: string; prompt: string; hint?: string; surfaces: string[]; enhancementDefault?: boolean }>; shape: { stepCount: number; stepTypes: string[]; hasMilestones: boolean } };
+  error?: string;
+}> {
+  const res = await fetch(`${API_BASE}/analyze`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ workflow }),
+  });
+  return res.json();
+}
+
+// ============================================================================
 // Stream Event Types
 // ============================================================================
 

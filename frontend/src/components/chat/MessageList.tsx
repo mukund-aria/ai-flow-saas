@@ -4,7 +4,7 @@ import { MessageItem } from './MessageItem';
 import { ThinkingIndicator } from './ThinkingIndicator';
 import { StreamingMessage } from './StreamingMessage';
 import { WelcomeMessage } from './WelcomeMessage';
-import type { Message, Clarification, SuggestedAction } from '@/types';
+import type { Message, Clarification, SuggestedAction, AnalysisResult } from '@/types';
 import type { ThinkingStatus } from '@/stores/chatStore';
 
 interface MessageListProps {
@@ -16,12 +16,13 @@ interface MessageListProps {
   onApprovePlan: (planId: string) => void;
   onRequestChanges: (changes: string) => void;
   onAnswerClarification: (answers: Record<string, string>, questions: Clarification[]) => void;
-  onPhase2Submit: (messageId: string, selections: Record<string, string | Record<string, string>>) => void;
-  onPhase2Skip: (messageId: string) => void;
+  onEnhancementSubmit: (messageId: string, selections: Record<string, string | Record<string, string>>) => void;
+  onEnhancementSkip: (messageId: string) => void;
   onSendMessage?: (message: string) => void;
   onSuggestedAction: (action: SuggestedAction) => void;
   hasWorkflow?: boolean;
   workflowName?: string;
+  analysis?: AnalysisResult | null;
 }
 
 export function MessageList({
@@ -33,12 +34,13 @@ export function MessageList({
   onApprovePlan,
   onRequestChanges,
   onAnswerClarification,
-  onPhase2Submit,
-  onPhase2Skip,
+  onEnhancementSubmit,
+  onEnhancementSkip,
   onSendMessage,
   onSuggestedAction,
   hasWorkflow,
   workflowName,
+  analysis,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -68,6 +70,7 @@ export function MessageList({
           onSelectExample={conversationStarted ? undefined : onSendMessage}
           hasWorkflow={hasWorkflow}
           workflowName={workflowName}
+          analysis={analysis}
         />
 
         {messages.map((message) => (
@@ -77,10 +80,11 @@ export function MessageList({
             onApprovePlan={onApprovePlan}
             onRequestChanges={onRequestChanges}
             onAnswerClarification={onAnswerClarification}
-            onPhase2Submit={onPhase2Submit}
-            onPhase2Skip={onPhase2Skip}
+            onEnhancementSubmit={onEnhancementSubmit}
+            onEnhancementSkip={onEnhancementSkip}
             onSuggestedAction={onSuggestedAction}
             pendingPlanId={pendingPlanId}
+            analysis={analysis}
           />
         ))}
 

@@ -1,0 +1,112 @@
+version: "1.0"
+
+# Rules evaluated against workflow shape. Conditions are AND-ed.
+# Array conditions (has_step_types, missing_step_types) use OR within the array.
+# surfaces: which UI component can use each rule
+
+rules:
+  # ── Governance ──
+  - id: add_approval
+    category: governance
+    priority: high
+    condition:
+      missing_step_types: [APPROVAL]
+      min_steps: 2
+    suggestion:
+      prompt: "Add an approval gate before the final step"
+      hint: "No approval steps — consider adding sign-off checkpoints"
+    surfaces: [welcome, enhancement]
+
+  - id: add_esign
+    category: governance
+    priority: medium
+    condition:
+      missing_step_types: [ESIGN]
+      has_step_types: [APPROVAL]
+    suggestion:
+      prompt: "Add e-signature for formal sign-off"
+      hint: "Approval steps can be elevated with formal e-signatures"
+    surfaces: [welcome]
+
+  # ── Communication ──
+  - id: add_notifications
+    category: communication
+    priority: medium
+    condition:
+      missing_step_types: [SYSTEM_EMAIL]
+    suggestion:
+      prompt: "Add email notifications when steps complete"
+      hint: "No notification steps — assignees won't get email updates"
+    surfaces: [welcome, enhancement]
+
+  # ── Flow Control ──
+  - id: add_branch
+    category: flow_control
+    priority: low
+    condition:
+      missing_step_types: [SINGLE_CHOICE_BRANCH, MULTI_CHOICE_BRANCH]
+      min_steps: 3
+    suggestion:
+      prompt: "Add a conditional branch for different scenarios"
+      hint: "A single linear path — consider branching for edge cases"
+    surfaces: [welcome]
+
+  # ── Structure ──
+  - id: add_milestones
+    category: structure
+    priority: medium
+    condition:
+      min_steps: 5
+      missing_milestones: true
+    suggestion:
+      prompt: "Organize steps into stages with milestones"
+      hint: "{{stepCount}} steps without milestones — progress tracking is harder"
+    surfaces: [welcome, enhancement]
+    enhancement_default: true
+
+  # ── AI Automation ──
+  - id: add_ai_extraction
+    category: ai
+    priority: medium
+    condition:
+      has_step_types: [FILE_REQUEST]
+      missing_step_types: [AI_EXTRACT]
+    suggestion:
+      prompt: "Auto-extract data from uploaded files with AI"
+      hint: "File uploads can be enhanced with AI data extraction"
+    surfaces: [welcome, enhancement]
+
+  - id: add_ai_summary
+    category: ai
+    priority: low
+    condition:
+      has_step_types: [FORM, QUESTIONNAIRE]
+      min_steps: 4
+      missing_step_types: [AI_SUMMARIZE]
+    suggestion:
+      prompt: "Add AI summary of collected responses"
+      hint: "Multiple forms — an AI summary step can consolidate the data"
+    surfaces: [welcome]
+
+  # ── Naming ──
+  - id: set_naming
+    category: naming
+    priority: medium
+    condition:
+      has_step_types: [FORM]
+      missing_naming_convention: true
+    suggestion:
+      prompt: "Set up a naming convention using form fields"
+      hint: "Form data can auto-name each run (e.g., \"{Client Name} - Onboarding\")"
+    surfaces: [enhancement]
+    enhancement_default: true
+
+  # ── Catch-all ──
+  - id: general_improvements
+    category: general
+    priority: lowest
+    condition:
+      always: true
+    suggestion:
+      prompt: "What improvements would you suggest?"
+    surfaces: [welcome]

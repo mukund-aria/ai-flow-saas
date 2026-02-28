@@ -21,8 +21,8 @@ import { useWorkflowStore } from '@/stores/workflowStore';
 import { usePreviewStore } from '@/stores/previewStore';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { Button } from '@/components/ui/button';
-import { publishTemplate as publishTemplateApi, createTemplate, updateTemplate, getTemplate, startTestFlow } from '@/lib/api';
-import type { Flow, StepType } from '@/types';
+import { publishTemplate as publishTemplateApi, createTemplate, updateTemplate, getTemplate, startTestFlow, analyzeWorkflow } from '@/lib/api';
+import type { Flow, StepType, AnalysisResult } from '@/types';
 import {
   DndContext,
   closestCenter,
@@ -66,6 +66,10 @@ export function FlowBuilderPage() {
   const modeParam = searchParams.get('mode') as BuilderMode | null;
   const [builderMode, setBuilderMode] = useState<BuilderMode>(modeParam === 'manual' ? 'manual' : 'ai');
   const [showAIChat, setShowAIChat] = useState(builderMode === 'ai');
+
+  // Workflow analysis state
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const analysisTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Resizable AI panel state
   const [chatWidthPercent, setChatWidthPercent] = useState(38);
@@ -299,6 +303,36 @@ export function FlowBuilderPage() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Analyze workflow when it changes (debounced)
+  useEffect(() => {
+    if (!workflow || workflow.steps.length === 0) {
+      setAnalysis(null);
+      return;
+    }
+
+    if (analysisTimerRef.current) {
+      clearTimeout(analysisTimerRef.current);
+    }
+
+    analysisTimerRef.current = setTimeout(() => {
+      analyzeWorkflow(workflow as unknown as Record<string, unknown>)
+        .then((result) => {
+          if (result.success && result.data) {
+            setAnalysis(result.data);
+          }
+        })
+        .catch((err) => {
+          console.warn('Workflow analysis failed:', err);
+        });
+    }, 500);
+
+    return () => {
+      if (analysisTimerRef.current) {
+        clearTimeout(analysisTimerRef.current);
+      }
+    };
+  }, [workflow]);
 
   // Handle publish
   const handlePublish = async () => {
@@ -640,6 +674,7 @@ export function FlowBuilderPage() {
                 <ChatContainer
                   hasWorkflow={!!workflow && workflow.steps.length > 0}
                   workflowName={workflow?.name}
+                  analysis={analysis}
                 />
               )}
             </div>

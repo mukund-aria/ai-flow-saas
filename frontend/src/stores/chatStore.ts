@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
-import type { Message, PendingPlan, Clarification, Rejection, ResponseMode, MessageAttachment, Phase2Data } from '@/types';
+import type { Message, PendingPlan, Clarification, Rejection, ResponseMode, MessageAttachment, EnhancementData } from '@/types';
 
 export type ThinkingStatus = 'thinking' | 'analyzing' | 'creating' | 'editing' | 'refining';
 
@@ -28,7 +28,7 @@ interface ChatStore {
   setMessagePendingPlan: (messageId: string, plan: PendingPlan) => void;
   setMessageClarifications: (messageId: string, clarifications: Clarification[]) => void;
   setMessageRejection: (messageId: string, rejection: Rejection) => void;
-  setMessagePhase2: (messageId: string, phase2: Phase2Data) => void;
+  setMessageEnhancement: (messageId: string, enhancement: EnhancementData) => void;
   setError: (error: string | null) => void;
   setPrefillMessage: (message: string | null) => void;
   setEnhancementsDismissed: (dismissed: boolean) => void;
@@ -121,10 +121,10 @@ export const useChatStore = create<ChatStore>((set) => ({
     }));
   },
 
-  setMessagePhase2: (messageId, phase2) => {
+  setMessageEnhancement: (messageId, enhancement) => {
     set((state) => ({
       messages: state.messages.map((m) =>
-        m.id === messageId ? { ...m, phase2 } : m
+        m.id === messageId ? { ...m, enhancement } : m
       ),
     }));
   },
