@@ -150,6 +150,10 @@ export function useChat() {
       setThinking(true, initialStatus);
       clearStreamingContent();
 
+      // Create abort controller for cancellation
+      const abortController = new AbortController();
+      useChatStore.getState().setAbortController(abortController);
+
       let assistantMessageId: string | null = null;
       let currentMode: string | null = null;
 
@@ -161,7 +165,7 @@ export function useChat() {
           sessionId: currentSessionId || undefined,
           stream: true,
           preview: true,
-        });
+        }, abortController.signal);
 
         let eventCount = 0;
         for await (const event of stream) {
@@ -183,16 +187,13 @@ export function useChat() {
             }
 
             case 'content': {
-              // DON'T show streaming content until we know the mode
-              // For create/edit modes: keep thinking indicator, show plan preview when ready
-              // For clarify/reject: show streaming text
-              // For unknown (null): keep thinking until mode is determined
-              if (currentMode === 'clarify' || currentMode === 'reject') {
+              const data = event.data as { chunk: string };
+              // Stream real text content for ALL modes (create, edit, clarify, reject, respond)
+              // Empty chunks (from JSON accumulation) are ignored
+              if (data.chunk) {
                 setThinking(false);
-                const data = event.data as { chunk: string };
                 appendStreamingContent(data.chunk);
               }
-              // For create/edit/null: keep thinking indicator visible
               break;
             }
 
@@ -347,13 +348,19 @@ export function useChat() {
         }
         console.log('[Chat] Stream ended, total events:', eventCount);
       } catch (err) {
-        console.error('[Chat Exception]', err);
-        const friendlyMessage = getUserFriendlyError(err instanceof Error ? err : 'Failed to send message');
-        addAssistantMessage(friendlyMessage, 'respond');
+        // Don't show error for intentional abort (stop button)
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          addAssistantMessage('Generation stopped.', 'respond');
+        } else {
+          console.error('[Chat Exception]', err);
+          const friendlyMessage = getUserFriendlyError(err instanceof Error ? err : 'Failed to send message');
+          addAssistantMessage(friendlyMessage, 'respond');
+        }
       } finally {
         setStreaming(false);
         setThinking(false);
         clearStreamingContent();
+        useChatStore.getState().setAbortController(null);
       }
     },
     [
@@ -708,6 +715,10 @@ export function useChat() {
     [handleApprovePlan, updateMessage, addAssistantMessage, setPrefillMessage]
   );
 
+  const cancelGeneration = useCallback(() => {
+    useChatStore.getState().cancelStream();
+  }, []);
+
   return {
     messages,
     isStreaming,
@@ -723,6 +734,7 @@ export function useChat() {
     handlePhase2Submit,
     handlePhase2Skip,
     handleSuggestedAction,
+    cancelGeneration,
     startNewChat,
   };
 }

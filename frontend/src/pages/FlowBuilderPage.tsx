@@ -636,7 +636,12 @@ export function FlowBuilderPage() {
               } ${isChatCollapsed ? 'opacity-0' : 'opacity-100'}`}
               style={{ width: isChatCollapsed ? '0%' : `${chatWidthPercent}%` }}
             >
-              {!isChatCollapsed && <ChatContainer />}
+              {!isChatCollapsed && (
+                <ChatContainer
+                  hasWorkflow={!!workflow && workflow.steps.length > 0}
+                  workflowName={workflow?.name}
+                />
+              )}
             </div>
 
             {/* Draggable Divider */}

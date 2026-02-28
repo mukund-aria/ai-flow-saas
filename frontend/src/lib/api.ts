@@ -122,12 +122,13 @@ async function* parseSSEStream(res: Response): AsyncGenerator<StreamEvent> {
  * Send a chat message with SSE streaming
  * Returns an async generator that yields stream events
  */
-export async function* streamMessage(request: ChatRequest): AsyncGenerator<StreamEvent> {
+export async function* streamMessage(request: ChatRequest, signal?: AbortSignal): AsyncGenerator<StreamEvent> {
   const res = await fetch(`${API_BASE}/chat`, {
     ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...request, stream: true }),
+    signal,
   });
 
   if (!res.ok) {

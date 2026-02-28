@@ -5,9 +5,12 @@
  * Items are draggable — drop onto the canvas to insert at a specific position.
  * Click a step type to append it to the end of the flow.
  * "Add with AI..." button switches to AI mode.
+ *
+ * Groups: Actions, AI, Automations, Layout, Integrations
  */
 
-import { Sparkles, Flag } from 'lucide-react';
+import { useState } from 'react';
+import { Sparkles, Flag, ChevronDown, ChevronRight } from 'lucide-react';
 import { StepIcon } from './StepIcon';
 import { STEP_TYPE_META } from '@/types';
 import type { StepType } from '@/types';
@@ -21,6 +24,7 @@ interface StepPaletteProps {
 interface StepGroup {
   label: string;
   types: StepType[];
+  hasMilestone?: boolean;
 }
 
 const STEP_GROUPS: StepGroup[] = [
@@ -29,12 +33,21 @@ const STEP_GROUPS: StepGroup[] = [
     types: ['FORM', 'QUESTIONNAIRE', 'TODO', 'FILE_REQUEST', 'APPROVAL', 'ACKNOWLEDGEMENT', 'DECISION', 'ESIGN', 'PDF_FORM'],
   },
   {
-    label: 'Flow control',
-    types: ['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO_DESTINATION', 'GOTO', 'TERMINATE', 'SUB_FLOW'],
+    label: 'AI',
+    types: ['AI_CUSTOM_PROMPT', 'AI_EXTRACT', 'AI_SUMMARIZE', 'AI_TRANSCRIBE', 'AI_TRANSLATE', 'AI_WRITE'],
   },
   {
     label: 'Automations',
-    types: ['SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE', 'AI_CUSTOM_PROMPT', 'AI_EXTRACT', 'AI_SUMMARIZE', 'AI_TRANSCRIBE', 'AI_TRANSLATE', 'AI_WRITE', 'INTEGRATION_AIRTABLE', 'INTEGRATION_CLICKUP', 'INTEGRATION_DROPBOX', 'INTEGRATION_GMAIL', 'INTEGRATION_GOOGLE_DRIVE', 'INTEGRATION_GOOGLE_SHEETS', 'INTEGRATION_WRIKE'],
+    types: ['SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE'],
+  },
+  {
+    label: 'Layout',
+    types: ['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO_DESTINATION', 'GOTO', 'TERMINATE', 'SUB_FLOW'],
+    hasMilestone: true,
+  },
+  {
+    label: 'Integrations',
+    types: ['INTEGRATION_AIRTABLE', 'INTEGRATION_CLICKUP', 'INTEGRATION_DROPBOX', 'INTEGRATION_GMAIL', 'INTEGRATION_GOOGLE_DRIVE', 'INTEGRATION_GOOGLE_SHEETS', 'INTEGRATION_WRIKE'],
   },
 ];
 
@@ -102,6 +115,20 @@ function MilestonePaletteItem() {
 }
 
 export function StepPalette({ onSwitchToAI }: StepPaletteProps) {
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = (label: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="w-[220px] shrink-0 bg-white border-r border-gray-200 flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -124,24 +151,36 @@ export function StepPalette({ onSwitchToAI }: StepPaletteProps) {
 
       {/* Step types list */}
       <div className="flex-1 overflow-y-auto px-1 pb-4">
-        {STEP_GROUPS.map((group) => (
-          <div key={group.label} className="mt-2">
-            <div className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              {group.label}
-            </div>
-            {group.types.map((type) => (
-              <DraggablePaletteItem key={type} type={type} />
-            ))}
-          </div>
-        ))}
+        {STEP_GROUPS.map((group) => {
+          const isCollapsed = collapsedGroups.has(group.label);
 
-        {/* Layout section */}
-        <div className="mt-2">
-          <div className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-            Layout
-          </div>
-          <MilestonePaletteItem />
-        </div>
+          return (
+            <div key={group.label} className="mt-2">
+              {/* Collapsible group header */}
+              <button
+                onClick={() => toggleGroup(group.label)}
+                className="w-full flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition-colors"
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="w-3 h-3 shrink-0" />
+                ) : (
+                  <ChevronDown className="w-3 h-3 shrink-0" />
+                )}
+                {group.label}
+              </button>
+
+              {/* Group items */}
+              {!isCollapsed && (
+                <>
+                  {group.types.map((type) => (
+                    <DraggablePaletteItem key={type} type={type} />
+                  ))}
+                  {group.hasMilestone && <MilestonePaletteItem />}
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

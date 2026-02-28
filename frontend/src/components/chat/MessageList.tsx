@@ -20,6 +20,8 @@ interface MessageListProps {
   onPhase2Skip: (messageId: string) => void;
   onSendMessage?: (message: string) => void;
   onSuggestedAction: (action: SuggestedAction) => void;
+  hasWorkflow?: boolean;
+  workflowName?: string;
 }
 
 export function MessageList({
@@ -35,6 +37,8 @@ export function MessageList({
   onPhase2Skip,
   onSendMessage,
   onSuggestedAction,
+  hasWorkflow,
+  workflowName,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -60,7 +64,11 @@ export function MessageList({
       <div className="py-4 space-y-1">
         {/* Welcome message is always the first message in the conversation */}
         {/* Only show example prompts before conversation starts */}
-        <WelcomeMessage onSelectExample={conversationStarted ? undefined : onSendMessage} />
+        <WelcomeMessage
+          onSelectExample={conversationStarted ? undefined : onSendMessage}
+          hasWorkflow={hasWorkflow}
+          workflowName={workflowName}
+        />
 
         {messages.map((message) => (
           <MessageItem

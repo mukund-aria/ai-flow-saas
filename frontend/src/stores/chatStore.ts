@@ -14,6 +14,7 @@ interface ChatStore {
   error: string | null;
   prefillMessage: string | null;  // Message to prefill into the input (user can edit before sending)
   enhancementsDismissed: boolean;  // Session-level flag to hide enhancement options after user dismisses them
+  abortController: AbortController | null;  // For cancelling in-flight stream requests
 
   // Actions
   addUserMessage: (content: string, attachment?: MessageAttachment) => string;
@@ -31,6 +32,8 @@ interface ChatStore {
   setError: (error: string | null) => void;
   setPrefillMessage: (message: string | null) => void;
   setEnhancementsDismissed: (dismissed: boolean) => void;
+  setAbortController: (controller: AbortController | null) => void;
+  cancelStream: () => void;
   clearMessages: () => void;
   loadMessages: (messages: Message[]) => void;
 }
@@ -45,6 +48,7 @@ export const useChatStore = create<ChatStore>((set) => ({
   error: null,
   prefillMessage: null,
   enhancementsDismissed: false,
+  abortController: null,
 
   addUserMessage: (content, attachment) => {
     const id = nanoid();
@@ -130,6 +134,16 @@ export const useChatStore = create<ChatStore>((set) => ({
   setPrefillMessage: (message) => set({ prefillMessage: message }),
 
   setEnhancementsDismissed: (dismissed) => set({ enhancementsDismissed: dismissed }),
+
+  setAbortController: (controller) => set({ abortController: controller }),
+
+  cancelStream: () => {
+    const { abortController } = useChatStore.getState();
+    if (abortController) {
+      abortController.abort();
+      set({ abortController: null });
+    }
+  },
 
   clearMessages: () =>
     set({

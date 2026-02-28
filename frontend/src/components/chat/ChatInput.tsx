@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, type KeyboardEvent, type ChangeEvent } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Paperclip, X, Image } from 'lucide-react';
+import { Send, Paperclip, X, Image, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useChatStore } from '@/stores/chatStore';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
@@ -10,14 +10,18 @@ import type { MessageAttachment } from '@/types';
 interface ChatInputProps {
   onSend: (message: string, attachment?: MessageAttachment) => void;
   onFileUpload: (file: File, message?: string) => void;
+  onStop?: () => void;
   disabled?: boolean;
+  isStreaming?: boolean;
   placeholder?: string;
 }
 
 export function ChatInput({
   onSend,
   onFileUpload,
+  onStop,
   disabled,
+  isStreaming = false,
   placeholder = 'Describe your workflow or ask a question...',
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
@@ -250,20 +254,34 @@ export function ChatInput({
           />
         )}
 
-        {/* Send Button - Circular with dynamic color */}
-        <button
-          onClick={handleSubmit}
-          disabled={disabled || !hasContent}
-          className={cn(
-            'shrink-0 p-2.5 rounded-xl transition-all duration-200',
-            'focus:outline-none focus:ring-2 focus:ring-purple-200',
-            hasContent
-              ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm hover:shadow'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          )}
-        >
-          <Send className="w-4 h-4" />
-        </button>
+        {/* Send / Stop Button */}
+        {isStreaming ? (
+          <button
+            onClick={onStop}
+            className={cn(
+              'shrink-0 p-2.5 rounded-xl transition-all duration-200',
+              'focus:outline-none focus:ring-2 focus:ring-red-200',
+              'bg-red-500 text-white hover:bg-red-600 shadow-sm hover:shadow'
+            )}
+            title="Stop generating"
+          >
+            <Square className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={handleSubmit}
+            disabled={disabled || !hasContent}
+            className={cn(
+              'shrink-0 p-2.5 rounded-xl transition-all duration-200',
+              'focus:outline-none focus:ring-2 focus:ring-purple-200',
+              hasContent
+                ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm hover:shadow'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            )}
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Hint Text */}

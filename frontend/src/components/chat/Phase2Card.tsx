@@ -1,23 +1,23 @@
-import { useState } from 'react';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { useState, useMemo } from 'react';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Send,
-  SkipForward,
   Layers,
   Sparkles,
   Link2,
   Tag,
-  Users,
+  Shield,
   ChevronDown,
   ChevronUp,
   CheckCircle,
-  Lightbulb
+  SkipForward,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useWorkflowStore } from '@/stores/workflowStore';
 
 // Phase 2 enhancement options
 interface Phase2Option {
@@ -40,47 +40,47 @@ const PHASE2_OPTIONS: Phase2Option[] = [
   {
     id: 'milestones',
     label: 'Organize into stages',
-    description: 'Group steps into phases or milestones for better tracking',
+    description: 'Group steps into milestones for clearer progress tracking',
     icon: <Layers className="w-4 h-4" />,
     hasDetails: true,
     detailsLabel: 'Describe the stages you want',
-    detailsPlaceholder: 'e.g., "Initiation, Review, Completion" or describe the phases',
+    detailsPlaceholder: 'e.g., "Initiation, Review, Completion" or leave blank for auto',
     detailsMultiline: true,
   },
   {
     id: 'aiAutomation',
     label: 'Add AI automation',
-    description: 'Extract data, summarize docs, translate, transcribe, write content, or run custom AI tasks',
+    description: 'Auto-extract data, summarize, translate, or generate content',
     icon: <Sparkles className="w-4 h-4" />,
     hasDetails: true,
-    detailsLabel: 'What would you like AI to help with? (Available: Extract, Summarize, Translate, Transcribe, Write, Custom Prompt)',
-    detailsPlaceholder: 'e.g., "Extract data from uploaded invoices", "Summarize client responses", "Translate documents to Spanish", "Transcribe meeting recordings"',
+    detailsLabel: 'What should AI help with?',
+    detailsPlaceholder: 'e.g., "Extract data from uploaded invoices", "Summarize client responses"',
     detailsMultiline: true,
   },
   {
     id: 'integrations',
     label: 'Connect to other systems',
-    description: 'Integrate with CRM, email, or other business tools',
+    description: 'Send data to CRM, email, Slack, or other tools',
     icon: <Link2 className="w-4 h-4" />,
     hasDetails: true,
     detailsLabel: 'Which systems should this connect to?',
-    detailsPlaceholder: 'e.g., "Salesforce", "HubSpot", "Send email to sales team"',
+    detailsPlaceholder: 'e.g., "Send email to sales team", "Update Salesforce record"',
     detailsMultiline: true,
   },
   {
     id: 'naming',
     label: 'Set up naming convention',
-    description: 'How each run of this flow should be named',
+    description: 'Define how each run of this flow gets named',
     icon: <Tag className="w-4 h-4" />,
     hasDetails: true,
     detailsLabel: 'Naming pattern',
-    detailsPlaceholder: 'e.g., "{Client Name} - Onboarding" or describe the pattern',
+    detailsPlaceholder: 'e.g., "{Client Name} - Onboarding"',
   },
   {
     id: 'permissions',
     label: 'Configure permissions',
     description: 'Control who can start, manage, or edit this flow',
-    icon: <Users className="w-4 h-4" />,
+    icon: <Shield className="w-4 h-4" />,
     hasDetails: true,
     detailsLabel: 'Permission settings',
     subFields: [
@@ -100,32 +100,82 @@ interface Phase2CardProps {
   savedSelections?: Record<string, string | Record<string, string>>;
 }
 
+/**
+ * Generate contextual hints based on the current workflow shape
+ */
+function useWorkflowHints() {
+  const workflow = useWorkflowStore((s) => s.workflow);
+
+  return useMemo(() => {
+    if (!workflow) return {};
+
+    const stepCount = workflow.steps?.length ?? 0;
+    const hasForm = workflow.steps?.some((s) => s.type === 'FORM' || s.type === 'QUESTIONNAIRE');
+    const hasApproval = workflow.steps?.some((s) => s.type === 'APPROVAL');
+    const hasFileRequest = workflow.steps?.some((s) => s.type === 'FILE_REQUEST');
+    const hasMilestones = (workflow.milestones?.length ?? 0) > 0;
+
+    const hints: Record<string, string> = {};
+    const recommended = new Set<string>();
+
+    // Milestones hint
+    if (stepCount >= 5 && !hasMilestones) {
+      hints.milestones = `Your flow has ${stepCount} steps — organizing into stages makes progress easier to track.`;
+      recommended.add('milestones');
+    } else if (hasMilestones) {
+      hints.milestones = 'Already organized into stages. You can adjust them here.';
+    }
+
+    // AI hint
+    if (hasForm || hasFileRequest) {
+      hints.aiAutomation = 'Forms and file uploads can be enhanced with AI extraction or summarization.';
+    }
+
+    // Naming hint
+    if (hasForm) {
+      hints.naming = 'Use a form field to auto-name each run (e.g., "{Client Name} - Onboarding").';
+      recommended.add('naming');
+    }
+
+    // Permissions hint
+    if (hasApproval) {
+      hints.permissions = 'Approval steps work best with clear permission roles.';
+    }
+
+    return { hints, recommended };
+  }, [workflow]);
+}
+
 export function Phase2Card({
   workflowName,
   onSubmit,
   onSkip,
   isLocked = false,
   wasSkipped = false,
-  savedSelections
+  savedSelections,
 }: Phase2CardProps) {
-  const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
+  const { hints, recommended } = useWorkflowHints();
+  const [selectedOptions, setSelectedOptions] = useState<Set<string>>(() => {
+    // Pre-select recommended options
+    return new Set(recommended);
+  });
   const [details, setDetails] = useState<Record<string, string>>({});
   const [subFieldValues, setSubFieldValues] = useState<Record<string, Record<string, string>>>({});
-  const [expandedOptions, setExpandedOptions] = useState<Set<string>>(new Set());
-  // For skipped state - whether to show expanded view
+  const [expandedOptions, setExpandedOptions] = useState<Set<string>>(() => {
+    // Auto-expand recommended options
+    return new Set(recommended);
+  });
   const [isSkippedExpanded, setIsSkippedExpanded] = useState(false);
 
   const toggleOption = (optionId: string) => {
     const newSelected = new Set(selectedOptions);
     if (newSelected.has(optionId)) {
       newSelected.delete(optionId);
-      // Also collapse when deselecting
       const newExpanded = new Set(expandedOptions);
       newExpanded.delete(optionId);
       setExpandedOptions(newExpanded);
     } else {
       newSelected.add(optionId);
-      // Auto-expand when selecting
       const newExpanded = new Set(expandedOptions);
       newExpanded.add(optionId);
       setExpandedOptions(newExpanded);
@@ -151,13 +201,10 @@ export function Phase2Card({
       if (!option) return;
 
       if (option.subFields) {
-        // For options with sub-fields, include all sub-field values
         result[optionId] = subFieldValues[optionId] || {};
       } else if (details[optionId]?.trim()) {
-        // For regular options with details text
         result[optionId] = details[optionId].trim();
       } else {
-        // Selected but no details - still include it
         result[optionId] = 'yes';
       }
     });
@@ -167,35 +214,33 @@ export function Phase2Card({
 
   const hasAnySelection = selectedOptions.size > 0;
 
-  // Locked state - show what was selected
+  // Locked + submitted state
   if (isLocked && savedSelections) {
     return (
-      <Card className="border-2 border-green-200 bg-white max-w-lg shadow-lg shadow-green-100/30 rounded-2xl overflow-hidden">
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50/50 border-b border-green-100 px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-            </div>
-            <span className="text-sm font-semibold text-green-700">Enhancements submitted</span>
+      <Card className="border border-green-200 bg-white max-w-lg rounded-xl overflow-hidden">
+        <div className="bg-green-50 border-b border-green-100 px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium text-green-700">Enhancements submitted</span>
           </div>
         </div>
-        <CardContent className="space-y-2.5 p-4">
+        <CardContent className="space-y-2 p-3">
           {Object.entries(savedSelections).map(([optionId, value]) => {
             const option = PHASE2_OPTIONS.find((o) => o.id === optionId);
             if (!option) return null;
 
             return (
-              <div key={optionId} className="flex items-start gap-2.5 p-2.5 bg-green-50/40 rounded-lg border border-green-100/60">
+              <div key={optionId} className="flex items-start gap-2 px-2 py-1.5 bg-green-50/50 rounded-lg">
                 <div className="text-green-600 mt-0.5 shrink-0">{option.icon}</div>
                 <div className="min-w-0">
                   <span className="font-medium text-sm text-gray-700">{option.label}</span>
                   {typeof value === 'string' && value !== 'yes' && (
-                    <p className="text-gray-600 text-xs mt-0.5">{value}</p>
+                    <p className="text-gray-500 text-xs mt-0.5">{value}</p>
                   )}
                   {typeof value === 'object' && (
-                    <div className="text-gray-600 text-xs mt-0.5 space-y-0.5">
+                    <div className="text-gray-500 text-xs mt-0.5 space-y-0.5">
                       {Object.entries(value).map(([fieldId, fieldValue]) => (
-                        fieldValue && <p key={fieldId}>• {fieldValue}</p>
+                        fieldValue && <p key={fieldId}>- {fieldValue}</p>
                       ))}
                     </div>
                   )}
@@ -208,48 +253,43 @@ export function Phase2Card({
     );
   }
 
-  // Skip state - collapsible to show what was available
+  // Locked + skipped state
   if (isLocked && wasSkipped) {
     return (
-      <Card className="border border-gray-200 bg-gray-50/50 max-w-lg">
-        {/* Collapsed header - always visible */}
+      <Card className="border border-gray-200 bg-gray-50/50 max-w-lg rounded-xl">
         <div
-          className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100/50 transition-colors"
+          className="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-100/50 transition-colors"
           onClick={() => setIsSkippedExpanded(!isSkippedExpanded)}
         >
-          <div className="flex items-center gap-2 text-gray-500 text-sm">
-            <SkipForward className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-gray-400 text-sm">
+            <SkipForward className="w-3.5 h-3.5" />
             <span>Enhancement options skipped</span>
           </div>
           <button className="p-1 hover:bg-gray-200 rounded">
             {isSkippedExpanded ? (
-              <ChevronUp className="w-4 h-4 text-gray-400" />
+              <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
             ) : (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
             )}
           </button>
         </div>
 
-        {/* Expanded view - shows available options (read-only) */}
         {isSkippedExpanded && (
-          <CardContent className="pt-0 pb-4 border-t border-gray-200">
-            <p className="text-sm text-gray-400 mb-3">These options were available:</p>
-            <div className="space-y-2">
+          <CardContent className="pt-0 pb-3 border-t border-gray-200">
+            <p className="text-sm text-gray-400 mb-2">These options were available:</p>
+            <div className="space-y-1.5">
               {PHASE2_OPTIONS.map((option) => (
                 <div
                   key={option.id}
-                  className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-gray-100/50"
+                  className="flex items-center gap-2 px-2 py-1 rounded-lg bg-gray-100/50"
                 >
                   <div className="text-gray-400 shrink-0">{option.icon}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-500">{option.label}</p>
-                    <p className="text-xs text-gray-400 truncate">{option.description}</p>
-                  </div>
+                  <p className="text-sm text-gray-500">{option.label}</p>
                 </div>
               ))}
             </div>
-            <p className="text-sm text-gray-400 mt-3 italic">
-              You can still ask me to add these enhancements anytime.
+            <p className="text-xs text-gray-400 mt-2 italic">
+              You can still ask me to add these anytime.
             </p>
           </CardContent>
         )}
@@ -257,26 +297,21 @@ export function Phase2Card({
     );
   }
 
+  // Active (unlocked) state
   return (
-    <Card className="border-2 border-amber-200 bg-white max-w-lg shadow-lg shadow-amber-100/30 rounded-2xl overflow-hidden">
-      <CardHeader className="pb-3 pt-0 px-0">
-        <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 border-b border-amber-100 px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
-              <Lightbulb className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 text-sm">What's next?</h3>
-              <p className="text-xs text-amber-600 font-medium">Optional enhancements for {workflowName}</p>
-            </div>
-          </div>
-        </div>
-      </CardHeader>
+    <Card className="border border-gray-200 bg-white max-w-lg rounded-xl overflow-hidden">
+      {/* Lighter header */}
+      <div className="bg-gray-50 border-b border-gray-100 px-4 py-2.5">
+        <h3 className="font-semibold text-gray-900 text-sm">Optional enhancements</h3>
+        <p className="text-xs text-gray-500 mt-0.5">Fine-tune <strong>{workflowName}</strong> before you start using it</p>
+      </div>
 
-      <CardContent className="space-y-2 pb-2 px-4">
+      <CardContent className="space-y-1.5 py-3 px-3">
         {PHASE2_OPTIONS.map((option) => {
           const isSelected = selectedOptions.has(option.id);
           const isExpanded = expandedOptions.has(option.id);
+          const isRecommended = recommended?.has(option.id);
+          const hint = hints?.[option.id];
 
           return (
             <div
@@ -284,8 +319,8 @@ export function Phase2Card({
               className={cn(
                 'rounded-lg border transition-all',
                 isSelected
-                  ? 'border-amber-300 bg-amber-50/30 shadow-sm'
-                  : 'border-gray-200 bg-gray-50/30 hover:bg-gray-50 hover:border-gray-300'
+                  ? 'border-violet-200 bg-violet-50/30'
+                  : 'border-gray-100 hover:border-gray-200'
               )}
             >
               {/* Option header */}
@@ -298,14 +333,23 @@ export function Phase2Card({
                   onCheckedChange={() => toggleOption(option.id)}
                   className="shrink-0"
                 />
-                <div className={cn('shrink-0', isSelected ? 'text-amber-600' : 'text-gray-400')}>
+                <div className={cn('shrink-0', isSelected ? 'text-violet-600' : 'text-gray-400')}>
                   {option.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={cn('text-sm font-medium', isSelected ? 'text-gray-900' : 'text-gray-700')}>
-                    {option.label}
+                  <div className="flex items-center gap-1.5">
+                    <p className={cn('text-sm font-medium', isSelected ? 'text-gray-900' : 'text-gray-700')}>
+                      {option.label}
+                    </p>
+                    {isRecommended && (
+                      <span className="text-[10px] font-medium text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded">
+                        Recommended
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 truncate">
+                    {hint || option.description}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">{option.description}</p>
                 </div>
                 {isSelected && option.hasDetails && (
                   <button
@@ -316,9 +360,9 @@ export function Phase2Card({
                     className="p-1 hover:bg-gray-100 rounded"
                   >
                     {isExpanded ? (
-                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                      <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                      <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
                     )}
                   </button>
                 )}
@@ -326,12 +370,12 @@ export function Phase2Card({
 
               {/* Expanded details */}
               {isSelected && isExpanded && option.hasDetails && (
-                <div className="px-3 pb-3 pt-0 border-t border-gray-100">
+                <div className="px-3 pb-2.5 pt-0 border-t border-gray-100">
                   {option.subFields ? (
-                    <div className="space-y-4 mt-3">
+                    <div className="space-y-3 mt-2.5">
                       {option.subFields.map((field) => (
                         <div key={field.id}>
-                          <label className="text-sm text-gray-600 block mb-2">{field.label}</label>
+                          <label className="text-sm text-gray-600 block mb-1.5">{field.label}</label>
                           <Input
                             value={subFieldValues[option.id]?.[field.id] || ''}
                             onChange={(e) =>
@@ -350,8 +394,8 @@ export function Phase2Card({
                       ))}
                     </div>
                   ) : (
-                    <div className="mt-3">
-                      <label className="text-sm text-gray-600 block mb-2">
+                    <div className="mt-2.5">
+                      <label className="text-sm text-gray-600 block mb-1.5">
                         {option.detailsLabel}
                       </label>
                       {option.detailsMultiline ? (
@@ -383,15 +427,14 @@ export function Phase2Card({
         })}
       </CardContent>
 
-      <CardFooter className="pt-2 gap-2 border-t border-amber-100/50 px-4">
-        <Button variant="outline" onClick={onSkip} className="flex-1 rounded-full border-gray-300">
-          <SkipForward className="w-4 h-4 mr-1.5" />
-          Skip for now
+      <CardFooter className="pt-2 gap-2 border-t border-gray-100 px-3 pb-3">
+        <Button variant="ghost" onClick={onSkip} className="flex-1 text-gray-500 hover:text-gray-700">
+          I'll do this later
         </Button>
         <Button
           onClick={handleSubmit}
           disabled={!hasAnySelection}
-          className="flex-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md"
+          className="flex-1 bg-violet-600 hover:bg-violet-700 text-white"
         >
           <Send className="w-4 h-4 mr-1.5" />
           Enhance workflow

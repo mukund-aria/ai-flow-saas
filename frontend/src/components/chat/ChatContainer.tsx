@@ -2,7 +2,12 @@ import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { useChat } from '@/hooks/useChat';
 
-export function ChatContainer() {
+interface ChatContainerProps {
+  hasWorkflow?: boolean;
+  workflowName?: string;
+}
+
+export function ChatContainer({ hasWorkflow, workflowName }: ChatContainerProps = {}) {
   const {
     messages,
     isStreaming,
@@ -17,6 +22,7 @@ export function ChatContainer() {
     handlePhase2Submit,
     handlePhase2Skip,
     handleSuggestedAction,
+    cancelGeneration,
   } = useChat();
 
   return (
@@ -35,13 +41,17 @@ export function ChatContainer() {
         onPhase2Skip={handlePhase2Skip}
         onSendMessage={sendMessage}
         onSuggestedAction={handleSuggestedAction}
+        hasWorkflow={hasWorkflow}
+        workflowName={workflowName}
       />
 
       {/* Input */}
       <ChatInput
         onSend={sendMessage}
         onFileUpload={handleFileUpload}
+        onStop={cancelGeneration}
         disabled={isStreaming}
+        isStreaming={isStreaming}
       />
     </div>
   );
