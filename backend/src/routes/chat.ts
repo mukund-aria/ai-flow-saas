@@ -98,6 +98,12 @@ router.post(
         hasPendingPlan: !!pendingPlan,
       });
 
+      // Track client disconnect to abort streaming
+      let clientDisconnected = false;
+      req.on('close', () => {
+        clientDisconnected = true;
+      });
+
       try {
         // Stream the response, passing pending plan info and clarification context
         const streamGenerator = llmService.chatStream(
@@ -111,10 +117,25 @@ router.post(
           }
         );
 
+        // Send periodic heartbeat comments to keep SSE connection alive
+        // Railway and proxies drop idle connections after ~30s
+        const heartbeat = setInterval(() => {
+          if (!res.writableEnded) {
+            res.write(':heartbeat\n\n');
+          }
+        }, 15000);
+
         // Consume stream events and collect the final result
         let result: LLMResult | undefined;
 
+        try {
         while (true) {
+          // Check if client disconnected (stop button pressed)
+          if (clientDisconnected) {
+            await streamGenerator.return(undefined as unknown as LLMResult);
+            break;
+          }
+
           const iterResult = await streamGenerator.next();
 
           if (iterResult.done) {
@@ -130,6 +151,9 @@ router.post(
           } else if (event.type === 'content') {
             sendSSE(res, 'content', { chunk: event.chunk });
           }
+        }
+        } finally {
+          clearInterval(heartbeat);
         }
 
         // Handle result

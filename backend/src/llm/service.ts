@@ -72,6 +72,7 @@ export class LLMService {
       hasPendingPlan?: boolean;
       pendingPlanName?: string;
       clarificationsPending?: boolean;
+      publicPreview?: boolean;
     } = {}
   ): Promise<LLMResult> {
     try {
@@ -87,7 +88,8 @@ export class LLMService {
         currentWorkflow,
         options.hasPendingPlan,
         options.pendingPlanName,
-        options.clarificationsPending
+        options.clarificationsPending,
+        options.publicPreview
       );
 
       // Call Claude API with tools for guaranteed structured output
@@ -318,7 +320,8 @@ export class LLMService {
     currentWorkflow: Flow | null,
     hasPendingPlan: boolean = false,
     pendingPlanName?: string,
-    clarificationsPending: boolean = false
+    clarificationsPending: boolean = false,
+    publicPreview: boolean = false
   ): SystemContentBlock[] {
     // Static base prompt — cached across turns via prompt caching
     const staticBlock: SystemContentBlock = {
@@ -366,6 +369,19 @@ Example suggestedActions when there's a pending plan:
     // Add context note if clarifications were asked in previous message
     if (clarificationsPending) {
       dynamicContext += `\n\nNote: You asked clarification questions in your previous message. The user's response follows.`;
+    }
+
+    // Public preview mode: one-shot creation, no clarification, concise output
+    if (publicPreview) {
+      dynamicContext += `\n\n# PUBLIC PREVIEW MODE
+
+This is a public website preview. You MUST:
+- ALWAYS use the "create" tool to generate a workflow immediately
+- NEVER use the "clarify" tool — make reasonable assumptions instead
+- NEVER use the "reject" or "respond" tools
+- Keep workflows concise: maximum 10 steps
+- Document your assumptions in the assumptions field
+- Use simple, clear step names that demonstrate the workflow's value`;
     }
 
     const blocks: SystemContentBlock[] = [staticBlock];
@@ -665,6 +681,7 @@ ${currentWorkflow
       hasPendingPlan?: boolean;
       pendingPlanName?: string;
       clarificationsPending?: boolean;
+      publicPreview?: boolean;
     } = {}
   ): AsyncGenerator<StreamEvent, LLMResult, unknown> {
     try {
@@ -680,7 +697,8 @@ ${currentWorkflow
         currentWorkflow,
         options.hasPendingPlan,
         options.pendingPlanName,
-        options.clarificationsPending
+        options.clarificationsPending,
+        options.publicPreview
       );
 
       // Yield thinking event
@@ -704,10 +722,13 @@ ${currentWorkflow
       for await (const event of stream) {
         if (event.type === 'content_block_start' && event.content_block.type === 'tool_use') {
           yield { type: 'thinking', status: 'Designing workflow...' };
+        } else if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+          // Stream the AI's conversational preamble text in real-time
+          yield { type: 'content', chunk: event.delta.text };
         } else if (event.type === 'content_block_delta' && event.delta.type === 'input_json_delta') {
           // Accumulate the tool input JSON
           toolInputJson += event.delta.partial_json;
-          // Yield progress indicator (no raw content shown to user)
+          // Yield empty chunk to keep connection alive (no raw JSON shown to user)
           yield { type: 'content', chunk: '' };
         }
       }
@@ -772,6 +793,8 @@ ${currentWorkflow
         for await (const event of followUpStream) {
           if (event.type === 'content_block_start' && event.content_block.type === 'tool_use') {
             yield { type: 'thinking', status: 'Designing workflow...' };
+          } else if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+            yield { type: 'content', chunk: event.delta.text };
           } else if (event.type === 'content_block_delta' && event.delta.type === 'input_json_delta') {
             followUpToolInputJson += event.delta.partial_json;
             yield { type: 'content', chunk: '' };

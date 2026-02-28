@@ -90,18 +90,27 @@ router.post('/', publicChatLimiter, async (req: Request, res: Response) => {
   try {
     const llmService = getLLMService();
 
-    // Stream the response with bias toward creating
+    // Stream the response — public preview mode: one-shot, no clarification
     const streamGenerator = llmService.chatStream(
       message,
       historyForLLM,
       session.workflow,
       {
         hasPendingPlan: false,
+        publicPreview: true,
       }
     );
 
     let result: LLMResult | undefined;
 
+    // Send periodic heartbeat to keep SSE connection alive
+    const heartbeat = setInterval(() => {
+      if (!res.writableEnded) {
+        res.write(':heartbeat\n\n');
+      }
+    }, 15000);
+
+    try {
     while (true) {
       const iterResult = await streamGenerator.next();
 
@@ -116,6 +125,9 @@ router.post('/', publicChatLimiter, async (req: Request, res: Response) => {
       } else if (event.type === 'content') {
         sendSSE(res, 'content', { chunk: event.chunk });
       }
+    }
+    } finally {
+      clearInterval(heartbeat);
     }
 
     if (!result || !result.success || !result.response) {

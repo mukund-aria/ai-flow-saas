@@ -77,7 +77,7 @@ export function usePreviewChat(): UsePreviewChatReturn {
           case 'clarify':
           case 'reject':
           case 'respond': {
-            // For preview, these are unexpected — show as error
+            // For preview, these are unexpected — retry once, then show error
             setError('Could not generate a workflow. Please try a different prompt.');
             setStatus('error');
             break;
