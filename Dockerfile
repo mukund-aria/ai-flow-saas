@@ -65,4 +65,4 @@ ENV PORT=8080
 EXPOSE 8080
 
 # Push schema changes then start the server
-CMD ["sh", "-c", "npx drizzle-kit push && node dist/index.js"]
+CMD ["sh", "-c", "npx drizzle-kit push --force && node dist/index.js"]
