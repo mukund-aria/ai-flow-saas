@@ -41,8 +41,12 @@ const STEP_GROUPS: StepGroup[] = [
     types: ['SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE'],
   },
   {
-    label: 'Layout',
+    label: 'Controls',
     types: ['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO_DESTINATION', 'GOTO', 'TERMINATE', 'SUB_FLOW'],
+  },
+  {
+    label: 'Layout',
+    types: [],
     hasMilestone: true,
   },
   {
