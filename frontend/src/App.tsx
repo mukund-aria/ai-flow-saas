@@ -38,7 +38,7 @@ import {
   SettingsPage,
   LoginPage,
   LandingPage,
-  // FlowPreviewPage,
+  FlowPreviewPage,
   OnboardingPage,
   OrgSelectPage,
   OrgSetupPage,
@@ -106,6 +106,7 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/preview" element={<FlowPreviewPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route

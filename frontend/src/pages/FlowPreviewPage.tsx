@@ -6,16 +6,16 @@
  */
 
 import { useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Sparkles, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { AnimatedWorkflowPanel } from '@/components/preview/AnimatedWorkflowPanel';
 import { PreviewCTA } from '@/components/preview/PreviewCTA';
 import { usePreviewChat } from '@/hooks/usePreviewChat';
 
 export function FlowPreviewPage() {
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const prompt = (location.state as { prompt?: string })?.prompt;
+  const prompt = searchParams.get('prompt');
   const { status, workflow, error, sessionId, sendPrompt } = usePreviewChat();
 
   // Send prompt on mount
