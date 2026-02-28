@@ -195,8 +195,8 @@ function EmailStep({
   return (
     <>
       <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Sign in to ServiceFlow</h2>
-        <p className="mt-1 text-sm text-gray-500">Enter your email to get started</p>
+        <h2 className="text-xl font-semibold text-gray-900">Welcome to ServiceFlow</h2>
+        <p className="mt-1 text-sm text-gray-500">Enter your email to sign in or create an account</p>
       </div>
 
       {/* Unauthorized error from URL */}
