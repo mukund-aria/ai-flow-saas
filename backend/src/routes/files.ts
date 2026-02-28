@@ -147,10 +147,9 @@ router.get(
 // ============================================================================
 
 router.get(
-  '/local/*',
+  '/local/{*storageKey}',
   asyncHandler(async (req: Request, res: Response) => {
-    // Express 5 puts wildcard segments in req.params[0] (or the array at index 0)
-    const storageKey = decodeURIComponent((req.params as any)[0] || '');
+    const storageKey = decodeURIComponent((req.params as any).storageKey || '');
     if (!storageKey) {
       res.status(400).json({ success: false, error: { code: 'BAD_REQUEST', message: 'Missing storage key' } });
       return;
