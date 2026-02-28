@@ -12,7 +12,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/aiflow';
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/serviceflow';
 
 async function runMigrations() {
   console.log('Running database migrations...');

@@ -18,7 +18,7 @@ Review the conversation and identify any of the following that should be persist
 
 ## Instructions
 
-1. Read the current CLAUDE.md file at `/Users/mukundchillakanti/ai-flow-copilot/CLAUDE.md`
+1. Read the current CLAUDE.md file at `/Users/mukundchillakanti/Documents/Projects/Moxo/ai-flow-saas/CLAUDE.md`
 2. Identify information from the conversation that should be added or updated
 3. Update the file while preserving its structure:
    - Keep the Overview, Tech Stack, and Architecture sections current

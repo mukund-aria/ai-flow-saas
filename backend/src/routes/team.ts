@@ -146,7 +146,7 @@ router.post(
     await sendInvitation({
       to: email.toLowerCase(),
       inviterName: user.name,
-      organizationName: org?.name || 'AI Flow',
+      organizationName: org?.name || 'ServiceFlow',
       token: invite.token,
       role,
     });

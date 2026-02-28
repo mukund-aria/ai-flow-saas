@@ -1,5 +1,5 @@
 /**
- * AI Flow SaaS - Main Application
+ * ServiceFlow - Main Application
  *
  * Routes:
  * Public:

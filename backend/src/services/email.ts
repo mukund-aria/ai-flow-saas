@@ -28,7 +28,7 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-const resendFrom = process.env.RESEND_FROM_EMAIL || 'AI Flow <noreply@aiflow.app>';
+const resendFrom = process.env.RESEND_FROM_EMAIL || 'ServiceFlow <noreply@serviceflow.app>';
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 async function sendEmail(to: string, subject: string, html: string) {
@@ -88,7 +88,7 @@ export async function sendInvitation(params: {
       <h2 style="color: #111; margin-bottom: 16px;">You've been invited!</h2>
       <p style="color: #555; line-height: 1.6;">
         <strong>${params.inviterName}</strong> has invited you to join
-        <strong>${params.organizationName}</strong> on AI Flow as a <strong>${params.role}</strong>.
+        <strong>${params.organizationName}</strong> on ServiceFlow as a <strong>${params.role}</strong>.
       </p>
       <a href="${inviteUrl}" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
         Accept Invitation
@@ -142,7 +142,7 @@ export async function sendTaskAssigned(params: {
         in flow <strong>${params.flowName}</strong>.
       </p>
       <a href="${frontendUrl}/home" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-        Go to AI Flow
+        Go to ServiceFlow
       </a>
     </div>
   `);

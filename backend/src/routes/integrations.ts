@@ -199,7 +199,7 @@ router.post(
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: '*Test from AI Flow* \u2705\nYour Slack integration is working!',
+              text: '*Test from ServiceFlow* \u2705\nYour Slack integration is working!',
             },
           }],
         };
@@ -209,7 +209,7 @@ router.post(
           '@type': 'MessageCard',
           summary: 'Test',
           sections: [{
-            activityTitle: 'Test from AI Flow \u2705',
+            activityTitle: 'Test from ServiceFlow \u2705',
             text: 'Your Teams integration is working!',
           }],
         };

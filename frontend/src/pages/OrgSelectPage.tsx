@@ -131,7 +131,7 @@ export function OrgSelectPage() {
         {/* Create Organization */}
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-500 mb-3">
-            Want to use AI Flow for a new business?
+            Want to use ServiceFlow for a new business?
           </p>
           <button
             onClick={() => navigate('/onboarding')}

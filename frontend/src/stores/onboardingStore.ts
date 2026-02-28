@@ -45,7 +45,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
         }),
     }),
     {
-      name: 'ai-flow-onboarding',
+      name: 'serviceflow-onboarding',
     }
   )
 );

@@ -1,7 +1,7 @@
-# AI Flow SaaS - Project Context
+# ServiceFlow - Project Context
 
 ## Overview
-AI Flow SaaS is a complete workflow automation platform that enables organizations to **build, run, and manage** business processes. The unique differentiator is AI-powered flow creation through natural conversation.
+ServiceFlow is a complete workflow automation platform that enables organizations to **build, run, and manage** business processes. The unique differentiator is AI-powered flow creation through natural conversation.
 
 **Two User Experiences:**
 1. **Coordinator Portal** - Internal team members who build, run, and manage flows
@@ -19,7 +19,7 @@ AI Flow SaaS is a complete workflow automation platform that enables organizatio
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           AI Flow SaaS                                       │
+│                           ServiceFlow                                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────┐     ┌─────────────────────────────────────┐   │
 │  │   Coordinator Portal     │     │        Assignee Portal              │   │
@@ -178,7 +178,7 @@ backend/src/
 
 ## AI Builder
 
-The AI builder (original AI Flow Copilot) is integrated into the Home page and Flow Builder. It creates workflows through natural conversation.
+The AI builder is integrated into the Home page and Flow Builder. It creates workflows through natural conversation.
 
 ### AI Output Modes
 - `create`: Full workflow JSON

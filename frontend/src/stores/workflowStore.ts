@@ -41,6 +41,7 @@ interface WorkflowStore {
   updateFlowSettings: (settings: Partial<FlowSettings>) => void;
   updateFlowPermissions: (permissions: Partial<FlowPermissions>) => void;
   updateFlowDueDates: (dueDates: FlowDueDates) => void;
+  updateTemplateCoordinators: (coordinatorIds: string[]) => void;
   // Milestone CRUD
   addMilestone: (afterStepIndex: number, name?: string) => void;
   removeMilestone: (milestoneId: string) => void;
@@ -226,6 +227,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => {
         placeholderId: `role-${Date.now()}-${++stepCounter}`,
         roleName,
         description,
+        roleType: 'assignee',
         roleOptions: { coordinatorToggle: false, allowViewAllActions: false },
       };
 
@@ -382,6 +384,20 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => {
         workflow: {
           ...workflow,
           dueDates,
+        },
+      });
+    },
+
+    updateTemplateCoordinators: (coordinatorIds) => {
+      const { workflow } = get();
+      if (!workflow) return;
+
+      pushHistory();
+
+      set({
+        workflow: {
+          ...workflow,
+          templateCoordinatorIds: coordinatorIds,
         },
       });
     },

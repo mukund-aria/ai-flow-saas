@@ -1,5 +1,5 @@
 # ============================================================================
-# AI Flow SaaS - Multi-stage Dockerfile
+# ServiceFlow - Multi-stage Dockerfile
 # ============================================================================
 # Builds both frontend and backend into a single production image.
 

@@ -37,7 +37,7 @@ export const usePreviewStore = create<PreviewStore>()(
         }),
     }),
     {
-      name: 'ai-flow-preview',
+      name: 'serviceflow-preview',
     }
   )
 );

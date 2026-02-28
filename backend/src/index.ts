@@ -1,5 +1,5 @@
 /**
- * AI Flow Copilot Backend
+ * ServiceFlow Backend
  *
  * Express server providing:
  * - Chat endpoint with SSE streaming for real-time AI responses
@@ -201,7 +201,7 @@ if (isProduction) {
   // Development only: API info at root (in production, frontend serves /)
   app.get('/', (_req, res) => {
     res.json({
-      name: 'AI Flow Copilot API (Development)',
+      name: 'ServiceFlow API (Development)',
       version: '1.0.0',
       frontend: 'http://localhost:5174',
       endpoints: {
@@ -251,7 +251,7 @@ app.listen(Number(PORT), '0.0.0.0', () => {
 
   console.log(`
 ╔═══════════════════════════════════════════════════════════╗
-║           AI Flow Copilot Backend                         ║
+║           ServiceFlow Backend                              ║
 ╠═══════════════════════════════════════════════════════════╣
 ║  Mode:       ${modeStr.padEnd(43)}║
 ║  Server:     http://localhost:${PORT}                        ║

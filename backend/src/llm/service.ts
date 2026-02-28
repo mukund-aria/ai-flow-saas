@@ -427,7 +427,7 @@ Your task is to:
 1. Carefully examine the uploaded diagram/image
 2. Identify all steps, decision points, roles/actors, and transitions
 3. Extract a structured understanding of the workflow
-4. Generate a workflow in the standard AI Flow Copilot format
+4. Generate a workflow in the standard ServiceFlow format
 
 When analyzing the diagram:
 - Map visual elements to workflow step types (FORM, APPROVAL, DECISION, etc.)
@@ -551,7 +551,7 @@ Your task is to:
 1. Carefully examine the uploaded document
 2. Identify all steps, decision points, roles/actors, and transitions described
 3. Extract a structured understanding of the workflow
-4. Generate a workflow in the standard AI Flow Copilot format
+4. Generate a workflow in the standard ServiceFlow format
 
 When analyzing the document:
 - Map described processes to workflow step types (FORM, APPROVAL, DECISION, etc.)

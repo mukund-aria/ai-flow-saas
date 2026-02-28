@@ -1,7 +1,7 @@
 {
   "name": "ai-flow-copilot-backend",
   "version": "1.0.0",
-  "description": "Backend for AI Flow Copilot - Moxo workflow builder AI assistant",
+  "description": "Backend for ServiceFlow - Moxo workflow builder AI assistant",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

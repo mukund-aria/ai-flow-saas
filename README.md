@@ -1,11 +1,11 @@
-# AI Flow Copilot
+# ServiceFlow
 
 An AI workflow builder application.
 
 ## Project Structure
 
 ```
-ai-flow-copilot/
+serviceflow/
 ├── frontend/          # React + Vite + TypeScript
 └── backend/           # Python + FastAPI
 ```

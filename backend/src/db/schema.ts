@@ -1,5 +1,5 @@
 /**
- * Database Schema for AI Flow SaaS
+ * Database Schema for ServiceFlow
  *
  * Using Drizzle ORM with PostgreSQL.
  * This schema defines all tables for the SaaS platform.
@@ -112,6 +112,7 @@ export const flows = pgTable('flows', {
   isDefault: boolean('is_default').default(false).notNull(),
   definition: jsonb('definition').$type<Record<string, unknown>>(),
   folderId: text('folder_id').references(() => templateFolders.id),
+  templateCoordinatorIds: jsonb('template_coordinator_ids').$type<string[]>().default([]),
   createdById: text('created_by_id').notNull().references(() => users.id),
   organizationId: text('organization_id').notNull().references(() => organizations.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),

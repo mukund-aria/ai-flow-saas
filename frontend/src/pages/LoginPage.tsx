@@ -57,7 +57,7 @@ export function LoginPage() {
               />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">AI Flow</h1>
+          <h1 className="text-3xl font-bold text-gray-900">ServiceFlow</h1>
           <p className="mt-2 text-gray-600">
             Build workflows with AI
           </p>

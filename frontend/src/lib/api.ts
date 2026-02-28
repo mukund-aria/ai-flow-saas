@@ -1,5 +1,5 @@
 /**
- * API Client for AI Flow Copilot Backend
+ * API Client for ServiceFlow Backend
  */
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
@@ -641,6 +641,26 @@ export async function getStepActToken(runId: string, stepId: string): Promise<st
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to get action token');
   return data.data.token;
+}
+
+// ============================================================================
+// Team Members API
+// ============================================================================
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  picture?: string;
+  role: 'ADMIN' | 'MEMBER';
+  joinedAt: string;
+}
+
+export async function listTeamMembers(): Promise<TeamMember[]> {
+  const res = await fetch(`${API_BASE}/team`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list team members');
+  return data.data.members;
 }
 
 export async function listContacts(): Promise<Contact[]> {

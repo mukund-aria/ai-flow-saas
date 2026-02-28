@@ -101,6 +101,12 @@ export function AssigneeManager() {
               <span className="text-sm font-medium text-gray-700 flex-1 truncate">
                 {assignee.roleName}
               </span>
+              {(assignee.roleType || 'assignee') === 'coordinator' && (
+                <span className="text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded font-medium flex items-center gap-0.5">
+                  <Shield className="w-2.5 h-2.5" />
+                  Coordinator
+                </span>
+              )}
               <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
                 {RESOLUTION_LABELS[assignee.resolution?.type || 'CONTACT_TBD']}
               </span>

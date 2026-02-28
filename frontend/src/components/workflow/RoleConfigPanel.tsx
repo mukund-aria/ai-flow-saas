@@ -13,10 +13,11 @@ import {
   X, ChevronUp, ChevronDown, Search, Plus, Trash2, Check,
   UserPlus, UserCheck, PlayCircle, FileText,
   Variable, GitBranch, RefreshCw, Database,
+  Shield, UserCircle,
 } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { getRoleColor, getRoleInitials } from '@/types';
-import type { AssigneePlaceholder, ResolutionType, Resolution, FormField, FlowVariable } from '@/types';
+import type { AssigneePlaceholder, ResolutionType, Resolution, FormField, FlowVariable, RoleType } from '@/types';
 import { listContacts } from '@/lib/api';
 import type { Contact } from '@/lib/api';
 
@@ -231,6 +232,40 @@ export function RoleConfigPanel({ placeholderId, onClose }: RoleConfigPanelProps
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
+        {/* Role Type Section */}
+        <div className="border-b border-gray-100 px-6 py-4">
+          <div className="text-xs text-gray-500 font-medium mb-2">Role type</div>
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+            <button
+              onClick={() => updateAssigneePlaceholder(placeholderId, { roleType: 'coordinator' })}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+                (assignee.roleType || 'assignee') === 'coordinator'
+                  ? 'bg-violet-50 text-violet-700 border-r border-gray-200'
+                  : 'bg-white text-gray-500 hover:bg-gray-50 border-r border-gray-200'
+              }`}
+            >
+              <Shield className="w-4 h-4" />
+              Coordinator
+            </button>
+            <button
+              onClick={() => updateAssigneePlaceholder(placeholderId, { roleType: 'assignee' })}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+                (assignee.roleType || 'assignee') === 'assignee'
+                  ? 'bg-violet-50 text-violet-700'
+                  : 'bg-white text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              <UserCircle className="w-4 h-4" />
+              Assignee
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
+            {(assignee.roleType || 'assignee') === 'coordinator'
+              ? 'Full access to this flow run. Can view all steps, reassign, and chat.'
+              : 'Can only complete their assigned tasks. Accessed via magic link.'}
+          </p>
+        </div>
+
         {/* Assignee Section */}
         <div className="border-b border-gray-100">
           <button

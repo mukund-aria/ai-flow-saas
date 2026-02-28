@@ -1,8 +1,8 @@
-# AI Flow Copilot - Product Requirements Document
+# ServiceFlow - Product Requirements Document
 
 ## Overview
 
-**Product**: AI Flow Copilot for Moxo
+**Product**: ServiceFlow for Moxo
 **Purpose**: An AI-powered virtual Solutions Engineer that helps non-technical business users create and edit workflow templates through natural conversation.
 
 **Value Proposition**: Moxo customers often struggle with the complexity of the flow builder. This AI Copilot replaces the need for human SE consultation, enabling any business user to design sophisticated workflows by simply describing their process.
@@ -1073,7 +1073,7 @@ All errors follow consistent format:
 
 | Document | Purpose |
 |----------|---------|
-| AI Flow Copilot Instructions.pdf | High-level requirements and step 1 task |
+| ServiceFlow Instructions.pdf | High-level requirements and step 1 task |
 | SE Flow Consultation.pdf | How human SEs consult - AI should mimic this |
 | flow_copilot_master_docs.md | Product constraints and action specs |
 | flow_copilot_canonical_master_docs.md | Canonical constraint reference |

@@ -22,7 +22,7 @@ export function PublicLayout() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-200/50">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-gray-900">AI Flow</span>
+            <span className="text-lg font-bold text-gray-900">ServiceFlow</span>
           </Link>
 
           {/* Auth Buttons */}

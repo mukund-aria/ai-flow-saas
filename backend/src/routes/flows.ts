@@ -104,7 +104,7 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req, res) => {
-    const { name, description, definition, status = 'DRAFT' } = req.body;
+    const { name, description, definition, status = 'DRAFT', templateCoordinatorIds } = req.body;
 
     if (!name) {
       res.status(400).json({
@@ -148,6 +148,7 @@ router.post(
         description,
         definition: definition || {},
         status,
+        templateCoordinatorIds: templateCoordinatorIds || [],
         createdById: userId,
         organizationId: orgId,
       })

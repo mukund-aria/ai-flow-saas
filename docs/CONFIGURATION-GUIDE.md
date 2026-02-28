@@ -1,10 +1,10 @@
-# Configuration Guide: Updating AI Flow Copilot
+# Configuration Guide: Updating ServiceFlow
 
 This document explains how to update the AI SE when Moxo's platform changes.
 
 ## Architecture Overview
 
-AI Flow Copilot uses a **configuration-driven architecture**. The AI's knowledge comes from YAML config files, not hardcoded logic. This means:
+ServiceFlow uses a **configuration-driven architecture**. The AI's knowledge comes from YAML config files, not hardcoded logic. This means:
 
 - **New features** → Add/update config files
 - **Constraint changes** → Edit constraints.yaml

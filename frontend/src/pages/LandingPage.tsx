@@ -29,7 +29,7 @@ export function LandingPage() {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-100 py-8">
         <div className="max-w-6xl mx-auto px-6 text-center text-sm text-gray-400">
-          AI Flow — Workflow automation powered by AI
+          ServiceFlow — Workflow automation powered by AI
         </div>
       </footer>
     </div>

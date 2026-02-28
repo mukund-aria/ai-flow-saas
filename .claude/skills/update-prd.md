@@ -18,7 +18,7 @@ Review the conversation and identify any product requirement changes that should
 
 ## Instructions
 
-1. Read the current PRD.md file at `/Users/mukundchillakanti/ai-flow-copilot/PRD.md`
+1. Read the current PRD.md file at `/Users/mukundchillakanti/Documents/Projects/Moxo/ai-flow-saas/PRD.md`
 2. Identify product requirement changes from the conversation
 3. Update the file while preserving its structure:
    - Add new features to appropriate sections

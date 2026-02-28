@@ -1,7 +1,7 @@
 /**
  * Assignee Footer
  *
- * "Powered by AI Flow" branding footer.
+ * "Powered by ServiceFlow" branding footer.
  * Shows company name if white-label branding is configured.
  */
 
@@ -15,7 +15,7 @@ export function AssigneeFooter({ companyName }: AssigneeFooterProps = {}) {
       <span className="text-xs text-gray-400">
         Powered by{' '}
         <span className="font-semibold text-gray-500">
-          {companyName || 'AI Flow'}
+          {companyName || 'ServiceFlow'}
         </span>
       </span>
     </footer>

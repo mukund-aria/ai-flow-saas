@@ -46,7 +46,7 @@ export const useSessionStore = create<SessionStore>()(
       clearCurrentSession: () => set({ currentSessionId: null }),
     }),
     {
-      name: 'ai-flow-copilot-session',
+      name: 'serviceflow-session',
       partialize: (state) => ({
         currentSessionId: state.currentSessionId,
       }),

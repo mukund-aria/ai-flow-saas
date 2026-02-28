@@ -22,6 +22,8 @@ export interface Flow {
   assigneePlaceholders: AssigneePlaceholder[];
   parameters?: Parameter[];
   triggerConfig?: TriggerConfig;
+  /** User IDs of template coordinators who can see ALL runs of this template */
+  templateCoordinatorIds?: string[];
 }
 
 // ============================================================================
@@ -623,6 +625,8 @@ export interface Milestone {
   afterStepId: string;
 }
 
+export type RoleType = 'coordinator' | 'assignee';
+
 export interface RoleOptions {
   coordinatorToggle: boolean;
   allowViewAllActions: boolean;
@@ -634,6 +638,9 @@ export interface AssigneePlaceholder {
   description?: string;
   resolution?: Resolution;
   roleOptions?: RoleOptions;
+  /** Whether this role is a coordinator (full run access) or assignee (task-only portal).
+   *  Defaults to 'assignee' for backward compatibility. */
+  roleType?: RoleType;
 }
 
 export interface Parameter {
