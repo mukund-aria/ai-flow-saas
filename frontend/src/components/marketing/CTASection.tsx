@@ -12,16 +12,17 @@ export function CTASection() {
 
       <div className="relative max-w-3xl mx-auto px-6 text-center">
         <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-          Ready to automate your workflows?
+          Stop chasing people. Start running workflows.
         </h2>
         <p className="text-lg text-violet-100 mb-10 max-w-xl mx-auto">
-          Start building in seconds. No credit card required.
+          Build your first workflow in 60 seconds. No credit card required.
         </p>
         <Link
           to="/login"
           className="inline-flex items-center px-8 py-4 rounded-xl bg-white text-violet-700 text-lg font-semibold hover:bg-violet-50 transition-colors shadow-xl shadow-violet-900/20"
         >
           Get Started Free
+
         </Link>
       </div>
     </section>

@@ -44,6 +44,12 @@ export function MarketingHeader() {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
           <a
+            href="#use-cases"
+            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            Use Cases
+          </a>
+          <a
             href="#features"
             className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
           >
@@ -86,6 +92,13 @@ export function MarketingHeader() {
       {mobileOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
           <div className="px-6 py-4 space-y-3">
+            <a
+              href="#use-cases"
+              onClick={() => setMobileOpen(false)}
+              className="block text-sm font-medium text-gray-600 hover:text-gray-900 py-2"
+            >
+              Use Cases
+            </a>
             <a
               href="#features"
               onClick={() => setMobileOpen(false)}

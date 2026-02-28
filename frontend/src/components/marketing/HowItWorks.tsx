@@ -1,23 +1,23 @@
-import { MessageSquare, Sparkles, Play } from 'lucide-react';
+import { Sparkles, Users, CheckCircle } from 'lucide-react';
 
 const steps = [
   {
     number: 1,
-    title: 'Describe',
-    description: 'Tell AI what process you want to automate',
-    icon: MessageSquare,
-  },
-  {
-    number: 2,
-    title: 'Build',
-    description: 'AI creates a complete workflow with steps, roles, and logic',
+    title: 'Design',
+    description: 'Describe your process or pick a template. AI builds a complete workflow with steps, roles, and assignments.',
     icon: Sparkles,
   },
   {
+    number: 2,
+    title: 'Assign',
+    description: 'Invite participants by email. They get a magic link — no account, no app download, no friction.',
+    icon: Users,
+  },
+  {
     number: 3,
-    title: 'Run',
-    description: 'Execute with your team — assignees get magic links, no account needed',
-    icon: Play,
+    title: 'Deliver',
+    description: 'Track every step in real time. AI nudges, reminds, and reviews so nothing falls through.',
+    icon: CheckCircle,
   },
 ];
 

@@ -51,9 +51,9 @@ export function ProductPreview() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { name: 'Client Onboarding', steps: 8, color: 'violet' },
-                  { name: 'Invoice Approval', steps: 5, color: 'blue' },
-                  { name: 'Employee Offboarding', steps: 6, color: 'emerald' },
-                  { name: 'Document Review', steps: 4, color: 'amber' },
+                  { name: 'Vendor Qualification', steps: 5, color: 'blue' },
+                  { name: 'Partner Setup', steps: 6, color: 'emerald' },
+                  { name: 'Employee Onboarding', steps: 4, color: 'amber' },
                 ].map((card) => (
                   <div
                     key={card.name}

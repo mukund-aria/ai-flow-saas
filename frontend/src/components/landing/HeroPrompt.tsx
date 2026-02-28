@@ -9,17 +9,17 @@ import { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
 const PLACEHOLDER_PROMPTS = [
-  'Create a client onboarding workflow...',
-  'Build an invoice approval process...',
-  'Design an employee offboarding flow...',
-  'Set up a document review pipeline...',
-  'Create a support ticket escalation process...',
+  'Onboard new clients with document collection and approvals...',
+  'Run a vendor qualification process with 5 review steps...',
+  'Coordinate partner onboarding across legal, finance, and ops...',
+  'Collect signed agreements and compliance docs from new hires...',
+  'Manage a multi-step RFP response with stakeholder sign-offs...',
 ];
 
 const QUICK_PROMPTS = [
-  'Create a client onboarding workflow',
-  'Build an approval process for invoices',
-  'Design an employee offboarding flow',
+  'Client onboarding workflow',
+  'Vendor qualification process',
+  'Partner agreement collection',
 ];
 
 interface HeroPromptProps {
@@ -86,21 +86,20 @@ export function HeroPrompt({ onSubmit }: HeroPromptProps) {
         {/* Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-8">
           <Sparkles className="w-4 h-4" />
-          AI-Powered Workflow Builder
+          Client Workflow Platform
         </div>
 
         {/* Headline */}
         <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-          Build workflows with{' '}
+          Run client workflows that{' '}
           <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-            a single prompt
+            actually get done
           </span>
         </h1>
 
         {/* Subtitle */}
         <p className="text-xl text-gray-500 mb-12 max-w-2xl mx-auto">
-          Describe your business process and watch AI create a complete workflow in seconds.
-          No setup required.
+          Give clients, vendors, and partners a structured path to complete every step — with AI handling the busywork.
         </p>
 
         {/* Prompt Input */}
@@ -137,7 +136,7 @@ export function HeroPrompt({ onSubmit }: HeroPromptProps) {
 
         {/* Trust signal */}
         <p className="mt-8 text-sm text-gray-400">
-          No credit card required. Free to try.
+          No credit card required. Free to start.
         </p>
       </div>
     </div>

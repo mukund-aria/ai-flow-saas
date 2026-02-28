@@ -8,6 +8,7 @@
 import { useCallback } from 'react';
 import { HeroPrompt } from '@/components/landing/HeroPrompt';
 import { FeatureSection } from '@/components/landing/FeatureSection';
+import { UseCasesSection } from '@/components/landing/UseCasesSection';
 import { MarketingHeader } from '@/components/marketing/MarketingHeader';
 import { HowItWorks } from '@/components/marketing/HowItWorks';
 import { ProductPreview } from '@/components/marketing/ProductPreview';
@@ -34,6 +35,9 @@ export function LandingPage() {
 
       {/* How It Works */}
       <HowItWorks />
+
+      {/* Use Cases */}
+      <UseCasesSection />
 
       {/* Features */}
       <div id="features">

@@ -45,7 +45,7 @@ export function MarketingFooter() {
               <span className="text-sm font-bold text-gray-900">ServiceFlow</span>
             </Link>
             <p className="text-sm text-gray-500">
-              Workflow automation powered by AI.
+              Structured workflows for teams that work with people.
             </p>
           </div>
 
@@ -76,7 +76,7 @@ export function MarketingFooter() {
       <div className="border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-400">
-            &copy; 2024 ServiceFlow. All rights reserved.
+            &copy; 2025 ServiceFlow. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             {/* Twitter/X */}

@@ -4,32 +4,32 @@
  * Three cards highlighting Build, Run, and Manage capabilities.
  */
 
-import { Sparkles, PlayCircle, BarChart3 } from 'lucide-react';
+import { Sparkles, Link, Shield } from 'lucide-react';
 
 const features = [
   {
     icon: Sparkles,
-    title: 'Build with AI',
+    title: 'AI builds it for you',
     description:
-      'Describe your process in plain language. AI designs a complete workflow with steps, assignments, and logic.',
+      'Describe any process in plain English. AI creates the full workflow — steps, assignments, due dates, and logic — in seconds.',
     color: 'violet',
     bgClass: 'bg-violet-100',
     iconClass: 'text-violet-600',
   },
   {
-    icon: PlayCircle,
-    title: 'Run with your team',
+    icon: Link,
+    title: 'Anyone can participate',
     description:
-      'Execute workflows with your team and external participants. Magic links let anyone complete tasks — no account needed.',
+      'External participants complete tasks via magic links or their own branded portal. No accounts, no training, no friction.',
     color: 'blue',
     bgClass: 'bg-blue-100',
     iconClass: 'text-blue-600',
   },
   {
-    icon: BarChart3,
-    title: 'Manage & improve',
+    icon: Shield,
+    title: 'Nothing falls through',
     description:
-      'Track progress, identify bottlenecks, and optimize your processes with real-time reports and insights.',
+      'Real-time dashboards, automated reminders, AI-powered reviews, and smart escalations keep every workflow on track.',
     color: 'emerald',
     bgClass: 'bg-emerald-100',
     iconClass: 'text-emerald-600',
@@ -42,10 +42,10 @@ export function FeatureSection() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Everything you need to automate work
+            Everything happens in one place
           </h2>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-            From creation to execution to optimization — all in one platform.
+            Build, run, and track every workflow — without chasing emails or spreadsheets.
           </p>
         </div>
 
