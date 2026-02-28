@@ -26,6 +26,7 @@ import {
   MessageSquare,
   ExternalLink,
   UserPlus,
+  GitBranch,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIcon } from '@/components/workflow/StepIcon';
@@ -37,6 +38,7 @@ import { useFlowRunChatStore } from '@/stores/flowRunChatStore';
 import { AuditTimeline } from '@/components/flows/AuditTimeline';
 import { ReassignStepDialog } from '@/components/flows/ReassignStepDialog';
 import type { StepType } from '@/types';
+import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -64,6 +66,8 @@ interface FlowRunStep {
   dueAt?: string;
   reminderCount?: number;
   milestoneId?: string;
+  branchPath?: string | null;
+  parallelGroupId?: string | null;
 }
 
 interface MilestoneGroup {
@@ -234,6 +238,86 @@ function ResultDataViewer({ data }: { data: Record<string, unknown> }) {
 }
 
 // ============================================================================
+// Branch Grouping Helpers
+// ============================================================================
+
+interface BranchGroup {
+  type: 'parallel' | 'branch';
+  parallelGroupId?: string;
+  paths: Map<string, FlowRunStep[]>;
+}
+
+/**
+ * Separate steps into normal (non-branched) steps and branch groups.
+ * Returns an ordered list of segments: either a single step or a branch group.
+ */
+function segmentSteps(steps: FlowRunStep[]): Array<{ kind: 'step'; step: FlowRunStep } | { kind: 'branch'; group: BranchGroup }> {
+  const segments: Array<{ kind: 'step'; step: FlowRunStep } | { kind: 'branch'; group: BranchGroup }> = [];
+  const branchSteps = new Set<string>();
+
+  // Group branched steps by parallelGroupId or branchPath
+  const parallelGroups = new Map<string, Map<string, FlowRunStep[]>>();
+  const branchPathSteps = new Map<string, FlowRunStep[]>();
+
+  for (const step of steps) {
+    if (step.parallelGroupId) {
+      branchSteps.add(step.id);
+      if (!parallelGroups.has(step.parallelGroupId)) {
+        parallelGroups.set(step.parallelGroupId, new Map());
+      }
+      const group = parallelGroups.get(step.parallelGroupId)!;
+      const pathKey = step.branchPath || 'default';
+      if (!group.has(pathKey)) {
+        group.set(pathKey, []);
+      }
+      group.get(pathKey)!.push(step);
+    } else if (step.branchPath) {
+      branchSteps.add(step.id);
+      const pathKey = step.branchPath;
+      if (!branchPathSteps.has(pathKey)) {
+        branchPathSteps.set(pathKey, []);
+      }
+      branchPathSteps.get(pathKey)!.push(step);
+    }
+  }
+
+  // Build segments in order
+  const processedParallelGroups = new Set<string>();
+  const processedBranchPaths = new Set<string>();
+
+  for (const step of steps) {
+    if (branchSteps.has(step.id)) {
+      if (step.parallelGroupId && !processedParallelGroups.has(step.parallelGroupId)) {
+        processedParallelGroups.add(step.parallelGroupId);
+        segments.push({
+          kind: 'branch',
+          group: {
+            type: 'parallel',
+            parallelGroupId: step.parallelGroupId,
+            paths: parallelGroups.get(step.parallelGroupId)!,
+          },
+        });
+      } else if (step.branchPath && !step.parallelGroupId && !processedBranchPaths.has(step.branchPath)) {
+        processedBranchPaths.add(step.branchPath);
+        const paths = new Map<string, FlowRunStep[]>();
+        paths.set(step.branchPath, branchPathSteps.get(step.branchPath)!);
+        segments.push({
+          kind: 'branch',
+          group: {
+            type: 'branch',
+            paths,
+          },
+        });
+      }
+    } else {
+      segments.push({ kind: 'step', step });
+    }
+  }
+
+  return segments;
+}
+
+// ============================================================================
 // Main Component
 // ============================================================================
 
@@ -299,6 +383,8 @@ export function FlowRunDetailPage() {
             startedAt: se.startedAt,
             dueAt: se.dueAt,
             reminderCount: se.reminderCount,
+            branchPath: (se as any).branchPath || null,
+            parallelGroupId: (se as any).parallelGroupId || null,
           };
         });
 
@@ -352,6 +438,25 @@ export function FlowRunDetailPage() {
     }
     fetchRun();
   }, [id, refetchKey]);
+
+  // Real-time updates via SSE — auto-refresh step statuses for current run
+  useRealtimeUpdates({
+    onStepCompleted: (data) => {
+      if (data.flowRunId === id) {
+        setRefetchKey((k) => k + 1);
+      }
+    },
+    onRunCompleted: (data) => {
+      if (data.flowRunId === id) {
+        setRefetchKey((k) => k + 1);
+      }
+    },
+    onRunStarted: (data) => {
+      if (data.flowRunId === id) {
+        setRefetchKey((k) => k + 1);
+      }
+    },
+  });
 
   // Handle cancel run
   const handleCancelRun = async () => {
@@ -880,11 +985,88 @@ export function FlowRunDetailPage() {
                 })}
               </div>
             ) : (
-              /* Flat list (no milestones) */
+              /* Flat list (no milestones) - with branch awareness */
               <div className="divide-y divide-gray-100">
-                {steps.map((step, index) =>
-                  renderStepRow(step, index, index === steps.length - 1)
-                )}
+                {(() => {
+                  const segments = segmentSteps(steps);
+                  let stepCounter = 0;
+
+                  return segments.map((segment, segIdx) => {
+                    if (segment.kind === 'step') {
+                      const idx = stepCounter++;
+                      return renderStepRow(segment.step, idx, segIdx === segments.length - 1);
+                    }
+
+                    // Branch group rendering
+                    const { group } = segment;
+                    const isParallel = group.type === 'parallel';
+                    const pathEntries = Array.from(group.paths.entries());
+
+                    return (
+                      <div key={group.parallelGroupId || `branch-${segIdx}`} className="py-3 px-4">
+                        {/* Branch header */}
+                        <div className="flex items-center gap-2 mb-3 pl-2">
+                          <GitBranch className="w-4 h-4 text-violet-500" />
+                          <span className="text-xs font-semibold text-violet-700 uppercase tracking-wider">
+                            {isParallel ? 'Parallel Paths' : 'Branch Path'}
+                          </span>
+                          {isParallel && (
+                            <span className="text-[10px] text-gray-400">
+                              ({pathEntries.length} paths running simultaneously)
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Render paths side by side for parallel, stacked for branch */}
+                        <div className={cn(
+                          isParallel ? 'grid gap-3' : 'space-y-2',
+                          isParallel && pathEntries.length === 2 && 'grid-cols-2',
+                          isParallel && pathEntries.length >= 3 && 'grid-cols-3',
+                        )}>
+                          {pathEntries.map(([pathId, pathSteps]) => {
+                            const allPathComplete = pathSteps.every(s => s.status === 'COMPLETED');
+                            const anyActive = pathSteps.some(
+                              s => s.status === 'IN_PROGRESS' || s.status === 'WAITING_FOR_ASSIGNEE'
+                            );
+
+                            return (
+                              <div
+                                key={pathId}
+                                className={cn(
+                                  'border rounded-lg overflow-hidden',
+                                  allPathComplete && 'border-green-200 bg-green-50/30',
+                                  anyActive && 'border-blue-200 bg-blue-50/30',
+                                  !allPathComplete && !anyActive && 'border-gray-200 bg-gray-50/30'
+                                )}
+                              >
+                                {/* Path label */}
+                                <div className={cn(
+                                  'px-3 py-1.5 text-xs font-medium border-b',
+                                  allPathComplete && 'bg-green-100/50 text-green-700 border-green-200',
+                                  anyActive && 'bg-blue-100/50 text-blue-700 border-blue-200',
+                                  !allPathComplete && !anyActive && 'bg-gray-100/50 text-gray-500 border-gray-200'
+                                )}>
+                                  {pathId}
+                                  {allPathComplete && (
+                                    <CheckCircle2 className="w-3 h-3 inline ml-1.5 -mt-0.5" />
+                                  )}
+                                </div>
+
+                                {/* Path steps */}
+                                <div className="divide-y divide-gray-100">
+                                  {pathSteps.map((pathStep, pIdx) => {
+                                    const idx = stepCounter++;
+                                    return renderStepRow(pathStep, idx, pIdx === pathSteps.length - 1);
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             )}
 

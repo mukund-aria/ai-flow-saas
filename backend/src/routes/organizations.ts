@@ -306,4 +306,115 @@ router.put(
   })
 );
 
+// ============================================================================
+// GET /api/organizations/:id/branding - Get branding config
+// ============================================================================
+
+router.get(
+  '/:id/branding',
+  asyncHandler(async (req, res) => {
+    const user = req.user as any;
+    if (!user) {
+      res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED' } });
+      return;
+    }
+
+    const orgId = req.params.id as string;
+
+    // Verify membership
+    const membership = await db.query.userOrganizations.findFirst({
+      where: and(
+        eq(userOrganizations.userId, user.id),
+        eq(userOrganizations.organizationId, orgId)
+      ),
+    });
+
+    if (!membership) {
+      res.status(403).json({
+        success: false,
+        error: { code: 'FORBIDDEN', message: 'Not a member of this organization' },
+      });
+      return;
+    }
+
+    const org = await db.query.organizations.findFirst({
+      where: eq(organizations.id, orgId),
+    });
+
+    res.json({
+      success: true,
+      data: (org?.brandingConfig as Record<string, unknown>) || {},
+    });
+  })
+);
+
+// ============================================================================
+// PUT /api/organizations/:id/branding - Update branding config (admin only)
+// ============================================================================
+
+router.put(
+  '/:id/branding',
+  asyncHandler(async (req, res) => {
+    const user = req.user as any;
+    if (!user) {
+      res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED' } });
+      return;
+    }
+
+    const orgId = req.params.id as string;
+    const { logoUrl, primaryColor, accentColor, companyName, faviconUrl, emailFooter } = req.body;
+
+    // Verify admin membership
+    const membership = await db.query.userOrganizations.findFirst({
+      where: and(
+        eq(userOrganizations.userId, user.id),
+        eq(userOrganizations.organizationId, orgId)
+      ),
+    });
+
+    if (!membership || membership.role !== 'ADMIN') {
+      res.status(403).json({
+        success: false,
+        error: { code: 'FORBIDDEN', message: 'Only admins can update branding settings' },
+      });
+      return;
+    }
+
+    // Validate hex colors if provided
+    const hexColorRegex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+    if (primaryColor && !hexColorRegex.test(primaryColor)) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid primary color. Must be a valid hex color (e.g., #7c3aed)' },
+      });
+      return;
+    }
+    if (accentColor && !hexColorRegex.test(accentColor)) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid accent color. Must be a valid hex color (e.g., #6366f1)' },
+      });
+      return;
+    }
+
+    const brandingConfig: Record<string, unknown> = {};
+    if (logoUrl !== undefined) brandingConfig.logoUrl = logoUrl;
+    if (primaryColor !== undefined) brandingConfig.primaryColor = primaryColor;
+    if (accentColor !== undefined) brandingConfig.accentColor = accentColor;
+    if (companyName !== undefined) brandingConfig.companyName = companyName;
+    if (faviconUrl !== undefined) brandingConfig.faviconUrl = faviconUrl;
+    if (emailFooter !== undefined) brandingConfig.emailFooter = emailFooter;
+
+    const [updated] = await db.update(organizations)
+      .set({ brandingConfig })
+      .where(eq(organizations.id, orgId))
+      .returning();
+
+    res.json({
+      success: true,
+      data: (updated.brandingConfig as Record<string, unknown>) || {},
+    });
+  })
+);
+
 export default router;

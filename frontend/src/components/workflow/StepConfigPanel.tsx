@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormFieldsBuilder } from './FormFieldsBuilder';
 import { PDFFormConfigEditor } from './PDFFormConfigEditor';
@@ -13,6 +13,7 @@ import type {
   AIAutomationConfig, AIInputField, AIOutputField, AIActionType, AIFieldType,
   SystemEmailConfig, SystemWebhookConfig, SystemChatMessageConfig,
   SystemUpdateWorkspaceConfig, BusinessRuleConfig, BusinessRuleInput,
+  SubFlowConfig,
   StepDue, DueUnit,
 } from '@/types';
 
@@ -1380,7 +1381,14 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
 
   // Skip sequential order (for human action steps)
   const [skipSequentialOrder, setSkipSequentialOrder] = useState(step.config.skipSequentialOrder || false);
-  const [showAdditional, setShowAdditional] = useState(!!step.config.skipSequentialOrder);
+  const [showAdditional, setShowAdditional] = useState(!!step.config.skipSequentialOrder || !!(step.config as any).skipCondition);
+
+  // Skip condition (conditional step skip)
+  const existingSkipCondition = (step.config as any).skipCondition as { source: string; operator: string; value?: string } | undefined;
+  const [skipConditionEnabled, setSkipConditionEnabled] = useState(!!existingSkipCondition);
+  const [skipConditionSource, setSkipConditionSource] = useState(existingSkipCondition?.source || '');
+  const [skipConditionOperator, setSkipConditionOperator] = useState(existingSkipCondition?.operator || 'equals');
+  const [skipConditionValue, setSkipConditionValue] = useState(existingSkipCondition?.value || '');
 
   // GoTo target step
   const [targetStepId, setTargetStepId] = useState(step.config.targetStepId || '');
@@ -1478,6 +1486,35 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
     step.config.businessRule || { inputs: [], rules: [], outputs: [] }
   );
 
+  // Sub-Flow config
+  const isSubFlow = step.type === 'SUB_FLOW';
+  const [subFlowConfig, setSubFlowConfig] = useState<SubFlowConfig>(
+    step.config.subFlow || {
+      flowTemplateId: '',
+      assigneeMappings: [],
+      variableMappings: [],
+      inputMappings: [],
+      outputMappings: [],
+      waitForCompletion: true,
+    }
+  );
+  const [availableTemplates, setAvailableTemplates] = useState<Array<{ id: string; name: string }>>([]);
+
+  // Fetch available templates for SUB_FLOW selector
+  useEffect(() => {
+    if (isSubFlow) {
+      const API_BASE = import.meta.env.VITE_API_URL || '/api';
+      fetch(`${API_BASE}/templates`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.data)) {
+            setAvailableTemplates(data.data.map((t: any) => ({ id: t.id, name: t.name })));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isSubFlow]);
+
   // Due date (supports StepDue type; legacy waitDuration is migrated to RELATIVE)
   const [dueDate, setDueDate] = useState<StepDue | undefined>(() => {
     if (step.config.stepDue) return step.config.stepDue;
@@ -1497,7 +1534,7 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
   const automationTypes = ['AI_CUSTOM_PROMPT', 'AI_EXTRACT', 'AI_SUMMARIZE', 'AI_TRANSCRIBE', 'AI_TRANSLATE', 'AI_WRITE', 'SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE', 'INTEGRATION_AIRTABLE', 'INTEGRATION_CLICKUP', 'INTEGRATION_DROPBOX', 'INTEGRATION_GMAIL', 'INTEGRATION_GOOGLE_DRIVE', 'INTEGRATION_GOOGLE_SHEETS', 'INTEGRATION_WRIKE'];
 
   // Steps that support assignee selection
-  const hasAssignee = !['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO', 'GOTO_DESTINATION', 'TERMINATE', ...automationTypes].includes(step.type);
+  const hasAssignee = !['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO', 'GOTO_DESTINATION', 'TERMINATE', 'SUB_FLOW', ...automationTypes].includes(step.type);
 
   // Steps that support due dates
   const hasDueDate = ['FORM', 'QUESTIONNAIRE', 'FILE_REQUEST', 'TODO', 'APPROVAL', 'DECISION', 'ACKNOWLEDGEMENT', 'ESIGN', 'PDF_FORM'].includes(step.type);
@@ -1574,6 +1611,10 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
       updates.businessRule = businessRuleConfig;
     }
 
+    if (isSubFlow) {
+      updates.subFlow = subFlowConfig;
+    }
+
     if (hasDueDate) {
       updates.stepDue = dueDate;
     }
@@ -1589,6 +1630,19 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
 
     if (step.type === 'GOTO') {
       updates.targetStepId = targetStepId || undefined;
+    }
+
+    // Skip condition
+    if (skipConditionEnabled && skipConditionSource) {
+      (updates as any).skipCondition = {
+        source: skipConditionSource,
+        operator: skipConditionOperator,
+        ...(skipConditionOperator !== 'is_empty' && skipConditionOperator !== 'not_empty'
+          ? { value: skipConditionValue }
+          : {}),
+      };
+    } else {
+      (updates as any).skipCondition = undefined;
     }
 
     onSave(step.stepId, updates);
@@ -1806,6 +1860,180 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
         </div>
       )}
 
+      {/* Sub-Flow Config */}
+      {isSubFlow && (
+        <div className="mb-4 pt-3 border-t border-gray-100">
+          <label className="text-xs font-semibold text-gray-600 block mb-3">Sub-Flow Configuration</label>
+
+          {/* Template Selector */}
+          <div className="mb-3">
+            <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1">
+              Flow Template *
+            </label>
+            <select
+              value={subFlowConfig.flowTemplateId}
+              onChange={(e) => setSubFlowConfig({ ...subFlowConfig, flowTemplateId: e.target.value })}
+              className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 bg-white"
+            >
+              <option value="">Select a flow template...</option>
+              {availableTemplates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Wait for completion toggle */}
+          <div className="mb-3">
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={subFlowConfig.waitForCompletion !== false}
+                onChange={(e) => setSubFlowConfig({ ...subFlowConfig, waitForCompletion: e.target.checked })}
+                className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+              />
+              <span className="text-sm text-gray-700">Wait for sub-flow to complete</span>
+            </label>
+            <p className="text-[11px] text-gray-400 mt-1 ml-6.5">
+              Parent flow pauses until the sub-flow finishes
+            </p>
+          </div>
+
+          {/* Input Mappings */}
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+                Input Mappings
+              </label>
+              <button
+                type="button"
+                onClick={() => setSubFlowConfig({
+                  ...subFlowConfig,
+                  inputMappings: [...subFlowConfig.inputMappings, { parentRef: '', subFlowField: '' }],
+                })}
+                className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 font-medium"
+              >
+                <Plus className="w-3 h-3" />
+                Add
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-400 mb-2">
+              Pass data from parent flow into the sub-flow's kickoff fields
+            </p>
+            {subFlowConfig.inputMappings.length === 0 ? (
+              <p className="text-xs text-gray-400 italic">No input mappings configured</p>
+            ) : (
+              <div className="space-y-2">
+                {subFlowConfig.inputMappings.map((mapping, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={mapping.parentRef}
+                      onChange={(e) => {
+                        const updated = [...subFlowConfig.inputMappings];
+                        updated[idx] = { ...updated[idx], parentRef: e.target.value };
+                        setSubFlowConfig({ ...subFlowConfig, inputMappings: updated });
+                      }}
+                      placeholder="{Kickoff / Field}"
+                      className="flex-1 px-2 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 font-mono"
+                    />
+                    <span className="text-gray-400 text-xs shrink-0">-&gt;</span>
+                    <input
+                      type="text"
+                      value={mapping.subFlowField}
+                      onChange={(e) => {
+                        const updated = [...subFlowConfig.inputMappings];
+                        updated[idx] = { ...updated[idx], subFlowField: e.target.value };
+                        setSubFlowConfig({ ...subFlowConfig, inputMappings: updated });
+                      }}
+                      placeholder="Child kickoff field"
+                      className="flex-1 px-2 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = subFlowConfig.inputMappings.filter((_, i) => i !== idx);
+                        setSubFlowConfig({ ...subFlowConfig, inputMappings: updated });
+                      }}
+                      className="p-1 text-gray-300 hover:text-red-500 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Output Mappings */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+                Output Mappings
+              </label>
+              <button
+                type="button"
+                onClick={() => setSubFlowConfig({
+                  ...subFlowConfig,
+                  outputMappings: [...subFlowConfig.outputMappings, { subFlowOutputRef: '', parentOutputKey: '' }],
+                })}
+                className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 font-medium"
+              >
+                <Plus className="w-3 h-3" />
+                Add
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-400 mb-2">
+              Capture data from the sub-flow back into the parent flow
+            </p>
+            {subFlowConfig.outputMappings.length === 0 ? (
+              <p className="text-xs text-gray-400 italic">No output mappings configured</p>
+            ) : (
+              <div className="space-y-2">
+                {subFlowConfig.outputMappings.map((mapping, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={mapping.subFlowOutputRef}
+                      onChange={(e) => {
+                        const updated = [...subFlowConfig.outputMappings];
+                        updated[idx] = { ...updated[idx], subFlowOutputRef: e.target.value };
+                        setSubFlowConfig({ ...subFlowConfig, outputMappings: updated });
+                      }}
+                      placeholder="StepName / FieldName"
+                      className="flex-1 px-2 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 font-mono"
+                    />
+                    <span className="text-gray-400 text-xs shrink-0">-&gt;</span>
+                    <input
+                      type="text"
+                      value={mapping.parentOutputKey}
+                      onChange={(e) => {
+                        const updated = [...subFlowConfig.outputMappings];
+                        updated[idx] = { ...updated[idx], parentOutputKey: e.target.value };
+                        setSubFlowConfig({ ...subFlowConfig, outputMappings: updated });
+                      }}
+                      placeholder="Parent result key"
+                      className="flex-1 px-2 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = subFlowConfig.outputMappings.filter((_, i) => i !== idx);
+                        setSubFlowConfig({ ...subFlowConfig, outputMappings: updated });
+                      }}
+                      className="p-1 text-gray-300 hover:text-red-500 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {step.type === 'WAIT' && (
         <div className="mb-4 pt-3 border-t border-gray-100">
           <label className="text-xs font-medium text-gray-600 block mb-1">
@@ -1902,6 +2130,71 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
                   </span>
                 </span>
               </label>
+
+              {/* Skip Condition */}
+              <div>
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={skipConditionEnabled}
+                    onChange={(e) => setSkipConditionEnabled(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                  />
+                  <span className="text-sm text-gray-700">Skip this step when...</span>
+                  <span className="relative group">
+                    <Info className="w-3.5 h-3.5 text-gray-400" />
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                      Conditionally skip this step based on data from prior steps.
+                    </span>
+                  </span>
+                </label>
+
+                {skipConditionEnabled && (
+                  <div className="mt-2 ml-6.5 space-y-2 pl-1 border-l-2 border-violet-200">
+                    <div className="pl-3">
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Source (DDR token)</label>
+                      <input
+                        type="text"
+                        value={skipConditionSource}
+                        onChange={(e) => setSkipConditionSource(e.target.value)}
+                        placeholder="{Kickoff / Country}"
+                        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 font-mono"
+                      />
+                    </div>
+                    <div className="pl-3">
+                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Operator</label>
+                      <select
+                        value={skipConditionOperator}
+                        onChange={(e) => setSkipConditionOperator(e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+                      >
+                        <option value="equals">equals</option>
+                        <option value="not_equals">not equals</option>
+                        <option value="contains">contains</option>
+                        <option value="not_contains">does not contain</option>
+                        <option value="greater_than">greater than</option>
+                        <option value="less_than">less than</option>
+                        <option value="is_empty">is empty</option>
+                        <option value="not_empty">is not empty</option>
+                        <option value="in">in list</option>
+                        <option value="not_in">not in list</option>
+                      </select>
+                    </div>
+                    {skipConditionOperator !== 'is_empty' && skipConditionOperator !== 'not_empty' && (
+                      <div className="pl-3">
+                        <label className="block text-[11px] font-medium text-gray-500 mb-1">Value</label>
+                        <input
+                          type="text"
+                          value={skipConditionValue}
+                          onChange={(e) => setSkipConditionValue(e.target.value)}
+                          placeholder={skipConditionOperator === 'in' || skipConditionOperator === 'not_in' ? 'value1, value2, value3' : 'Value to compare'}
+                          className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

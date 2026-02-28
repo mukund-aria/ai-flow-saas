@@ -44,6 +44,7 @@ import { FilterDropdown } from '@/components/ui/filter-dropdown';
 import { AttentionSettingsPopover } from '@/components/flows/AttentionSettingsPopover';
 import { useAttentionSettings, filterByAttentionSettings } from '@/hooks/useAttentionSettings';
 import { useSavedFilters, type SavedFilter } from '@/hooks/useSavedFilters';
+import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -358,6 +359,27 @@ export function FlowRunsPage() {
     }
     fetchData();
   }, []);
+
+  // Real-time updates via SSE — auto-refresh when events arrive
+  const refetchRuns = useCallback(async () => {
+    try {
+      const [flowData, attention] = await Promise.all([
+        listFlows(),
+        getAttentionItems().catch(() => [] as AttentionItem[]),
+      ]);
+      setRuns(flowData);
+      setAttentionItems(attention);
+    } catch {
+      // Silently ignore — background refresh
+    }
+  }, []);
+
+  useRealtimeUpdates({
+    onRunStarted: refetchRuns,
+    onRunCompleted: refetchRuns,
+    onStepCompleted: refetchRuns,
+    onRunUpdated: refetchRuns,
+  });
 
   // Sync filters to URL
   const syncURL = useCallback(

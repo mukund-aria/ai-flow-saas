@@ -32,6 +32,15 @@ export interface JourneyStep {
   resultData?: Record<string, unknown>;
 }
 
+export interface BrandingConfig {
+  logoUrl?: string;
+  primaryColor?: string;
+  accentColor?: string;
+  companyName?: string;
+  faviconUrl?: string;
+  emailFooter?: string;
+}
+
 export interface TaskContext {
   token: string;
   flowName: string;
@@ -54,6 +63,7 @@ export interface TaskContext {
   expired: boolean;
   completed: boolean;
   journeySteps?: JourneyStep[];
+  branding?: BrandingConfig;
 }
 
 export async function validateMagicLink(token: string): Promise<TaskContext | null> {
@@ -196,12 +206,16 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
 
   // 4. workspace — from the organization
   let ddrWorkspace: DDRContext['workspace'];
+  let orgBranding: BrandingConfig | undefined;
   if (run.organizationId) {
     const org = await db.query.organizations.findFirst({
       where: eq(organizations.id, run.organizationId),
     });
     if (org) {
       ddrWorkspace = { name: org.name, id: org.id };
+      if (org.brandingConfig) {
+        orgBranding = org.brandingConfig as BrandingConfig;
+      }
     }
   }
 
@@ -276,5 +290,6 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
     expired: new Date() > link.expiresAt,
     completed: !!link.usedAt || stepExec.status === 'COMPLETED',
     journeySteps: resolvedJourneySteps,
+    branding: orgBranding,
   };
 }

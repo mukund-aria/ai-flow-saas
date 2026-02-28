@@ -1,61 +1,31 @@
 /**
  * Schedules API Routes
  *
- * CRUD operations for scheduled workflow triggers.
- * Uses an in-memory store so the UI works without Redis,
- * and delegates to flow-scheduler for BullMQ cron jobs when available.
+ * Database-backed CRUD operations for scheduled workflow triggers.
+ * Uses the `schedules` table for persistence and delegates to
+ * flow-scheduler for BullMQ cron jobs when Redis is available.
  */
 
 import { Router } from 'express';
-import { db, flows } from '../db/index.js';
-import { eq, and } from 'drizzle-orm';
+import { db, flows, schedules } from '../db/index.js';
+import { eq, and, desc } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { scheduleFlowStart, cancelFlowSchedule } from '../services/flow-scheduler.js';
+import { CronExpressionParser } from 'cron-parser';
+import { processScheduledFlowStart } from '../services/flow-scheduler.js';
 
 const router = Router();
 
-// ============================================================================
-// In-memory schedule store (persists across requests, lost on restart)
-// ============================================================================
-
-interface ScheduleRecord {
-  id: string;
-  flowId: string;
-  flowName: string;
-  organizationId: string;
-  scheduleName: string;
-  cronPattern: string;
-  roleAssignments?: Record<string, string>;
-  kickoffData?: Record<string, unknown>;
-  createdAt: string;
-  nextRun?: string;
-}
-
-const scheduleStore: Map<string, ScheduleRecord> = new Map();
-
 /**
- * Compute the next occurrence of a cron pattern (simple heuristic).
- * Returns an ISO string for the next approximate run.
+ * Compute the next run time for a cron pattern in a given timezone.
  */
-function computeNextRun(cronPattern: string): string | undefined {
-  // Simple cron parsing for common patterns
-  // Format: minute hour dayOfMonth month dayOfWeek
-  const parts = cronPattern.trim().split(/\s+/);
-  if (parts.length !== 5) return undefined;
-
-  const [minute, hour] = parts;
-  const now = new Date();
-  const next = new Date(now);
-
-  const h = parseInt(hour, 10);
-  const m = parseInt(minute, 10);
-  if (isNaN(h) || isNaN(m)) return undefined;
-
-  next.setHours(h, m, 0, 0);
-  if (next <= now) {
-    next.setDate(next.getDate() + 1);
+function computeNextRun(cronPattern: string, timezone: string = 'UTC'): Date | null {
+  try {
+    const expr = CronExpressionParser.parse(cronPattern, { tz: timezone });
+    return expr.next().toDate();
+  } catch {
+    return null;
   }
-  return next.toISOString();
 }
 
 // ============================================================================
@@ -67,14 +37,28 @@ router.get(
   asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
 
-    const schedules = Array.from(scheduleStore.values())
-      .filter((s) => !orgId || s.organizationId === orgId)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    res.json({
-      success: true,
-      data: schedules,
+    const results = await db.query.schedules.findMany({
+      where: orgId ? eq(schedules.organizationId, orgId) : undefined,
+      with: {
+        flow: { columns: { id: true, name: true } },
+      },
+      orderBy: [desc(schedules.createdAt)],
     });
+
+    const data = results.map((s) => ({
+      id: s.id,
+      flowId: s.flowId,
+      flowName: s.flow?.name || 'Unknown',
+      scheduleName: s.scheduleName,
+      cronPattern: s.cronPattern,
+      timezone: s.timezone,
+      enabled: s.enabled,
+      lastRunAt: s.lastRunAt?.toISOString() || null,
+      nextRun: s.nextRunAt?.toISOString() || computeNextRun(s.cronPattern, s.timezone)?.toISOString() || null,
+      createdAt: s.createdAt.toISOString(),
+    }));
+
+    res.json({ success: true, data });
   })
 );
 
@@ -85,7 +69,7 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req, res) => {
-    const { flowId, scheduleName, cronPattern, roleAssignments, kickoffData } = req.body;
+    const { flowId, scheduleName, cronPattern, timezone, roleAssignments, kickoffData } = req.body;
 
     // Validate required fields
     if (!flowId) {
@@ -112,12 +96,13 @@ router.post(
       return;
     }
 
-    // Validate cron pattern format (5 fields)
-    const cronParts = cronPattern.trim().split(/\s+/);
-    if (cronParts.length !== 5) {
+    // Validate cron pattern using cron-parser
+    try {
+      CronExpressionParser.parse(cronPattern);
+    } catch {
       res.status(400).json({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'cronPattern must have 5 fields (minute hour dayOfMonth month dayOfWeek)' },
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid cron pattern. Use 5-field format: minute hour dayOfMonth month dayOfWeek' },
       });
       return;
     }
@@ -138,41 +123,155 @@ router.post(
       return;
     }
 
+    const tz = timezone || 'UTC';
+    const nextRun = computeNextRun(cronPattern, tz);
+
+    // Insert into the database
+    const userId = req.user?.id || 'system';
+    const [record] = await db
+      .insert(schedules)
+      .values({
+        organizationId: orgId || flow.organizationId,
+        flowId,
+        scheduleName,
+        cronPattern,
+        timezone: tz,
+        roleAssignments: roleAssignments || null,
+        kickoffData: kickoffData || null,
+        enabled: true,
+        nextRunAt: nextRun,
+        createdByUserId: userId,
+      })
+      .returning();
+
     // Register with BullMQ (no-op without Redis)
-    const scheduleId = await scheduleFlowStart({
-      flowId,
-      organizationId: orgId || flow.organizationId,
-      scheduleName,
-      cronPattern,
-      roleAssignments,
-      kickoffData,
-    });
-
-    // Store in memory
-    const record: ScheduleRecord = {
-      id: scheduleId,
-      flowId,
-      flowName: flow.name,
-      organizationId: orgId || flow.organizationId,
-      scheduleName,
-      cronPattern,
-      roleAssignments,
-      kickoffData,
-      createdAt: new Date().toISOString(),
-      nextRun: computeNextRun(cronPattern),
-    };
-
-    scheduleStore.set(scheduleId, record);
+    try {
+      await scheduleFlowStart({
+        flowId,
+        organizationId: orgId || flow.organizationId,
+        scheduleName,
+        cronPattern,
+        roleAssignments,
+        kickoffData,
+      });
+    } catch {
+      // Redis not available — schedule saved to DB, will be loaded on next restart
+    }
 
     res.status(201).json({
       success: true,
-      data: record,
+      data: {
+        id: record.id,
+        flowId: record.flowId,
+        flowName: flow.name,
+        scheduleName: record.scheduleName,
+        cronPattern: record.cronPattern,
+        timezone: record.timezone,
+        enabled: record.enabled,
+        lastRunAt: null,
+        nextRun: record.nextRunAt?.toISOString() || null,
+        createdAt: record.createdAt.toISOString(),
+      },
     });
   })
 );
 
 // ============================================================================
-// DELETE /api/schedules/:id - Cancel a schedule
+// PUT /api/schedules/:id - Update a schedule
+// ============================================================================
+
+router.put(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const id = req.params.id as string;
+    const orgId = req.organizationId;
+
+    const existing = await db.query.schedules.findFirst({
+      where: orgId
+        ? and(eq(schedules.id, id), eq(schedules.organizationId, orgId))
+        : eq(schedules.id, id),
+      with: { flow: { columns: { id: true, name: true } } },
+    });
+
+    if (!existing) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Schedule not found' },
+      });
+      return;
+    }
+
+    const { scheduleName, cronPattern, timezone, enabled, roleAssignments, kickoffData } = req.body;
+
+    // Validate cron pattern if provided
+    const newCron = cronPattern || existing.cronPattern;
+    if (cronPattern) {
+      try {
+        CronExpressionParser.parse(cronPattern);
+      } catch {
+        res.status(400).json({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid cron pattern' },
+        });
+        return;
+      }
+    }
+
+    const newTz = timezone || existing.timezone;
+    const nextRun = computeNextRun(newCron, newTz);
+
+    const [updated] = await db
+      .update(schedules)
+      .set({
+        ...(scheduleName !== undefined ? { scheduleName } : {}),
+        ...(cronPattern !== undefined ? { cronPattern } : {}),
+        ...(timezone !== undefined ? { timezone } : {}),
+        ...(enabled !== undefined ? { enabled } : {}),
+        ...(roleAssignments !== undefined ? { roleAssignments } : {}),
+        ...(kickoffData !== undefined ? { kickoffData } : {}),
+        nextRunAt: nextRun,
+        updatedAt: new Date(),
+      })
+      .where(eq(schedules.id, id))
+      .returning();
+
+    // Re-register with BullMQ if cron or enabled status changed
+    try {
+      await cancelFlowSchedule(id);
+      if (updated.enabled) {
+        await scheduleFlowStart({
+          flowId: updated.flowId,
+          organizationId: updated.organizationId,
+          scheduleName: updated.scheduleName,
+          cronPattern: updated.cronPattern,
+          roleAssignments: updated.roleAssignments as Record<string, string> | undefined,
+          kickoffData: updated.kickoffData as Record<string, unknown> | undefined,
+        });
+      }
+    } catch {
+      // Redis not available
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: updated.id,
+        flowId: updated.flowId,
+        flowName: existing.flow?.name || 'Unknown',
+        scheduleName: updated.scheduleName,
+        cronPattern: updated.cronPattern,
+        timezone: updated.timezone,
+        enabled: updated.enabled,
+        lastRunAt: updated.lastRunAt?.toISOString() || null,
+        nextRun: updated.nextRunAt?.toISOString() || null,
+        createdAt: updated.createdAt.toISOString(),
+      },
+    });
+  })
+);
+
+// ============================================================================
+// DELETE /api/schedules/:id - Delete a schedule
 // ============================================================================
 
 router.delete(
@@ -181,8 +280,13 @@ router.delete(
     const id = req.params.id as string;
     const orgId = req.organizationId;
 
-    const existing = scheduleStore.get(id);
-    if (!existing || (orgId && existing.organizationId !== orgId)) {
+    const existing = await db.query.schedules.findFirst({
+      where: orgId
+        ? and(eq(schedules.id, id), eq(schedules.organizationId, orgId))
+        : eq(schedules.id, id),
+    });
+
+    if (!existing) {
       res.status(404).json({
         success: false,
         error: { code: 'NOT_FOUND', message: 'Schedule not found' },
@@ -191,14 +295,67 @@ router.delete(
     }
 
     // Cancel in BullMQ (no-op without Redis)
-    await cancelFlowSchedule(id);
+    try {
+      await cancelFlowSchedule(id);
+    } catch {
+      // Redis not available
+    }
 
-    // Remove from store
-    scheduleStore.delete(id);
+    // Delete from DB
+    await db.delete(schedules).where(eq(schedules.id, id));
 
     res.json({
       success: true,
       data: { id, deleted: true },
+    });
+  })
+);
+
+// ============================================================================
+// POST /api/schedules/:id/trigger - Manual trigger: start flow run immediately
+// ============================================================================
+
+router.post(
+  '/:id/trigger',
+  asyncHandler(async (req, res) => {
+    const id = req.params.id as string;
+    const orgId = req.organizationId;
+
+    const schedule = await db.query.schedules.findFirst({
+      where: orgId
+        ? and(eq(schedules.id, id), eq(schedules.organizationId, orgId))
+        : eq(schedules.id, id),
+      with: { flow: { columns: { id: true, name: true } } },
+    });
+
+    if (!schedule) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Schedule not found' },
+      });
+      return;
+    }
+
+    // Use the same logic as the scheduled flow start
+    await processScheduledFlowStart({
+      type: 'scheduled-flow-start',
+      flowId: schedule.flowId,
+      organizationId: schedule.organizationId,
+      scheduleName: schedule.scheduleName,
+      roleAssignments: schedule.roleAssignments as Record<string, string> | undefined,
+      kickoffData: schedule.kickoffData as Record<string, unknown> | undefined,
+    });
+
+    // Update lastRunAt
+    const nextRun = computeNextRun(schedule.cronPattern, schedule.timezone);
+    await db
+      .update(schedules)
+      .set({ lastRunAt: new Date(), nextRunAt: nextRun })
+      .where(eq(schedules.id, id));
+
+    res.json({
+      success: true,
+      data: { message: 'Flow run triggered successfully' },
     });
   })
 );

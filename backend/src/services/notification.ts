@@ -6,7 +6,7 @@
  * (email / in-app), and logs everything.
  */
 
-import { db, notifications, notificationLog, userNotificationPrefs, stepExecutions, flowRuns, users, flows, contacts, magicLinks } from '../db/index.js';
+import { db, notifications, notificationLog, userNotificationPrefs, stepExecutions, flowRuns, users, flows, contacts, magicLinks, integrations } from '../db/index.js';
 import { eq, and, gte, desc } from 'drizzle-orm';
 import * as email from './email.js';
 import { dispatchWebhooks } from './webhook.js';
@@ -588,6 +588,13 @@ export async function handleOverdueJob(stepExecutionId: string): Promise<void> {
 
   if (!stepExec || stepExec.status === 'COMPLETED' || stepExec.status === 'SKIPPED') return;
 
+  // Mark SLA breach timestamp if not already set
+  if (!stepExec.slaBreachedAt) {
+    await db.update(stepExecutions)
+      .set({ slaBreachedAt: new Date() })
+      .where(eq(stepExecutions.id, stepExecutionId));
+  }
+
   await notifyStepOverdue(stepExec);
 }
 
@@ -679,5 +686,131 @@ export async function handleDailyDigest(): Promise<void> {
         status: 'SENT',
       });
     }
+  }
+}
+
+// ============================================================================
+// Integration Notifications (Slack/Teams/Custom Webhook)
+// ============================================================================
+
+/**
+ * Dispatch notifications to enabled org-level integrations (Slack, Teams, Custom).
+ * Called from execution lifecycle events.
+ */
+export async function dispatchIntegrationNotifications(orgId: string, event: {
+  type: string;
+  flowRunName: string;
+  stepName?: string;
+  completedBy?: string;
+  flowRunId: string;
+}): Promise<void> {
+  try {
+    const orgIntegrations = await db.query.integrations.findMany({
+      where: and(
+        eq(integrations.organizationId, orgId),
+        eq(integrations.enabled, true)
+      ),
+    });
+
+    if (orgIntegrations.length === 0) return;
+
+    for (const integration of orgIntegrations) {
+      const config = integration.config as { webhookUrl?: string; events?: string[] };
+      if (!config?.webhookUrl) continue;
+
+      // Check if integration subscribes to this event type
+      if (config.events && config.events.length > 0 && !config.events.includes(event.type)) {
+        continue;
+      }
+
+      let payload: unknown;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+      switch (integration.type) {
+        case 'SLACK_WEBHOOK': {
+          const lines = [`*${event.type}* in *${event.flowRunName}*`];
+          if (event.stepName) lines.push(`Step: ${event.stepName}`);
+          if (event.completedBy) lines.push(`By: ${event.completedBy}`);
+          payload = {
+            blocks: [{
+              type: 'section',
+              text: { type: 'mrkdwn', text: lines.join('\n') },
+            }],
+          };
+          break;
+        }
+        case 'TEAMS_WEBHOOK': {
+          const facts: { name: string; value: string }[] = [];
+          if (event.stepName) facts.push({ name: 'Step', value: event.stepName });
+          if (event.completedBy) facts.push({ name: 'Completed By', value: event.completedBy });
+          payload = {
+            '@type': 'MessageCard',
+            summary: `${event.type}: ${event.flowRunName}`,
+            sections: [{
+              activityTitle: `${event.type}: ${event.flowRunName}`,
+              facts,
+            }],
+          };
+          break;
+        }
+        case 'CUSTOM_WEBHOOK':
+        default: {
+          payload = {
+            event: event.type,
+            flowRunName: event.flowRunName,
+            flowRunId: event.flowRunId,
+            stepName: event.stepName,
+            completedBy: event.completedBy,
+            timestamp: new Date().toISOString(),
+          };
+          break;
+        }
+      }
+
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10_000);
+
+        const response = await fetch(config.webhookUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeout);
+        const success = response.status >= 200 && response.status < 300;
+
+        // Update delivery status
+        await db.update(integrations)
+          .set({
+            lastDeliveryAt: new Date(),
+            lastDeliveryStatus: success ? 'SUCCESS' : `FAILED (HTTP ${response.status})`,
+          })
+          .where(eq(integrations.id, integration.id));
+
+        // Log
+        await db.insert(notificationLog).values({
+          organizationId: orgId,
+          channel: 'WEBHOOK',
+          eventType: event.type,
+          flowRunId: event.flowRunId,
+          recipientEmail: config.webhookUrl,
+          status: success ? 'SENT' : 'FAILED',
+          errorMessage: success ? null : `HTTP ${response.status}`,
+        });
+      } catch (err) {
+        await db.update(integrations)
+          .set({
+            lastDeliveryAt: new Date(),
+            lastDeliveryStatus: `FAILED (${(err as Error).message})`,
+          })
+          .where(eq(integrations.id, integration.id));
+
+        console.error(`[Integration] Failed to dispatch to ${integration.name}:`, (err as Error).message);
+      }
+    }
+  } catch (err) {
+    console.error('[Integration] dispatchIntegrationNotifications error:', err);
   }
 }

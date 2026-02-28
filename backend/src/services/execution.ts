@@ -11,11 +11,12 @@
  * - Sending notifications on step/flow transitions
  */
 
-import { db, stepExecutions, flowRuns } from '../db/index.js';
-import { eq } from 'drizzle-orm';
+import { db, stepExecutions, flowRuns, flows, contacts } from '../db/index.js';
+import { eq, and } from 'drizzle-orm';
 import { scheduleReminder, scheduleOverdueCheck, scheduleEscalation, cancelStepJobs } from './scheduler.js';
-import { notifyStepCompleted, notifyFlowCompleted, notifyFlowCancelled } from './notification.js';
+import { notifyStepCompleted, notifyFlowCompleted, notifyFlowCancelled, dispatchIntegrationNotifications } from './notification.js';
 import { dispatchWebhooks } from './webhook.js';
+import { sseManager } from './sse-manager.js';
 import type { FlowNotificationSettings, StepDue, FlowDue } from '../models/workflow.js';
 import { defaultFlowNotificationSettings, migrateNotificationSettings } from '../models/workflow.js';
 
@@ -133,7 +134,7 @@ export async function onStepActivated(
 
 /**
  * Called when a step is completed.
- * Cancels pending jobs and sends notifications.
+ * Cancels pending jobs, calculates SLA metrics, and sends notifications.
  */
 export async function onStepCompleted(
   stepExec: { id: string; stepId: string; flowRunId: string },
@@ -142,8 +143,32 @@ export async function onStepCompleted(
   // Cancel all pending notification jobs for this step
   await cancelStepJobs(stepExec.id);
 
+  // Calculate timeToComplete (ms from startedAt to completedAt)
+  const fullStepExec = await db.query.stepExecutions.findFirst({
+    where: eq(stepExecutions.id, stepExec.id),
+  });
+  if (fullStepExec?.startedAt && fullStepExec?.completedAt) {
+    const timeToComplete = new Date(fullStepExec.completedAt).getTime() - new Date(fullStepExec.startedAt).getTime();
+    await db.update(stepExecutions)
+      .set({ timeToComplete })
+      .where(eq(stepExecutions.id, stepExec.id));
+  }
+
   // Notify coordinator that step was completed
   await notifyStepCompleted(stepExec, run);
+
+  // Emit SSE event
+  sseManager.emit(run.organizationId, {
+    type: 'step.completed',
+    data: {
+      flowRunId: run.id,
+      flowId: run.flowId,
+      stepId: stepExec.stepId,
+      stepExecId: stepExec.id,
+      runName: run.name,
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   // Dispatch webhook
   dispatchWebhooks({
@@ -161,6 +186,14 @@ export async function onStepCompleted(
     flowRunId: run.id,
     stepExecId: stepExec.id,
   }).catch((err) => console.error('[Webhook] step.completed dispatch error:', err));
+
+  // Dispatch to org-level integrations (Slack/Teams/Custom)
+  dispatchIntegrationNotifications(run.organizationId, {
+    type: 'step.completed',
+    flowRunName: run.name,
+    stepName: stepExec.stepId,
+    flowRunId: run.id,
+  }).catch((err) => console.error('[Integration] step.completed dispatch error:', err));
 }
 
 // ============================================================================
@@ -174,6 +207,18 @@ export async function onFlowCompleted(
   run: { id: string; name: string; organizationId: string; startedById: string; flowId: string; flow?: { name: string } | null }
 ): Promise<void> {
   await notifyFlowCompleted(run);
+
+  // Emit SSE event
+  sseManager.emit(run.organizationId, {
+    type: 'run.completed',
+    data: {
+      flowRunId: run.id,
+      flowId: run.flowId,
+      runName: run.name,
+      status: 'COMPLETED',
+      timestamp: new Date().toISOString(),
+    },
+  });
 
   dispatchWebhooks({
     flowId: run.flowId,
@@ -189,6 +234,13 @@ export async function onFlowCompleted(
     flowRunId: run.id,
   }).catch((err) => console.error('[Webhook] flow.completed dispatch error:', err));
 
+  // Dispatch to org-level integrations (Slack/Teams/Custom)
+  dispatchIntegrationNotifications(run.organizationId, {
+    type: 'flow.completed',
+    flowRunName: run.name,
+    flowRunId: run.id,
+  }).catch((err) => console.error('[Integration] flow.completed dispatch error:', err));
+
   // Invoke callback URL if one was stored at run creation (e.g., from webhook trigger)
   try {
     const fullRun = await db.query.flowRuns.findFirst({ where: eq(flowRuns.id, run.id) });
@@ -199,6 +251,13 @@ export async function onFlowCompleted(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event: 'flow.completed', flowRunId: run.id, flowId: run.flowId, name: run.name, status: 'COMPLETED', completedAt: new Date().toISOString() }),
       }).catch((err) => console.error('[Callback] Failed to invoke callbackUrl:', err));
+    }
+
+    // If this is a sub-flow, propagate completion to parent
+    if (fullRun?.parentRunId) {
+      propagateSubFlowCompletion(run.id).catch((err) =>
+        console.error('[SubFlow] Failed to propagate completion:', err)
+      );
     }
   } catch {}
 }
@@ -249,6 +308,18 @@ export async function onFlowCancelled(
 export async function onFlowStarted(
   run: { id: string; name: string; organizationId: string; flowId: string; flow?: { name: string } | null }
 ): Promise<void> {
+  // Emit SSE event
+  sseManager.emit(run.organizationId, {
+    type: 'run.started',
+    data: {
+      flowRunId: run.id,
+      flowId: run.flowId,
+      runName: run.name,
+      status: 'IN_PROGRESS',
+      timestamp: new Date().toISOString(),
+    },
+  });
+
   dispatchWebhooks({
     flowId: run.flowId,
     event: 'flow.started',
@@ -262,6 +333,13 @@ export async function onFlowStarted(
     orgId: run.organizationId,
     flowRunId: run.id,
   }).catch((err) => console.error('[Webhook] flow.started dispatch error:', err));
+
+  // Dispatch to org-level integrations (Slack/Teams/Custom)
+  dispatchIntegrationNotifications(run.organizationId, {
+    type: 'flow.started',
+    flowRunName: run.name,
+    flowRunId: run.id,
+  }).catch((err) => console.error('[Integration] flow.started dispatch error:', err));
 }
 
 // ============================================================================
@@ -275,4 +353,336 @@ export async function updateFlowActivity(flowRunId: string): Promise<void> {
   await db.update(flowRuns)
     .set({ lastActivityAt: new Date() })
     .where(eq(flowRuns.id, flowRunId));
+}
+
+// ============================================================================
+// Sub-Flow Handling
+// ============================================================================
+
+/**
+ * Resolve a DDR token from parent flow context.
+ * Simplified version: looks up kickoff data and step output data.
+ */
+function resolveParentDDR(token: string, kickoffData: Record<string, unknown>, stepOutputs: Record<string, Record<string, unknown>>): unknown {
+  // Format: "{StepName / FieldName}" or "{Kickoff / FieldName}"
+  const match = token.match(/^\{(.+?)\s*\/\s*(.+?)\}$/);
+  if (!match) return token;
+
+  const [, source, field] = match;
+  if (source.trim().toLowerCase() === 'kickoff') {
+    return kickoffData[field.trim()] ?? token;
+  }
+  // Check step outputs
+  const stepOutput = stepOutputs[source.trim()];
+  if (stepOutput) {
+    return stepOutput[field.trim()] ?? token;
+  }
+  return token;
+}
+
+/**
+ * Called when a SUB_FLOW step is activated.
+ * Starts a child flow run and links it to the parent step execution.
+ */
+export async function handleSubFlowStep(
+  stepExecutionId: string,
+  stepDef: Record<string, unknown>,
+  parentRun: { id: string; organizationId: string; startedById: string; flowId: string; name: string }
+): Promise<void> {
+  const config = (stepDef.config || stepDef) as Record<string, unknown>;
+  const subFlowObj = config.subFlow as Record<string, unknown> | undefined;
+  const subFlowId = (subFlowObj?.flowTemplateId || config.subFlowId || config.flowRef) as string | undefined;
+
+  if (!subFlowId) {
+    console.error('[SubFlow] No subFlowId configured for step execution:', stepExecutionId);
+    // Mark step as completed with error
+    await db.update(stepExecutions)
+      .set({
+        status: 'COMPLETED',
+        completedAt: new Date(),
+        resultData: { error: 'No sub-flow template configured', 'subFlow.status': 'FAILED' },
+      })
+      .where(eq(stepExecutions.id, stepExecutionId));
+    return;
+  }
+
+  // Look up the child flow template
+  const childFlow = await db.query.flows.findFirst({
+    where: eq(flows.id, subFlowId),
+  });
+
+  if (!childFlow) {
+    console.error('[SubFlow] Child flow template not found:', subFlowId);
+    await db.update(stepExecutions)
+      .set({
+        status: 'COMPLETED',
+        completedAt: new Date(),
+        resultData: { error: 'Sub-flow template not found', 'subFlow.status': 'FAILED' },
+      })
+      .where(eq(stepExecutions.id, stepExecutionId));
+    return;
+  }
+
+  // Resolve input mappings to build kickoff data for child flow
+  const inputMappings = (subFlowObj?.inputMappings || config.inputMappings || config.inputMapping || []) as Array<{ parentRef: string; subFlowField: string }>;
+
+  // Get parent context for DDR resolution
+  const fullParentRun = await db.query.flowRuns.findFirst({
+    where: eq(flowRuns.id, parentRun.id),
+    with: { stepExecutions: true },
+  });
+
+  const parentKickoff = (fullParentRun?.kickoffData as Record<string, unknown>) || {};
+
+  // Build step outputs from parent's completed steps
+  const parentFlow = await db.query.flows.findFirst({ where: eq(flows.id, parentRun.flowId) });
+  const parentDef = (parentFlow?.definition as any) || {};
+  const parentStepDefs = parentDef.steps || [];
+  const parentStepOutputs: Record<string, Record<string, unknown>> = {};
+  for (const se of fullParentRun?.stepExecutions || []) {
+    if (se.status === 'COMPLETED' && se.resultData) {
+      const defStep = parentStepDefs.find((s: any) => (s.stepId || s.id) === se.stepId);
+      const name = defStep?.config?.name;
+      if (name) {
+        parentStepOutputs[name] = se.resultData as Record<string, unknown>;
+      }
+    }
+  }
+
+  // Resolve input mappings
+  const childKickoffData: Record<string, unknown> = {};
+  for (const mapping of inputMappings) {
+    childKickoffData[mapping.subFlowField] = resolveParentDDR(mapping.parentRef, parentKickoff, parentStepOutputs);
+  }
+
+  // Get child flow definition
+  const childDefinition = childFlow.definition as { steps?: Array<Record<string, unknown>> } | null;
+  const childSteps = childDefinition?.steps || [];
+
+  if (childSteps.length === 0) {
+    await db.update(stepExecutions)
+      .set({
+        status: 'COMPLETED',
+        completedAt: new Date(),
+        resultData: { error: 'Sub-flow has no steps', 'subFlow.status': 'FAILED' },
+      })
+      .where(eq(stepExecutions.id, stepExecutionId));
+    return;
+  }
+
+  // Create child flow run
+  const runName = `${childFlow.name} (sub-flow of ${parentRun.name})`;
+  const [childRun] = await db
+    .insert(flowRuns)
+    .values({
+      flowId: childFlow.id,
+      name: runName,
+      status: 'IN_PROGRESS',
+      isSample: false,
+      currentStepIndex: 0,
+      startedById: parentRun.startedById,
+      organizationId: parentRun.organizationId,
+      kickoffData: Object.keys(childKickoffData).length > 0 ? childKickoffData : null,
+      parentRunId: parentRun.id,
+      parentStepExecutionId: stepExecutionId,
+    })
+    .returning();
+
+  // Create step executions for child flow
+  const childStepExecValues = childSteps.map((step, index) => {
+    const s = step as any;
+    return {
+      flowRunId: childRun.id,
+      stepId: s.stepId || s.id || `step-${index}`,
+      stepIndex: index,
+      status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
+      startedAt: index === 0 ? new Date() : null,
+    };
+  });
+
+  await db.insert(stepExecutions).values(childStepExecValues);
+
+  // Schedule jobs for first child step
+  const firstChildStep = childSteps[0] as any;
+  const firstChildStepExec = await db.query.stepExecutions.findFirst({
+    where: and(
+      eq(stepExecutions.flowRunId, childRun.id),
+      eq(stepExecutions.stepIndex, 0)
+    ),
+  });
+  if (firstChildStepExec) {
+    await onStepActivated(firstChildStepExec.id, firstChildStep.due || firstChildStep.config?.due, childFlow.definition as Record<string, unknown>);
+  }
+
+  await updateFlowActivity(childRun.id);
+
+  // Store childRunId in parent step's resultData for tracking
+  await db.update(stepExecutions)
+    .set({
+      resultData: { 'subFlow.runId': childRun.id, 'subFlow.status': 'IN_PROGRESS' },
+    })
+    .where(eq(stepExecutions.id, stepExecutionId));
+
+  // Dispatch flow.started for child
+  await onFlowStarted({
+    id: childRun.id,
+    name: runName,
+    organizationId: parentRun.organizationId,
+    flowId: childFlow.id,
+    flow: { name: childFlow.name },
+  });
+
+  console.log(`[SubFlow] Started child run ${childRun.id} for parent step ${stepExecutionId}`);
+}
+
+/**
+ * Called when a child flow completes to propagate completion back to the parent.
+ * Applies output mapping and advances the parent flow.
+ */
+export async function propagateSubFlowCompletion(childRunId: string): Promise<void> {
+  // Get the child run with parent info
+  const childRun = await db.query.flowRuns.findFirst({
+    where: eq(flowRuns.id, childRunId),
+    with: {
+      flow: true,
+      stepExecutions: true,
+    },
+  });
+
+  if (!childRun?.parentRunId || !childRun?.parentStepExecutionId) {
+    return; // Not a sub-flow, nothing to propagate
+  }
+
+  // Get the parent step execution
+  const parentStepExec = await db.query.stepExecutions.findFirst({
+    where: eq(stepExecutions.id, childRun.parentStepExecutionId),
+  });
+
+  if (!parentStepExec || parentStepExec.status === 'COMPLETED') {
+    return; // Already completed or not found
+  }
+
+  // Get the parent run with its flow for step defs
+  const parentRun = await db.query.flowRuns.findFirst({
+    where: eq(flowRuns.id, childRun.parentRunId),
+    with: {
+      flow: true,
+      stepExecutions: {
+        orderBy: (se, { asc }) => [asc(se.stepIndex)],
+      },
+    },
+  });
+
+  if (!parentRun) return;
+
+  // Get the parent step definition to find output mappings
+  const parentDef = (parentRun.flow?.definition as any) || {};
+  const parentStepDefs = parentDef.steps || [];
+  const parentStepDef = parentStepDefs.find((s: any) => (s.stepId || s.id) === parentStepExec.stepId);
+  const subFlowCfg = parentStepDef?.config?.subFlow as Record<string, unknown> | undefined;
+  const outputMappings = (subFlowCfg?.outputMappings || parentStepDef?.config?.outputMappings || parentStepDef?.config?.outputMapping || []) as Array<{
+    subFlowOutputRef: string;
+    parentOutputKey: string;
+  }>;
+
+  // Build child flow's step outputs
+  const childDef = (childRun.flow?.definition as any) || {};
+  const childStepDefs = childDef.steps || [];
+  const childStepOutputs: Record<string, Record<string, unknown>> = {};
+  for (const se of childRun.stepExecutions) {
+    if (se.status === 'COMPLETED' && se.resultData) {
+      const defStep = childStepDefs.find((s: any) => (s.stepId || s.id) === se.stepId);
+      const name = defStep?.config?.name;
+      if (name) {
+        childStepOutputs[name] = se.resultData as Record<string, unknown>;
+      }
+    }
+  }
+
+  // Apply output mapping
+  const resultData: Record<string, unknown> = {
+    ...(parentStepExec.resultData as Record<string, unknown> || {}),
+    'subFlow.status': 'COMPLETED',
+    'subFlow.runId': childRunId,
+  };
+
+  for (const mapping of outputMappings) {
+    // subFlowOutputRef format: "StepName / FieldName"
+    const resolved = resolveParentDDR(`{${mapping.subFlowOutputRef}}`, {}, childStepOutputs);
+    resultData[mapping.parentOutputKey] = resolved;
+  }
+
+  // Complete the parent step
+  await db.update(stepExecutions)
+    .set({
+      status: 'COMPLETED',
+      completedAt: new Date(),
+      resultData,
+    })
+    .where(eq(stepExecutions.id, parentStepExec.id));
+
+  // Notify and advance the parent flow
+  await onStepCompleted(parentStepExec, parentRun);
+  await updateFlowActivity(parentRun.id);
+
+  // Advance parent flow to next step
+  const { getNextStepExecutions } = await import('./step-advancement.js');
+  const nextStepIds = getNextStepExecutions(
+    parentStepExec as any,
+    parentRun.stepExecutions as any[],
+    parentStepDefs,
+    resultData
+  );
+
+  const nextStep = nextStepIds.length > 0
+    ? parentRun.stepExecutions.find(se => se.id === nextStepIds[0])
+    : undefined;
+
+  if (nextStep) {
+    await db.update(stepExecutions)
+      .set({ status: 'IN_PROGRESS', startedAt: new Date() })
+      .where(eq(stepExecutions.id, nextStep.id));
+
+    const nextStepDef = parentStepDefs.find((s: any) => (s.stepId || s.id) === nextStep.stepId);
+    const nextStepDue = nextStepDef?.due || nextStepDef?.config?.due;
+    const parentDueAt = parentRun.dueAt ? new Date(parentRun.dueAt) : null;
+    await onStepActivated(nextStep.id, nextStepDue, parentRun.flow?.definition as Record<string, unknown>, parentDueAt);
+
+    // If next step is a SUB_FLOW, handle it
+    if (nextStepDef?.type === 'SUB_FLOW') {
+      await handleSubFlowStep(nextStep.id, nextStepDef, parentRun);
+    }
+
+    // If next step has a contact assignee, create magic link
+    if (nextStep.assignedToContactId) {
+      const { createMagicLink } = await import('./magic-link.js');
+      const { sendMagicLink } = await import('./email.js');
+      const token = await createMagicLink(nextStep.id);
+      const contact = await db.query.contacts.findFirst({
+        where: eq(contacts.id, nextStep.assignedToContactId),
+      });
+      if (contact) {
+        await sendMagicLink({
+          to: contact.email,
+          contactName: contact.name,
+          stepName: `Step ${nextStep.stepIndex + 1}`,
+          flowName: parentRun.flow?.name || 'Flow',
+          token,
+        });
+      }
+    }
+
+    await db.update(flowRuns)
+      .set({ currentStepIndex: nextStep.stepIndex })
+      .where(eq(flowRuns.id, parentRun.id));
+  } else {
+    // No more steps - mark parent run as completed
+    await db.update(flowRuns)
+      .set({ status: 'COMPLETED', completedAt: new Date() })
+      .where(eq(flowRuns.id, parentRun.id));
+
+    await onFlowCompleted(parentRun);
+  }
+
+  console.log(`[SubFlow] Propagated completion of child run ${childRunId} to parent step ${parentStepExec.id}`);
 }

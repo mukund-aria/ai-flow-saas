@@ -21,6 +21,11 @@ import teamRouter from './team.js';
 import reportsRouter from './reports.js';
 import schedulesRouter from './schedules.js';
 import searchRouter from './search.js';
+import filesRouter from './files.js';
+import eventsRouter from './events.js';
+import integrationsRouter from './integrations.js';
+import embedRouter from './embed.js';
+import galleryRouter from './gallery.js';
 import { orgScope } from '../middleware/org-scope.js';
 
 const router = Router();
@@ -45,6 +50,9 @@ router.use('/sessions', sessionsRouter);
 
 // Templates API (workflow templates CRUD)
 router.use('/templates', flowsRouter);
+
+// Embed config API (generate embed config for a template)
+router.use('/templates', embedRouter);
 
 // Folders API (template folder organization)
 router.use('/folders', foldersRouter);
@@ -72,6 +80,18 @@ router.use('/schedules', schedulesRouter);
 
 // Search API (command palette global search)
 router.use('/search', searchRouter);
+
+// Files API (cloud file storage)
+router.use('/files', filesRouter);
+
+// Events API (SSE real-time updates)
+router.use('/events', eventsRouter);
+
+// Integrations API (Slack/Teams/Custom webhooks)
+router.use('/integrations', integrationsRouter);
+
+// Gallery API (curated template gallery with import)
+router.use('/gallery', galleryRouter);
 
 // Flows API (workflow execution — active instances)
 // Note: POST /api/templates/:templateId/flows is handled by runsRouter

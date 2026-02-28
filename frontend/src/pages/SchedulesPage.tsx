@@ -2,14 +2,17 @@
  * Schedules Page
  *
  * Manage scheduled workflow triggers with cron-based automation.
+ * Features: timezone selector, enable/disable toggle, Run Now, last run display.
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Clock, Plus, Trash2, Loader2, X, ChevronDown, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Calendar, Clock, Plus, Trash2, Loader2, X, ChevronDown, AlertCircle, Play, ToggleLeft, ToggleRight, Globe } from 'lucide-react';
 import {
   listSchedules,
   createSchedule,
+  updateSchedule,
   deleteSchedule,
+  triggerSchedule,
   listTemplates,
   type Schedule,
   type Template,
@@ -27,6 +30,31 @@ const CRON_PRESETS = [
   { label: 'Custom', value: 'custom' },
 ] as const;
 
+// Common timezones (curated list)
+const COMMON_TIMEZONES = (() => {
+  try {
+    return Intl.supportedValuesOf('timeZone');
+  } catch {
+    return [
+      'UTC',
+      'America/New_York',
+      'America/Chicago',
+      'America/Denver',
+      'America/Los_Angeles',
+      'America/Sao_Paulo',
+      'Europe/London',
+      'Europe/Paris',
+      'Europe/Berlin',
+      'Asia/Dubai',
+      'Asia/Kolkata',
+      'Asia/Shanghai',
+      'Asia/Tokyo',
+      'Australia/Sydney',
+      'Pacific/Auckland',
+    ];
+  }
+})();
+
 /**
  * Convert a cron pattern to a human-readable label.
  */
@@ -34,7 +62,6 @@ function cronToLabel(cron: string): string {
   const preset = CRON_PRESETS.find((p) => p.value === cron);
   if (preset) return preset.label;
 
-  // Simple pattern matching for common crons
   const parts = cron.trim().split(/\s+/);
   if (parts.length !== 5) return cron;
 
@@ -52,13 +79,13 @@ function cronToLabel(cron: string): string {
 /**
  * Format an ISO date string to a short human-readable form.
  */
-function formatNextRun(iso?: string): string {
+function formatDateTime(iso?: string | null): string {
   if (!iso) return '--';
   const d = new Date(iso);
   const now = new Date();
   const diffMs = d.getTime() - now.getTime();
 
-  if (diffMs < 0) return 'Overdue';
+  if (diffMs < 0 && diffMs > -60000) return 'Just now';
 
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dayName = days[d.getDay()];
@@ -68,7 +95,28 @@ function formatNextRun(iso?: string): string {
   const h12 = hours % 12 || 12;
   const timeStr = mins === 0 ? `${h12} ${ampm}` : `${h12}:${mins.toString().padStart(2, '0')} ${ampm}`;
 
-  return `${dayName} ${timeStr}`;
+  // If same day
+  if (d.toDateString() === now.toDateString()) return `Today ${timeStr}`;
+
+  // If within this week
+  const diffDays = Math.abs(diffMs) / (1000 * 60 * 60 * 24);
+  if (diffDays < 7) return `${dayName} ${timeStr}`;
+
+  // Otherwise show date
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  return `${month} ${d.getDate()} ${timeStr}`;
+}
+
+function formatRelativeTime(iso?: string | null): string {
+  if (!iso) return '--';
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+
+  if (diffMs < 60000) return 'Just now';
+  if (diffMs < 3600000) return `${Math.floor(diffMs / 60000)}m ago`;
+  if (diffMs < 86400000) return `${Math.floor(diffMs / 3600000)}h ago`;
+  return `${Math.floor(diffMs / 86400000)}d ago`;
 }
 
 export function SchedulesPage() {
@@ -78,14 +126,26 @@ export function SchedulesPage() {
   const [error, setError] = useState<string | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [triggering, setTriggering] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
 
   // New schedule form state
   const [formFlowId, setFormFlowId] = useState('');
   const [formName, setFormName] = useState('');
   const [formPreset, setFormPreset] = useState(CRON_PRESETS[0].value);
   const [formCustomCron, setFormCustomCron] = useState('');
+  const [formTimezone, setFormTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Timezone search filter
+  const [tzSearch, setTzSearch] = useState('');
+
+  const filteredTimezones = useMemo(() => {
+    if (!tzSearch) return COMMON_TIMEZONES.slice(0, 50);
+    const lower = tzSearch.toLowerCase();
+    return COMMON_TIMEZONES.filter((tz) => tz.toLowerCase().includes(lower));
+  }, [tzSearch]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -135,6 +195,7 @@ export function SchedulesPage() {
         flowId: formFlowId,
         scheduleName: formName.trim(),
         cronPattern,
+        timezone: formTimezone,
       });
       setShowDialog(false);
       resetForm();
@@ -159,12 +220,40 @@ export function SchedulesPage() {
     }
   };
 
+  const handleToggle = async (schedule: Schedule) => {
+    if (toggling) return;
+    try {
+      setToggling(schedule.id);
+      const updated = await updateSchedule(schedule.id, { enabled: !schedule.enabled });
+      setSchedules((prev) => prev.map((s) => (s.id === schedule.id ? updated : s)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update schedule');
+    } finally {
+      setToggling(null);
+    }
+  };
+
+  const handleTrigger = async (id: string) => {
+    if (triggering) return;
+    try {
+      setTriggering(id);
+      await triggerSchedule(id);
+      await fetchData(); // Refresh to get updated lastRunAt
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to trigger schedule');
+    } finally {
+      setTriggering(null);
+    }
+  };
+
   const resetForm = () => {
     setFormFlowId('');
     setFormName('');
     setFormPreset(CRON_PRESETS[0].value);
     setFormCustomCron('');
+    setFormTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
     setFormError(null);
+    setTzSearch('');
   };
 
   const openDialog = () => {
@@ -242,15 +331,18 @@ export function SchedulesPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Template</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Name</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Schedule</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Timezone</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Next Run</th>
-                <th className="w-12 px-4 py-3" />
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Last Run</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
+                <th className="w-28 px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               {schedules.map((schedule) => (
                 <tr
                   key={schedule.id}
-                  className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors"
+                  className={`border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors ${!schedule.enabled ? 'opacity-60' : ''}`}
                 >
                   <td className="px-4 py-3 text-gray-900 font-medium">{schedule.flowName}</td>
                   <td className="px-4 py-3 text-gray-700">{schedule.scheduleName}</td>
@@ -260,20 +352,64 @@ export function SchedulesPage() {
                       <span className="text-gray-700">{cronToLabel(schedule.cronPattern)}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{formatNextRun(schedule.nextRun)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-gray-400" />
+                      <span className="text-gray-500 text-xs">{schedule.timezone}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {schedule.enabled ? formatDateTime(schedule.nextRun) : '--'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {formatRelativeTime(schedule.lastRunAt)}
+                  </td>
                   <td className="px-4 py-3">
                     <button
-                      onClick={() => handleDelete(schedule.id)}
-                      disabled={deleting === schedule.id}
-                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
-                      title="Delete schedule"
+                      onClick={() => handleToggle(schedule)}
+                      disabled={toggling === schedule.id}
+                      className="flex items-center gap-1.5 text-sm transition-colors"
+                      title={schedule.enabled ? 'Disable schedule' : 'Enable schedule'}
                     >
-                      {deleting === schedule.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                      {toggling === schedule.id ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                      ) : schedule.enabled ? (
+                        <ToggleRight className="w-5 h-5 text-emerald-500" />
                       ) : (
-                        <Trash2 className="w-4 h-4" />
+                        <ToggleLeft className="w-5 h-5 text-gray-400" />
                       )}
+                      <span className={schedule.enabled ? 'text-emerald-600' : 'text-gray-400'}>
+                        {schedule.enabled ? 'Active' : 'Paused'}
+                      </span>
                     </button>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleTrigger(schedule.id)}
+                        disabled={triggering === schedule.id}
+                        className="p-1.5 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-md transition-colors disabled:opacity-50"
+                        title="Run now"
+                      >
+                        {triggering === schedule.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Play className="w-4 h-4" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(schedule.id)}
+                        disabled={deleting === schedule.id}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                        title="Delete schedule"
+                      >
+                        {deleting === schedule.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -372,6 +508,45 @@ export function SchedulesPage() {
                   </p>
                 </div>
               )}
+
+              {/* Timezone selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Timezone</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={tzSearch || formTimezone}
+                    onChange={(e) => setTzSearch(e.target.value)}
+                    onFocus={() => setTzSearch('')}
+                    onBlur={() => setTimeout(() => setTzSearch(''), 200)}
+                    placeholder="Search timezone..."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+                  />
+                  <Globe className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  {tzSearch !== '' && (
+                    <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+                      {filteredTimezones.length === 0 ? (
+                        <div className="px-3 py-2 text-sm text-gray-400">No timezones found</div>
+                      ) : (
+                        filteredTimezones.map((tz) => (
+                          <button
+                            key={tz}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setFormTimezone(tz);
+                              setTzSearch('');
+                            }}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-violet-50 ${tz === formTimezone ? 'bg-violet-50 text-violet-700 font-medium' : 'text-gray-700'}`}
+                          >
+                            {tz}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
 
               {/* Form error */}
               {formError && (

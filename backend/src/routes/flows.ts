@@ -5,7 +5,8 @@
  */
 
 import { Router } from 'express';
-import { db, flows, users, organizations, templateFolders } from '../db/index.js';
+import crypto from 'crypto';
+import { db, flows, users, organizations, templateFolders, webhookEndpoints } from '../db/index.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -380,6 +381,139 @@ router.put(
       .returning();
 
     res.json({ success: true, data: updated });
+  })
+);
+
+// ============================================================================
+// GET /api/templates/:id/webhook-config - Get or create webhook endpoint config
+// ============================================================================
+
+router.get(
+  '/:id/webhook-config',
+  asyncHandler(async (req, res) => {
+    const templateId = req.params.id as string;
+    const orgId = req.organizationId;
+
+    // Verify the template exists and belongs to this org
+    const flow = await db.query.flows.findFirst({
+      where: orgId
+        ? and(eq(flows.id, templateId), eq(flows.organizationId, orgId))
+        : eq(flows.id, templateId),
+    });
+
+    if (!flow) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow not found' },
+      });
+      return;
+    }
+
+    // Look for existing webhook endpoint
+    let endpoint = await db.query.webhookEndpoints.findFirst({
+      where: and(
+        eq(webhookEndpoints.flowId, templateId),
+        eq(webhookEndpoints.type, 'INCOMING')
+      ),
+    });
+
+    // Create one if it doesn't exist
+    if (!endpoint) {
+      const [newEndpoint] = await db
+        .insert(webhookEndpoints)
+        .values({
+          flowId: templateId,
+          organizationId: flow.organizationId,
+          type: 'INCOMING',
+          secret: crypto.randomUUID(),
+          enabled: true,
+        })
+        .returning();
+      endpoint = newEndpoint;
+    }
+
+    // Build the webhook URL
+    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3001}`;
+    const webhookUrl = `${baseUrl}/api/webhooks/flows/incoming/${templateId}`;
+
+    res.json({
+      success: true,
+      data: {
+        webhookUrl,
+        secret: endpoint.secret,
+        enabled: endpoint.enabled,
+      },
+    });
+  })
+);
+
+// ============================================================================
+// POST /api/templates/:id/webhook-config/regenerate - Regenerate webhook secret
+// ============================================================================
+
+router.post(
+  '/:id/webhook-config/regenerate',
+  asyncHandler(async (req, res) => {
+    const templateId = req.params.id as string;
+    const orgId = req.organizationId;
+
+    // Verify the template exists and belongs to this org
+    const flow = await db.query.flows.findFirst({
+      where: orgId
+        ? and(eq(flows.id, templateId), eq(flows.organizationId, orgId))
+        : eq(flows.id, templateId),
+    });
+
+    if (!flow) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow not found' },
+      });
+      return;
+    }
+
+    // Find existing endpoint
+    let endpoint = await db.query.webhookEndpoints.findFirst({
+      where: and(
+        eq(webhookEndpoints.flowId, templateId),
+        eq(webhookEndpoints.type, 'INCOMING')
+      ),
+    });
+
+    const newSecret = crypto.randomUUID();
+
+    if (endpoint) {
+      // Update existing
+      [endpoint] = await db
+        .update(webhookEndpoints)
+        .set({ secret: newSecret })
+        .where(eq(webhookEndpoints.id, endpoint.id))
+        .returning();
+    } else {
+      // Create new
+      [endpoint] = await db
+        .insert(webhookEndpoints)
+        .values({
+          flowId: templateId,
+          organizationId: flow.organizationId,
+          type: 'INCOMING',
+          secret: newSecret,
+          enabled: true,
+        })
+        .returning();
+    }
+
+    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3001}`;
+    const webhookUrl = `${baseUrl}/api/webhooks/flows/incoming/${templateId}`;
+
+    res.json({
+      success: true,
+      data: {
+        webhookUrl,
+        secret: endpoint.secret,
+        enabled: endpoint.enabled,
+      },
+    });
   })
 );
 

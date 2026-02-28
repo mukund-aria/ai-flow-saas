@@ -23,6 +23,15 @@ import type { JourneyStep } from '@/types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+interface BrandingConfig {
+  logoUrl?: string;
+  primaryColor?: string;
+  accentColor?: string;
+  companyName?: string;
+  faviconUrl?: string;
+  emailFooter?: string;
+}
+
 interface TaskContext {
   token: string;
   flowName: string;
@@ -45,6 +54,7 @@ interface TaskContext {
   completed: boolean;
   alreadyCompleted?: boolean;
   journeySteps?: JourneyStep[];
+  branding?: BrandingConfig;
 }
 
 export function AssigneeTaskPage() {
@@ -180,19 +190,30 @@ export function AssigneeTaskPage() {
   }
 
   if (!task) return null;
+  // Note: branding only available after task loads, error pages use default footer
 
   const stepIndex = task.stepIndex ?? 1;
   const totalSteps = task.totalSteps ?? 1;
   const displayStepIndex = viewingStepIndex !== null ? viewingStepIndex + 1 : stepIndex;
   const viewedJourneyStep = viewingStepIndex !== null ? journeySteps[viewingStepIndex] : undefined;
 
+  // Apply branding CSS custom properties
+  const brandingStyle: React.CSSProperties = {};
+  if (task.branding?.primaryColor) {
+    (brandingStyle as any)['--brand-primary'] = task.branding.primaryColor;
+  }
+  if (task.branding?.accentColor) {
+    (brandingStyle as any)['--brand-accent'] = task.branding.accentColor;
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50" style={brandingStyle}>
       <AssigneeHeader
         runName={task.runName}
         flowName={task.flowName}
         contactName={task.contactName}
         onToggleChat={() => chatStore.toggle()}
+        branding={task.branding}
       />
 
       <StepNavigator
@@ -230,7 +251,7 @@ export function AssigneeTaskPage() {
         </div>
       </div>
 
-      <AssigneeFooter />
+      <AssigneeFooter companyName={task.branding?.companyName} />
 
       {/* Overlays & floating elements */}
       {completionState.completed && (

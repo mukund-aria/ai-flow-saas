@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { User, Building2, Bell, Shield, CheckCircle, Loader2 } from 'lucide-react';
+import { User, Building2, Bell, Shield, CheckCircle, Loader2, Palette } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +14,7 @@ import {
   updateNotificationPreferences,
   type NotificationPreferences,
 } from '@/lib/api';
+import { BrandingSettings } from '@/components/settings/BrandingSettings';
 
 export function SettingsPage() {
   const { user, logout, checkAuth } = useAuth();
@@ -241,6 +242,19 @@ export function SettingsPage() {
           )}
         </div>
       </section>
+
+      {/* Branding Section */}
+      {user?.role === 'ADMIN' && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <Palette className="w-4 h-4" />
+            Branding
+          </h2>
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <BrandingSettings />
+          </div>
+        </section>
+      )}
 
       {/* Security Section */}
       <section>

@@ -19,7 +19,8 @@ export type NotificationJobType =
   | 'escalation'
   | 'check-stalled'
   | 'daily-digest'
-  | 'send-webhook';
+  | 'send-webhook'
+  | 'scheduled-flow-start';
 
 export interface NotificationJobData {
   type: NotificationJobType;
@@ -223,8 +224,98 @@ export async function initScheduler(): Promise<void> {
 
     isInitialized = true;
     console.log('[Scheduler] Initialized with BullMQ');
+
+    // Load persistent schedules from DB
+    await initSchedules();
   } catch (err) {
     console.error('[Scheduler] Failed to initialize:', err);
+  }
+}
+
+// ============================================================================
+// Schedule Management (DB-backed schedules)
+// ============================================================================
+
+/**
+ * Load all enabled schedules from the database and register them as
+ * repeatable BullMQ jobs. Called on server start.
+ */
+export async function initSchedules(): Promise<void> {
+  if (!notificationQueue) {
+    console.log('[Scheduler] No queue available — skipping schedule initialization');
+    return;
+  }
+
+  try {
+    const { db, schedules: schedulesTable } = await import('../db/index.js');
+    const { eq } = await import('drizzle-orm');
+
+    const enabledSchedules = await db.query.schedules.findMany({
+      where: eq(schedulesTable.enabled, true),
+    });
+
+    console.log(`[Scheduler] Loading ${enabledSchedules.length} enabled schedules from DB`);
+
+    for (const schedule of enabledSchedules) {
+      try {
+        await registerSchedule(schedule);
+      } catch (err) {
+        console.error(`[Scheduler] Failed to register schedule ${schedule.id}:`, err);
+      }
+    }
+
+    console.log('[Scheduler] All schedules loaded');
+  } catch (err) {
+    console.error('[Scheduler] Failed to load schedules from DB:', err);
+  }
+}
+
+/**
+ * Register a single schedule as a repeatable BullMQ job.
+ */
+export async function registerSchedule(schedule: {
+  id: string;
+  flowId: string;
+  organizationId: string;
+  scheduleName: string;
+  cronPattern: string;
+  roleAssignments?: Record<string, unknown> | null;
+  kickoffData?: Record<string, unknown> | null;
+}): Promise<void> {
+  if (!notificationQueue) return;
+
+  await notificationQueue.add(
+    'scheduled-flow-start',
+    {
+      type: 'scheduled-flow-start' as NotificationJobType,
+      organizationId: schedule.organizationId,
+    },
+    {
+      jobId: `schedule:${schedule.id}`,
+      repeat: { pattern: schedule.cronPattern },
+      removeOnComplete: true,
+      removeOnFail: 100,
+    }
+  );
+
+  console.log(`[Scheduler] Registered schedule "${schedule.scheduleName}" (${schedule.id})`);
+}
+
+/**
+ * Cancel/remove a repeatable schedule job.
+ */
+export async function cancelSchedule(scheduleId: string): Promise<void> {
+  if (!notificationQueue) return;
+
+  try {
+    const repeatableJobs = await notificationQueue.getRepeatableJobs();
+    const match = repeatableJobs.find((j) => j.id === `schedule:${scheduleId}`);
+    if (match) {
+      await notificationQueue.removeRepeatableByKey(match.key);
+      console.log(`[Scheduler] Cancelled schedule: ${scheduleId}`);
+    }
+  } catch (err) {
+    console.error(`[Scheduler] Failed to cancel schedule ${scheduleId}:`, err);
   }
 }
 
@@ -263,6 +354,39 @@ async function processNotificationJob(job: Job<NotificationJobData>): Promise<vo
     case 'send-webhook': {
       const { handleWebhookJob } = await import('./webhook.js');
       if (job.data.webhookData) await handleWebhookJob(job.data.webhookData);
+      break;
+    }
+    case 'scheduled-flow-start': {
+      // Find the schedule from the job ID and trigger the flow start
+      const scheduleId = job.opts?.jobId?.replace('schedule:', '') || '';
+      if (scheduleId) {
+        const { db, schedules: schedulesTable } = await import('../db/index.js');
+        const { eq } = await import('drizzle-orm');
+        const schedule = await db.query.schedules.findFirst({
+          where: eq(schedulesTable.id, scheduleId),
+        });
+        if (schedule) {
+          const { processScheduledFlowStart } = await import('./flow-scheduler.js');
+          await processScheduledFlowStart({
+            type: 'scheduled-flow-start',
+            flowId: schedule.flowId,
+            organizationId: schedule.organizationId,
+            scheduleName: schedule.scheduleName,
+            roleAssignments: schedule.roleAssignments as Record<string, string> | undefined,
+            kickoffData: schedule.kickoffData as Record<string, unknown> | undefined,
+          });
+          // Update lastRunAt and nextRunAt
+          const { CronExpressionParser } = await import('cron-parser');
+          let nextRunAt: Date | null = null;
+          try {
+            const expr = CronExpressionParser.parse(schedule.cronPattern, { tz: schedule.timezone });
+            nextRunAt = expr.next().toDate();
+          } catch {}
+          await db.update(schedulesTable)
+            .set({ lastRunAt: new Date(), nextRunAt })
+            .where(eq(schedulesTable.id, scheduleId));
+        }
+      }
       break;
     }
     default:

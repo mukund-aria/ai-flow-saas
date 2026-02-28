@@ -508,6 +508,15 @@ export interface SubFlowConfig {
     parentKey: string;
     childKey: string;
   }>;
+  inputMappings: Array<{
+    parentRef: string;
+    subFlowField: string;
+  }>;
+  outputMappings: Array<{
+    subFlowOutputRef: string;
+    parentOutputKey: string;
+  }>;
+  waitForCompletion?: boolean;
 }
 
 export interface IntegrationConfig {
@@ -528,9 +537,17 @@ export interface StepOption {
   value?: string;
 }
 
+export interface BranchCondition {
+  source: string;
+  operator: string;
+  value?: any;
+}
+
 export interface BranchPath {
   pathId: string;
   label: string;
+  isDefault?: boolean;
+  condition?: BranchCondition;
   steps: Step[];
 }
 

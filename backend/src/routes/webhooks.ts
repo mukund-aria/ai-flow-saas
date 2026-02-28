@@ -3,10 +3,14 @@
  *
  * Public HTTP endpoints for triggering flow starts via webhook.
  * No authentication required - mounted outside auth middleware.
+ *
+ * Also includes HMAC-signed incoming webhook endpoint that verifies
+ * signatures against stored webhook endpoint secrets.
  */
 
 import { Router } from 'express';
-import { db, flows, flowRuns, stepExecutions, organizations, users, contacts } from '../db/index.js';
+import crypto from 'crypto';
+import { db, flows, flowRuns, stepExecutions, organizations, users, contacts, webhookEndpoints } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
@@ -255,6 +259,199 @@ router.get(
         assigneePlaceholders,
         kickoffFields,
       },
+    });
+  })
+);
+
+// ============================================================================
+// POST /api/webhooks/incoming/:flowId - HMAC-verified incoming webhook
+// ============================================================================
+
+router.post(
+  '/incoming/:flowId',
+  asyncHandler(async (req, res) => {
+    const flowId = req.params.flowId as string;
+
+    // Look up the webhook endpoint record for this flow
+    const endpoint = await db.query.webhookEndpoints.findFirst({
+      where: and(
+        eq(webhookEndpoints.flowId, flowId),
+        eq(webhookEndpoints.type, 'INCOMING')
+      ),
+    });
+
+    if (!endpoint || !endpoint.enabled) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Webhook endpoint not found or disabled' },
+      });
+      return;
+    }
+
+    // Verify HMAC-SHA256 signature
+    const signature = req.headers['x-webhook-signature'] as string;
+    if (!signature) {
+      res.status(401).json({
+        success: false,
+        error: { code: 'UNAUTHORIZED', message: 'Missing X-Webhook-Signature header' },
+      });
+      return;
+    }
+
+    const body = JSON.stringify(req.body);
+    const expectedSignature = crypto
+      .createHmac('sha256', endpoint.secret)
+      .update(body)
+      .digest('hex');
+
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+      res.status(401).json({
+        success: false,
+        error: { code: 'UNAUTHORIZED', message: 'Invalid webhook signature' },
+      });
+      return;
+    }
+
+    // Get the flow template
+    const flow = await db.query.flows.findFirst({
+      where: eq(flows.id, flowId),
+    });
+
+    if (!flow) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow not found' },
+      });
+      return;
+    }
+
+    // Extract payload
+    const { name, roleAssignments, kickoffData } = req.body as {
+      name?: string;
+      roleAssignments?: Record<string, string>;
+      kickoffData?: Record<string, unknown>;
+    };
+
+    // Get flow definition and steps
+    const definition = flow.definition as { steps?: Array<Record<string, unknown>> } | null;
+    const steps = definition?.steps || [];
+
+    if (steps.length === 0) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Flow has no steps defined' },
+      });
+      return;
+    }
+
+    // Resolve user/org from the flow record
+    const orgId = flow.organizationId;
+    const userId = flow.createdById;
+
+    // Create the flow run
+    const runName = name || `${flow.name} - Webhook ${new Date().toISOString().split('T')[0]}`;
+
+    const [newRun] = await db
+      .insert(flowRuns)
+      .values({
+        flowId: flow.id,
+        name: runName,
+        status: 'IN_PROGRESS',
+        isSample: false,
+        currentStepIndex: 0,
+        startedById: userId,
+        organizationId: orgId,
+        roleAssignments: roleAssignments || null,
+        kickoffData: kickoffData || null,
+      })
+      .returning();
+
+    // Resolve role assignments
+    const resolvedRoles: Record<string, string> = {};
+    if (roleAssignments && typeof roleAssignments === 'object') {
+      for (const [roleName, contactId] of Object.entries(roleAssignments)) {
+        if (contactId && typeof contactId === 'string') {
+          resolvedRoles[roleName] = contactId;
+        }
+      }
+    }
+
+    // Create step executions
+    const stepExecutionValues = steps.map((step, index) => {
+      const stepDef = step as any;
+      const resolvedStepId = stepDef.stepId || stepDef.id || `step-${index}`;
+      const assigneeRole = stepDef.config?.assignee || stepDef.assignee;
+      const contactId = assigneeRole ? resolvedRoles[assigneeRole] : undefined;
+
+      return {
+        flowRunId: newRun.id,
+        stepId: resolvedStepId,
+        stepIndex: index,
+        status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
+        startedAt: index === 0 ? new Date() : null,
+        assignedToContactId: contactId || null,
+        assignedToUserId: (!contactId && assigneeRole === '__coordinator__') ? userId : null,
+      };
+    });
+
+    await db.insert(stepExecutions).values(stepExecutionValues);
+
+    // Create magic links for contact-assigned first step
+    const firstStepVal = stepExecutionValues[0];
+    if (firstStepVal.assignedToContactId) {
+      const stepExec = await db.query.stepExecutions.findFirst({
+        where: and(
+          eq(stepExecutions.flowRunId, newRun.id),
+          eq(stepExecutions.stepIndex, 0)
+        ),
+      });
+      if (stepExec) {
+        const { createMagicLink } = await import('../services/magic-link.js');
+        const { sendMagicLink } = await import('../services/email.js');
+        const token = await createMagicLink(stepExec.id);
+        const contact = await db.query.contacts.findFirst({
+          where: eq(contacts.id, firstStepVal.assignedToContactId),
+        });
+        if (contact) {
+          await sendMagicLink({
+            to: contact.email,
+            contactName: contact.name,
+            stepName: (steps[0] as any).config?.name || 'Task',
+            flowName: flow.name,
+            token,
+          });
+        }
+      }
+    }
+
+    // Schedule notification jobs for the first step
+    const firstStep = steps[0] as { id?: string; stepId?: string; due?: { value: number; unit: string }; config?: { due?: { value: number; unit: string } } };
+    const firstStepExec = await db.query.stepExecutions.findFirst({
+      where: and(
+        eq(stepExecutions.flowRunId, newRun.id),
+        eq(stepExecutions.stepIndex, 0)
+      ),
+    });
+    if (firstStepExec) {
+      await onStepActivated(firstStepExec.id, firstStep.due || firstStep.config?.due, flow.definition as Record<string, unknown>);
+    }
+
+    // Set initial activity timestamp
+    await updateFlowActivity(newRun.id);
+
+    // Dispatch flow.started event
+    await onFlowStarted({ id: newRun.id, name: runName, organizationId: orgId, flowId: flow.id, flow: { name: flow.name } });
+
+    // Audit log
+    logAction({
+      flowRunId: newRun.id,
+      action: 'WEBHOOK_FLOW_STARTED',
+      details: { flowId: flow.id, flowName: flow.name, runName, source: 'hmac_webhook' },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { runId: newRun.id, status: 'started' },
     });
   })
 );

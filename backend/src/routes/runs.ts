@@ -10,7 +10,7 @@ import { db, flows, flowRuns, stepExecutions, users, organizations, contacts, ma
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
-import { onStepActivated, onStepCompleted, onFlowCompleted, onFlowCancelled, onFlowStarted, updateFlowActivity, computeFlowDueAt } from '../services/execution.js';
+import { onStepActivated, onStepCompleted, onFlowCompleted, onFlowCancelled, onFlowStarted, updateFlowActivity, computeFlowDueAt, handleSubFlowStep } from '../services/execution.js';
 import { getNextStepExecutions } from '../services/step-advancement.js';
 
 const router = Router();
@@ -489,6 +489,17 @@ router.post(
     });
     if (firstStepExec) {
       await onStepActivated(firstStepExec.id, firstStep.due || firstStep.config?.due, flow.definition as Record<string, unknown>, flowDueAt);
+
+      // If first step is a SUB_FLOW, start the child flow automatically
+      if ((steps[0] as any).type === 'SUB_FLOW') {
+        await handleSubFlowStep(firstStepExec.id, steps[0] as Record<string, unknown>, {
+          id: newRun.id,
+          organizationId: resolvedOrgId,
+          startedById: userId,
+          flowId: flow.id,
+          name: runName,
+        });
+      }
     }
 
     // Set initial activity timestamp
@@ -647,6 +658,17 @@ router.post(
       // Pass flow-level dueAt so BEFORE_FLOW_DUE steps can be computed
       const runDueAt = run.dueAt ? new Date(run.dueAt) : null;
       await onStepActivated(nextStepExecution.id, nextStepDue, run.flow?.definition as Record<string, unknown>, runDueAt);
+
+      // If next step is a SUB_FLOW, start the child flow automatically
+      if ((nextStepDef as any)?.type === 'SUB_FLOW') {
+        await handleSubFlowStep(nextStepExecution.id, nextStepDef as Record<string, unknown>, {
+          id: run.id,
+          organizationId: run.organizationId,
+          startedById: run.startedById,
+          flowId: run.flowId,
+          name: run.name,
+        });
+      }
 
       // If next step has a contact assignee, create magic link and send email
       if (nextStepExecution.assignedToContactId) {

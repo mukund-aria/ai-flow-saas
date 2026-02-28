@@ -73,9 +73,13 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
   const kickoffFormFields = kickoff.kickoffFormFields ?? [];
   const flowVariables = kickoff.flowVariables ?? [];
 
-  // Start Link config state
+  // Start Link config state — use embed system for real URLs
   const flowId = workflow?.flowId || 'new';
-  const startLinkUrl = `https://app.aiflow.com/start/${flowId}`;
+  const embedId = (workflow as any)?.embedId;
+  const baseUrl = window.location.origin;
+  const startLinkUrl = embedId
+    ? `${baseUrl}/embed/${embedId}`
+    : `${baseUrl}/embed/${flowId}`;
   const embedSnippet = `<iframe src="${startLinkUrl}" width="100%" height="600" frameborder="0" style="border:none;border-radius:8px;"></iframe>`;
 
   const [startLinkConfig, setStartLinkConfig] = useState({

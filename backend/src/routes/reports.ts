@@ -7,7 +7,7 @@
 
 import { Router } from 'express';
 import { db, flows, flowRuns, stepExecutions, contacts, users } from '../db/index.js';
-import { eq, and, gte, lte, sql, count, desc } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, count, desc, isNotNull } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
 const router = Router();
@@ -383,5 +383,244 @@ router.get(
     });
   })
 );
+
+// ============================================================================
+// GET /api/reports/sla - SLA compliance metrics
+// ============================================================================
+
+router.get(
+  '/sla',
+  asyncHandler(async (req, res) => {
+    const orgId = req.organizationId;
+    const range = (req.query.range as string) || 'week';
+    const cutoff = getDateRangeCutoff(range);
+
+    // Fetch completed step executions within the time range, with their flow run + flow info
+    const completedSteps = await db.query.stepExecutions.findMany({
+      where: orgId
+        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowRunId} IN (SELECT ${flowRuns.id} FROM ${flowRuns} WHERE ${flowRuns.organizationId} = ${orgId})`
+        : sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.completedAt} >= ${cutoff}`,
+      with: {
+        flowRun: { with: { flow: true } },
+      },
+    });
+
+    // Overall SLA compliance
+    const stepsWithDue = completedSteps.filter((s) => s.dueAt);
+    const stepsOnTime = stepsWithDue.filter((s) => !s.slaBreachedAt);
+    const stepsBreached = stepsWithDue.filter((s) => !!s.slaBreachedAt);
+    const complianceRate = stepsWithDue.length > 0
+      ? Math.round((stepsOnTime.length / stepsWithDue.length) * 100)
+      : 100;
+
+    // Per-template breakdown
+    const byTemplate = new Map<string, {
+      templateName: string;
+      templateId: string;
+      totalSteps: number;
+      stepsWithDue: number;
+      breached: number;
+      totalTimeMs: number;
+      stepsWithTime: number;
+      stepTimes: Map<string, { stepName: string; totalMs: number; count: number; breachCount: number }>;
+    }>();
+
+    for (const step of completedSteps) {
+      const templateId = step.flowRun?.flowId || 'unknown';
+      const templateName = step.flowRun?.flow?.name || 'Unknown Template';
+
+      if (!byTemplate.has(templateId)) {
+        byTemplate.set(templateId, {
+          templateName,
+          templateId,
+          totalSteps: 0,
+          stepsWithDue: 0,
+          breached: 0,
+          totalTimeMs: 0,
+          stepsWithTime: 0,
+          stepTimes: new Map(),
+        });
+      }
+
+      const entry = byTemplate.get(templateId)!;
+      entry.totalSteps++;
+
+      if (step.dueAt) {
+        entry.stepsWithDue++;
+        if (step.slaBreachedAt) entry.breached++;
+      }
+
+      if (step.timeToComplete) {
+        entry.totalTimeMs += step.timeToComplete;
+        entry.stepsWithTime++;
+      }
+
+      // Track per-step metrics for bottleneck detection
+      const stepKey = step.stepId;
+      // Get step name from flow definition
+      const definition = step.flowRun?.flow?.definition as any;
+      const stepDef = definition?.steps?.find((s: any) => (s.stepId || s.id) === step.stepId);
+      const stepName = stepDef?.config?.name || `Step ${step.stepIndex + 1}`;
+
+      if (!entry.stepTimes.has(stepKey)) {
+        entry.stepTimes.set(stepKey, { stepName, totalMs: 0, count: 0, breachCount: 0 });
+      }
+      const stepEntry = entry.stepTimes.get(stepKey)!;
+      if (step.timeToComplete) {
+        stepEntry.totalMs += step.timeToComplete;
+        stepEntry.count++;
+      }
+      if (step.slaBreachedAt) stepEntry.breachCount++;
+    }
+
+    const templateBreakdown = Array.from(byTemplate.values()).map((entry) => {
+      const avgCompletionMs = entry.stepsWithTime > 0 ? entry.totalTimeMs / entry.stepsWithTime : 0;
+      const breachRate = entry.stepsWithDue > 0 ? Math.round((entry.breached / entry.stepsWithDue) * 100) : 0;
+
+      // Find bottleneck step (slowest average)
+      let bottleneckStep: string | null = null;
+      let maxAvgMs = 0;
+      for (const [, stepData] of entry.stepTimes) {
+        if (stepData.count > 0) {
+          const avg = stepData.totalMs / stepData.count;
+          if (avg > maxAvgMs) {
+            maxAvgMs = avg;
+            bottleneckStep = stepData.stepName;
+          }
+        }
+      }
+
+      return {
+        templateName: entry.templateName,
+        templateId: entry.templateId,
+        totalSteps: entry.totalSteps,
+        avgCompletionMs,
+        avgCompletionFormatted: formatDuration(avgCompletionMs),
+        breachRate,
+        bottleneckStep,
+      };
+    });
+
+    templateBreakdown.sort((a, b) => b.breachRate - a.breachRate);
+
+    res.json({
+      success: true,
+      data: {
+        overall: {
+          totalCompleted: completedSteps.length,
+          stepsWithDue: stepsWithDue.length,
+          onTime: stepsOnTime.length,
+          breached: stepsBreached.length,
+          complianceRate,
+        },
+        templateBreakdown,
+      },
+    });
+  })
+);
+
+// ============================================================================
+// GET /api/reports/bottlenecks - Top 10 slowest steps
+// ============================================================================
+
+router.get(
+  '/bottlenecks',
+  asyncHandler(async (req, res) => {
+    const orgId = req.organizationId;
+    const range = (req.query.range as string) || 'month';
+    const cutoff = getDateRangeCutoff(range);
+
+    // Fetch completed steps with time data
+    const completedSteps = await db.query.stepExecutions.findMany({
+      where: orgId
+        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.timeToComplete} IS NOT NULL AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowRunId} IN (SELECT ${flowRuns.id} FROM ${flowRuns} WHERE ${flowRuns.organizationId} = ${orgId})`
+        : sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.timeToComplete} IS NOT NULL AND ${stepExecutions.completedAt} >= ${cutoff}`,
+      with: {
+        flowRun: { with: { flow: true } },
+        assignedToContact: true,
+        assignedToUser: true,
+      },
+    });
+
+    // Aggregate by stepId + templateId
+    const byStep = new Map<string, {
+      stepName: string;
+      templateName: string;
+      templateId: string;
+      totalMs: number;
+      count: number;
+      breachCount: number;
+      assignees: Set<string>;
+    }>();
+
+    for (const step of completedSteps) {
+      const templateId = step.flowRun?.flowId || 'unknown';
+      const templateName = step.flowRun?.flow?.name || 'Unknown Template';
+      const key = `${templateId}:${step.stepId}`;
+
+      // Get step name from flow definition
+      const definition = step.flowRun?.flow?.definition as any;
+      const stepDef = definition?.steps?.find((s: any) => (s.stepId || s.id) === step.stepId);
+      const stepName = stepDef?.config?.name || `Step ${step.stepIndex + 1}`;
+
+      if (!byStep.has(key)) {
+        byStep.set(key, {
+          stepName,
+          templateName,
+          templateId,
+          totalMs: 0,
+          count: 0,
+          breachCount: 0,
+          assignees: new Set(),
+        });
+      }
+
+      const entry = byStep.get(key)!;
+      entry.totalMs += step.timeToComplete!;
+      entry.count++;
+      if (step.slaBreachedAt) entry.breachCount++;
+
+      const assigneeName = step.assignedToContact?.name || step.assignedToUser?.name;
+      if (assigneeName) entry.assignees.add(assigneeName);
+    }
+
+    const result = Array.from(byStep.values())
+      .map((entry) => ({
+        stepName: entry.stepName,
+        templateName: entry.templateName,
+        templateId: entry.templateId,
+        avgDurationMs: Math.round(entry.totalMs / entry.count),
+        avgDurationFormatted: formatDuration(entry.totalMs / entry.count),
+        occurrences: entry.count,
+        breachCount: entry.breachCount,
+        assignees: Array.from(entry.assignees).slice(0, 3),
+      }))
+      .sort((a, b) => b.avgDurationMs - a.avgDurationMs)
+      .slice(0, 10);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  })
+);
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function formatDuration(ms: number): string {
+  if (ms <= 0) return '0s';
+  const hours = ms / (1000 * 60 * 60);
+  if (hours < 1) {
+    const mins = Math.round(ms / (1000 * 60));
+    return `${mins}m`;
+  }
+  if (hours < 24) {
+    return `${hours.toFixed(1)}h`;
+  }
+  const days = hours / 24;
+  return `${days.toFixed(1)}d`;
+}
 
 export default router;

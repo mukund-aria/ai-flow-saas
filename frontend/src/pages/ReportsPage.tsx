@@ -25,6 +25,8 @@ import {
   Target,
   PieChart,
   Loader2,
+  ShieldCheck,
+  Timer,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -32,14 +34,18 @@ import {
   getFlowReports,
   getAssigneeReports,
   getMemberReports,
+  getSLAReport,
+  getBottleneckReport,
   type ReportSummary,
   type FlowReport,
   type AssigneeReport,
   type MemberReport,
+  type SLAReport,
+  type BottleneckReport,
 } from '@/lib/api';
 
 // Types
-type TabId = 'dashboard' | 'flow-report' | 'assignee-report' | 'member-report';
+type TabId = 'dashboard' | 'flow-report' | 'assignee-report' | 'member-report' | 'sla';
 type TimeRange = 'today' | 'week' | 'month' | 'quarter' | 'year';
 
 interface Tab {
@@ -72,6 +78,7 @@ const tabs: Tab[] = [
   { id: 'flow-report', label: 'Flow report', icon: Layers },
   { id: 'assignee-report', label: 'Assignee report', icon: Users },
   { id: 'member-report', label: 'Member report', icon: FileText },
+  { id: 'sla', label: 'SLA', icon: ShieldCheck },
 ];
 
 const timeRanges: { value: TimeRange; label: string }[] = [
@@ -455,6 +462,208 @@ function MemberReportTab() {
   );
 }
 
+function SLAReportTab() {
+  const [slaData, setSlaData] = useState<SLAReport | null>(null);
+  const [bottlenecks, setBottlenecks] = useState<BottleneckReport[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [range, setRange] = useState<TimeRange>('week');
+
+  useEffect(() => {
+    setIsLoading(true);
+    Promise.all([getSLAReport(range), getBottleneckReport(range)])
+      .then(([sla, bn]) => {
+        setSlaData(sla);
+        setBottlenecks(bn);
+      })
+      .catch((err) => console.error('Failed to fetch SLA data:', err))
+      .finally(() => setIsLoading(false));
+  }, [range]);
+
+  if (isLoading) return <LoadingSpinner />;
+  if (!slaData) return <EmptyState message="Unable to load SLA data. Please try again." />;
+
+  const { overall, templateBreakdown } = slaData;
+
+  return (
+    <div className="space-y-6">
+      {/* Time range selector */}
+      <div className="flex justify-end">
+        <div className="relative">
+          <select
+            value={range}
+            onChange={(e) => setRange(e.target.value as TimeRange)}
+            className="appearance-none pl-4 pr-10 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+          >
+            {timeRanges.map((r) => (
+              <option key={r.value} value={r.value}>{r.label}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* SLA Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className={`rounded-xl p-5 text-white ${
+          overall.complianceRate >= 90 ? 'bg-gradient-to-br from-emerald-500 to-emerald-600' :
+          overall.complianceRate >= 70 ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
+          'bg-gradient-to-br from-red-500 to-red-600'
+        }`}>
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldCheck className="w-5 h-5 opacity-80" />
+            <span className="text-sm opacity-80">SLA Compliance</span>
+          </div>
+          <div className="text-3xl font-bold">{overall.complianceRate}%</div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+            <span className="text-sm text-gray-500">On Time</span>
+          </div>
+          <div className="text-2xl font-bold text-gray-900">{overall.onTime}</div>
+          <p className="text-xs text-gray-400 mt-1">of {overall.stepsWithDue} steps with deadlines</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <span className="text-sm text-gray-500">Breached</span>
+          </div>
+          <div className="text-2xl font-bold text-gray-900">{overall.breached}</div>
+          <p className="text-xs text-gray-400 mt-1">steps past deadline</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <Activity className="w-5 h-5 text-gray-400" />
+            <span className="text-sm text-gray-500">Total Completed</span>
+          </div>
+          <div className="text-2xl font-bold text-gray-900">{overall.totalCompleted}</div>
+          <p className="text-xs text-gray-400 mt-1">steps in period</p>
+        </div>
+      </div>
+
+      {/* Per-Template SLA Breakdown */}
+      {templateBreakdown.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900">SLA by Template</h3>
+            <p className="text-sm text-gray-500">Compliance rate and bottleneck per template</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Template</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Steps</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Avg. Time</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Breach Rate</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Bottleneck</th>
+                </tr>
+              </thead>
+              <tbody>
+                {templateBreakdown.map((tmpl) => (
+                  <tr key={tmpl.templateId} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
+                          <Layers className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="font-medium text-gray-900">{tmpl.templateName}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right text-gray-600">{tmpl.totalSteps}</td>
+                    <td className="px-6 py-4 text-right text-gray-600">{tmpl.avgCompletionFormatted}</td>
+                    <td className="px-6 py-4 text-right">
+                      <span className={`font-medium ${
+                        tmpl.breachRate <= 10 ? 'text-emerald-600' : tmpl.breachRate <= 30 ? 'text-amber-600' : 'text-red-600'
+                      }`}>
+                        {tmpl.breachRate}%
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {tmpl.bottleneckStep ? (
+                        <Badge variant="secondary" className="bg-orange-50 text-orange-700 text-xs">
+                          {tmpl.bottleneckStep}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400 text-sm">--</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Bottleneck Steps */}
+      {bottlenecks.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900">Bottleneck Steps</h3>
+            <p className="text-sm text-gray-500">Top 10 slowest steps across all templates</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Step</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Template</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Avg. Duration</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Occurrences</th>
+                  <th className="text-right text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Breaches</th>
+                  <th className="text-left text-xs font-medium text-gray-500 uppercase tracking-wide px-6 py-4">Assignees</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bottlenecks.map((bn, idx) => (
+                  <tr key={`${bn.templateId}-${bn.stepName}-${idx}`} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                          <Timer className="w-4 h-4 text-orange-600" />
+                        </div>
+                        <span className="font-medium text-gray-900">{bn.stepName}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 text-sm">{bn.templateName}</td>
+                    <td className="px-6 py-4 text-right font-medium text-gray-900">{bn.avgDurationFormatted}</td>
+                    <td className="px-6 py-4 text-right text-gray-600">{bn.occurrences}</td>
+                    <td className="px-6 py-4 text-right">
+                      {bn.breachCount > 0 ? (
+                        <span className="text-red-600 font-medium">{bn.breachCount}</span>
+                      ) : (
+                        <span className="text-emerald-600">0</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {bn.assignees.length > 0 ? (
+                        <div className="flex gap-1 flex-wrap">
+                          {bn.assignees.map((name) => (
+                            <Badge key={name} variant="secondary" className="bg-gray-100 text-gray-600 text-xs">
+                              {name}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm">--</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {templateBreakdown.length === 0 && bottlenecks.length === 0 && (
+        <EmptyState message="No SLA data yet. Complete some steps with due dates to see SLA metrics." />
+      )}
+    </div>
+  );
+}
+
 export function ReportsPage() {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [timeRange, setTimeRange] = useState<TimeRange>('week');
@@ -593,6 +802,7 @@ export function ReportsPage() {
       {activeTab === 'flow-report' && <FlowReportTab />}
       {activeTab === 'assignee-report' && <AssigneeReportTab />}
       {activeTab === 'member-report' && <MemberReportTab />}
+      {activeTab === 'sla' && <SLAReportTab />}
     </div>
   );
 }

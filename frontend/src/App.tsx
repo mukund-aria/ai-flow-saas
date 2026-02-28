@@ -47,6 +47,7 @@ import {
   FormBuilderPage,
 } from '@/pages';
 import { TemplateDetailPage } from '@/pages/TemplateDetailPage';
+import { EmbedStartPage } from '@/pages/EmbedStartPage';
 
 // ============================================================================
 // Protected Route Component
@@ -124,6 +125,7 @@ function AppRoutes() {
         }
       />
       <Route path="/task/:token" element={<AssigneeTaskPage />} />
+      <Route path="/embed/:embedId" element={<EmbedStartPage />} />
 
       {/* Protected Routes - Coordinator Portal */}
       <Route

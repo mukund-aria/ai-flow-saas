@@ -6,13 +6,15 @@
  */
 
 import { Router } from 'express';
-import { db, magicLinks, stepExecutions, flowRuns, contacts, flowRunConversations, flowRunMessages, auditLogs } from '../db/index.js';
-import { eq, and } from 'drizzle-orm';
+import multer from 'multer';
+import { db, magicLinks, stepExecutions, flowRuns, contacts, flowRunConversations, flowRunMessages, auditLogs, files } from '../db/index.js';
+import { eq, and, isNull } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { validateMagicLink } from '../services/magic-link.js';
 import { logAction } from '../services/audit.js';
-import { onStepActivated, onStepCompleted, onFlowCompleted, updateFlowActivity } from '../services/execution.js';
+import { onStepActivated, onStepCompleted, onFlowCompleted, updateFlowActivity, handleSubFlowStep } from '../services/execution.js';
 import { getNextStepExecutions } from '../services/step-advancement.js';
+import { fileStorage } from '../services/file-storage.js';
 
 const router = Router();
 
@@ -51,9 +53,24 @@ router.get(
       return;
     }
 
+    // Include files for this step if available
+    let stepFiles: any[] = [];
+    const linkForFiles = await db.query.magicLinks.findFirst({
+      where: eq(magicLinks.token, token),
+    });
+    if (linkForFiles?.stepExecutionId) {
+      stepFiles = await db.query.files.findMany({
+        where: and(
+          eq(files.stepExecutionId, linkForFiles.stepExecutionId),
+          isNull(files.deletedAt),
+        ),
+        orderBy: (f, { desc }) => [desc(f.createdAt)],
+      });
+    }
+
     res.json({
       success: true,
-      data: taskContext,
+      data: { ...taskContext, files: stepFiles },
     });
   })
 );
@@ -186,6 +203,17 @@ router.post(
         const nextStepDef = definition?.steps?.find((s: any) => (s.stepId || s.id) === nextStep.stepId);
         const nextStepDue = (nextStepDef as any)?.due || (nextStepDef as any)?.config?.due;
         await onStepActivated(nextStep.id, nextStepDue, run.flow?.definition as Record<string, unknown>);
+
+        // If next step is a SUB_FLOW, start the child flow automatically
+        if ((nextStepDef as any)?.type === 'SUB_FLOW') {
+          await handleSubFlowStep(nextStep.id, nextStepDef as Record<string, unknown>, {
+            id: run.id,
+            organizationId: run.organizationId,
+            startedById: run.startedById,
+            flowId: run.flowId,
+            name: run.name,
+          });
+        }
 
         await db.update(flowRuns)
           .set({ currentStepIndex: nextStep.stepIndex })
@@ -530,6 +558,95 @@ router.post(
         attachments: [],
         createdAt: message.createdAt,
       },
+    });
+  })
+);
+
+// ============================================================================
+// POST /api/public/task/:token/upload - File upload for assignees
+// ============================================================================
+
+const uploadStorage = multer.memoryStorage();
+const publicUpload = multer({
+  storage: uploadStorage,
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
+});
+
+router.post(
+  '/:token/upload',
+  publicUpload.single('file'),
+  asyncHandler(async (req, res) => {
+    const token = req.params.token as string;
+
+    // Validate magic link
+    const link = await db.query.magicLinks.findFirst({
+      where: eq(magicLinks.token, token),
+      with: { stepExecution: true },
+    });
+
+    if (!link || new Date() > link.expiresAt) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Invalid or expired link' },
+      });
+      return;
+    }
+
+    const stepExec = link.stepExecution;
+    if (!stepExec) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Step not found' },
+      });
+      return;
+    }
+
+    const file = req.file;
+    if (!file) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'No file uploaded' },
+      });
+      return;
+    }
+
+    // Get the flow run to find the org ID
+    const run = await db.query.flowRuns.findFirst({
+      where: eq(flowRuns.id, stepExec.flowRunId),
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+      });
+      return;
+    }
+
+    // Upload to storage
+    const { storageKey } = await fileStorage.upload(file.buffer, {
+      fileName: file.originalname,
+      mimeType: file.mimetype,
+      orgId: run.organizationId,
+      flowRunId: run.id,
+      stepId: stepExec.id,
+    });
+
+    // Save metadata to database
+    const [fileRecord] = await db.insert(files).values({
+      organizationId: run.organizationId,
+      flowRunId: run.id,
+      stepExecutionId: stepExec.id,
+      fileName: file.originalname,
+      fileSize: file.size,
+      mimeType: file.mimetype,
+      storageKey,
+      uploadedByContactId: stepExec.assignedToContactId || null,
+    }).returning();
+
+    res.status(201).json({
+      success: true,
+      data: fileRecord,
     });
   })
 );

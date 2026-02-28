@@ -766,6 +766,50 @@ export async function getMemberReports(): Promise<MemberReport[]> {
   return data.data;
 }
 
+export interface SLAReport {
+  overall: {
+    totalCompleted: number;
+    stepsWithDue: number;
+    onTime: number;
+    breached: number;
+    complianceRate: number;
+  };
+  templateBreakdown: Array<{
+    templateName: string;
+    templateId: string;
+    totalSteps: number;
+    avgCompletionMs: number;
+    avgCompletionFormatted: string;
+    breachRate: number;
+    bottleneckStep: string | null;
+  }>;
+}
+
+export interface BottleneckReport {
+  stepName: string;
+  templateName: string;
+  templateId: string;
+  avgDurationMs: number;
+  avgDurationFormatted: string;
+  occurrences: number;
+  breachCount: number;
+  assignees: string[];
+}
+
+export async function getSLAReport(range: string = 'week'): Promise<SLAReport> {
+  const res = await fetch(`${API_BASE}/reports/sla?range=${range}`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch SLA report');
+  return data.data;
+}
+
+export async function getBottleneckReport(range: string = 'month'): Promise<BottleneckReport[]> {
+  const res = await fetch(`${API_BASE}/reports/bottlenecks?range=${range}`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch bottleneck report');
+  return data.data;
+}
+
 // ============================================================================
 // Schedules API
 // ============================================================================
@@ -776,8 +820,11 @@ export interface Schedule {
   flowName: string;
   scheduleName: string;
   cronPattern: string;
+  timezone: string;
+  enabled: boolean;
+  lastRunAt: string | null;
+  nextRun: string | null;
   createdAt: string;
-  nextRun?: string;
 }
 
 export async function listSchedules(): Promise<Schedule[]> {
@@ -791,6 +838,7 @@ export async function createSchedule(data: {
   flowId: string;
   scheduleName: string;
   cronPattern: string;
+  timezone?: string;
 }): Promise<Schedule> {
   const res = await fetch(`${API_BASE}/schedules`, {
     ...fetchOpts,
@@ -803,10 +851,33 @@ export async function createSchedule(data: {
   return result.data;
 }
 
+export async function updateSchedule(id: string, data: Partial<{
+  scheduleName: string;
+  cronPattern: string;
+  timezone: string;
+  enabled: boolean;
+}>): Promise<Schedule> {
+  const res = await fetch(`${API_BASE}/schedules/${id}`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json();
+  if (!result.success) throw new Error(result.error?.message || 'Failed to update schedule');
+  return result.data;
+}
+
 export async function deleteSchedule(id: string): Promise<void> {
   const res = await fetch(`${API_BASE}/schedules/${id}`, { ...fetchOpts, method: 'DELETE' });
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to delete schedule');
+}
+
+export async function triggerSchedule(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/schedules/${id}/trigger`, { ...fetchOpts, method: 'POST' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to trigger schedule');
 }
 
 // ============================================================================
@@ -951,6 +1022,77 @@ export async function search(query: string): Promise<SearchResults> {
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Search failed');
   return data.data;
+}
+
+// ============================================================================
+// Files API (Cloud File Storage)
+// ============================================================================
+
+export interface FileRecord {
+  id: string;
+  organizationId: string;
+  flowRunId?: string;
+  stepExecutionId?: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  storageKey: string;
+  uploadedByContactId?: string;
+  uploadedByUserId?: string;
+  deletedAt?: string;
+  createdAt: string;
+}
+
+/**
+ * Upload a file for a flow run step (authenticated coordinator)
+ */
+export async function uploadFlowFile(runId: string, stepId: string, file: File): Promise<FileRecord> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('flowRunId', runId);
+  formData.append('stepExecutionId', stepId);
+
+  const res = await fetch(`${API_BASE}/files/upload`, {
+    ...fetchOpts,
+    method: 'POST',
+    body: formData,
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to upload file');
+  return data.data;
+}
+
+/**
+ * Upload a file as an assignee via magic link token
+ */
+export async function uploadPublicFile(token: string, file: File): Promise<FileRecord> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_BASE}/public/task/${token}/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to upload file');
+  return data.data;
+}
+
+/**
+ * List files for a specific step in a flow run
+ */
+export async function getStepFiles(runId: string, stepId: string): Promise<FileRecord[]> {
+  const res = await fetch(`${API_BASE}/files/runs/${runId}/steps/${stepId}/files`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list files');
+  return data.data;
+}
+
+/**
+ * Get download URL for a file (redirects to signed URL or streams)
+ */
+export function getFileDownloadUrl(fileId: string): string {
+  return `${API_BASE}/files/${fileId}/download`;
 }
 
 // ============================================================================

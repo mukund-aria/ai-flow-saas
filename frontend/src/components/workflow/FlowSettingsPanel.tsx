@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { X, Settings, Shield, Users, Bell, Clock } from 'lucide-react';
+import { X, Settings, Shield, Users, Bell, Clock, Code2 } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { FlowPermissionsEditor } from './FlowPermissionsEditor';
 import { AssigneeExperienceEditor } from './AssigneeExperienceEditor';
 import { FlowNotificationSettingsPanel } from './FlowNotificationSettings';
+import { EmbedConfig } from './EmbedConfig';
 import type { FlowDueDates, FlowDue, DueUnit } from '@/types';
 
 interface FlowSettingsPanelProps {
   onClose: () => void;
 }
 
-type SettingsTab = 'general' | 'permissions' | 'assignee' | 'notifications' | 'duedates';
+type SettingsTab = 'general' | 'permissions' | 'assignee' | 'notifications' | 'duedates' | 'embed';
 
 const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
   { id: 'general', label: 'General', icon: Settings },
@@ -18,6 +19,7 @@ const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
   { id: 'assignee', label: 'Assignee', icon: Users },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'duedates', label: 'Due Dates', icon: Clock },
+  { id: 'embed', label: 'Embed', icon: Code2 },
 ];
 
 export function FlowSettingsPanel({ onClose }: FlowSettingsPanelProps) {
@@ -94,6 +96,24 @@ export function FlowSettingsPanel({ onClose }: FlowSettingsPanelProps) {
             dueDates={workflow.dueDates || {}}
             onUpdate={updateFlowDueDates}
           />
+        )}
+
+        {activeTab === 'embed' && workflow.flowId && (
+          <div className="space-y-4">
+            <p className="text-xs text-gray-500">
+              Enable embedding to let external users start this flow from your website or via a shareable link.
+            </p>
+            <EmbedConfig
+              templateId={workflow.flowId}
+              existingEmbedId={(workflow as any).embedId}
+            />
+          </div>
+        )}
+
+        {activeTab === 'embed' && !workflow.flowId && (
+          <div className="text-center py-8">
+            <p className="text-sm text-gray-500">Save the template first to enable embedding.</p>
+          </div>
         )}
       </div>
     </div>

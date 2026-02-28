@@ -21,6 +21,8 @@ export type ContactStatus = 'ACTIVE' | 'INACTIVE';
 export type NotificationChannel = 'EMAIL' | 'IN_APP' | 'SLACK' | 'WEBHOOK';
 export type NotificationStatus = 'SENT' | 'FAILED' | 'SKIPPED';
 export type DigestFrequency = 'NONE' | 'DAILY' | 'WEEKLY';
+export type WebhookEndpointType = 'INCOMING' | 'OUTGOING';
+export type IntegrationType = 'SLACK_WEBHOOK' | 'TEAMS_WEBHOOK' | 'CUSTOM_WEBHOOK';
 
 // ============================================================================
 // Organizations
@@ -30,6 +32,14 @@ export const organizations = pgTable('organizations', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
+  brandingConfig: jsonb('branding_config').$type<{
+    logoUrl?: string;
+    primaryColor?: string;
+    accentColor?: string;
+    companyName?: string;
+    faviconUrl?: string;
+    emailFooter?: string;
+  }>(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -127,6 +137,8 @@ export const flowRuns = pgTable('flow_runs', {
   completedAt: timestamp('completed_at'),
   dueAt: timestamp('due_at'),
   lastActivityAt: timestamp('last_activity_at'),
+  parentRunId: text('parent_run_id'),
+  parentStepExecutionId: text('parent_step_execution_id'),
 });
 
 // ============================================================================
@@ -164,6 +176,11 @@ export const stepExecutions = pgTable('step_executions', {
   lastReminderSentAt: timestamp('last_reminder_sent_at'),
   reminderCount: integer('reminder_count').default(0).notNull(),
   escalatedAt: timestamp('escalated_at'),
+  branchPath: text('branch_path'),
+  parallelGroupId: text('parallel_group_id'),
+  dynamicIndex: integer('dynamic_index'),
+  slaBreachedAt: timestamp('sla_breached_at'),
+  timeToComplete: integer('time_to_complete'),
 });
 
 // ============================================================================
@@ -291,6 +308,84 @@ export const userNotificationPrefs = pgTable('user_notification_prefs', {
 }, (table) => [
   uniqueIndex('user_notif_prefs_unique').on(table.userId, table.organizationId),
 ]);
+
+// ============================================================================
+// Files (Cloud Storage Metadata)
+// ============================================================================
+
+export const files = pgTable('files', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  flowRunId: text('flow_run_id').references(() => flowRuns.id),
+  stepExecutionId: text('step_execution_id').references(() => stepExecutions.id),
+  fileName: text('file_name').notNull(),
+  fileSize: integer('file_size').notNull(),
+  mimeType: text('mime_type').notNull(),
+  storageKey: text('storage_key').notNull(),
+  uploadedByContactId: text('uploaded_by_contact_id').references(() => contacts.id),
+  uploadedByUserId: text('uploaded_by_user_id').references(() => users.id),
+  deletedAt: timestamp('deleted_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Schedules (Persistent Cron Schedules)
+// ============================================================================
+
+export const schedules = pgTable('schedules', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  flowId: text('flow_id').notNull().references(() => flows.id),
+  scheduleName: text('schedule_name').notNull(),
+  cronPattern: text('cron_pattern').notNull(),
+  timezone: text('timezone').default('UTC').notNull(),
+  roleAssignments: jsonb('role_assignments').$type<Record<string, unknown>>(),
+  kickoffData: jsonb('kickoff_data').$type<Record<string, unknown>>(),
+  enabled: boolean('enabled').default(true).notNull(),
+  lastRunAt: timestamp('last_run_at'),
+  nextRunAt: timestamp('next_run_at'),
+  createdByUserId: text('created_by_user_id').notNull().references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Webhook Endpoints (Incoming/Outgoing)
+// ============================================================================
+
+export const webhookEndpoints = pgTable('webhook_endpoints', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  flowId: text('flow_id').notNull().references(() => flows.id),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  type: text('type').$type<WebhookEndpointType>().notNull(),
+  url: text('url'),
+  secret: text('secret').notNull().$defaultFn(() => crypto.randomUUID()),
+  events: jsonb('events').$type<string[]>(),
+  enabled: boolean('enabled').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Integrations (Slack/Teams/Custom Webhooks)
+// ============================================================================
+
+export const integrations = pgTable('integrations', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  type: text('type').$type<IntegrationType>().notNull(),
+  name: text('name').notNull(),
+  config: jsonb('config').$type<{
+    webhookUrl?: string;
+    channel?: string;
+    events?: string[];
+    [key: string]: unknown;
+  }>().notNull(),
+  enabled: boolean('enabled').default(true).notNull(),
+  lastDeliveryAt: timestamp('last_delivery_at'),
+  lastDeliveryStatus: text('last_delivery_status'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
 
 // ============================================================================
 // Relations (for Drizzle query builder)
@@ -515,5 +610,65 @@ export const flowRunMessageAttachmentsRelations = relations(flowRunMessageAttach
   message: one(flowRunMessages, {
     fields: [flowRunMessageAttachments.messageId],
     references: [flowRunMessages.id],
+  }),
+}));
+
+// ============================================================================
+// New Table Relations
+// ============================================================================
+
+export const filesRelations = relations(files, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [files.organizationId],
+    references: [organizations.id],
+  }),
+  flowRun: one(flowRuns, {
+    fields: [files.flowRunId],
+    references: [flowRuns.id],
+  }),
+  stepExecution: one(stepExecutions, {
+    fields: [files.stepExecutionId],
+    references: [stepExecutions.id],
+  }),
+  uploadedByContact: one(contacts, {
+    fields: [files.uploadedByContactId],
+    references: [contacts.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [files.uploadedByUserId],
+    references: [users.id],
+  }),
+}));
+
+export const schedulesRelations = relations(schedules, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [schedules.organizationId],
+    references: [organizations.id],
+  }),
+  flow: one(flows, {
+    fields: [schedules.flowId],
+    references: [flows.id],
+  }),
+  createdBy: one(users, {
+    fields: [schedules.createdByUserId],
+    references: [users.id],
+  }),
+}));
+
+export const webhookEndpointsRelations = relations(webhookEndpoints, ({ one }) => ({
+  flow: one(flows, {
+    fields: [webhookEndpoints.flowId],
+    references: [flows.id],
+  }),
+  organization: one(organizations, {
+    fields: [webhookEndpoints.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+export const integrationsRelations = relations(integrations, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [integrations.organizationId],
+    references: [organizations.id],
   }),
 }));

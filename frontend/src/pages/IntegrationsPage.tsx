@@ -1,12 +1,11 @@
 /**
  * Integrations Page
  *
- * Catalog/directory of available integrations, grouped by connection status.
- * Includes an aggregate view of outgoing webhooks configured across templates.
+ * Full CRUD for org-level integrations (Slack, Teams, Custom Webhook)
+ * plus a catalog of available/coming-soon integrations.
  */
 
-import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Search,
   Globe,
@@ -18,354 +17,417 @@ import {
   Table2,
   HardDrive,
   MessageSquare,
-  ExternalLink,
   CheckCircle2,
   Plug,
   Loader2,
-  Link2,
+  Plus,
+  Trash2,
+  Send,
+  X,
 } from 'lucide-react';
-import { listTemplates, getTemplate } from '@/lib/api';
-import type { WebhookEndpointConfig } from '@/types';
+import { Button } from '@/components/ui/button';
 
-// ---------- Data ----------
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
-type IntegrationStatus = 'connected' | 'available' | 'coming_soon';
+// ---------- API helpers ----------
 
-interface Integration {
+interface OrgIntegration {
+  id: string;
+  type: 'SLACK_WEBHOOK' | 'TEAMS_WEBHOOK' | 'CUSTOM_WEBHOOK';
+  name: string;
+  config: {
+    webhookUrl?: string;
+    events?: string[];
+    [key: string]: unknown;
+  };
+  enabled: boolean;
+  lastDeliveryAt?: string;
+  lastDeliveryStatus?: string;
+  createdAt: string;
+}
+
+async function fetchIntegrations(): Promise<OrgIntegration[]> {
+  const res = await fetch(`${API_BASE}/integrations`, { credentials: 'include' });
+  const data = await res.json();
+  return data.success ? data.data : [];
+}
+
+async function createIntegration(body: {
+  type: string;
+  name: string;
+  config: Record<string, unknown>;
+}): Promise<OrgIntegration> {
+  const res = await fetch(`${API_BASE}/integrations`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to create');
+  return data.data;
+}
+
+async function updateIntegration(
+  id: string,
+  body: Partial<{ name: string; config: Record<string, unknown>; enabled: boolean }>
+): Promise<OrgIntegration> {
+  const res = await fetch(`${API_BASE}/integrations/${id}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to update');
+  return data.data;
+}
+
+async function deleteIntegration(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/integrations/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to delete');
+}
+
+async function testIntegration(id: string): Promise<{ success: boolean; message?: string }> {
+  const res = await fetch(`${API_BASE}/integrations/${id}/test`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  const data = await res.json();
+  return { success: data.success, message: data.data?.message || data.error?.message };
+}
+
+// ---------- Catalog data ----------
+
+type CatalogStatus = 'available' | 'coming_soon';
+
+interface CatalogIntegration {
   id: string;
   name: string;
   description: string;
   icon: React.ElementType;
-  status: IntegrationStatus;
+  status: CatalogStatus;
   category: string;
-  configPath?: string;
-  configLabel?: string;
 }
 
-const integrations: Integration[] = [
-  {
-    id: 'webhooks',
-    name: 'Outgoing Webhooks',
-    description:
-      'Send flow events to any URL via signed HTTP POST requests. Connect to Zapier, Make, or your own endpoints.',
-    icon: Globe,
-    status: 'connected',
-    category: 'Notifications',
-    configPath: '/home',
-    configLabel: 'Configure per-flow',
-  },
-  {
-    id: 'email',
-    name: 'Email (SMTP / Resend)',
-    description:
-      'Transactional emails for task assignments, reminders, and completions. Auto-configured.',
-    icon: Mail,
-    status: 'connected',
-    category: 'Notifications',
-  },
-  {
-    id: 'slack',
-    name: 'Slack',
-    description:
-      'Post flow activity to Slack channels. Create dedicated channels per flow run.',
-    icon: Hash,
-    status: 'available',
-    category: 'Notifications',
-    configPath: '/home',
-    configLabel: 'Configure per-flow',
-  },
-  {
-    id: 'google-sheets',
-    name: 'Google Sheets',
-    description:
-      'Sync form submissions and workflow data to Google Sheets automatically.',
-    icon: FileSpreadsheet,
-    status: 'coming_soon',
-    category: 'Data',
-  },
-  {
-    id: 'salesforce',
-    name: 'Salesforce',
-    description: 'Create and update Salesforce records from workflow steps.',
-    icon: Database,
-    status: 'coming_soon',
-    category: 'CRM',
-  },
-  {
-    id: 'hubspot',
-    name: 'HubSpot',
-    description: 'Sync contacts and deals with HubSpot CRM.',
-    icon: Database,
-    status: 'coming_soon',
-    category: 'CRM',
-  },
-  {
-    id: 'zapier',
-    name: 'Zapier',
-    description:
-      'Connect to 5,000+ apps through Zapier triggers and actions.',
-    icon: Zap,
-    status: 'coming_soon',
-    category: 'Automation',
-  },
-  {
-    id: 'airtable',
-    name: 'Airtable',
-    description: 'Read and write Airtable records from workflow steps.',
-    icon: Table2,
-    status: 'coming_soon',
-    category: 'Data',
-  },
-  {
-    id: 'google-drive',
-    name: 'Google Drive',
-    description:
-      'Upload and manage files in Google Drive from workflows.',
-    icon: HardDrive,
-    status: 'coming_soon',
-    category: 'Storage',
-  },
-  {
-    id: 'microsoft-teams',
-    name: 'Microsoft Teams',
-    description:
-      'Post flow updates to Teams channels and send adaptive cards.',
-    icon: MessageSquare,
-    status: 'coming_soon',
-    category: 'Notifications',
-  },
+const CATALOG_INTEGRATIONS: CatalogIntegration[] = [
+  { id: 'email', name: 'Email (SMTP / Resend)', description: 'Transactional emails for task assignments, reminders, and completions. Auto-configured.', icon: Mail, status: 'available', category: 'Notifications' },
+  { id: 'google-sheets', name: 'Google Sheets', description: 'Sync form submissions and workflow data to Google Sheets automatically.', icon: FileSpreadsheet, status: 'coming_soon', category: 'Data' },
+  { id: 'salesforce', name: 'Salesforce', description: 'Create and update Salesforce records from workflow steps.', icon: Database, status: 'coming_soon', category: 'CRM' },
+  { id: 'hubspot', name: 'HubSpot', description: 'Sync contacts and deals with HubSpot CRM.', icon: Database, status: 'coming_soon', category: 'CRM' },
+  { id: 'zapier', name: 'Zapier', description: 'Connect to 5,000+ apps through Zapier triggers and actions.', icon: Zap, status: 'coming_soon', category: 'Automation' },
+  { id: 'airtable', name: 'Airtable', description: 'Read and write Airtable records from workflow steps.', icon: Table2, status: 'coming_soon', category: 'Data' },
+  { id: 'google-drive', name: 'Google Drive', description: 'Upload and manage files in Google Drive from workflows.', icon: HardDrive, status: 'coming_soon', category: 'Storage' },
 ];
 
-// ---------- Helpers ----------
-
-const STATUS_ORDER: IntegrationStatus[] = ['connected', 'available', 'coming_soon'];
-
-const STATUS_META: Record<
-  IntegrationStatus,
-  { label: string; sectionLabel: string; badgeClass: string }
-> = {
-  connected: {
-    label: 'Connected',
-    sectionLabel: 'CONNECTED',
-    badgeClass:
-      'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20',
-  },
-  available: {
-    label: 'Available',
-    sectionLabel: 'AVAILABLE',
-    badgeClass: 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20',
-  },
-  coming_soon: {
-    label: 'Coming Soon',
-    sectionLabel: 'COMING SOON',
-    badgeClass: 'bg-gray-100 text-gray-500 ring-1 ring-gray-300/40',
-  },
+const INTEGRATION_TYPE_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
+  SLACK_WEBHOOK: { label: 'Slack', icon: Hash, color: 'bg-purple-100 text-purple-600' },
+  TEAMS_WEBHOOK: { label: 'Teams', icon: MessageSquare, color: 'bg-blue-100 text-blue-600' },
+  CUSTOM_WEBHOOK: { label: 'Custom', icon: Globe, color: 'bg-gray-100 text-gray-600' },
 };
 
-/** Mask a URL to show just the domain + path start */
-function maskUrl(url: string): string {
-  try {
-    const u = new URL(url);
-    const path = u.pathname.length > 20
-      ? u.pathname.slice(0, 20) + '...'
-      : u.pathname;
-    return u.host + path;
-  } catch {
-    return url.length > 40 ? url.slice(0, 40) + '...' : url;
-  }
+const SUBSCRIBABLE_EVENTS = [
+  { id: 'flow.started', label: 'Flow Started' },
+  { id: 'step.completed', label: 'Step Completed' },
+  { id: 'flow.completed', label: 'Flow Completed' },
+  { id: 'step.overdue', label: 'Step Overdue' },
+];
+
+// ---------- Config Dialog ----------
+
+interface ConfigDialogProps {
+  integration?: OrgIntegration | null;
+  onSave: (data: { type: string; name: string; config: Record<string, unknown> }) => Promise<void>;
+  onClose: () => void;
+  onTest?: (id: string) => void;
 }
 
-/** Count how many events are enabled on an endpoint */
-function countEnabledEvents(endpoint: WebhookEndpointConfig): number {
-  const e = endpoint.events;
-  return [
-    e.flowStarted, e.stepCompleted, e.flowCompleted,
-    e.flowCancelled, e.stepOverdue, e.stepEscalated, e.chatMessage,
-  ].filter(Boolean).length;
-}
+function ConfigDialog({ integration, onSave, onClose, onTest }: ConfigDialogProps) {
+  const [type, setType] = useState(integration?.type || 'SLACK_WEBHOOK');
+  const [name, setName] = useState(integration?.name || '');
+  const [webhookUrl, setWebhookUrl] = useState((integration?.config?.webhookUrl as string) || '');
+  const [events, setEvents] = useState<string[]>((integration?.config?.events as string[]) || ['flow.started', 'step.completed', 'flow.completed']);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message?: string } | null>(null);
 
-// ---------- Types for webhook aggregate ----------
+  const toggleEvent = (eventId: string) => {
+    setEvents((prev) => prev.includes(eventId) ? prev.filter((e) => e !== eventId) : [...prev, eventId]);
+  };
 
-interface WebhookSummary {
-  endpoint: WebhookEndpointConfig;
-  flowName: string;
-  flowId: string;
-}
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave({ type, name, config: { webhookUrl, events } });
+      onClose();
+    } catch (err) {
+      console.error('Save failed:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-// ---------- Components ----------
-
-function IntegrationCard({ integration }: { integration: Integration }) {
-  const navigate = useNavigate();
-  const meta = STATUS_META[integration.status];
-  const Icon = integration.icon;
-  const isComingSoon = integration.status === 'coming_soon';
+  const handleTest = async () => {
+    if (!integration?.id) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const result = await testIntegration(integration.id);
+      setTestResult(result);
+    } catch (err) {
+      setTestResult({ success: false, message: (err as Error).message });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   return (
-    <div
-      className={`bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-4 transition-all ${
-        isComingSoon
-          ? 'opacity-75'
-          : 'hover:border-violet-200 hover:shadow-md hover:shadow-violet-100/40'
-      }`}
-    >
-      {/* Top row: icon + badge */}
-      <div className="flex items-start justify-between">
-        <div
-          className={`w-11 h-11 rounded-lg flex items-center justify-center ${
-            integration.status === 'connected'
-              ? 'bg-emerald-100'
-              : integration.status === 'available'
-                ? 'bg-blue-100'
-                : 'bg-gray-100'
-          }`}
-        >
-          <Icon
-            className={`w-5 h-5 ${
-              integration.status === 'connected'
-                ? 'text-emerald-600'
-                : integration.status === 'available'
-                  ? 'text-blue-600'
-                  : 'text-gray-400'
-            }`}
-          />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900">
+            {integration ? 'Edit Integration' : 'Add Integration'}
+          </h2>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <span
-          className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full ${meta.badgeClass}`}
-        >
-          {integration.status === 'connected' && (
-            <CheckCircle2 className="w-3 h-3" />
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Type selector (only for new) */}
+          {!integration && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['SLACK_WEBHOOK', 'TEAMS_WEBHOOK', 'CUSTOM_WEBHOOK'] as const).map((t) => {
+                  const meta = INTEGRATION_TYPE_META[t];
+                  const Icon = meta.icon;
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => setType(t)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                        type === t
+                          ? 'border-violet-500 bg-violet-50 text-violet-700'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {meta.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           )}
-          {meta.label}
-        </span>
-      </div>
 
-      {/* Name + description */}
-      <div className="flex-1">
-        <h3 className="text-sm font-semibold text-gray-900">
-          {integration.name}
-        </h3>
-        <p className="text-xs text-gray-500 mt-1 leading-relaxed line-clamp-2">
-          {integration.description}
-        </p>
-      </div>
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              placeholder="e.g., #engineering-alerts"
+            />
+          </div>
 
-      {/* Footer: category pill + action */}
-      <div className="flex items-center justify-between">
-        <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-gray-100 text-gray-500">
-          {integration.category}
-        </span>
+          {/* Webhook URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Webhook URL</label>
+            <input
+              type="url"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-violet-500"
+              placeholder="https://hooks.slack.com/services/..."
+            />
+          </div>
 
-        {integration.status === 'connected' && integration.configPath && (
-          <button
-            onClick={() => navigate(integration.configPath!)}
-            className="inline-flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors"
+          {/* Events */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Events to subscribe to</label>
+            <div className="space-y-2">
+              {SUBSCRIBABLE_EVENTS.map((evt) => (
+                <label key={evt.id} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={events.includes(evt.id)}
+                    onChange={() => toggleEvent(evt.id)}
+                    className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                  />
+                  <span className="text-sm text-gray-700">{evt.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Test button (only for existing) */}
+          {integration && (
+            <div>
+              <Button
+                variant="outline"
+                onClick={handleTest}
+                disabled={testing}
+                className="w-full"
+              >
+                {testing ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
+                Send Test Message
+              </Button>
+              {testResult && (
+                <div className={`mt-2 px-3 py-2 rounded-lg text-sm ${
+                  testResult.success
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-red-50 text-red-700 border border-red-200'
+                }`}>
+                  {testResult.success ? 'Test message sent successfully!' : `Failed: ${testResult.message}`}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
+            onClick={handleSave}
+            disabled={saving || !name.trim() || !webhookUrl.trim()}
           >
-            {integration.configLabel || 'Configure'}
-            <ExternalLink className="w-3 h-3" />
-          </button>
-        )}
-        {integration.status === 'connected' && !integration.configPath && (
-          <span className="text-xs text-emerald-600 font-medium">
-            Auto-configured
-          </span>
-        )}
-        {integration.status === 'available' && (
-          <button
-            onClick={() =>
-              integration.configPath && navigate(integration.configPath)
-            }
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 shadow-sm transition-all"
-          >
-            Set up
-            <ExternalLink className="w-3 h-3" />
-          </button>
-        )}
+            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            {integration ? 'Save Changes' : 'Create Integration'}
+          </Button>
+        </div>
       </div>
     </div>
   );
 }
 
-function WebhookAggregateSection({ webhooks, loading }: { webhooks: WebhookSummary[]; loading: boolean }) {
-  const navigate = useNavigate();
+// ---------- Integration Card ----------
 
-  if (loading) {
-    return (
-      <section>
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
-          Configured Webhooks
-        </h2>
-        <div className="bg-white rounded-xl border border-gray-200 p-8 flex items-center justify-center">
-          <Loader2 className="w-5 h-5 animate-spin text-gray-400 mr-2" />
-          <span className="text-sm text-gray-500">Loading webhook configurations...</span>
-        </div>
-      </section>
-    );
-  }
-
-  if (webhooks.length === 0) return null;
+function OrgIntegrationCard({
+  integration,
+  onEdit,
+  onDelete,
+  onToggle,
+}: {
+  integration: OrgIntegration;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggle: () => void;
+}) {
+  const meta = INTEGRATION_TYPE_META[integration.type] || INTEGRATION_TYPE_META.CUSTOM_WEBHOOK;
+  const Icon = meta.icon;
 
   return (
-    <section>
-      <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
-        Configured Webhooks
-      </h2>
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              {webhooks.length} webhook endpoint{webhooks.length !== 1 ? 's' : ''} across your templates
-            </p>
-          </div>
+    <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-4 hover:border-violet-200 hover:shadow-md hover:shadow-violet-100/40 transition-all">
+      <div className="flex items-start justify-between">
+        <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${meta.color}`}>
+          <Icon className="w-5 h-5" />
         </div>
-        <div className="divide-y divide-gray-100">
-          {webhooks.map((wh, idx) => (
-            <div
-              key={`${wh.flowId}-${wh.endpoint.id}-${idx}`}
-              className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/50 transition-colors"
-            >
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                wh.endpoint.enabled ? 'bg-emerald-100' : 'bg-gray-100'
-              }`}>
-                <Link2 className={`w-4 h-4 ${
-                  wh.endpoint.enabled ? 'text-emerald-600' : 'text-gray-400'
-                }`} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900 truncate">
-                    {wh.endpoint.label || 'Unnamed endpoint'}
-                  </span>
-                  <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded-full ${
-                    wh.endpoint.enabled
-                      ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20'
-                      : 'bg-gray-100 text-gray-500 ring-1 ring-gray-300/40'
-                  }`}>
-                    {wh.endpoint.enabled ? 'Active' : 'Paused'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs text-gray-400 font-mono truncate">
-                    {maskUrl(wh.endpoint.url)}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {countEnabledEvents(wh.endpoint)} event{countEnabledEvents(wh.endpoint) !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              </div>
-              <div className="shrink-0 text-right">
-                <span className="text-xs text-gray-500">{wh.flowName}</span>
-                <button
-                  onClick={() => navigate(`/flows/${wh.flowId}`)}
-                  className="block text-xs text-violet-600 hover:text-violet-700 font-medium mt-0.5 transition-colors"
-                >
-                  Edit flow
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full ${
+            integration.enabled
+              ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20'
+              : 'bg-gray-100 text-gray-500 ring-1 ring-gray-300/40'
+          }`}>
+            {integration.enabled && <CheckCircle2 className="w-3 h-3" />}
+            {integration.enabled ? 'Active' : 'Disabled'}
+          </span>
+          {/* Enable/disable toggle */}
+          <button
+            onClick={onToggle}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+              integration.enabled ? 'bg-violet-500' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                integration.enabled ? 'translate-x-4.5' : 'translate-x-0.5'
+              }`}
+              style={{ transform: integration.enabled ? 'translateX(18px)' : 'translateX(2px)' }}
+            />
+          </button>
         </div>
       </div>
-    </section>
+
+      <div className="flex-1">
+        <h3 className="text-sm font-semibold text-gray-900">{integration.name}</h3>
+        <p className="text-xs text-gray-500 mt-1 font-mono truncate">
+          {(integration.config?.webhookUrl as string) || 'No URL configured'}
+        </p>
+        {integration.lastDeliveryAt && (
+          <p className="text-xs text-gray-400 mt-1">
+            Last delivery: {new Date(integration.lastDeliveryAt).toLocaleDateString()} - {integration.lastDeliveryStatus}
+          </p>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-gray-100 text-gray-500">
+          {meta.label}
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onEdit}
+            className="text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors"
+          >
+            Configure
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-1 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Catalog Card ----------
+
+function CatalogCard({ integration }: { integration: CatalogIntegration }) {
+  const Icon = integration.icon;
+  const isComingSoon = integration.status === 'coming_soon';
+
+  return (
+    <div className={`bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-4 transition-all ${
+      isComingSoon ? 'opacity-75' : 'hover:border-violet-200 hover:shadow-md hover:shadow-violet-100/40'
+    }`}>
+      <div className="flex items-start justify-between">
+        <div className={`w-11 h-11 rounded-lg flex items-center justify-center ${
+          isComingSoon ? 'bg-gray-100' : 'bg-blue-100'
+        }`}>
+          <Icon className={`w-5 h-5 ${isComingSoon ? 'text-gray-400' : 'text-blue-600'}`} />
+        </div>
+        <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${
+          isComingSoon
+            ? 'bg-gray-100 text-gray-500 ring-1 ring-gray-300/40'
+            : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20'
+        }`}>
+          {isComingSoon ? 'Coming Soon' : 'Auto-configured'}
+        </span>
+      </div>
+      <div className="flex-1">
+        <h3 className="text-sm font-semibold text-gray-900">{integration.name}</h3>
+        <p className="text-xs text-gray-500 mt-1 leading-relaxed line-clamp-2">{integration.description}</p>
+      </div>
+      <div className="flex items-center">
+        <span className="inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-md bg-gray-100 text-gray-500">
+          {integration.category}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -373,88 +435,70 @@ function WebhookAggregateSection({ webhooks, loading }: { webhooks: WebhookSumma
 
 export function IntegrationsPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [webhooks, setWebhooks] = useState<WebhookSummary[]>([]);
-  const [webhooksLoading, setWebhooksLoading] = useState(true);
+  const [orgIntegrations, setOrgIntegrations] = useState<OrgIntegration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingIntegration, setEditingIntegration] = useState<OrgIntegration | null>(null);
 
-  // Fetch all templates and extract webhook endpoints from their definitions
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchWebhooks() {
-      try {
-        const templates = await listTemplates();
-        // Fetch full details for each template to get the definition with webhook config
-        const details = await Promise.all(
-          templates.map((t) => getTemplate(t.id).catch(() => null)),
-        );
-
-        if (cancelled) return;
-
-        const summaries: WebhookSummary[] = [];
-        for (const tmpl of details) {
-          if (!tmpl?.definition) continue;
-          const def = tmpl.definition as Record<string, unknown>;
-          const settings = def.settings as Record<string, unknown> | undefined;
-          const notifs = settings?.notifications as Record<string, unknown> | undefined;
-          const channelInt = notifs?.channelIntegrations as Record<string, unknown> | undefined;
-          const webhookSettings = channelInt?.webhooks as { endpoints?: WebhookEndpointConfig[] } | undefined;
-          const endpoints = webhookSettings?.endpoints;
-          if (endpoints && endpoints.length > 0) {
-            for (const ep of endpoints) {
-              summaries.push({
-                endpoint: ep,
-                flowName: tmpl.name || 'Untitled',
-                flowId: tmpl.id,
-              });
-            }
-          }
-        }
-        setWebhooks(summaries);
-      } catch {
-        // Silently fail — the webhook section just won't show
-      } finally {
-        if (!cancelled) setWebhooksLoading(false);
-      }
+  const loadIntegrations = useCallback(async () => {
+    try {
+      const items = await fetchIntegrations();
+      setOrgIntegrations(items);
+    } catch {
+      // silently fail
+    } finally {
+      setLoading(false);
     }
-
-    fetchWebhooks();
-    return () => { cancelled = true; };
   }, []);
 
-  // Filter by search
-  const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return integrations;
+  useEffect(() => {
+    loadIntegrations();
+  }, [loadIntegrations]);
+
+  const handleCreate = async (data: { type: string; name: string; config: Record<string, unknown> }) => {
+    await createIntegration(data);
+    await loadIntegrations();
+  };
+
+  const handleUpdate = async (data: { type: string; name: string; config: Record<string, unknown> }) => {
+    if (!editingIntegration) return;
+    await updateIntegration(editingIntegration.id, { name: data.name, config: data.config });
+    await loadIntegrations();
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteIntegration(id);
+    await loadIntegrations();
+  };
+
+  const handleToggle = async (integration: OrgIntegration) => {
+    await updateIntegration(integration.id, { enabled: !integration.enabled });
+    await loadIntegrations();
+  };
+
+  // Filter catalog by search
+  const filteredCatalog = useMemo(() => {
+    if (!searchQuery.trim()) return CATALOG_INTEGRATIONS;
     const q = searchQuery.toLowerCase();
-    return integrations.filter(
-      (i) =>
-        i.name.toLowerCase().includes(q) ||
-        i.description.toLowerCase().includes(q) ||
-        i.category.toLowerCase().includes(q),
+    return CATALOG_INTEGRATIONS.filter(
+      (i) => i.name.toLowerCase().includes(q) || i.description.toLowerCase().includes(q) || i.category.toLowerCase().includes(q),
     );
   }, [searchQuery]);
-
-  // Group by status
-  const grouped = useMemo(() => {
-    const map = new Map<IntegrationStatus, Integration[]>();
-    for (const status of STATUS_ORDER) {
-      const items = filtered.filter((i) => i.status === status);
-      if (items.length > 0) map.set(status, items);
-    }
-    return map;
-  }, [filtered]);
-
-  const hasResults = filtered.length > 0;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-1">
-          <h1 className="text-2xl font-bold text-gray-900">Integrations</h1>
+        <div className="flex items-center justify-between mb-1">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Integrations</h1>
+            <p className="text-sm text-gray-500 mt-1">Connect your workflows to Slack, Teams, and custom webhooks</p>
+          </div>
+          <Button onClick={() => { setEditingIntegration(null); setDialogOpen(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Integration
+          </Button>
         </div>
-        <p className="text-sm text-gray-500">
-          Connect your workflows to external services
-        </p>
       </div>
 
       {/* Search */}
@@ -469,49 +513,75 @@ export function IntegrationsPage() {
         />
       </div>
 
-      {/* Grouped sections */}
-      {hasResults ? (
-        <div className="space-y-10">
-          {Array.from(grouped.entries()).map(([status, items]) => (
-            <section key={status}>
-              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
-                {STATUS_META[status].sectionLabel}
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {items.map((integration) => (
-                  <IntegrationCard
-                    key={integration.id}
-                    integration={integration}
-                  />
-                ))}
+      <div className="space-y-10">
+        {/* Configured integrations */}
+        {loading ? (
+          <section>
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Your Integrations</h2>
+            <div className="bg-white rounded-xl border border-gray-200 p-8 flex items-center justify-center">
+              <Loader2 className="w-5 h-5 animate-spin text-gray-400 mr-2" />
+              <span className="text-sm text-gray-500">Loading integrations...</span>
+            </div>
+          </section>
+        ) : orgIntegrations.length > 0 ? (
+          <section>
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
+              Your Integrations ({orgIntegrations.length})
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {orgIntegrations.map((integration) => (
+                <OrgIntegrationCard
+                  key={integration.id}
+                  integration={integration}
+                  onEdit={() => { setEditingIntegration(integration); setDialogOpen(true); }}
+                  onDelete={() => handleDelete(integration.id)}
+                  onToggle={() => handleToggle(integration)}
+                />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section>
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Your Integrations</h2>
+            <div className="bg-white rounded-xl border border-gray-200 border-dashed p-8 text-center">
+              <div className="w-12 h-12 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                <Plug className="w-6 h-6 text-gray-400" />
               </div>
-            </section>
-          ))}
+              <p className="text-sm text-gray-600 font-medium mb-1">No integrations configured</p>
+              <p className="text-xs text-gray-500 mb-4">Add a Slack, Teams, or custom webhook integration to get flow event notifications.</p>
+              <Button
+                variant="outline"
+                onClick={() => { setEditingIntegration(null); setDialogOpen(true); }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Your First Integration
+              </Button>
+            </div>
+          </section>
+        )}
 
-          {/* Webhook aggregate view — only shown when not searching */}
-          {!searchQuery.trim() && (
-            <WebhookAggregateSection webhooks={webhooks} loading={webhooksLoading} />
-          )}
-        </div>
-      ) : (
-        /* Empty search results */
-        <div className="text-center py-20">
-          <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-4">
-            <Plug className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No integrations found
-          </h3>
-          <p className="text-gray-500 mb-4">
-            No integrations match "{searchQuery}"
-          </p>
-          <button
-            onClick={() => setSearchQuery('')}
-            className="text-sm font-medium text-violet-600 hover:text-violet-700 transition-colors"
-          >
-            Clear search
-          </button>
-        </div>
+        {/* Catalog of other integrations */}
+        {filteredCatalog.length > 0 && (
+          <section>
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">
+              More Integrations
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredCatalog.map((integration) => (
+                <CatalogCard key={integration.id} integration={integration} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* Config Dialog */}
+      {dialogOpen && (
+        <ConfigDialog
+          integration={editingIntegration}
+          onSave={editingIntegration ? handleUpdate : handleCreate}
+          onClose={() => { setDialogOpen(false); setEditingIntegration(null); }}
+        />
       )}
     </div>
   );
