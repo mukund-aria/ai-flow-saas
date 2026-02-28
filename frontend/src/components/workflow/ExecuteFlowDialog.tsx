@@ -27,7 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { listContacts, startFlow, getTemplate } from '@/lib/api';
+import { listContacts, createContact, startFlow, getTemplate } from '@/lib/api';
 import type { Contact } from '@/lib/api';
 import { getRoleColor, getRoleInitials } from '@/types';
 import type { AssigneePlaceholder, KickoffConfig, FormField } from '@/types';
@@ -57,17 +57,22 @@ interface ContactDropdownProps {
   contacts: Contact[];
   value: string | null;
   onChange: (contactId: string | null) => void;
+  onContactCreated: (contact: Contact) => void;
   placeholder?: string;
 }
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function ContactDropdown({
   contacts,
   value,
   onChange,
+  onContactCreated,
   placeholder = 'Select a contact...',
 }: ContactDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [creating, setCreating] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedContact = contacts.find((c) => c.id === value) ?? null;
@@ -80,6 +85,37 @@ function ContactDropdown({
         c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q)
     );
   }, [contacts, search]);
+
+  // Show "Invite" option when search looks like a valid email not already in contacts
+  const canInvite = useMemo(() => {
+    const trimmed = search.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(trimmed)) return false;
+    return !contacts.some((c) => c.email.toLowerCase() === trimmed);
+  }, [search, contacts]);
+
+  const handleInvite = async () => {
+    const email = search.trim().toLowerCase();
+    if (!EMAIL_REGEX.test(email) || creating) return;
+
+    setCreating(true);
+    try {
+      const name = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      const newContact = await createContact({
+        name,
+        email,
+        type: 'ASSIGNEE',
+        status: 'ACTIVE',
+      });
+      onContactCreated(newContact);
+      onChange(newContact.id);
+      setIsOpen(false);
+      setSearch('');
+    } catch {
+      // If creation fails (e.g. duplicate), still close
+    } finally {
+      setCreating(false);
+    }
+  };
 
   // Close on outside click
   useEffect(() => {
@@ -135,46 +171,80 @@ function ContactDropdown({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search contacts..."
+                placeholder="Search or type an email to invite..."
                 className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-violet-500"
                 autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && canInvite && filtered.length === 0) {
+                    e.preventDefault();
+                    handleInvite();
+                  }
+                }}
               />
             </div>
           </div>
 
           {/* Options */}
           <div className="max-h-48 overflow-y-auto">
-            {filtered.length === 0 ? (
+            {filtered.map((contact) => (
+              <button
+                key={contact.id}
+                type="button"
+                onClick={() => {
+                  onChange(contact.id);
+                  setIsOpen(false);
+                  setSearch('');
+                }}
+                className={`flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-violet-50 transition-colors ${
+                  contact.id === value ? 'bg-violet-50' : ''
+                }`}
+              >
+                <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+                  {contact.name.charAt(0).toUpperCase()}
+                </span>
+                <span className="flex flex-col items-start min-w-0">
+                  <span className="text-gray-900 truncate w-full">
+                    {contact.name}
+                  </span>
+                  <span className="text-gray-400 text-xs truncate w-full">
+                    {contact.email}
+                  </span>
+                </span>
+              </button>
+            ))}
+
+            {/* Invite new email option */}
+            {canInvite && (
+              <button
+                type="button"
+                onClick={handleInvite}
+                disabled={creating}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-violet-50 transition-colors border-t border-gray-100"
+              >
+                {creating ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-violet-500 shrink-0" />
+                ) : (
+                  <span className="w-6 h-6 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-xs font-bold shrink-0">
+                    +
+                  </span>
+                )}
+                <span className="flex flex-col items-start min-w-0">
+                  <span className="text-violet-600 font-medium truncate w-full">
+                    {creating ? 'Inviting...' : `Invite ${search.trim()}`}
+                  </span>
+                  <span className="text-gray-400 text-xs truncate w-full">
+                    Add as new contact
+                  </span>
+                </span>
+              </button>
+            )}
+
+            {filtered.length === 0 && !canInvite && (
               <div className="px-3 py-4 text-sm text-gray-400 text-center">
-                No contacts found
+                {search.trim()
+                  ? 'No contacts found — type a full email to invite'
+                  : 'No contacts found'}
               </div>
-            ) : (
-              filtered.map((contact) => (
-                <button
-                  key={contact.id}
-                  type="button"
-                  onClick={() => {
-                    onChange(contact.id);
-                    setIsOpen(false);
-                    setSearch('');
-                  }}
-                  className={`flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-violet-50 transition-colors ${
-                    contact.id === value ? 'bg-violet-50' : ''
-                  }`}
-                >
-                  <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] font-bold shrink-0">
-                    {contact.name.charAt(0).toUpperCase()}
-                  </span>
-                  <span className="flex flex-col items-start min-w-0">
-                    <span className="text-gray-900 truncate w-full">
-                      {contact.name}
-                    </span>
-                    <span className="text-gray-400 text-xs truncate w-full">
-                      {contact.email}
-                    </span>
-                  </span>
-                </button>
-              ))
             )}
           </div>
 
@@ -535,6 +605,13 @@ export function ExecuteFlowDialog({
     setRoleAssignments((prev) => ({ ...prev, [roleName]: contactId }));
   };
 
+  const handleContactCreated = (newContact: Contact) => {
+    setContacts((prev) => {
+      if (prev.some((c) => c.id === newContact.id)) return prev;
+      return [...prev, newContact];
+    });
+  };
+
   const handleKickoffChange = (fieldId: string, value: unknown) => {
     setKickoffData((prev) => ({ ...prev, [fieldId]: value }));
   };
@@ -741,6 +818,7 @@ export function ExecuteFlowDialog({
                               onChange={(contactId) =>
                                 handleRoleAssignment(placeholder.roleName, contactId)
                               }
+                              onContactCreated={handleContactCreated}
                               placeholder={`Select contact for ${placeholder.roleName}...`}
                             />
                           ) : (
