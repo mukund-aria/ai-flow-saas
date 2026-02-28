@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useAssigneeAuth } from '@/contexts/AssigneeAuthContext';
 import { FlowCatalogCard } from '@/components/portal/FlowCatalogCard';
 import { getPortalAvailableFlows, startPortalFlow } from '@/lib/api';
@@ -25,6 +25,7 @@ export function PortalFlowCatalogPage() {
   const [flows, setFlows] = useState<CatalogFlow[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingId, setStartingId] = useState<string | null>(null);
+  const [startError, setStartError] = useState('');
 
   useEffect(() => {
     if (!token) return;
@@ -37,6 +38,7 @@ export function PortalFlowCatalogPage() {
   const handleStart = useCallback(async (flowId: string) => {
     if (!token) return;
     setStartingId(flowId);
+    setStartError('');
     try {
       const result = await startPortalFlow(token, flowId);
       if (result.firstTaskToken) {
@@ -44,8 +46,8 @@ export function PortalFlowCatalogPage() {
       } else {
         navigate(`/portal/${slug}`);
       }
-    } catch (err) {
-      console.error('Failed to start flow:', err);
+    } catch {
+      setStartError('Failed to start flow. Please try again.');
       setStartingId(null);
     }
   }, [token, slug, navigate]);
@@ -69,6 +71,13 @@ export function PortalFlowCatalogPage() {
         </button>
         <h1 className="text-lg font-semibold text-gray-900">Start a New Flow</h1>
       </div>
+
+      {startError && (
+        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+          <p className="text-sm text-red-700">{startError}</p>
+        </div>
+      )}
 
       {flows.length === 0 ? (
         <div className="text-center py-16">

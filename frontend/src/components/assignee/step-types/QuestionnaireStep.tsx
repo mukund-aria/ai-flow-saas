@@ -1,9 +1,10 @@
 /**
  * Questionnaire Step
  *
- * Renders questionnaire questions with various answer types.
+ * Renders questionnaire questions with various answer types and validation.
  */
 
+import { useState } from 'react';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -23,7 +24,29 @@ interface QuestionnaireStepProps {
   isSubmitting: boolean;
 }
 
+function isAnswered(answer: string | string[] | undefined): boolean {
+  if (!answer) return false;
+  if (Array.isArray(answer)) return answer.length > 0;
+  return answer.trim().length > 0;
+}
+
 export function QuestionnaireStep({ questions, answers, onChange, onSubmit, isSubmitting }: QuestionnaireStepProps) {
+  const [showErrors, setShowErrors] = useState(false);
+
+  const unansweredRequired = questions.filter(q => q.required && !isAnswered(answers[q.questionId]));
+  const isValid = unansweredRequired.length === 0;
+
+  const handleSubmit = () => {
+    if (!isValid) {
+      setShowErrors(true);
+      return;
+    }
+    onSubmit();
+  };
+
+  const showQuestionError = (q: Question) =>
+    showErrors && q.required && !isAnswered(answers[q.questionId]);
+
   return (
     <div className="space-y-5">
       {questions.map((q, qIndex) => (
@@ -43,6 +66,8 @@ export function QuestionnaireStep({ questions, answers, onChange, onSubmit, isSu
                   className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-colors ${
                     answers[q.questionId] === option
                       ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : showQuestionError(q)
+                      ? 'border-red-200 text-gray-600 hover:bg-gray-50'
                       : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}
                 >
@@ -56,7 +81,9 @@ export function QuestionnaireStep({ questions, answers, onChange, onSubmit, isSu
               onChange={(e) => onChange(q.questionId, e.target.value)}
               placeholder="Enter your answer..."
               rows={3}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
+                showQuestionError(q) ? 'border-red-300' : 'border-gray-200'
+              }`}
             />
           ) : q.answerType === 'SINGLE_SELECT' ? (
             <div className="space-y-2">
@@ -105,10 +132,19 @@ export function QuestionnaireStep({ questions, answers, onChange, onSubmit, isSu
               })}
             </div>
           ) : null}
+
+          {showQuestionError(q) && (
+            <p className="text-xs text-red-500">This question is required</p>
+          )}
         </div>
       ))}
+
+      {showErrors && !isValid && (
+        <p className="text-sm text-red-600 text-center">Please answer all required questions</p>
+      )}
+
       <Button
-        onClick={onSubmit}
+        onClick={handleSubmit}
         disabled={isSubmitting}
         className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base"
       >

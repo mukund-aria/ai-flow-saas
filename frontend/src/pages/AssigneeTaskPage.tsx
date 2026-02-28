@@ -251,15 +251,23 @@ export function AssigneeTaskPage() {
     );
   }
 
-  // Error / Not found
+  // Error / Expired / Not found
   if (error && !task) {
+    const isExpired = error.toLowerCase().includes('expired');
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center max-w-sm">
-            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-gray-900 mb-2">Task Not Available</h1>
-            <p className="text-gray-500">{error}</p>
+          <div className="text-center max-w-sm px-4">
+            <AlertCircle className={`w-12 h-12 mx-auto mb-4 ${isExpired ? 'text-amber-400' : 'text-red-400'}`} />
+            <h1 className="text-xl font-bold text-gray-900 mb-2">
+              {isExpired ? 'Link Expired' : 'Task Not Available'}
+            </h1>
+            <p className="text-gray-500 mb-4">{error}</p>
+            {isExpired && (
+              <p className="text-sm text-gray-400">
+                Please contact the person who sent you this link to request a new one.
+              </p>
+            )}
           </div>
         </div>
         <AssigneeFooter />
@@ -346,6 +354,7 @@ export function AssigneeTaskPage() {
           nextTaskToken={completionState.nextTaskToken}
           portalSlug={task.portalSlug}
           onContinue={handleNextAction}
+          onDismiss={() => setCompletionState(prev => ({ ...prev, completed: false }))}
         />
       )}
 
