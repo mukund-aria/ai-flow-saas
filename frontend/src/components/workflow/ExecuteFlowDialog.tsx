@@ -22,13 +22,15 @@ import {
   Variable,
   RefreshCw,
   GitBranch,
+  Shield,
+  UserCircle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { listContacts, createContact, startFlow, getTemplate } from '@/lib/api';
-import type { Contact } from '@/lib/api';
+import { listContacts, createContact, startFlow, getTemplate, listTeamMembers } from '@/lib/api';
+import type { Contact, TeamMember } from '@/lib/api';
 import { getRoleColor, getRoleInitials } from '@/types';
 import type { AssigneePlaceholder, KickoffConfig, FormField } from '@/types';
 import { cn } from '@/lib/utils';
@@ -463,6 +465,7 @@ export function ExecuteFlowDialog({
   const [definitionLoading, setDefinitionLoading] = useState(false);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   // Fetch full template definition if not provided (list endpoint omits it)
   useEffect(() => {
@@ -548,29 +551,26 @@ export function ExecuteFlowDialog({
     }
   }, [open, template.name]);
 
-  // Fetch contacts when dialog opens and roles are known
+  // Fetch contacts and team members when dialog opens and roles are known
   useEffect(() => {
     if (!open || definitionLoading || !hasRoles) return;
 
     let cancelled = false;
     setContactsLoading(true);
 
-    listContacts()
-      .then((data) => {
-        if (!cancelled) {
-          setContacts(data.filter((c) => c.status === 'ACTIVE'));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setContacts([]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setContactsLoading(false);
-        }
-      });
+    Promise.all([
+      listContacts().catch(() => [] as Contact[]),
+      listTeamMembers().catch(() => [] as TeamMember[]),
+    ]).then(([contactData, memberData]) => {
+      if (!cancelled) {
+        setContacts(contactData.filter((c) => c.status === 'ACTIVE'));
+        setTeamMembers(memberData);
+      }
+    }).finally(() => {
+      if (!cancelled) {
+        setContactsLoading(false);
+      }
+    });
 
     return () => {
       cancelled = true;
@@ -756,6 +756,7 @@ export function ExecuteFlowDialog({
                   {assigneePlaceholders.map((placeholder, index) => {
                     const resolutionType = placeholder.resolution?.type;
                     const isManual = !resolutionType || resolutionType === 'CONTACT_TBD';
+                    const isCoordinator = placeholder.roleType === 'coordinator' || placeholder.roleOptions?.coordinatorToggle;
 
                     // Determine the read-only label and icon for auto-resolved roles
                     let autoResolvedIcon: React.ReactNode = null;
@@ -789,6 +790,20 @@ export function ExecuteFlowDialog({
                       }
                     }
 
+                    // For coordinator roles with CONTACT_TBD, show org members instead of contacts
+                    const memberContacts: Contact[] = isCoordinator && isManual
+                      ? teamMembers.map(m => ({
+                          id: m.id,
+                          name: m.name,
+                          email: m.email,
+                          type: m.role as string,
+                          status: 'ACTIVE' as const,
+                          organizationId: '',
+                          createdAt: '',
+                          updatedAt: '',
+                        }))
+                      : contacts;
+
                     return (
                       <div key={placeholder.placeholderId}>
                         <div className="flex items-center gap-2 mb-1.5">
@@ -801,6 +816,17 @@ export function ExecuteFlowDialog({
                           <span className="text-sm font-medium text-gray-700">
                             {placeholder.roleName}
                           </span>
+                          {isCoordinator ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-violet-50 border border-violet-200 rounded text-[10px] font-medium text-violet-700">
+                              <Shield className="w-3 h-3" />
+                              Coordinator
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded text-[10px] font-medium text-gray-500">
+                              <UserCircle className="w-3 h-3" />
+                              Assignee
+                            </span>
+                          )}
                         </div>
                         {placeholder.description && (
                           <p className="text-xs text-gray-400 mb-1.5 ml-8">
@@ -808,18 +834,22 @@ export function ExecuteFlowDialog({
                           </p>
                         )}
                         <p className="text-xs text-gray-400 ml-8">
-                          Assigned to {stepsPerRole[placeholder.roleName] || 0} steps
+                          {isCoordinator
+                            ? 'Full run access: view all steps, reassign, and chat'
+                            : `Assigned to ${stepsPerRole[placeholder.roleName] || 0} steps`}
                         </p>
                         <div className="ml-8 mt-1.5">
                           {isManual ? (
                             <ContactDropdown
-                              contacts={contacts}
+                              contacts={memberContacts}
                               value={roleAssignments[placeholder.roleName] ?? null}
                               onChange={(contactId) =>
                                 handleRoleAssignment(placeholder.roleName, contactId)
                               }
                               onContactCreated={handleContactCreated}
-                              placeholder={`Select contact for ${placeholder.roleName}...`}
+                              placeholder={isCoordinator
+                                ? `Select org member for ${placeholder.roleName}...`
+                                : `Select contact for ${placeholder.roleName}...`}
                             />
                           ) : (
                             <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
@@ -828,7 +858,7 @@ export function ExecuteFlowDialog({
                             </div>
                           )}
                         </div>
-                        {isManual && !roleAssignments[placeholder.roleName] && (stepsPerRole[placeholder.roleName] || 0) > 0 && (
+                        {isManual && !roleAssignments[placeholder.roleName] && (stepsPerRole[placeholder.roleName] || 0) > 0 && !isCoordinator && (
                           <p className="text-xs text-amber-500 mt-1 ml-8">
                             This role has {stepsPerRole[placeholder.roleName]} steps that won't be assigned
                           </p>

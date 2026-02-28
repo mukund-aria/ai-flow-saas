@@ -37,7 +37,7 @@ import {
   IntegrationsPage,
   SettingsPage,
   LoginPage,
-  // LandingPage,
+  LandingPage,
   // FlowPreviewPage,
   OnboardingPage,
   OrgSelectPage,
@@ -105,7 +105,7 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route

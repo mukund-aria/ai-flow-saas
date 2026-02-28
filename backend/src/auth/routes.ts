@@ -10,6 +10,7 @@ import passport from 'passport';
 import { db } from '../db/client.js';
 import { organizationInvites, userOrganizations, users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { generateOTP, verifyOTP } from './otp-service.js';
 
 const router = Router();
 
@@ -110,6 +111,102 @@ router.get('/google/callback',
     });
   }
 );
+
+// ============================================================================
+// OTP Routes
+// ============================================================================
+
+/**
+ * Send OTP code to email
+ * POST /auth/otp/send
+ */
+router.post('/otp/send', async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ success: false, error: 'Valid email is required' });
+  }
+
+  const result = await generateOTP(email);
+
+  if (!result.success) {
+    const statusCode = 'retryAfter' in result && result.retryAfter ? 429 : 403;
+    return res.status(statusCode).json(result);
+  }
+
+  res.json({ success: true });
+});
+
+/**
+ * Verify OTP code and establish session
+ * POST /auth/otp/verify
+ */
+router.post('/otp/verify', async (req: Request, res: Response) => {
+  const { email, code, inviteToken } = req.body;
+
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ success: false, error: 'Valid email is required' });
+  }
+
+  if (!code || typeof code !== 'string') {
+    return res.status(400).json({ success: false, error: 'Code is required' });
+  }
+
+  const result = await verifyOTP(email, code);
+
+  if (!result.success) {
+    return res.status(401).json(result);
+  }
+
+  // Establish session via Passport's req.login
+  req.login(result.user, async (err) => {
+    if (err) {
+      console.error('Session login error:', err);
+      return res.status(500).json({ success: false, error: 'Failed to establish session' });
+    }
+
+    // Auto-accept invite if token was provided
+    if (inviteToken) {
+      try {
+        const invite = await db.query.organizationInvites.findFirst({
+          where: eq(organizationInvites.token, inviteToken),
+        });
+
+        if (invite && !invite.acceptedAt && new Date() <= invite.expiresAt) {
+          await db.insert(userOrganizations).values({
+            userId: result.user.id,
+            organizationId: invite.organizationId,
+            role: invite.role,
+          }).onConflictDoNothing();
+
+          await db.update(organizationInvites)
+            .set({ acceptedAt: new Date() })
+            .where(eq(organizationInvites.id, invite.id));
+
+          await db.update(users)
+            .set({ activeOrganizationId: invite.organizationId })
+            .where(eq(users.id, result.user.id));
+        }
+      } catch (inviteErr) {
+        console.error('Failed to auto-accept invite:', inviteErr);
+      }
+    }
+
+    // Save session before responding
+    req.session.save((saveErr) => {
+      if (saveErr) {
+        console.error('Session save error after OTP:', saveErr);
+        return res.status(500).json({ success: false, error: 'Failed to save session' });
+      }
+
+      res.json({
+        success: true,
+        user: result.user,
+        redirectTo: result.redirectTo,
+      });
+    });
+  });
+});
 
 // ============================================================================
 // Session Routes

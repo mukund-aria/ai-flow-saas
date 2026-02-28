@@ -60,6 +60,13 @@ export function OrgSelectPage() {
     await logout();
   };
 
+  // Edge case: no orgs after loading — redirect to onboarding
+  useEffect(() => {
+    if (!authLoading && !isLoading && orgs.length === 0) {
+      navigate('/onboarding');
+    }
+  }, [authLoading, isLoading, orgs, navigate]);
+
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
@@ -68,9 +75,26 @@ export function OrgSelectPage() {
     );
   }
 
+  if (orgs.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <p className="text-gray-500 text-sm">No organizations found. Redirecting...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md animate-fade-in">
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-fade-in {
+            animation: fadeIn 0.4s ease-out;
+          }
+        `}</style>
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg">

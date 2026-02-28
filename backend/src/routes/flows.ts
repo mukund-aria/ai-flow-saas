@@ -44,6 +44,7 @@ router.get(
       status: flow.status,
       isDefault: flow.isDefault,
       folderId: flow.folderId,
+      templateCoordinatorIds: flow.templateCoordinatorIds || [],
       stepCount: (flow.definition as any)?.steps?.length || 0,
       createdBy: flow.createdBy,
       createdAt: flow.createdAt,
@@ -170,7 +171,7 @@ router.put(
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
     const orgId = req.organizationId;
-    const { name, description, definition, status, version } = req.body;
+    const { name, description, definition, status, version, templateCoordinatorIds } = req.body;
 
     // Check if flow exists (scoped to org)
     const existing = await db.query.flows.findFirst({
@@ -196,6 +197,7 @@ router.put(
     if (definition !== undefined) updates.definition = definition;
     if (status !== undefined) updates.status = status;
     if (version !== undefined) updates.version = version;
+    if (templateCoordinatorIds !== undefined) updates.templateCoordinatorIds = templateCoordinatorIds;
 
     // Update the flow
     const [updatedFlow] = await db

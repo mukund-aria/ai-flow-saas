@@ -198,6 +198,20 @@ export const magicLinks = pgTable('magic_links', {
 });
 
 // ============================================================================
+// Login OTPs (Email-based Authentication)
+// ============================================================================
+
+export const loginOtps = pgTable('login_otps', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  email: text('email').notNull(),
+  code: text('code').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  usedAt: timestamp('used_at'),
+  attempts: integer('attempts').default(0).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
 // Audit Logs (Activity Tracking)
 // ============================================================================
 

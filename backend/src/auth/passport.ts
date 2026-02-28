@@ -37,15 +37,7 @@ declare global {
 // Configuration
 // ============================================================================
 
-// Email/domain whitelist from environment (comma-separated)
-// Supports full emails (user@example.com) or domains (@example.com)
-const ALLOWED_LIST = (process.env.ALLOWED_EMAILS || '')
-  .split(',')
-  .map(e => e.trim().toLowerCase())
-  .filter(e => e.length > 0);
-
-const ALLOWED_DOMAINS = ALLOWED_LIST.filter(e => e.startsWith('@')).map(e => e.slice(1));
-const ALLOWED_EMAILS = ALLOWED_LIST.filter(e => !e.startsWith('@'));
+import { isEmailAllowed } from './email-whitelist.js';
 
 // ============================================================================
 // Google OAuth Strategy
@@ -81,13 +73,9 @@ export function configurePassport(): void {
         }
 
         // Check if email is in whitelist (if whitelist is configured)
-        if (ALLOWED_LIST.length > 0) {
-          const emailDomain = email.split('@')[1];
-          const isAllowed = ALLOWED_EMAILS.includes(email) || ALLOWED_DOMAINS.includes(emailDomain);
-          if (!isAllowed) {
-            console.log(`Auth denied for email: ${email} (not in whitelist)`);
-            return done(null, false, { message: 'Email not authorized' });
-          }
+        if (!isEmailAllowed(email)) {
+          console.log(`Auth denied for email: ${email} (not in whitelist)`);
+          return done(null, false, { message: 'Email not authorized' });
         }
 
         // Find or create user in DB
@@ -230,11 +218,6 @@ export function configurePassport(): void {
   });
 
   console.log('Google OAuth configured');
-  if (ALLOWED_LIST.length > 0) {
-    console.log(`Email whitelist: ${ALLOWED_DOMAINS.length} domain(s), ${ALLOWED_EMAILS.length} email(s) allowed`);
-  } else {
-    console.log('No email whitelist configured - all Google accounts allowed');
-  }
 }
 
 export default passport;

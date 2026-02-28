@@ -231,6 +231,7 @@ export interface CreateTemplateRequest {
   description?: string;
   definition?: Record<string, unknown>;
   status?: 'DRAFT' | 'ACTIVE';
+  templateCoordinatorIds?: string[];
 }
 
 /**
@@ -1113,6 +1114,42 @@ export async function getStepFiles(runId: string, stepId: string): Promise<FileR
  */
 export function getFileDownloadUrl(fileId: string): string {
   return `${API_BASE}/files/${fileId}/download`;
+}
+
+// ============================================================================
+// Auth API (OTP)
+// ============================================================================
+
+export async function sendOTP(email: string): Promise<{ success: boolean; retryAfter?: number }> {
+  const res = await fetch('/auth/otp/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email }),
+  });
+  if (res.status === 429) {
+    const data = await res.json();
+    throw new Error(data.error || 'Please wait before requesting another code.');
+  }
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || 'Failed to send code.');
+  }
+  return res.json();
+}
+
+export async function verifyOTP(email: string, code: string): Promise<{ success: boolean; user: any; redirectTo: string }> {
+  const res = await fetch('/auth/otp/verify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email, code }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || 'Verification failed.');
+  }
+  return res.json();
 }
 
 // ============================================================================

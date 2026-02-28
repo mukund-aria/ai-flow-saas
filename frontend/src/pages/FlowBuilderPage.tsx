@@ -236,6 +236,7 @@ export function FlowBuilderPage() {
           name: currentWorkflow.name || 'Untitled Template',
           description: currentWorkflow.description || '',
           definition: currentWorkflow as unknown as Record<string, unknown>,
+          templateCoordinatorIds: currentWorkflow.templateCoordinatorIds || [],
         });
         setSavedFlow(saved.id, saved.status);
       } else {
@@ -243,6 +244,7 @@ export function FlowBuilderPage() {
           name: currentWorkflow.name || 'Untitled Template',
           description: currentWorkflow.description || '',
           definition: currentWorkflow as unknown as Record<string, unknown>,
+          templateCoordinatorIds: currentWorkflow.templateCoordinatorIds || [],
           status: 'DRAFT',
         });
         setSavedFlow(saved.id, 'DRAFT');

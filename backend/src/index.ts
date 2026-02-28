@@ -34,7 +34,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 // ============================================================================
 
 if (isProduction) {
-  const required = ['DATABASE_URL', 'SESSION_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'ANTHROPIC_API_KEY'];
+  const required = ['DATABASE_URL', 'SESSION_SECRET', 'ANTHROPIC_API_KEY'];
   const missing = required.filter(key => !process.env[key]);
   if (missing.length > 0) {
     console.error(`FATAL: Missing required environment variables: ${missing.join(', ')}`);

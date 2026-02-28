@@ -321,6 +321,26 @@ export async function sendChatNotification(params: {
   `);
 }
 
+export async function sendOTP(params: {
+  to: string;
+  code: string;
+}) {
+  await sendEmail(params.to, `Your ServiceFlow login code: ${params.code}`, `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 0;">
+      <h2 style="color: #111; margin-bottom: 16px;">Your login code</h2>
+      <p style="color: #555; line-height: 1.6;">
+        Enter this code to sign in to ServiceFlow:
+      </p>
+      <div style="background: #f5f3ff; border-radius: 8px; padding: 24px; margin: 20px 0; text-align: center;">
+        <span style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #7c3aed;">${params.code}</span>
+      </div>
+      <p style="color: #999; font-size: 13px; margin-top: 24px;">
+        This code expires in 10 minutes. If you didn't request this code, you can safely ignore this email.
+      </p>
+    </div>
+  `);
+}
+
 export async function sendDailyDigest(params: {
   to: string;
   userName: string;

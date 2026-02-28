@@ -7,6 +7,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { usePreviewChat } from '@/hooks/usePreviewChat';
+import type { Flow } from '@/types';
 
 const PLACEHOLDER_PROMPTS = [
   'Create a client onboarding workflow...',
@@ -24,15 +26,25 @@ const QUICK_PROMPTS = [
 
 interface HeroPromptProps {
   onSubmit: (prompt: string) => void;
+  onPreviewStart?: () => void;
+  onPreviewComplete?: (workflow: Flow) => void;
+  showInlinePreview?: boolean;
 }
 
-export function HeroPrompt({ onSubmit }: HeroPromptProps) {
+export function HeroPrompt({
+  onSubmit,
+  onPreviewStart,
+  onPreviewComplete,
+  showInlinePreview,
+}: HeroPromptProps) {
   const [prompt, setPrompt] = useState('');
   const [placeholder, setPlaceholder] = useState('');
   const [promptIndex, setPromptIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const previewChat = usePreviewChat();
 
   // Typewriter effect
   useEffect(() => {
@@ -69,15 +81,35 @@ export function HeroPrompt({ onSubmit }: HeroPromptProps) {
     return () => clearTimeout(timer);
   }, [charIndex, isDeleting, promptIndex, prompt]);
 
+  // Notify parent when workflow arrives
+  useEffect(() => {
+    if (showInlinePreview && previewChat.workflow && onPreviewComplete) {
+      onPreviewComplete(previewChat.workflow);
+    }
+  }, [showInlinePreview, previewChat.workflow, onPreviewComplete]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (prompt.trim()) {
+    if (!prompt.trim()) return;
+
+    if (showInlinePreview) {
+      onPreviewStart?.();
+      previewChat.sendPrompt(prompt.trim());
+      onSubmit(prompt.trim());
+    } else {
       onSubmit(prompt.trim());
     }
   };
 
   const handleQuickPrompt = (text: string) => {
-    onSubmit(text);
+    if (showInlinePreview) {
+      setPrompt(text);
+      onPreviewStart?.();
+      previewChat.sendPrompt(text);
+      onSubmit(text);
+    } else {
+      onSubmit(text);
+    }
   };
 
   return (
