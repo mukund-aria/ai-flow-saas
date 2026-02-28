@@ -65,6 +65,7 @@ export interface TaskContext {
   journeySteps?: JourneyStep[];
   branding?: BrandingConfig;
   portalSlug?: string;
+  isSandbox?: boolean;
 }
 
 export async function validateMagicLink(token: string): Promise<TaskContext | null> {
@@ -209,6 +210,7 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
   let ddrWorkspace: DDRContext['workspace'];
   let orgBranding: BrandingConfig | undefined;
   let portalSlug: string | undefined;
+  let isSandbox = false;
   if (run.organizationId) {
     const org = await db.query.organizations.findFirst({
       where: eq(organizations.id, run.organizationId),
@@ -218,6 +220,7 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
       if (org.brandingConfig) {
         orgBranding = org.brandingConfig as BrandingConfig;
       }
+      isSandbox = org.slug === '__serviceflow-sandbox__';
     }
   }
 
@@ -311,5 +314,6 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
     journeySteps: resolvedJourneySteps,
     branding: orgBranding,
     portalSlug,
+    isSandbox,
   };
 }

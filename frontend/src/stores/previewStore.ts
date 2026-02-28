@@ -7,8 +7,10 @@ interface PreviewStore {
   previewPrompt: string | null;
   previewSessionId: string | null;
   previewTimestamp: number | null;
+  sandboxFlowId: string | null;
 
   setPreview: (workflow: Flow, prompt: string, sessionId?: string) => void;
+  setSandboxFlowId: (id: string) => void;
   clearPreview: () => void;
 }
 
@@ -19,6 +21,7 @@ export const usePreviewStore = create<PreviewStore>()(
       previewPrompt: null,
       previewSessionId: null,
       previewTimestamp: null,
+      sandboxFlowId: null,
 
       setPreview: (workflow, prompt, sessionId) =>
         set({
@@ -28,12 +31,16 @@ export const usePreviewStore = create<PreviewStore>()(
           previewTimestamp: Date.now(),
         }),
 
+      setSandboxFlowId: (id) =>
+        set({ sandboxFlowId: id }),
+
       clearPreview: () =>
         set({
           previewWorkflow: null,
           previewPrompt: null,
           previewSessionId: null,
           previewTimestamp: null,
+          sandboxFlowId: null,
         }),
     }),
     {

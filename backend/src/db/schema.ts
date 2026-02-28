@@ -487,6 +487,23 @@ export const integrations = pgTable('integrations', {
 });
 
 // ============================================================================
+// Sandbox Flows (Ephemeral public flows for viral onboarding)
+// ============================================================================
+
+export const sandboxFlows = pgTable('sandbox_flows', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  description: text('description'),
+  definition: jsonb('definition').$type<Record<string, unknown>>(),
+  prompt: text('prompt').notNull(),
+  sessionId: text('session_id'),
+  expiresAt: timestamp('expires_at').notNull(),
+  claimedByUserId: text('claimed_by_user_id'),
+  claimedAt: timestamp('claimed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
 // Relations (for Drizzle query builder)
 // ============================================================================
 

@@ -8,6 +8,7 @@ import { Router } from 'express';
 import { db, organizations, users, userOrganizations, flows, flowRuns, stepExecutions, portals } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
+import { claimSandboxFlow } from '../services/sandbox.js';
 
 const router = Router();
 
@@ -24,7 +25,7 @@ router.post(
       return;
     }
 
-    const { name } = req.body;
+    const { name, claimSandboxFlowId } = req.body;
 
     if (!name || !name.trim()) {
       res.status(400).json({
@@ -173,6 +174,17 @@ router.post(
       .set({ activeOrganizationId: org.id })
       .where(eq(users.id, user.id));
 
+    // Claim sandbox flow if provided (non-fatal on failure)
+    let claimedFlowId: string | null = null;
+    if (claimSandboxFlowId) {
+      try {
+        const result = await claimSandboxFlow(claimSandboxFlowId, user.id, org.id);
+        claimedFlowId = result.flowId;
+      } catch (err) {
+        console.warn('[OrgCreate] Failed to claim sandbox flow:', err);
+      }
+    }
+
     res.status(201).json({
       success: true,
       data: {
@@ -180,6 +192,7 @@ router.post(
         name: org.name,
         slug: org.slug,
         role: 'ADMIN',
+        claimedFlowId,
       },
     });
   })

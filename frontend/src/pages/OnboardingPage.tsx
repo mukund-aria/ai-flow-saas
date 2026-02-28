@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingStore } from '@/stores/onboardingStore';
+import { usePreviewStore } from '@/stores/previewStore';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -28,17 +29,30 @@ export function OnboardingPage() {
     setError('');
 
     try {
+      const { sandboxFlowId } = usePreviewStore.getState();
+
       const res = await fetch(`${API_BASE}/organizations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ name: orgName.trim() }),
+        body: JSON.stringify({
+          name: orgName.trim(),
+          claimSandboxFlowId: sandboxFlowId || undefined,
+        }),
       });
 
       if (res.ok) {
+        const data = await res.json();
         await checkAuth();
         useOnboardingStore.getState().resetOnboarding();
-        navigate('/org-setup');
+        usePreviewStore.getState().clearPreview();
+
+        if (data.data?.claimedFlowId) {
+          // Skip walkthrough — go directly to builder with claimed flow
+          navigate(`/templates/${data.data.claimedFlowId}`);
+        } else {
+          navigate('/org-setup');
+        }
       } else {
         const data = await res.json();
         setError(data.error?.message || 'Failed to create organization');

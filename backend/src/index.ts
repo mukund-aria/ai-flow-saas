@@ -23,8 +23,10 @@ import publicStartRouter from './routes/public-start.js';
 import webhooksRouter from './routes/webhooks.js';
 import publicEmbedRouter from './routes/public-embed.js';
 import publicPortalRouter from './routes/public-portal.js';
+import publicSandboxRouter from './routes/public-sandbox.js';
 import { initScheduler } from './services/scheduler.js';
 import { initFlowScheduler } from './services/flow-scheduler.js';
+import { ensureSandboxInfrastructure, startSandboxCleanup } from './services/sandbox.js';
 
 dotenv.config();
 
@@ -188,6 +190,7 @@ app.use('/api/webhooks/flows', webhooksRouter);
 // Public embed API (embedded flow start pages)
 app.use('/api/public/embed', publicEmbedRouter);
 app.use('/api/public/portal', publicPortalRouter);
+app.use('/api/public/sandbox', publicSandboxRouter);
 
 // ============================================================================
 // API Routes (protected in production)
@@ -246,6 +249,12 @@ initScheduler().catch((err) => {
 initFlowScheduler().catch((err) => {
   console.warn('[FlowScheduler] Failed to start:', err);
 });
+
+// Initialize sandbox infrastructure + cleanup
+ensureSandboxInfrastructure().catch((err) => {
+  console.warn('[Sandbox] Failed to bootstrap:', err);
+});
+startSandboxCleanup();
 
 app.listen(Number(PORT), '0.0.0.0', () => {
   const authStatus = process.env.GOOGLE_CLIENT_ID ? 'Google OAuth enabled' : 'Auth disabled (dev mode)';

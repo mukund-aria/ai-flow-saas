@@ -1363,6 +1363,41 @@ export async function startPortalFlow(token: string, flowId: string, kickoffData
 }
 
 // ============================================================================
+// Public Sandbox API (Viral Onboarding)
+// ============================================================================
+
+export async function saveSandboxFlow(data: {
+  name: string;
+  description?: string;
+  definition: Record<string, unknown>;
+  prompt: string;
+  sessionId?: string;
+}): Promise<{ sandboxFlowId: string }> {
+  const res = await fetch(`${API_BASE}/public/sandbox/flows`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json();
+  if (!result.success) throw new Error(result.error?.message || 'Failed to save sandbox flow');
+  return result.data;
+}
+
+export async function testSandboxFlow(
+  sandboxFlowId: string,
+  contact: { name: string; email: string },
+): Promise<{ token: string; taskUrl: string }> {
+  const res = await fetch(`${API_BASE}/public/sandbox/flows/${sandboxFlowId}/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contactName: contact.name, contactEmail: contact.email }),
+  });
+  const result = await res.json();
+  if (!result.success) throw new Error(result.error?.message || 'Failed to start test');
+  return result.data;
+}
+
+// ============================================================================
 // Stream Event Types
 // ============================================================================
 

@@ -22,6 +22,7 @@ import { ActivitySection } from '@/components/assignee/ActivitySection';
 import { AIAdviseCard } from '@/components/assignee/AIAdviseCard';
 import { AIReviewFeedback } from '@/components/assignee/AIReviewFeedback';
 import { FormChatAssistant } from '@/components/assignee/FormChatAssistant';
+import { SandboxBanner } from '@/components/assignee/SandboxBanner';
 import type { JourneyStep, AIPrepareResult, AIAdviseResult, AIReviewResult } from '@/types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
@@ -59,6 +60,7 @@ interface TaskContext {
   journeySteps?: JourneyStep[];
   branding?: BrandingConfig;
   portalSlug?: string;
+  isSandbox?: boolean;
 }
 
 export function AssigneeTaskPage() {
@@ -284,6 +286,7 @@ export function AssigneeTaskPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50" style={brandingStyle}>
+      {task.isSandbox && <SandboxBanner />}
       <AssigneeHeader
         runName={task.runName}
         flowName={task.flowName}

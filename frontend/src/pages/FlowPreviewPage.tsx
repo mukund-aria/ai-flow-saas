@@ -2,15 +2,18 @@
  * Flow Preview Page
  *
  * Full-page animated preview of AI-generated workflow.
- * Shows the prompt, building animation, and "Edit This Flow" CTA.
+ * After generation completes, auto-saves to sandbox and shows
+ * PostGenerationPanel with "Test Flow" + "Edit Flow" CTAs.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Sparkles, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { AnimatedWorkflowPanel } from '@/components/preview/AnimatedWorkflowPanel';
 import { PreviewCTA } from '@/components/preview/PreviewCTA';
+import { PostGenerationPanel } from '@/components/preview/PostGenerationPanel';
 import { usePreviewChat } from '@/hooks/usePreviewChat';
+import { saveSandboxFlow } from '@/lib/api';
 
 export function FlowPreviewPage() {
   const [searchParams] = useSearchParams();
@@ -18,12 +21,43 @@ export function FlowPreviewPage() {
   const prompt = searchParams.get('prompt');
   const { status, workflow, error, sessionId, sendPrompt } = usePreviewChat();
 
+  const [sandboxFlowId, setSandboxFlowId] = useState<string | null>(null);
+  const [savingToSandbox, setSavingToSandbox] = useState(false);
+  const savedRef = useRef(false);
+
   // Send prompt on mount
   useEffect(() => {
     if (prompt && status === 'idle') {
       sendPrompt(prompt);
     }
   }, [prompt, status, sendPrompt]);
+
+  // Auto-save to sandbox when generation completes
+  useEffect(() => {
+    if (status !== 'complete' || !workflow || !prompt || savedRef.current) return;
+    savedRef.current = true;
+
+    const save = async () => {
+      setSavingToSandbox(true);
+      try {
+        const result = await saveSandboxFlow({
+          name: workflow.name || 'Untitled Flow',
+          description: workflow.description,
+          definition: workflow as unknown as Record<string, unknown>,
+          prompt,
+          sessionId: sessionId || undefined,
+        });
+        setSandboxFlowId(result.sandboxFlowId);
+      } catch (err) {
+        console.error('[Preview] Failed to save sandbox flow:', err);
+        // Non-fatal — fall back to PreviewCTA without sandbox features
+      } finally {
+        setSavingToSandbox(false);
+      }
+    };
+
+    save();
+  }, [status, workflow, prompt, sessionId]);
 
   // Redirect if no prompt
   if (!prompt) {
@@ -110,11 +144,20 @@ export function FlowPreviewPage() {
 
       {/* CTA bar (fixed at bottom) */}
       {status === 'complete' && workflow && (
-        <PreviewCTA
-          workflow={workflow}
-          prompt={prompt}
-          sessionId={sessionId || undefined}
-        />
+        sandboxFlowId ? (
+          <PostGenerationPanel
+            workflow={workflow}
+            prompt={prompt}
+            sessionId={sessionId || undefined}
+            sandboxFlowId={sandboxFlowId}
+          />
+        ) : (
+          <PreviewCTA
+            workflow={workflow}
+            prompt={prompt}
+            sessionId={sessionId || undefined}
+          />
+        )
       )}
     </div>
   );

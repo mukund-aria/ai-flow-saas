@@ -16,11 +16,53 @@ const PLACEHOLDER_PROMPTS = [
   'Manage a multi-step RFP response with stakeholder sign-offs...',
 ];
 
-const QUICK_PROMPTS = [
-  'Client onboarding workflow',
-  'Vendor qualification process',
-  'Partner agreement collection',
+const INDUSTRIES = [
+  { id: 'general', label: 'General' },
+  { id: 'accounting', label: 'Accounting' },
+  { id: 'legal', label: 'Legal' },
+  { id: 'consulting', label: 'Consulting' },
+  { id: 'marketing', label: 'Digital Marketing' },
+  { id: 'real-estate', label: 'Real Estate' },
+  { id: 'healthcare', label: 'Healthcare' },
 ];
+
+const INDUSTRY_PROMPTS: Record<string, string[]> = {
+  general: [
+    'Create a client onboarding workflow',
+    'Build an approval process for invoices',
+    'Design an employee offboarding flow',
+  ],
+  accounting: [
+    'Create a tax return preparation workflow',
+    'Build a monthly close process',
+    'Design a client engagement letter flow',
+  ],
+  legal: [
+    'Create a client intake and conflict check',
+    'Build a document review and approval process',
+    'Design a case management workflow',
+  ],
+  consulting: [
+    'Create a new project kickoff workflow',
+    'Build a client deliverable review process',
+    'Design a proposal submission and approval flow',
+  ],
+  marketing: [
+    'Create a campaign launch approval workflow',
+    'Build a content review and publish process',
+    'Design a client reporting and sign-off flow',
+  ],
+  'real-estate': [
+    'Create a property listing approval workflow',
+    'Build a buyer qualification process',
+    'Design a closing document collection flow',
+  ],
+  healthcare: [
+    'Create a patient intake workflow',
+    'Build a referral management process',
+    'Design a compliance audit checklist flow',
+  ],
+};
 
 interface HeroPromptProps {
   onSubmit: (prompt: string) => void;
@@ -32,6 +74,7 @@ export function HeroPrompt({ onSubmit }: HeroPromptProps) {
   const [promptIndex, setPromptIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [activeIndustry, setActiveIndustry] = useState('general');
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Typewriter effect
@@ -121,13 +164,30 @@ export function HeroPrompt({ onSubmit }: HeroPromptProps) {
           </button>
         </form>
 
-        {/* Quick Prompts */}
+        {/* Industry Chips */}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {QUICK_PROMPTS.map((text, i) => (
+          {INDUSTRIES.map((industry) => (
             <button
-              key={i}
+              key={industry.id}
+              onClick={() => setActiveIndustry(industry.id)}
+              className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                activeIndustry === industry.id
+                  ? 'bg-violet-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700'
+              }`}
+            >
+              {industry.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Quick Prompts for active industry */}
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          {(INDUSTRY_PROMPTS[activeIndustry] || INDUSTRY_PROMPTS.general).map((text, i) => (
+            <button
+              key={`${activeIndustry}-${i}`}
               onClick={() => handleQuickPrompt(text)}
-              className="px-4 py-2 rounded-full bg-gray-100 hover:bg-violet-100 hover:text-violet-700 text-sm text-gray-600 transition-colors"
+              className="px-4 py-2 rounded-full bg-gray-50 border border-gray-200 hover:bg-violet-50 hover:border-violet-200 hover:text-violet-700 text-sm text-gray-600 transition-colors"
             >
               {text}
             </button>
