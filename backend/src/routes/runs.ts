@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, flows, flowRuns, stepExecutions, users, organizations, contacts, magicLinks, FlowRunStatus } from '../db/index.js';
+import { db, flows, flowRuns, stepExecutions, users, organizations, contacts, magicLinks, auditLogs, FlowRunStatus } from '../db/index.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
@@ -78,15 +78,115 @@ router.get(
         currentStepAssignee = { id: activeStep.assignedToUser.id, name: activeStep.assignedToUser.name, type: 'user' as const };
       }
 
+      // Compute currentStep info from active step
+      const currentStep = activeStep
+        ? {
+            stepId: activeStep.id,
+            stepIndex: activeStep.stepIndex,
+            hasAssignee: !!(activeStep.assignedToContactId || activeStep.assignedToUserId),
+          }
+        : null;
+
       // Strip stepExecutions array from response to keep payload small
       const { stepExecutions: _se, ...rest } = run as any;
-      return { ...rest, totalSteps, currentStepAssignee };
+      return { ...rest, totalSteps, currentStepAssignee, currentStep };
     });
 
     res.json({
       success: true,
       data: runsWithTotalSteps,
     });
+  })
+);
+
+// ============================================================================
+// POST /api/flows/bulk-remind - Send reminders for multiple overdue runs
+// ============================================================================
+
+router.post(
+  '/bulk-remind',
+  asyncHandler(async (req, res) => {
+    const { runIds } = req.body;
+    if (!Array.isArray(runIds) || runIds.length === 0 || runIds.length > 50) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_INPUT', message: 'runIds must be an array of 1-50 IDs' },
+      });
+      return;
+    }
+
+    const orgId = req.organizationId;
+    let remindedCount = 0;
+
+    for (const runId of runIds) {
+      // Get run with flow context
+      const run = await db.query.flowRuns.findFirst({
+        where: orgId
+          ? and(eq(flowRuns.id, runId), eq(flowRuns.organizationId, orgId))
+          : eq(flowRuns.id, runId),
+        with: { flow: true },
+      });
+
+      if (!run || run.status !== 'IN_PROGRESS') continue;
+
+      // Find active step executions with contact assignees
+      const activeSteps = await db.query.stepExecutions.findMany({
+        where: and(
+          eq(stepExecutions.flowRunId, runId),
+        ),
+      });
+
+      for (const stepExec of activeSteps) {
+        if (stepExec.status !== 'IN_PROGRESS' && stepExec.status !== 'WAITING_FOR_ASSIGNEE') continue;
+        if (!stepExec.assignedToContactId) continue;
+
+        const contact = await db.query.contacts.findFirst({
+          where: eq(contacts.id, stepExec.assignedToContactId),
+        });
+
+        if (!contact) continue;
+
+        // Find existing magic link for this step
+        const existingLink = await db.query.magicLinks.findFirst({
+          where: eq(magicLinks.stepExecutionId, stepExec.id),
+        });
+
+        if (existingLink && !existingLink.usedAt) {
+          // Get step name from definition
+          const definition = run.flow?.definition as any;
+          const defSteps = definition?.steps || [];
+          const defStep = defSteps.find((s: any) => s.stepId === stepExec.stepId);
+          const stepName = defStep?.config?.name || `Step ${stepExec.stepIndex + 1}`;
+
+          const { sendMagicLink } = await import('../services/email.js');
+          await sendMagicLink({
+            to: contact.email,
+            contactName: contact.name,
+            stepName,
+            flowName: run.flow?.name || 'Flow',
+            token: existingLink.token,
+          });
+        }
+
+        // Update reminder tracking
+        await db.update(stepExecutions)
+          .set({
+            lastReminderSentAt: new Date(),
+            reminderCount: (stepExec.reminderCount || 0) + 1,
+          })
+          .where(eq(stepExecutions.id, stepExec.id));
+
+        logAction({
+          flowRunId: runId,
+          action: 'REMINDER_SENT',
+          details: { stepId: stepExec.stepId, stepIndex: stepExec.stepIndex, bulk: true },
+        });
+
+        remindedCount++;
+      }
+    }
+
+    res.json({ success: true, data: { remindedCount } });
   })
 );
 
@@ -854,6 +954,209 @@ router.post(
     res.json({
       success: true,
       data: { message: 'Reminder sent successfully' },
+    });
+  })
+);
+
+// ============================================================================
+// GET /api/flows/:id/audit-log - Get audit log for a flow run
+// ============================================================================
+
+router.get(
+  '/:id/audit-log',
+  asyncHandler(async (req, res) => {
+    const id = req.params.id as string;
+    const orgId = req.organizationId;
+
+    // Verify the flow run belongs to this org
+    const run = await db.query.flowRuns.findFirst({
+      where: orgId
+        ? and(eq(flowRuns.id, id), eq(flowRuns.organizationId, orgId))
+        : eq(flowRuns.id, id),
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+      });
+      return;
+    }
+
+    // Query audit logs with actor info
+    const logs = await db
+      .select({
+        id: auditLogs.id,
+        action: auditLogs.action,
+        actorId: auditLogs.actorId,
+        actorEmail: auditLogs.actorEmail,
+        details: auditLogs.details,
+        createdAt: auditLogs.createdAt,
+        actorName: users.name,
+      })
+      .from(auditLogs)
+      .leftJoin(users, eq(auditLogs.actorId, users.id))
+      .where(eq(auditLogs.flowRunId, id))
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(100);
+
+    const data = logs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      actorName: log.actorName || null,
+      actorEmail: log.actorEmail || null,
+      details: log.details || null,
+      createdAt: log.createdAt.toISOString(),
+    }));
+
+    res.json({
+      success: true,
+      data,
+    });
+  })
+);
+
+// ============================================================================
+// POST /api/flows/:id/steps/:stepId/reassign - Reassign a step to a different person
+// ============================================================================
+
+router.post(
+  '/:id/steps/:stepId/reassign',
+  asyncHandler(async (req, res) => {
+    const runId = req.params.id as string;
+    const stepId = req.params.stepId as string;
+    const { assignToContactId, assignToUserId } = req.body;
+    const orgId = req.organizationId;
+
+    // Validate exactly one assignment target
+    if ((!assignToContactId && !assignToUserId) || (assignToContactId && assignToUserId)) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Provide exactly one of assignToContactId or assignToUserId' },
+      });
+      return;
+    }
+
+    // Get the flow run (scoped to org)
+    const run = await db.query.flowRuns.findFirst({
+      where: orgId
+        ? and(eq(flowRuns.id, runId), eq(flowRuns.organizationId, orgId))
+        : eq(flowRuns.id, runId),
+      with: { flow: true },
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+      });
+      return;
+    }
+
+    if (run.status !== 'IN_PROGRESS') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Can only reassign steps on an in-progress run' },
+      });
+      return;
+    }
+
+    // Find the step execution
+    const stepExec = await db.query.stepExecutions.findFirst({
+      where: and(
+        eq(stepExecutions.flowRunId, runId),
+        eq(stepExecutions.stepId, stepId)
+      ),
+    });
+
+    if (!stepExec) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Step execution not found' },
+      });
+      return;
+    }
+
+    if (stepExec.status === 'COMPLETED' || stepExec.status === 'SKIPPED') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Cannot reassign a completed or skipped step' },
+      });
+      return;
+    }
+
+    // Record old assignee info for audit
+    const oldAssignee = {
+      contactId: stepExec.assignedToContactId,
+      userId: stepExec.assignedToUserId,
+    };
+
+    // Update the step execution
+    await db
+      .update(stepExecutions)
+      .set({
+        assignedToContactId: assignToContactId || null,
+        assignedToUserId: assignToUserId || null,
+      })
+      .where(eq(stepExecutions.id, stepExec.id));
+
+    // If step is active and reassigned to a new contact, handle magic link
+    const isActive = stepExec.status === 'IN_PROGRESS' || stepExec.status === 'WAITING_FOR_ASSIGNEE';
+    if (isActive && assignToContactId) {
+      // Invalidate old magic link
+      const existingLink = await db.query.magicLinks.findFirst({
+        where: eq(magicLinks.stepExecutionId, stepExec.id),
+      });
+      if (existingLink) {
+        await db.update(magicLinks)
+          .set({ usedAt: new Date() })
+          .where(eq(magicLinks.id, existingLink.id));
+      }
+
+      // Create new magic link and send notification
+      const { createMagicLink } = await import('../services/magic-link.js');
+      const { sendMagicLink } = await import('../services/email.js');
+      const token = await createMagicLink(stepExec.id);
+      const contact = await db.query.contacts.findFirst({
+        where: eq(contacts.id, assignToContactId),
+      });
+
+      // Get step name from definition
+      const definition = run.flow?.definition as any;
+      const defSteps = definition?.steps || [];
+      const defStep = defSteps.find((s: any) => (s.stepId || s.id) === stepId);
+      const stepName = defStep?.config?.name || `Step ${stepExec.stepIndex + 1}`;
+
+      if (contact) {
+        await sendMagicLink({
+          to: contact.email,
+          contactName: contact.name,
+          stepName,
+          flowName: run.flow?.name || 'Flow',
+          token,
+        });
+      }
+    }
+
+    // Audit log
+    logAction({
+      flowRunId: runId,
+      action: 'STEP_REASSIGNED',
+      actorId: req.user?.id,
+      details: {
+        stepId,
+        stepIndex: stepExec.stepIndex,
+        oldAssignee,
+        newAssignee: {
+          contactId: assignToContactId || null,
+          userId: assignToUserId || null,
+        },
+      },
+    });
+
+    res.json({
+      success: true,
+      data: { message: 'Step reassigned successfully' },
     });
   })
 );

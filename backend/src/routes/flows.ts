@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import { db, flows, users, organizations } from '../db/index.js';
+import { db, flows, users, organizations, templateFolders } from '../db/index.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -42,6 +42,7 @@ router.get(
       version: flow.version,
       status: flow.status,
       isDefault: flow.isDefault,
+      folderId: flow.folderId,
       stepCount: (flow.definition as any)?.steps?.length || 0,
       createdBy: flow.createdBy,
       createdAt: flow.createdAt,
@@ -327,6 +328,58 @@ router.post(
       success: true,
       data: duplicate,
     });
+  })
+);
+
+// ============================================================================
+// PUT /api/templates/:id/folder - Move template to folder
+// ============================================================================
+
+router.put(
+  '/:id/folder',
+  asyncHandler(async (req, res) => {
+    const id = req.params.id as string;
+    const orgId = req.organizationId;
+    const { folderId } = req.body; // string | null
+
+    // Verify the template exists and belongs to this org
+    const existing = await db.query.flows.findFirst({
+      where: orgId
+        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
+        : eq(flows.id, id),
+    });
+
+    if (!existing) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Template not found' },
+      });
+      return;
+    }
+
+    // If folderId is provided, verify the folder exists and belongs to this org
+    if (folderId) {
+      const folder = await db.query.templateFolders.findFirst({
+        where: orgId
+          ? and(eq(templateFolders.id, folderId), eq(templateFolders.organizationId, orgId))
+          : eq(templateFolders.id, folderId),
+      });
+      if (!folder) {
+        res.status(404).json({
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'Folder not found' },
+        });
+        return;
+      }
+    }
+
+    const [updated] = await db
+      .update(flows)
+      .set({ folderId: folderId || null, updatedAt: new Date() })
+      .where(eq(flows.id, id))
+      .returning();
+
+    res.json({ success: true, data: updated });
   })
 );
 

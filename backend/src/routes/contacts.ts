@@ -6,11 +6,60 @@
  */
 
 import { Router } from 'express';
-import { db, contacts, organizations } from '../db/index.js';
-import { eq, desc, and } from 'drizzle-orm';
+import { db, contacts, organizations, stepExecutions, flowRuns } from '../db/index.js';
+import { eq, desc, and, isNotNull } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
 const router = Router();
+
+// ============================================================================
+// GET /api/contacts/workload - Contact workload summary
+// ============================================================================
+
+router.get(
+  '/workload',
+  asyncHandler(async (req, res) => {
+    const orgId = req.organizationId;
+
+    // Get all step executions assigned to contacts for this org's flow runs
+    const rows = await db
+      .select({
+        contactId: stepExecutions.assignedToContactId,
+        status: stepExecutions.status,
+        dueAt: stepExecutions.dueAt,
+      })
+      .from(stepExecutions)
+      .innerJoin(flowRuns, eq(stepExecutions.flowRunId, flowRuns.id))
+      .where(
+        and(
+          isNotNull(stepExecutions.assignedToContactId),
+          ...(orgId ? [eq(flowRuns.organizationId, orgId)] : [])
+        )
+      );
+
+    // Aggregate in JS
+    const workloads: Record<string, { active: number; completed: number; overdue: number }> = {};
+    const now = new Date();
+
+    for (const row of rows) {
+      const cId = row.contactId!;
+      if (!workloads[cId]) {
+        workloads[cId] = { active: 0, completed: 0, overdue: 0 };
+      }
+
+      if (row.status === 'COMPLETED') {
+        workloads[cId].completed++;
+      } else if (row.status === 'IN_PROGRESS' || row.status === 'WAITING_FOR_ASSIGNEE') {
+        workloads[cId].active++;
+        if (row.dueAt && new Date(row.dueAt) < now) {
+          workloads[cId].overdue++;
+        }
+      }
+    }
+
+    res.json({ success: true, data: workloads });
+  })
+);
 
 // ============================================================================
 // GET /api/contacts - List all contacts

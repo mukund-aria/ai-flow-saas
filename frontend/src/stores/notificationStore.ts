@@ -11,6 +11,9 @@ import {
 interface NotificationState {
   notifications: AppNotification[];
   unreadCount: number;
+  previousUnreadCount: number;
+  hasNewNotifications: boolean;
+  _newNotifTimeout: ReturnType<typeof setTimeout> | null;
   isLoading: boolean;
   isOpen: boolean;
   setOpen: (open: boolean) => void;
@@ -25,6 +28,9 @@ interface NotificationState {
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   unreadCount: 0,
+  previousUnreadCount: 0,
+  hasNewNotifications: false,
+  _newNotifTimeout: null,
   isLoading: false,
   isOpen: false,
 
@@ -57,6 +63,14 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       const count = await getUnreadNotificationCount();
       set({ unreadCount: count });
+      const prev = get().previousUnreadCount;
+      if (count > prev && prev > 0) {
+        if (get()._newNotifTimeout) clearTimeout(get()._newNotifTimeout!);
+        set({ hasNewNotifications: true });
+        const timeout = setTimeout(() => set({ hasNewNotifications: false }), 5000);
+        set({ _newNotifTimeout: timeout });
+      }
+      set({ previousUnreadCount: count });
     } catch {
       // silently ignore polling failures
     }

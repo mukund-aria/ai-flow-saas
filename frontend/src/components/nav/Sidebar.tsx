@@ -20,6 +20,8 @@ import {
   RotateCcw,
   Play,
   Loader2,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,15 +35,18 @@ interface NavItemProps {
   to: string;
   icon: React.ReactNode;
   label: string;
+  isCollapsed?: boolean;
 }
 
-function NavItem({ to, icon, label }: NavItemProps) {
+function NavItem({ to, icon, label, isCollapsed }: NavItemProps) {
   return (
     <NavLink
       to={to}
+      title={isCollapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+          isCollapsed && 'justify-center',
           isActive
             ? 'bg-violet-100 text-violet-900'
             : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -49,7 +54,7 @@ function NavItem({ to, icon, label }: NavItemProps) {
       }
     >
       <span className="w-5 h-5">{icon}</span>
-      <span className="flex-1">{label}</span>
+      {!isCollapsed && <span className="flex-1">{label}</span>}
     </NavLink>
   );
 }
@@ -58,6 +63,14 @@ export function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const resetOnboarding = useOnboardingStore((s) => s.resetOnboarding);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar-collapsed') === 'true';
+  });
+  const toggleCollapsed = () => {
+    const next = !isCollapsed;
+    setIsCollapsed(next);
+    localStorage.setItem('sidebar-collapsed', next.toString());
+  };
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showStartFlow, setShowStartFlow] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -122,20 +135,32 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-56 bg-white border-r border-gray-200 flex flex-col">
+    <aside className={cn(isCollapsed ? 'w-16' : 'w-56', 'bg-white border-r border-gray-200 flex flex-col transition-all duration-200')}>
       {/* Organization Switcher */}
-      <div className="p-4 border-b border-gray-200">
-        <OrgSwitcher />
+      <div className={cn('border-b border-gray-200', isCollapsed ? 'p-2' : 'p-4')}>
+        {isCollapsed ? (
+          <div className="flex items-center justify-center" title={user?.organizationName || 'My Organization'}>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+              {(user?.organizationName || 'M').charAt(0).toUpperCase()}
+            </div>
+          </div>
+        ) : (
+          <OrgSwitcher />
+        )}
       </div>
 
       {/* Start Flow Button + Dropdown */}
-      <div className="p-4 relative" ref={startFlowRef}>
+      <div className={cn('relative', isCollapsed ? 'p-2' : 'p-4')} ref={startFlowRef}>
         <button
           onClick={() => setShowStartFlow(!showStartFlow)}
-          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors text-sm"
+          title={isCollapsed ? 'Start Flow' : undefined}
+          className={cn(
+            'flex items-center justify-center w-full bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors text-sm',
+            isCollapsed ? 'px-2 py-2.5' : 'gap-2 px-4 py-2.5'
+          )}
         >
           <Play className="w-4 h-4" />
-          Start Flow
+          {!isCollapsed && 'Start Flow'}
         </button>
 
         {/* Start Flow Dropdown */}
@@ -186,46 +211,52 @@ export function Sidebar() {
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-        <NavItem to="/home" icon={<Home className="w-5 h-5" />} label="Home" />
-        <NavItem to="/flows" icon={<PlayCircle className="w-5 h-5" />} label="Flows" />
-        <NavItem to="/templates" icon={<FileText className="w-5 h-5" />} label="Templates" />
-        <NavItem to="/contacts" icon={<Users className="w-5 h-5" />} label="Contacts" />
-        <NavItem to="/reports" icon={<BarChart3 className="w-5 h-5" />} label="Reports" />
-        <NavItem to="/schedules" icon={<Calendar className="w-5 h-5" />} label="Schedules" />
-        <NavItem to="/integrations" icon={<Plug className="w-5 h-5" />} label="Integrations" />
+      <nav className={cn('flex-1 py-2 space-y-1 overflow-y-auto', isCollapsed ? 'px-2' : 'px-3')}>
+        <NavItem to="/home" icon={<Home className="w-5 h-5" />} label="Home" isCollapsed={isCollapsed} />
+        <NavItem to="/flows" icon={<PlayCircle className="w-5 h-5" />} label="Flows" isCollapsed={isCollapsed} />
+        <NavItem to="/templates" icon={<FileText className="w-5 h-5" />} label="Templates" isCollapsed={isCollapsed} />
+        <NavItem to="/contacts" icon={<Users className="w-5 h-5" />} label="Contacts" isCollapsed={isCollapsed} />
+        <NavItem to="/reports" icon={<BarChart3 className="w-5 h-5" />} label="Reports" isCollapsed={isCollapsed} />
+        <NavItem to="/schedules" icon={<Calendar className="w-5 h-5" />} label="Schedules" isCollapsed={isCollapsed} />
+        <NavItem to="/integrations" icon={<Plug className="w-5 h-5" />} label="Integrations" isCollapsed={isCollapsed} />
       </nav>
 
       {/* Bottom Section */}
-      <div className="p-3 border-t border-gray-200">
+      <div className={cn('border-t border-gray-200', isCollapsed ? 'p-2' : 'p-3')}>
         <div className="relative">
-          <NotificationBell />
+          <NotificationBell isCollapsed={isCollapsed} />
           <NotificationPanel />
         </div>
-        <NavItem to="/settings" icon={<Settings className="w-5 h-5" />} label="Settings" />
+        <NavItem to="/settings" icon={<Settings className="w-5 h-5" />} label="Settings" isCollapsed={isCollapsed} />
 
         {/* User Profile with Popover Menu */}
         {user && (
           <div className="relative mt-2" ref={menuRef}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+              title={isCollapsed ? user.name : undefined}
+              className={cn(
+                'flex items-center w-full rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors',
+                isCollapsed ? 'justify-center px-1 py-2' : 'gap-3 px-3 py-2'
+              )}
             >
               {user.picture ? (
                 <img
                   src={user.picture}
                   alt={user.name}
-                  className="w-8 h-8 rounded-full"
+                  className="w-8 h-8 rounded-full flex-shrink-0"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-medium">
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-medium flex-shrink-0">
                   {user.name?.charAt(0) || 'U'}
                 </div>
               )}
-              <div className="flex-1 text-left min-w-0">
-                <p className="font-medium text-gray-900 truncate">{user.name}</p>
-                <p className="text-xs text-gray-400 truncate">{user.email}</p>
-              </div>
+              {!isCollapsed && (
+                <div className="flex-1 text-left min-w-0">
+                  <p className="font-medium text-gray-900 truncate">{user.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                </div>
+              )}
             </button>
 
             {/* Popover Menu */}
@@ -265,6 +296,11 @@ export function Sidebar() {
             )}
           </div>
         )}
+
+        {/* Collapse Toggle */}
+        <button onClick={toggleCollapsed} className="flex items-center justify-center w-full py-2 mt-1 text-gray-400 hover:text-gray-600 transition-colors">
+          {isCollapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
+        </button>
       </div>
     </aside>
   );

@@ -7,6 +7,7 @@
 
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '@/components/nav/Sidebar';
+import { CommandPalette } from '@/components/CommandPalette';
 
 export function CoordinatorLayout() {
   return (
@@ -18,6 +19,9 @@ export function CoordinatorLayout() {
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
+
+      {/* Command Palette (Cmd+K) */}
+      <CommandPalette />
     </div>
   );
 }

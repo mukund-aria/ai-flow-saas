@@ -25,6 +25,7 @@ import {
   Calendar,
   MessageSquare,
   ExternalLink,
+  UserPlus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIcon } from '@/components/workflow/StepIcon';
@@ -33,6 +34,8 @@ import { cn } from '@/lib/utils';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { FlowRunChatPanel } from '@/components/flow-chat/FlowRunChatPanel';
 import { useFlowRunChatStore } from '@/stores/flowRunChatStore';
+import { AuditTimeline } from '@/components/flows/AuditTimeline';
+import { ReassignStepDialog } from '@/components/flows/ReassignStepDialog';
 import type { StepType } from '@/types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
@@ -248,6 +251,8 @@ export function FlowRunDetailPage() {
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [collapsedMilestones, setCollapsedMilestones] = useState<Set<string>>(new Set());
   const [showSettingsSidebar, setShowSettingsSidebar] = useState(false);
+  const [reassigningStep, setReassigningStep] = useState<{ stepId: string; currentAssignee?: { name: string; type: 'contact' | 'user' } } | null>(null);
+  const [refetchKey, setRefetchKey] = useState(0);
 
   // Track onboarding
   useEffect(() => {
@@ -346,7 +351,7 @@ export function FlowRunDetailPage() {
       }
     }
     fetchRun();
-  }, [id]);
+  }, [id, refetchKey]);
 
   // Handle cancel run
   const handleCancelRun = async () => {
@@ -635,6 +640,22 @@ export function FlowRunDetailPage() {
             </Button>
           )}
 
+          {/* Reassign button - for non-completed, non-skipped steps */}
+          {step.status !== 'COMPLETED' && step.status !== 'SKIPPED' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setReassigningStep({
+                stepId: step.stepId,
+                currentAssignee: step.assignee ? { name: step.assignee.name, type: step.assignee.type } : undefined,
+              })}
+              className="gap-1.5 text-xs h-7"
+            >
+              <UserPlus className="w-3 h-3" />
+              Reassign
+            </Button>
+          )}
+
           {/* View result data */}
           {step.status === 'COMPLETED' && step.resultData && Object.keys(step.resultData).length > 0 && (
             <Button
@@ -906,6 +927,9 @@ export function FlowRunDetailPage() {
               </div>
             </div>
           )}
+
+          {/* Audit Timeline */}
+          {id && <AuditTimeline runId={id} />}
         </div>
 
         {/* Settings Sidebar */}
@@ -1006,6 +1030,18 @@ export function FlowRunDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Reassign Step Dialog */}
+      {reassigningStep && id && (
+        <ReassignStepDialog
+          open={!!reassigningStep}
+          onOpenChange={(open) => { if (!open) setReassigningStep(null); }}
+          runId={id}
+          stepId={reassigningStep.stepId}
+          currentAssignee={reassigningStep.currentAssignee}
+          onReassigned={() => setRefetchKey((k) => k + 1)}
+        />
+      )}
 
       {/* Chat Panel */}
       {id && <FlowRunChatPanel mode="coordinator" flowRunId={id} />}

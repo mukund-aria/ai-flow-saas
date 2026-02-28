@@ -78,6 +78,18 @@ export const organizationInvites = pgTable('organization_invites', {
 });
 
 // ============================================================================
+// Template Folders
+// ============================================================================
+
+export const templateFolders = pgTable('template_folders', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ============================================================================
 // Flows (Workflow Templates)
 // ============================================================================
 
@@ -89,6 +101,7 @@ export const flows = pgTable('flows', {
   status: text('status').$type<FlowStatus>().default('DRAFT').notNull(),
   isDefault: boolean('is_default').default(false).notNull(),
   definition: jsonb('definition').$type<Record<string, unknown>>(),
+  folderId: text('folder_id').references(() => templateFolders.id),
   createdById: text('created_by_id').notNull().references(() => users.id),
   organizationId: text('organization_id').notNull().references(() => organizations.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -289,6 +302,7 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   contacts: many(contacts),
   flowRuns: many(flowRuns),
   invites: many(organizationInvites),
+  templateFolders: many(templateFolders),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -326,6 +340,14 @@ export const organizationInvitesRelations = relations(organizationInvites, ({ on
   }),
 }));
 
+export const templateFoldersRelations = relations(templateFolders, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [templateFolders.organizationId],
+    references: [organizations.id],
+  }),
+  templates: many(flows),
+}));
+
 export const flowsRelations = relations(flows, ({ one, many }) => ({
   createdBy: one(users, {
     fields: [flows.createdById],
@@ -334,6 +356,10 @@ export const flowsRelations = relations(flows, ({ one, many }) => ({
   organization: one(organizations, {
     fields: [flows.organizationId],
     references: [organizations.id],
+  }),
+  folder: one(templateFolders, {
+    fields: [flows.folderId],
+    references: [templateFolders.id],
   }),
   runs: many(flowRuns),
 }));

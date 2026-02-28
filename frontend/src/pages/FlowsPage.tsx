@@ -15,6 +15,7 @@ import {
   Play,
   Loader2,
   ChevronDown,
+  ChevronRight,
   Layers,
   Sparkles,
   ArrowUpDown,
@@ -22,14 +23,22 @@ import {
   Copy,
   Trash2,
   LayoutGrid,
+  FolderPlus,
+  Folder as FolderIcon,
+  FolderInput,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { listTemplates, deleteTemplate, duplicateTemplate, type Template } from '@/lib/api';
+import {
+  listTemplates, deleteTemplate, duplicateTemplate, type Template,
+  listFolders, createFolder, deleteFolder, moveTemplateToFolder, type Folder,
+} from '@/lib/api';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { CreateFlowDialog } from '@/components/workflow/CreateFlowDialog';
 import { ExecuteFlowDialog } from '@/components/workflow/ExecuteFlowDialog';
 import { TemplateGalleryDialog } from '@/components/workflow/TemplateGalleryDialog';
+import { FolderDialog } from '@/components/workflow/FolderDialog';
+import { MoveToFolderDialog } from '@/components/workflow/MoveToFolderDialog';
 
 type SortOption = 'lastModified' | 'name' | 'created' | 'steps';
 
@@ -83,11 +92,12 @@ interface FlowCardProps {
   onStartRun: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  onMoveToFolder: () => void;
   isStarting: boolean;
   onClick?: () => void;
 }
 
-function FlowCard({ flow, onEdit, onStartRun, onDelete, onDuplicate, isStarting, onClick }: FlowCardProps) {
+function FlowCard({ flow, onEdit, onStartRun, onDelete, onDuplicate, onMoveToFolder, isStarting, onClick }: FlowCardProps) {
   const [showMenu, setShowMenu] = useState(false);
 
   return (
@@ -148,6 +158,17 @@ function FlowCard({ flow, onEdit, onStartRun, onDelete, onDuplicate, isStarting,
                 >
                   <Copy className="w-3.5 h-3.5 text-gray-400" />
                   Duplicate
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(false);
+                    onMoveToFolder();
+                  }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <FolderInput className="w-3.5 h-3.5 text-gray-400" />
+                  Move to Folder
                 </button>
                 <div className="border-t border-gray-100 my-1" />
                 <button
@@ -272,6 +293,8 @@ function EmptyState({ onCreateFlow, onBrowseGallery }: { onCreateFlow: () => voi
 export function FlowsPage() {
   const navigate = useNavigate();
   const [flows, setFlows] = useState<Template[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -280,6 +303,8 @@ export function FlowsPage() {
   const [startingFlowId] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
+  const [showFolderDialog, setShowFolderDialog] = useState(false);
+  const [moveTemplate, setMoveTemplate] = useState<Template | null>(null);
   const [executeTemplate, setExecuteTemplate] = useState<Template | null>(null);
 
   // Handler to open the execute dialog
@@ -321,13 +346,59 @@ export function FlowsPage() {
     navigate(`/templates/${templateId}`);
   };
 
-  // Fetch templates on mount
+  // Handler to create a new folder
+  const handleCreateFolder = async (name: string) => {
+    try {
+      const folder = await createFolder(name);
+      setFolders((prev) => [...prev, folder].sort((a, b) => a.name.localeCompare(b.name)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create folder');
+    }
+  };
+
+  // Handler to delete a folder
+  const handleDeleteFolder = async (folderId: string) => {
+    if (!window.confirm('Delete this folder? Templates will be moved to root.')) return;
+    try {
+      await deleteFolder(folderId);
+      setFolders((prev) => prev.filter((f) => f.id !== folderId));
+      setFlows((prev) => prev.map((f) => f.folderId === folderId ? { ...f, folderId: null } : f));
+      if (currentFolderId === folderId) setCurrentFolderId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete folder');
+    }
+  };
+
+  // Handler to move template to a folder
+  const handleMoveToFolder = async (folderId: string | null) => {
+    if (!moveTemplate) return;
+    try {
+      await moveTemplateToFolder(moveTemplate.id, folderId);
+      setFlows((prev) => prev.map((f) => f.id === moveTemplate.id ? { ...f, folderId } : f));
+      // Update folder counts
+      setFolders((prev) => prev.map((folder) => {
+        let count = folder.templateCount;
+        if (moveTemplate.folderId === folder.id) count--;
+        if (folderId === folder.id) count++;
+        return { ...folder, templateCount: count };
+      }));
+      setMoveTemplate(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to move template');
+    }
+  };
+
+  // Fetch templates and folders on mount
   useEffect(() => {
-    async function fetchTemplates() {
+    async function fetchData() {
       try {
         setIsLoading(true);
-        const data = await listTemplates();
-        setFlows(data);
+        const [templatesData, foldersData] = await Promise.all([
+          listTemplates(),
+          listFolders().catch(() => [] as Folder[]),
+        ]);
+        setFlows(templatesData);
+        setFolders(foldersData);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load templates');
@@ -335,7 +406,7 @@ export function FlowsPage() {
         setIsLoading(false);
       }
     }
-    fetchTemplates();
+    fetchData();
   }, []);
 
   // Filter and sort flows
@@ -346,7 +417,15 @@ export function FlowsPage() {
         .includes(searchQuery.toLowerCase());
       const matchesStatus =
         statusFilter === 'all' || flow.status === statusFilter;
-      return matchesSearch && matchesStatus;
+      // When searching, show all templates regardless of folder
+      // When in a folder, show only that folder's templates
+      // When at root (no folder selected), show only unfiled templates
+      const matchesFolder = searchQuery
+        ? true
+        : currentFolderId
+          ? flow.folderId === currentFolderId
+          : !flow.folderId;
+      return matchesSearch && matchesStatus && matchesFolder;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -398,6 +477,21 @@ export function FlowsPage() {
         onOpenChange={setShowGallery}
         onTemplateImported={handleGalleryImported}
       />
+      <FolderDialog
+        open={showFolderDialog}
+        onOpenChange={setShowFolderDialog}
+        onSubmit={handleCreateFolder}
+        title="New Folder"
+      />
+      {moveTemplate && (
+        <MoveToFolderDialog
+          open={!!moveTemplate}
+          onOpenChange={(open) => { if (!open) setMoveTemplate(null); }}
+          folders={folders}
+          currentFolderId={moveTemplate.folderId}
+          onMove={handleMoveToFolder}
+        />
+      )}
       {executeTemplate && (
         <ExecuteFlowDialog
           open={!!executeTemplate}
@@ -418,6 +512,14 @@ export function FlowsPage() {
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
+            onClick={() => setShowFolderDialog(true)}
+            className="gap-2"
+          >
+            <FolderPlus className="w-4 h-4" />
+            New Folder
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => setShowGallery(true)}
             className="gap-2"
           >
@@ -433,6 +535,19 @@ export function FlowsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Breadcrumb navigation */}
+      {currentFolderId && (
+        <div className="flex items-center gap-2 text-sm mb-4">
+          <button onClick={() => setCurrentFolderId(null)} className="text-violet-600 hover:underline">
+            All Templates
+          </button>
+          <ChevronRight size={14} className="text-gray-400" />
+          <span className="text-gray-700 font-medium">
+            {folders.find((f) => f.id === currentFolderId)?.name}
+          </span>
+        </div>
+      )}
 
       {/* Filters bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
@@ -486,10 +601,39 @@ export function FlowsPage() {
       </div>
 
       {/* Flow Grid or Empty State */}
-      {flows.length === 0 ? (
+      {flows.length === 0 && folders.length === 0 ? (
         <EmptyState onCreateFlow={handleCreateFlow} onBrowseGallery={() => setShowGallery(true)} />
-      ) : filteredFlows.length > 0 ? (
+      ) : filteredFlows.length > 0 || (!currentFolderId && folders.length > 0 && !searchQuery) ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Folder cards at root level */}
+          {!currentFolderId && !searchQuery && folders.map((folder) => (
+            <div
+              key={folder.id}
+              onClick={() => setCurrentFolderId(folder.id)}
+              className="group bg-white rounded-xl border border-gray-200 p-5 cursor-pointer hover:border-violet-300 hover:shadow-sm transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FolderIcon size={20} className="text-violet-500" />
+                  <div>
+                    <div className="font-medium text-gray-900">{folder.name}</div>
+                    <div className="text-xs text-gray-500">{folder.templateCount} templates</div>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteFolder(folder.id);
+                  }}
+                  className="p-1.5 rounded-lg text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* Template cards */}
           {filteredFlows.map((flow) => (
             <FlowCard
               key={flow.id}
@@ -498,6 +642,7 @@ export function FlowsPage() {
               onStartRun={() => handleStartFlow(flow)}
               onDelete={() => handleDeleteFlow(flow.id)}
               onDuplicate={() => handleDuplicateFlow(flow.id)}
+              onMoveToFolder={() => setMoveTemplate(flow)}
               isStarting={startingFlowId === flow.id}
               onClick={() => flow.status === 'DRAFT' ? handleEditFlow(flow.id) : handleViewDetail(flow.id)}
             />
@@ -513,16 +658,17 @@ export function FlowsPage() {
             No templates found
           </h3>
           <p className="text-gray-500 mb-4">
-            Try adjusting your search or filter criteria
+            {currentFolderId ? 'This folder is empty' : 'Try adjusting your search or filter criteria'}
           </p>
           <Button
             variant="outline"
             onClick={() => {
               setSearchQuery('');
               setStatusFilter('all');
+              if (currentFolderId) setCurrentFolderId(null);
             }}
           >
-            Clear filters
+            {currentFolderId ? 'Back to all templates' : 'Clear filters'}
           </Button>
         </div>
       )}

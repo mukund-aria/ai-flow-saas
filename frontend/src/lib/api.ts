@@ -214,6 +214,7 @@ export interface Template {
   version: string;
   status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
   isDefault?: boolean;
+  folderId?: string | null;
   definition?: Record<string, unknown>;
   stepCount?: number;
   createdBy?: {
@@ -302,6 +303,67 @@ export async function publishTemplate(id: string): Promise<Template> {
 }
 
 // ============================================================================
+// Template Folders API
+// ============================================================================
+
+export interface Folder {
+  id: string;
+  name: string;
+  organizationId: string;
+  templateCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function listFolders(): Promise<Folder[]> {
+  const res = await fetch(`${API_BASE}/folders`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch folders');
+  return data.data;
+}
+
+export async function createFolder(name: string): Promise<Folder> {
+  const res = await fetch(`${API_BASE}/folders`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to create folder');
+  return data.data;
+}
+
+export async function renameFolder(id: string, name: string): Promise<Folder> {
+  const res = await fetch(`${API_BASE}/folders/${id}`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to rename folder');
+  return data.data;
+}
+
+export async function deleteFolder(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/folders/${id}`, { ...fetchOpts, method: 'DELETE' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to delete folder');
+}
+
+export async function moveTemplateToFolder(templateId: string, folderId: string | null): Promise<void> {
+  const res = await fetch(`${API_BASE}/templates/${templateId}/folder`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folderId }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to move template');
+}
+
+// ============================================================================
 // Flows API (active workflow instances)
 // ============================================================================
 
@@ -318,6 +380,7 @@ export interface Flow {
   flow?: { id: string; name: string };
   startedBy?: { id: string; name: string; email: string };
   currentStepAssignee?: { id: string; name: string; type: 'user' | 'contact' } | null;
+  currentStep?: { stepId: string; stepIndex: number; hasAssignee: boolean } | null;
   stepExecutions?: Array<{
     id: string;
     stepId: string;
@@ -427,6 +490,33 @@ export async function duplicateTemplate(id: string): Promise<Template> {
   const res = await fetch(`${API_BASE}/templates/${id}/duplicate`, { ...fetchOpts, method: 'POST' });
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to duplicate template');
+  return data.data;
+}
+
+/**
+ * Send reminder for a specific step in a flow run
+ */
+export async function remindStep(runId: string, stepId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/flows/${runId}/steps/${stepId}/remind`, {
+    ...fetchOpts,
+    method: 'POST',
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to send reminder');
+}
+
+/**
+ * Send reminders for multiple overdue runs at once
+ */
+export async function bulkRemind(runIds: string[]): Promise<{ remindedCount: number }> {
+  const res = await fetch(`${API_BASE}/flows/bulk-remind`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ runIds }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to send reminders');
   return data.data;
 }
 
@@ -588,6 +678,19 @@ export async function deleteContact(id: string): Promise<void> {
   const res = await fetch(`${API_BASE}/contacts/${id}`, { ...fetchOpts, method: 'DELETE' });
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to delete contact');
+}
+
+export interface ContactWorkload {
+  active: number;
+  completed: number;
+  overdue: number;
+}
+
+export async function getContactWorkloads(): Promise<Record<string, ContactWorkload>> {
+  const res = await fetch(`${API_BASE}/contacts/workload`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch workloads');
+  return data.data;
 }
 
 export async function toggleContactStatus(id: string, status: 'ACTIVE' | 'INACTIVE'): Promise<Contact> {
@@ -795,6 +898,58 @@ export async function uploadPDF(file: File): Promise<PDFUploadResult> {
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to upload PDF');
+  return data.data;
+}
+
+// ============================================================================
+// Audit Log API
+// ============================================================================
+
+export interface AuditLogEntry {
+  id: string;
+  action: string;
+  actorName: string | null;
+  actorEmail: string | null;
+  details: Record<string, any> | null;
+  createdAt: string;
+}
+
+export async function getFlowAuditLog(runId: string): Promise<AuditLogEntry[]> {
+  const res = await fetch(`${API_BASE}/flows/${runId}/audit-log`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch audit log');
+  return data.data;
+}
+
+// ============================================================================
+// Step Reassignment API
+// ============================================================================
+
+export async function reassignStep(runId: string, stepId: string, assignment: { assignToContactId?: string; assignToUserId?: string }): Promise<void> {
+  const res = await fetch(`${API_BASE}/flows/${runId}/steps/${stepId}/reassign`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(assignment),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to reassign step');
+}
+
+// ============================================================================
+// Search API (Command Palette)
+// ============================================================================
+
+export interface SearchResults {
+  runs: Array<{ id: string; name: string; status: string }>;
+  templates: Array<{ id: string; name: string; status: string }>;
+  contacts: Array<{ id: string; name: string; email: string }>;
+}
+
+export async function search(query: string): Promise<SearchResults> {
+  const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Search failed');
   return data.data;
 }
 

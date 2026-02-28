@@ -10,6 +10,7 @@ import sessionsRouter from './sessions.js';
 import uploadRouter from './upload.js';
 import pdfUploadRouter from './pdf-upload.js';
 import flowsRouter from './flows.js';
+import foldersRouter from './folders.js';
 import runsRouter from './runs.js';
 import contactsRouter from './contacts.js';
 import notificationsRouter from './notifications.js';
@@ -19,6 +20,7 @@ import organizationsRouter from './organizations.js';
 import teamRouter from './team.js';
 import reportsRouter from './reports.js';
 import schedulesRouter from './schedules.js';
+import searchRouter from './search.js';
 import { orgScope } from '../middleware/org-scope.js';
 
 const router = Router();
@@ -44,6 +46,9 @@ router.use('/sessions', sessionsRouter);
 // Templates API (workflow templates CRUD)
 router.use('/templates', flowsRouter);
 
+// Folders API (template folder organization)
+router.use('/folders', foldersRouter);
+
 // Contacts API (external assignees management)
 router.use('/contacts', contactsRouter);
 
@@ -64,6 +69,9 @@ router.use('/reports', reportsRouter);
 
 // Schedules API (scheduled workflow triggers)
 router.use('/schedules', schedulesRouter);
+
+// Search API (command palette global search)
+router.use('/search', searchRouter);
 
 // Flows API (workflow execution — active instances)
 // Note: POST /api/templates/:templateId/flows is handled by runsRouter

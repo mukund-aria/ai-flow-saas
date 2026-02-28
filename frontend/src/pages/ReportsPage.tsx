@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   TrendingUp,
@@ -247,6 +248,7 @@ function ProgressInsightsSection({ summary }: { summary: ReportSummary }) {
 }
 
 function FlowReportTab() {
+  const navigate = useNavigate();
   const [data, setData] = useState<FlowReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -288,7 +290,10 @@ function FlowReportTab() {
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
                         <Layers className="w-4 h-4 text-white" />
                       </div>
-                      <span className="font-medium text-gray-900">{flow.name}</span>
+                      <span
+                        onClick={() => navigate('/flows?template=' + flow.templateId)}
+                        className="font-medium text-violet-600 hover:text-violet-700 cursor-pointer hover:underline"
+                      >{flow.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right text-gray-600">{flow.runs}</td>
@@ -312,6 +317,7 @@ function FlowReportTab() {
 }
 
 function AssigneeReportTab() {
+  const navigate = useNavigate();
   const [data, setData] = useState<AssigneeReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -359,7 +365,10 @@ function AssigneeReportTab() {
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center text-white text-xs font-medium">
                         {initials}
                       </div>
-                      <span className="font-medium text-gray-900">{assignee.name}</span>
+                      <span
+                        onClick={() => navigate('/flows?contact=' + assignee.contactId)}
+                        className="font-medium text-violet-600 hover:text-violet-700 cursor-pointer hover:underline"
+                      >{assignee.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right text-gray-600">{assignee.tasks}</td>

@@ -2,8 +2,8 @@ import { Bell } from 'lucide-react';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useEffect } from 'react';
 
-export function NotificationBell() {
-  const { unreadCount, toggleOpen, fetchUnreadCount } = useNotificationStore();
+export function NotificationBell({ isCollapsed }: { isCollapsed?: boolean }) {
+  const { unreadCount, toggleOpen, fetchUnreadCount, hasNewNotifications } = useNotificationStore();
 
   // Poll unread count every 30 seconds
   useEffect(() => {
@@ -20,12 +20,17 @@ export function NotificationBell() {
       <span className="w-5 h-5 relative">
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
+          <>
+            {hasNewNotifications && (
+              <span className="absolute -top-1 -right-1 min-w-[20px] h-[20px] rounded-full bg-red-400 animate-ping" />
+            )}
+            <span className="absolute -top-1 -right-1 min-w-[20px] h-[20px] rounded-full bg-red-600 flex items-center justify-center text-[10px] font-bold text-white">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          </>
         )}
       </span>
-      <span className="flex-1 text-left">Notifications</span>
+      {!isCollapsed && <span className="flex-1 text-left">Notifications</span>}
     </button>
   );
 }

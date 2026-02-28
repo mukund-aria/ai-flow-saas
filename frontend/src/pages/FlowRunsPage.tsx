@@ -6,6 +6,9 @@
  * - "Needs Attention" toggle pill with count badge
  * - Attention Settings gear popover
  * - Enhanced row items with context badges, progress bars, kebab menus
+ * - Inline row actions: Remind + Act on hover
+ * - Bulk remind for overdue runs
+ * - Saved/Pinned filters
  * - URL sync for deep linking
  */
 
@@ -16,6 +19,11 @@ import {
   Loader2,
   MoreVertical,
   AlertCircle,
+  Bell,
+  ExternalLink,
+  Bookmark,
+  Check,
+  X,
 } from 'lucide-react';
 import {
   listFlows,
@@ -23,14 +31,19 @@ import {
   listTemplates,
   listContacts,
   cancelFlow,
+  remindStep,
+  bulkRemind,
+  getStepActToken,
   type Flow,
   type AttentionItem,
   type Template,
   type Contact,
 } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { FilterDropdown } from '@/components/ui/filter-dropdown';
 import { AttentionSettingsPopover } from '@/components/flows/AttentionSettingsPopover';
 import { useAttentionSettings, filterByAttentionSettings } from '@/hooks/useAttentionSettings';
+import { useSavedFilters, type SavedFilter } from '@/hooks/useSavedFilters';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -200,6 +213,83 @@ function KebabMenu({ run, onCancel }: { run: Flow; onCancel: (id: string) => voi
 }
 
 // ---------------------------------------------------------------------------
+// Save Filter Popover
+// ---------------------------------------------------------------------------
+
+function SaveFilterPopover({
+  onSave,
+}: {
+  onSave: (name: string, pinned: boolean) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [pinToTop, setPinToTop] = useState(true);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isOpen]);
+
+  const handleSubmit = () => {
+    if (!name.trim()) return;
+    onSave(name.trim(), pinToTop);
+    setName('');
+    setPinToTop(true);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-1.5 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
+        title="Save current filter"
+      >
+        <Bookmark className="w-4 h-4" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-3 z-50 w-56">
+          <p className="text-xs font-medium text-gray-700 mb-2">Save filter</p>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+            placeholder="Filter name..."
+            className="w-full px-2.5 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-500 mb-2"
+            autoFocus
+          />
+          <label className="flex items-center gap-2 text-xs text-gray-600 mb-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={pinToTop}
+              onChange={(e) => setPinToTop(e.target.checked)}
+              className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+            />
+            Pin to top
+          </label>
+          <button
+            onClick={handleSubmit}
+            disabled={!name.trim()}
+            className="w-full px-3 py-1.5 text-xs font-medium text-white bg-violet-600 rounded-md hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -215,8 +305,20 @@ export function FlowRunsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Inline action states
+  const [remindingRunId, setRemindingRunId] = useState<string | null>(null);
+  const [remindedRunId, setRemindedRunId] = useState<string | null>(null);
+  const [actingRunId, setActingRunId] = useState<string | null>(null);
+
+  // Bulk remind state
+  const [isBulkReminding, setIsBulkReminding] = useState(false);
+  const [bulkRemindResult, setBulkRemindResult] = useState<string | null>(null);
+
   // Attention settings
   const { settings: attentionSettings, updateSetting, resetToDefaults } = useAttentionSettings();
+
+  // Saved filters
+  const { pinnedFilters, saveFilter, togglePin } = useSavedFilters();
 
   // Filter state — read from URL on mount
   const [flowFilter, setFlowFilter] = useState(searchParams.get('flow') || 'all');
@@ -300,7 +402,6 @@ export function FlowRunsPage() {
   const handleCancel = async (id: string) => {
     try {
       await cancelFlow(id);
-      // Refresh data
       const [flowData, attention] = await Promise.all([
         listFlows(),
         getAttentionItems().catch(() => [] as AttentionItem[]),
@@ -310,6 +411,96 @@ export function FlowRunsPage() {
     } catch {
       // ignore
     }
+  };
+
+  // Inline action handlers
+  const handleRemind = async (run: Flow) => {
+    if (!run.currentStep?.stepId) return;
+    setRemindingRunId(run.id);
+    setRemindedRunId(null);
+    try {
+      await remindStep(run.id, run.currentStep.stepId);
+      setRemindedRunId(run.id);
+      setTimeout(() => setRemindedRunId(null), 2000);
+    } catch {
+      // ignore
+    } finally {
+      setRemindingRunId(null);
+    }
+  };
+
+  const handleAct = async (run: Flow) => {
+    if (!run.currentStep?.stepId) return;
+    setActingRunId(run.id);
+    try {
+      const token = await getStepActToken(run.id, run.currentStep.stepId);
+      window.open(`/task/${token}`, '_blank');
+    } catch {
+      // ignore
+    } finally {
+      setActingRunId(null);
+    }
+  };
+
+  // Bulk remind handler
+  const handleBulkRemind = async () => {
+    const overdueRunIds = filteredRuns
+      .filter((run) => {
+        const attn = attentionByRunId.get(run.id);
+        return attn && attn.reasons.some((r) => r.type === 'STEP_OVERDUE' || r.type === 'FLOW_OVERDUE');
+      })
+      .map((run) => run.id);
+
+    if (overdueRunIds.length === 0) return;
+
+    setIsBulkReminding(true);
+    setBulkRemindResult(null);
+    try {
+      const result = await bulkRemind(overdueRunIds);
+      setBulkRemindResult(`Sent ${result.remindedCount} reminder${result.remindedCount !== 1 ? 's' : ''}`);
+      setTimeout(() => setBulkRemindResult(null), 3000);
+    } catch {
+      setBulkRemindResult('Failed to send reminders');
+      setTimeout(() => setBulkRemindResult(null), 3000);
+    } finally {
+      setIsBulkReminding(false);
+    }
+  };
+
+  // Saved filter handlers
+  const applyFilter = (filter: SavedFilter) => {
+    setFlowFilter(filter.filters.flow);
+    setTemplateFilter(filter.filters.template);
+    setStatusFilter(filter.filters.status);
+    setContactFilter(filter.filters.contact);
+    setNeedsAttention(filter.filters.attention);
+    syncURL({
+      flow: filter.filters.flow,
+      template: filter.filters.template,
+      status: filter.filters.status,
+      contact: filter.filters.contact,
+      attention: filter.filters.attention,
+    });
+  };
+
+  const isFilterActive = (filter: SavedFilter) => {
+    return (
+      filter.filters.flow === flowFilter &&
+      filter.filters.template === templateFilter &&
+      filter.filters.status === statusFilter &&
+      filter.filters.contact === contactFilter &&
+      filter.filters.attention === needsAttention
+    );
+  };
+
+  const handleSaveFilter = (name: string, pinned: boolean) => {
+    saveFilter(name, {
+      flow: flowFilter,
+      template: templateFilter,
+      status: statusFilter,
+      contact: contactFilter,
+      attention: needsAttention,
+    }, pinned);
   };
 
   // Build filter options
@@ -374,6 +565,12 @@ export function FlowRunsPage() {
     return true;
   });
 
+  // Check if any filtered runs have overdue attention items
+  const hasOverdueRuns = filteredRuns.some((run) => {
+    const attn = attentionByRunId.get(run.id);
+    return attn && attn.reasons.some((r) => r.type === 'STEP_OVERDUE' || r.type === 'FLOW_OVERDUE');
+  });
+
   // Loading state
   if (isLoading) {
     return (
@@ -412,6 +609,32 @@ export function FlowRunsPage() {
         </div>
       </div>
 
+      {/* Pinned Filters */}
+      {pinnedFilters.length > 0 && (
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          {pinnedFilters.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => applyFilter(f)}
+              className={cn(
+                "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border transition-colors",
+                isFilterActive(f)
+                  ? "bg-violet-100 border-violet-300 text-violet-700"
+                  : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+              )}
+            >
+              {f.name}
+              <span
+                onClick={(e) => { e.stopPropagation(); togglePin(f.id); }}
+                className="ml-1 hover:text-red-500 cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Filter Bar */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
         {/* Left: Filter dropdowns */}
@@ -442,8 +665,27 @@ export function FlowRunsPage() {
           searchable
         />
 
+        {/* Save filter button */}
+        <SaveFilterPopover onSave={handleSaveFilter} />
+
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* Bulk Remind button */}
+        {hasOverdueRuns && (
+          <button
+            onClick={handleBulkRemind}
+            disabled={isBulkReminding}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors disabled:opacity-50"
+          >
+            {isBulkReminding ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Bell className="w-3.5 h-3.5" />
+            )}
+            {bulkRemindResult || 'Remind All Overdue'}
+          </button>
+        )}
 
         {/* Right: Needs Attention toggle + Settings gear */}
         <button
@@ -488,11 +730,13 @@ export function FlowRunsPage() {
               : 0;
 
             const badges = getContextBadges(run, attentionData);
+            const hasActiveStep = !!run.currentStep;
+            const hasAssignee = !!run.currentStep?.hasAssignee;
 
             return (
               <div
                 key={run.id}
-                className="px-4 py-3.5 hover:bg-gray-50 cursor-pointer transition-colors"
+                className="group px-4 py-3.5 hover:bg-gray-50 cursor-pointer transition-colors"
                 onClick={() => navigate(`/flows/${run.id}`)}
               >
                 <div className="flex items-center gap-4">
@@ -519,6 +763,40 @@ export function FlowRunsPage() {
                   {/* Context badges */}
                   <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
                     {badges}
+                  </div>
+
+                  {/* Inline actions (hover-visible) */}
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                    {hasAssignee && run.status === 'IN_PROGRESS' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRemind(run); }}
+                        title="Send reminder"
+                        className="p-1.5 rounded hover:bg-gray-200 transition-colors text-gray-400 hover:text-gray-600"
+                        disabled={remindingRunId === run.id}
+                      >
+                        {remindingRunId === run.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : remindedRunId === run.id ? (
+                          <Check className="w-3.5 h-3.5 text-green-500" />
+                        ) : (
+                          <Bell className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
+                    {hasActiveStep && run.status === 'IN_PROGRESS' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleAct(run); }}
+                        title="Act on step"
+                        className="p-1.5 rounded hover:bg-gray-200 transition-colors text-gray-400 hover:text-gray-600"
+                        disabled={actingRunId === run.id}
+                      >
+                        {actingRunId === run.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   {/* Progress */}

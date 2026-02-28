@@ -26,11 +26,13 @@ import {
   createContact,
   deleteContact,
   toggleContactStatus,
+  getContactWorkloads,
   type Contact,
+  type ContactWorkload,
 } from '@/lib/api';
 
 // Sort configuration
-type SortField = 'name' | 'email' | 'status' | 'type' | 'lastActive';
+type SortField = 'name' | 'email' | 'status' | 'type' | 'lastActive' | 'activeTasks' | 'completed' | 'overdue';
 type SortDirection = 'asc' | 'desc';
 
 interface SortConfig {
@@ -299,6 +301,7 @@ function AddContactDialog({ open, onOpenChange, onSubmit }: AddContactDialogProp
 
 export function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [workloads, setWorkloads] = useState<Record<string, ContactWorkload>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -309,13 +312,17 @@ export function ContactsPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  // Fetch contacts on mount
+  // Fetch contacts and workloads on mount
   useEffect(() => {
-    async function fetchContacts() {
+    async function fetchData() {
       try {
         setIsLoading(true);
-        const data = await listContacts();
-        setContacts(data);
+        const [contactsData, workloadsData] = await Promise.all([
+          listContacts(),
+          getContactWorkloads().catch(() => ({} as Record<string, ContactWorkload>)),
+        ]);
+        setContacts(contactsData);
+        setWorkloads(workloadsData);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load contacts');
@@ -323,7 +330,7 @@ export function ContactsPage() {
         setIsLoading(false);
       }
     }
-    fetchContacts();
+    fetchData();
   }, []);
 
   // Handle sort
@@ -388,13 +395,30 @@ export function ContactsPage() {
           const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
           return direction * (dateA - dateB);
         }
+        case 'activeTasks':
+          return direction * ((workloads[a.id]?.active || 0) - (workloads[b.id]?.active || 0));
+        case 'completed':
+          return direction * ((workloads[a.id]?.completed || 0) - (workloads[b.id]?.completed || 0));
+        case 'overdue':
+          return direction * ((workloads[a.id]?.overdue || 0) - (workloads[b.id]?.overdue || 0));
         default:
           return 0;
       }
     });
 
     return result;
-  }, [contacts, searchQuery, sortConfig]);
+  }, [contacts, searchQuery, sortConfig, workloads]);
+
+  // Compute workload totals for summary cards
+  const { totalActive, totalCompleted, totalOverdue } = useMemo(() => {
+    let active = 0, completed = 0, overdue = 0;
+    for (const w of Object.values(workloads)) {
+      active += w.active;
+      completed += w.completed;
+      overdue += w.overdue;
+    }
+    return { totalActive: active, totalCompleted: completed, totalOverdue: overdue };
+  }, [workloads]);
 
   // Loading state
   if (isLoading) {
@@ -467,6 +491,22 @@ export function ContactsPage() {
         />
       </div>
 
+      {/* Workload Summary Cards */}
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="bg-white rounded-lg border p-4">
+          <div className="text-sm text-gray-500">Active Tasks</div>
+          <div className="text-2xl font-bold text-blue-600">{totalActive}</div>
+        </div>
+        <div className="bg-white rounded-lg border p-4">
+          <div className="text-sm text-gray-500">Completed</div>
+          <div className="text-2xl font-bold text-green-600">{totalCompleted}</div>
+        </div>
+        <div className="bg-white rounded-lg border p-4">
+          <div className="text-sm text-gray-500">Overdue</div>
+          <div className="text-2xl font-bold text-red-600">{totalOverdue}</div>
+        </div>
+      </div>
+
       {/* Contacts Table */}
       {filteredContacts.length > 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
@@ -497,6 +537,24 @@ export function ContactsPage() {
                 <SortableHeader
                   label="Last Active"
                   field="lastActive"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Active Tasks"
+                  field="activeTasks"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Completed"
+                  field="completed"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+                <SortableHeader
+                  label="Overdue"
+                  field="overdue"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                 />
@@ -562,6 +620,23 @@ export function ContactsPage() {
                   {/* Last Active */}
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {formatRelativeDate(contact.updatedAt)}
+                  </td>
+
+                  {/* Active Tasks */}
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    {workloads[contact.id]?.active || 0}
+                  </td>
+
+                  {/* Completed */}
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    {workloads[contact.id]?.completed || 0}
+                  </td>
+
+                  {/* Overdue */}
+                  <td className="px-6 py-4 text-sm">
+                    <span className={(workloads[contact.id]?.overdue || 0) > 0 ? 'text-red-600 font-medium' : 'text-gray-700'}>
+                      {workloads[contact.id]?.overdue || 0}
+                    </span>
                   </td>
 
                   {/* Actions (3-dot menu) */}
