@@ -1,8 +1,25 @@
-version: "1.0"
+# Workflow Analysis Rules
+# YAML-driven suggestions based on a workflow's structural shape (step types, counts, etc.).
+# Evaluated by backend/src/services/workflow-analyzer.ts — no AI call, pure condition matching.
+#
+# HOW IT WORKS:
+# - POST /api/analyze receives a workflow, evaluates every rule, returns matching suggestions
+# - Frontend calls this on workflow load/change (debounced) and threads results to UI components
+#
+# WHERE RESULTS ARE USED:
+# - WelcomeMessage (surfaces: [welcome]) — editing-mode suggestion chips
+# - EnhancementCard (surfaces: [enhancement]) — post-creation enhancement hints
+#
+# RULE ANATOMY:
+# - condition: fields are AND-ed; array fields (has_step_types, missing_step_types) use OR within
+# - suggestion.prompt: clickable chip text; suggestion.hint: contextual description
+# - priority: high > medium > low > lowest (controls display order)
+# - enhancement_default: true → pre-checked in EnhancementCard
+# - {{stepCount}} in hints is interpolated at evaluation time
+#
+# TO ADD A NEW SUGGESTION: add a rule below — zero code changes needed.
 
-# Rules evaluated against workflow shape. Conditions are AND-ed.
-# Array conditions (has_step_types, missing_step_types) use OR within the array.
-# surfaces: which UI component can use each rule
+version: "1.0"
 
 rules:
   # ── Governance ──
