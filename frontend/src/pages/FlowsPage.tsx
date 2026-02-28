@@ -407,6 +407,8 @@ export function FlowsPage() {
       }
     }
     fetchData();
+    // Onboarding step 5: viewing the flows list page (store guards enforce steps 1-4 first)
+    useOnboardingStore.getState().completeCoordinateFlows();
   }, []);
 
   // Filter and sort flows

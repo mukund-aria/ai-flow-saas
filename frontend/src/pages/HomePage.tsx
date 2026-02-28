@@ -22,6 +22,7 @@ import {
   Clock,
   AlertTriangle,
   XCircle,
+  Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getAttentionItems, type AttentionItem, type TrackingStatus } from '@/lib/api';
@@ -144,7 +145,7 @@ const SETUP_STEPS = [
   { key: 'buildTemplate' as const, label: 'Build', description: 'Build a template', path: '/templates/new' },
   { key: 'publishTemplate' as const, label: 'Publish', description: 'Publish your template', path: '/templates' },
   { key: 'startFlow' as const, label: 'Execute', description: 'Start your first flow', path: '/flows' },
-  { key: 'completeAction' as const, label: 'Action', description: 'Complete an action', path: '/flows/latest' },
+  { key: 'completeAction' as const, label: 'Action', description: 'Complete an action', path: '/flows' },
   { key: 'coordinateFlows' as const, label: 'Coordinate', description: 'Coordinate your flows', path: '/flows' },
 ];
 
@@ -216,6 +217,9 @@ export function HomePage() {
               <div className="flex items-center justify-between">
                 {SETUP_STEPS.map((step, idx) => {
                   const done = onboarding[step.key];
+                  const firstIncompleteIdx = SETUP_STEPS.findIndex((s) => !onboarding[s.key]);
+                  const isCurrent = idx === firstIncompleteIdx;
+                  const isLocked = !done && !isCurrent;
                   const isLast = idx === SETUP_STEPS.length - 1;
 
                   return (
@@ -223,24 +227,32 @@ export function HomePage() {
                       {/* Step */}
                       <button
                         onClick={() => {
-                          if (done) return;
+                          if (done || isLocked) return;
                           navigate(step.path);
                         }}
                         className={`flex flex-col items-center text-center group flex-1 rounded-lg py-3 transition-colors ${
-                          done ? '' : 'hover:bg-violet-50 cursor-pointer'
+                          done
+                            ? ''
+                            : isLocked
+                            ? 'opacity-50 cursor-not-allowed'
+                            : 'hover:bg-violet-50 cursor-pointer'
                         }`}
-                        disabled={done}
+                        disabled={done || isLocked}
                       >
                         {/* Circle */}
                         <div
                           className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                             done
                               ? 'bg-green-100'
+                              : isLocked
+                              ? 'bg-gray-100'
                               : 'bg-gray-100 group-hover:bg-violet-100 group-hover:ring-2 group-hover:ring-violet-200'
                           }`}
                         >
                           {done ? (
                             <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          ) : isLocked ? (
+                            <Lock className="w-4 h-4 text-gray-300" />
                           ) : (
                             <span className="text-xs font-bold text-gray-400 group-hover:text-violet-600">
                               {idx + 1}
@@ -250,12 +262,12 @@ export function HomePage() {
                         {/* Label */}
                         <span
                           className={`text-xs font-semibold mt-2 ${
-                            done ? 'text-gray-400' : 'text-gray-800 group-hover:text-violet-700'
+                            done ? 'text-gray-400' : isLocked ? 'text-gray-300' : 'text-gray-800 group-hover:text-violet-700'
                           }`}
                         >
                           {step.label}
                         </span>
-                        <span className={`text-[11px] mt-0.5 whitespace-nowrap ${done ? 'text-gray-300' : 'text-gray-400'}`}>
+                        <span className={`text-[11px] mt-0.5 whitespace-nowrap ${done ? 'text-gray-300' : isLocked ? 'text-gray-200' : 'text-gray-400'}`}>
                           {step.description}
                         </span>
                       </button>

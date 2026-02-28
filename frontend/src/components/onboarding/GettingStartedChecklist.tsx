@@ -5,7 +5,7 @@
  * Tracks 5 steps: Build, Publish, Execute, Action, Coordinate.
  */
 
-import { CheckCircle2, Circle, X, ChevronRight } from 'lucide-react';
+import { CheckCircle2, Circle, X, ChevronRight, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 
@@ -54,26 +54,34 @@ export function GettingStartedChecklist() {
 
       {/* Checklist items */}
       <div className="space-y-0.5">
-        {CHECKLIST_ITEMS.map((item) => {
+        {CHECKLIST_ITEMS.map((item, idx) => {
           const done = store[item.key];
+          const firstIncompleteIdx = CHECKLIST_ITEMS.findIndex((i) => !store[i.key]);
+          const isCurrent = idx === firstIncompleteIdx;
+          const isLocked = !done && !isCurrent;
+
           return (
             <button
               key={item.key}
-              onClick={() => !done && navigate(item.path)}
+              onClick={() => isCurrent && navigate(item.path)}
               className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-left text-sm transition-colors ${
                 done
                   ? 'text-gray-400'
+                  : isLocked
+                  ? 'text-gray-300 cursor-not-allowed'
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
-              disabled={done}
+              disabled={done || isLocked}
             >
               {done ? (
                 <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+              ) : isLocked ? (
+                <Lock className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
               ) : (
                 <Circle className="w-4 h-4 text-gray-300 flex-shrink-0" />
               )}
               <span className={done ? 'line-through' : ''}>{item.label}</span>
-              {!done && (
+              {isCurrent && (
                 <ChevronRight className="w-3.5 h-3.5 text-gray-400 ml-auto flex-shrink-0" />
               )}
             </button>

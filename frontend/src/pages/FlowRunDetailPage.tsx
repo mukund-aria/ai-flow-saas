@@ -337,11 +337,8 @@ export function FlowRunDetailPage() {
   const [reassigningStep, setReassigningStep] = useState<{ stepId: string; currentAssignee?: { name: string; type: 'contact' | 'user' } } | null>(null);
   const [refetchKey, setRefetchKey] = useState(0);
 
-  // Track onboarding
-  useEffect(() => {
-    useOnboardingStore.getState().completeCompleteAction();
-    useOnboardingStore.getState().completeCoordinateFlows();
-  }, []);
+  // Onboarding: step 4 is completed when the coordinator actually acts on a step
+  // (see handleActOnStep below)
 
   // Fetch flow run details
   useEffect(() => {
@@ -509,6 +506,7 @@ export function FlowRunDetailPage() {
     setActingOnStep(step.id);
     try {
       const token = await getStepActToken(run.id, step.stepId);
+      useOnboardingStore.getState().completeCompleteAction();
       window.open(`/task/${token}`, '_blank');
     } catch (err) {
       console.error('Failed to get action token:', err);
