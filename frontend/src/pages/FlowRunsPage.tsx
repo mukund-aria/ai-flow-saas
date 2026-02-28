@@ -785,6 +785,11 @@ export function FlowRunsPage() {
                   {/* Context badges */}
                   <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
                     {badges}
+                    {run.startedByContactName && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-violet-100 text-violet-700">
+                        Started by {run.startedByContactName}{run.portalName ? ` via ${run.portalName}` : ''}
+                      </span>
+                    )}
                   </div>
 
                   {/* Inline actions (hover-visible) */}

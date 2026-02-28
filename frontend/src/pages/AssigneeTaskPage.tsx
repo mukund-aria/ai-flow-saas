@@ -58,6 +58,7 @@ interface TaskContext {
   alreadyCompleted?: boolean;
   journeySteps?: JourneyStep[];
   branding?: BrandingConfig;
+  portalSlug?: string;
 }
 
 export function AssigneeTaskPage() {
@@ -340,6 +341,7 @@ export function AssigneeTaskPage() {
         <CompletionDialog
           contactName={task.contactName}
           nextTaskToken={completionState.nextTaskToken}
+          portalSlug={task.portalSlug}
           onContinue={handleNextAction}
         />
       )}

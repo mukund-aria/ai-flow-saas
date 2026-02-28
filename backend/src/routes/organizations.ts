@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import { db, organizations, users, userOrganizations, flows, flowRuns, stepExecutions } from '../db/index.js';
+import { db, organizations, users, userOrganizations, flows, flowRuns, stepExecutions, portals } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -53,6 +53,15 @@ router.post(
       userId: user.id,
       organizationId: org.id,
       role: 'ADMIN',
+    });
+
+    // Create default portal
+    await db.insert(portals).values({
+      organizationId: org.id,
+      name: 'Client Portal',
+      slug: 'client',
+      description: 'Default portal for clients',
+      isDefault: true,
     });
 
     // Seed default "Onboarding (Sample)" flow template

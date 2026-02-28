@@ -381,6 +381,8 @@ export interface Flow {
   completedAt?: string;
   flow?: { id: string; name: string };
   startedBy?: { id: string; name: string; email: string };
+  portalName?: string;
+  startedByContactName?: string;
   currentStepAssignee?: { id: string; name: string; type: 'user' | 'contact' } | null;
   currentStep?: { stepId: string; stepIndex: number; hasAssignee: boolean } | null;
   stepExecutions?: Array<{
@@ -1169,6 +1171,195 @@ export async function analyzeWorkflow(workflow: Record<string, unknown>): Promis
     body: JSON.stringify({ workflow }),
   });
   return res.json();
+}
+
+// ============================================================================
+// Portals API (Admin)
+// ============================================================================
+
+export async function listPortals(): Promise<import('@/types').Portal[]> {
+  const res = await fetch(`${API_BASE}/portals`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list portals');
+  return data.data;
+}
+
+export async function createPortal(portal: { name: string; description?: string }): Promise<import('@/types').Portal> {
+  const res = await fetch(`${API_BASE}/portals`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(portal),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to create portal');
+  return data.data;
+}
+
+export async function updatePortal(id: string, updates: Partial<{ name: string; description: string; settings: import('@/types').PortalSettings; brandingOverrides: import('@/types').PortalBranding }>): Promise<import('@/types').Portal> {
+  const res = await fetch(`${API_BASE}/portals/${id}`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to update portal');
+  return data.data;
+}
+
+export async function deletePortal(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/portals/${id}`, { ...fetchOpts, method: 'DELETE' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to delete portal');
+}
+
+export async function getPortalFlows(portalId: string): Promise<import('@/types').PortalFlow[]> {
+  const res = await fetch(`${API_BASE}/portals/${portalId}/flows`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list portal flows');
+  return data.data;
+}
+
+export async function addPortalFlow(portalId: string, flowId: string, opts?: { displayTitle?: string; displayDescription?: string }): Promise<import('@/types').PortalFlow> {
+  const res = await fetch(`${API_BASE}/portals/${portalId}/flows`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ flowId, ...opts }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to add flow to portal');
+  return data.data;
+}
+
+export async function updatePortalFlow(portalId: string, pfId: string, updates: Partial<{ displayTitle: string; displayDescription: string; sortOrder: number; enabled: boolean }>): Promise<import('@/types').PortalFlow> {
+  const res = await fetch(`${API_BASE}/portals/${portalId}/flows/${pfId}`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to update portal flow');
+  return data.data;
+}
+
+export async function removePortalFlow(portalId: string, pfId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/portals/${portalId}/flows/${pfId}`, { ...fetchOpts, method: 'DELETE' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to remove flow from portal');
+}
+
+// ============================================================================
+// Email Templates API (Admin)
+// ============================================================================
+
+export async function listEmailTemplates(): Promise<import('@/types').EmailTemplate[]> {
+  const res = await fetch(`${API_BASE}/email-templates`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list email templates');
+  return data.data;
+}
+
+export async function updateEmailTemplate(type: string, template: Partial<import('@/types').EmailTemplate>): Promise<import('@/types').EmailTemplate> {
+  const res = await fetch(`${API_BASE}/email-templates/${type}`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(template),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to update email template');
+  return data.data;
+}
+
+export async function previewEmailTemplate(type: string, template: Partial<import('@/types').EmailTemplate>, sampleData?: Record<string, string>): Promise<string> {
+  const res = await fetch(`${API_BASE}/email-templates/${type}/preview`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...template, sampleData }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to preview email template');
+  return data.data.html;
+}
+
+export async function deleteEmailTemplate(type: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/email-templates/${type}`, { ...fetchOpts, method: 'DELETE' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to delete email template');
+}
+
+// ============================================================================
+// Assignee Portal API (Public - Bearer token auth)
+// ============================================================================
+
+export async function getPortalInfo(slug: string): Promise<{ name: string; description?: string; branding?: import('@/types').PortalBranding; settings?: import('@/types').PortalSettings }> {
+  const res = await fetch(`${API_BASE}/public/portal/${slug}`);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Portal not found');
+  return data.data;
+}
+
+export async function portalSendOTP(slug: string, email: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/public/portal/${slug}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error?.message || 'Failed to send code');
+  }
+}
+
+export async function portalVerifyOTP(slug: string, email: string, code: string): Promise<{ token: string; contact: { id: string; name: string; email: string } }> {
+  const res = await fetch(`${API_BASE}/public/portal/${slug}/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Verification failed');
+  return data.data;
+}
+
+function assigneeHeaders(token: string): RequestInit {
+  return { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } };
+}
+
+export async function getPortalMe(token: string): Promise<{ contact: { id: string; name: string; email: string }; portal: { name: string; slug: string; branding?: import('@/types').PortalBranding; settings?: import('@/types').PortalSettings } }> {
+  const res = await fetch(`${API_BASE}/public/portal/me`, assigneeHeaders(token));
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Session invalid');
+  return data.data;
+}
+
+export async function getPortalDashboard(token: string): Promise<import('@/types').PortalDashboardData> {
+  const res = await fetch(`${API_BASE}/public/portal/dashboard`, assigneeHeaders(token));
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to load dashboard');
+  return data.data;
+}
+
+export async function getPortalAvailableFlows(token: string): Promise<Array<{ id: string; name: string; description?: string; stepCount: number }>> {
+  const res = await fetch(`${API_BASE}/public/portal/flows`, assigneeHeaders(token));
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to load flows');
+  return data.data;
+}
+
+export async function startPortalFlow(token: string, flowId: string, kickoffData?: Record<string, unknown>): Promise<{ runId: string; firstTaskToken?: string }> {
+  const res = await fetch(`${API_BASE}/public/portal/start-flow`, {
+    ...assigneeHeaders(token),
+    method: 'POST',
+    body: JSON.stringify({ flowId, kickoffData }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to start flow');
+  return data.data;
 }
 
 // ============================================================================

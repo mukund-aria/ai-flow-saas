@@ -5,8 +5,8 @@
  */
 
 import { db } from '../db/client.js';
-import { magicLinks, stepExecutions, flowRuns, flows, contacts, users, organizations } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { magicLinks, stepExecutions, flowRuns, flows, contacts, users, organizations, portals } from '../db/schema.js';
+import { eq, and } from 'drizzle-orm';
 import { resolveDDR, type DDRContext } from './ddr-resolver.js';
 
 export async function createMagicLink(stepExecutionId: string, expiresInHours = 168): Promise<string> {
@@ -64,6 +64,7 @@ export interface TaskContext {
   completed: boolean;
   journeySteps?: JourneyStep[];
   branding?: BrandingConfig;
+  portalSlug?: string;
 }
 
 export async function validateMagicLink(token: string): Promise<TaskContext | null> {
@@ -207,6 +208,7 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
   // 4. workspace — from the organization
   let ddrWorkspace: DDRContext['workspace'];
   let orgBranding: BrandingConfig | undefined;
+  let portalSlug: string | undefined;
   if (run.organizationId) {
     const org = await db.query.organizations.findFirst({
       where: eq(organizations.id, run.organizationId),
@@ -217,6 +219,23 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
         orgBranding = org.brandingConfig as BrandingConfig;
       }
     }
+  }
+
+  // Look up portal slug if the flow run is associated with a portal
+  if (run.portalId) {
+    const portal = await db.query.portals.findFirst({
+      where: eq(portals.id, run.portalId),
+    });
+    if (portal) portalSlug = portal.slug;
+  } else if (run.organizationId) {
+    // Fall back to default portal for the org
+    const defaultPortal = await db.query.portals.findFirst({
+      where: and(
+        eq(portals.organizationId, run.organizationId),
+        eq(portals.isDefault, true),
+      ),
+    });
+    if (defaultPortal) portalSlug = defaultPortal.slug;
   }
 
   const ddrContext: DDRContext = {
@@ -291,5 +310,6 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
     completed: !!link.usedAt || stepExec.status === 'COMPLETED',
     journeySteps: resolvedJourneySteps,
     branding: orgBranding,
+    portalSlug,
   };
 }

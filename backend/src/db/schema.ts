@@ -23,6 +23,7 @@ export type NotificationStatus = 'SENT' | 'FAILED' | 'SKIPPED';
 export type DigestFrequency = 'NONE' | 'DAILY' | 'WEEKLY';
 export type WebhookEndpointType = 'INCOMING' | 'OUTGOING';
 export type IntegrationType = 'SLACK_WEBHOOK' | 'TEAMS_WEBHOOK' | 'CUSTOM_WEBHOOK';
+export type EmailTemplateType = 'TASK_ASSIGNED' | 'TASK_REMINDER' | 'FLOW_COMPLETED';
 
 // ============================================================================
 // Organizations
@@ -40,6 +41,86 @@ export const organizations = pgTable('organizations', {
     faviconUrl?: string;
     emailFooter?: string;
   }>(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Portals (Named entry points for assignee groups)
+// ============================================================================
+
+export const portals = pgTable('portals', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  name: text('name').notNull(),
+  slug: text('slug').notNull(),
+  description: text('description'),
+  isDefault: boolean('is_default').default(false).notNull(),
+  settings: jsonb('settings').$type<{
+    flowExperience?: { headerImage?: string; viewMode?: string; welcomeMessage?: string };
+    startLink?: { initTitle?: string; initSubtitle?: string; startButtonLabel?: string; completedImage?: string; completedTitle?: string; completedSubtitle?: string };
+    allowSelfServiceFlowStart?: boolean;
+    showWorkspaceSummary?: boolean;
+  }>(),
+  brandingOverrides: jsonb('branding_overrides').$type<{
+    logoUrl?: string;
+    primaryColor?: string;
+    accentColor?: string;
+    companyName?: string;
+  }>(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('portal_org_slug_unique').on(table.organizationId, table.slug),
+]);
+
+// ============================================================================
+// Portal Flows (Junction: which flows are in a portal's self-service catalog)
+// ============================================================================
+
+export const portalFlows = pgTable('portal_flows', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  portalId: text('portal_id').notNull().references(() => portals.id),
+  flowId: text('flow_id').notNull().references(() => flows.id),
+  displayTitle: text('display_title'),
+  displayDescription: text('display_description'),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  enabled: boolean('enabled').default(true).notNull(),
+}, (table) => [
+  uniqueIndex('portal_flow_unique').on(table.portalId, table.flowId),
+]);
+
+// ============================================================================
+// Email Templates (Custom email copy per org, optionally per portal)
+// ============================================================================
+
+export const emailTemplates = pgTable('email_templates', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  portalId: text('portal_id').references(() => portals.id),
+  templateType: text('template_type').$type<EmailTemplateType>().notNull(),
+  subject: text('subject').notNull(),
+  heading: text('heading').notNull(),
+  body: text('body').notNull(),
+  buttonLabel: text('button_label'),
+  enabled: boolean('enabled').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('email_template_unique').on(table.organizationId, table.portalId, table.templateType),
+]);
+
+// ============================================================================
+// Assignee Sessions (Portal-authenticated assignee sessions)
+// ============================================================================
+
+export const assigneeSessions = pgTable('assignee_sessions', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  contactId: text('contact_id').notNull().references(() => contacts.id),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  portalId: text('portal_id').notNull().references(() => portals.id),
+  token: text('token').notNull().unique().$defaultFn(() => crypto.randomUUID()),
+  expiresAt: timestamp('expires_at').notNull(),
+  lastAccessedAt: timestamp('last_accessed_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -140,6 +221,8 @@ export const flowRuns = pgTable('flow_runs', {
   lastActivityAt: timestamp('last_activity_at'),
   parentRunId: text('parent_run_id'),
   parentStepExecutionId: text('parent_step_execution_id'),
+  portalId: text('portal_id').references(() => portals.id),
+  startedByContactId: text('started_by_contact_id').references(() => contacts.id),
 });
 
 // ============================================================================
@@ -151,6 +234,7 @@ export const contacts = pgTable('contacts', {
   email: text('email').notNull(),
   name: text('name').notNull(),
   organizationId: text('organization_id').notNull().references(() => organizations.id),
+  portalId: text('portal_id').references(() => portals.id),
   type: text('type').$type<ContactType>().default('ASSIGNEE').notNull(),
   status: text('status').$type<ContactStatus>().default('ACTIVE').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -413,6 +497,9 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   flowRuns: many(flowRuns),
   invites: many(organizationInvites),
   templateFolders: many(templateFolders),
+  portals: many(portals),
+  emailTemplates: many(emailTemplates),
+  assigneeSessions: many(assigneeSessions),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -487,6 +574,14 @@ export const flowRunsRelations = relations(flowRuns, ({ one, many }) => ({
     fields: [flowRuns.organizationId],
     references: [organizations.id],
   }),
+  portal: one(portals, {
+    fields: [flowRuns.portalId],
+    references: [portals.id],
+  }),
+  startedByContact: one(contacts, {
+    fields: [flowRuns.startedByContactId],
+    references: [contacts.id],
+  }),
   stepExecutions: many(stepExecutions),
   auditLogs: many(auditLogs),
 }));
@@ -496,7 +591,12 @@ export const contactsRelations = relations(contacts, ({ one, many }) => ({
     fields: [contacts.organizationId],
     references: [organizations.id],
   }),
+  portal: one(portals, {
+    fields: [contacts.portalId],
+    references: [portals.id],
+  }),
   stepExecutions: many(stepExecutions),
+  assigneeSessions: many(assigneeSessions),
 }));
 
 export const stepExecutionsRelations = relations(stepExecutions, ({ one }) => ({
@@ -685,5 +785,57 @@ export const integrationsRelations = relations(integrations, ({ one }) => ({
   organization: one(organizations, {
     fields: [integrations.organizationId],
     references: [organizations.id],
+  }),
+}));
+
+// ============================================================================
+// Portal Relations
+// ============================================================================
+
+export const portalsRelations = relations(portals, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [portals.organizationId],
+    references: [organizations.id],
+  }),
+  portalFlows: many(portalFlows),
+  contacts: many(contacts),
+  emailTemplates: many(emailTemplates),
+  assigneeSessions: many(assigneeSessions),
+}));
+
+export const portalFlowsRelations = relations(portalFlows, ({ one }) => ({
+  portal: one(portals, {
+    fields: [portalFlows.portalId],
+    references: [portals.id],
+  }),
+  flow: one(flows, {
+    fields: [portalFlows.flowId],
+    references: [flows.id],
+  }),
+}));
+
+export const emailTemplatesRelations = relations(emailTemplates, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [emailTemplates.organizationId],
+    references: [organizations.id],
+  }),
+  portal: one(portals, {
+    fields: [emailTemplates.portalId],
+    references: [portals.id],
+  }),
+}));
+
+export const assigneeSessionsRelations = relations(assigneeSessions, ({ one }) => ({
+  contact: one(contacts, {
+    fields: [assigneeSessions.contactId],
+    references: [contacts.id],
+  }),
+  organization: one(organizations, {
+    fields: [assigneeSessions.organizationId],
+    references: [organizations.id],
+  }),
+  portal: one(portals, {
+    fields: [assigneeSessions.portalId],
+    references: [portals.id],
   }),
 }));

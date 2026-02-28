@@ -11,10 +11,11 @@ import { Button } from '@/components/ui/button';
 interface CompletionDialogProps {
   contactName?: string;
   nextTaskToken?: string | null;
+  portalSlug?: string | null;
   onContinue: () => void;
 }
 
-export function CompletionDialog({ contactName, nextTaskToken, onContinue }: CompletionDialogProps) {
+export function CompletionDialog({ contactName, nextTaskToken, portalSlug, onContinue }: CompletionDialogProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Dimmed backdrop */}
@@ -48,6 +49,19 @@ export function CompletionDialog({ contactName, nextTaskToken, onContinue }: Com
                 You can close this window.
               </p>
             </div>
+          )}
+
+          {/* Portal sign-in prompt */}
+          {portalSlug && (
+            <p className="mt-4 text-xs text-gray-400">
+              Want to track all your tasks?{' '}
+              <a
+                href={`/portal/${portalSlug}/login`}
+                className="text-violet-600 hover:text-violet-700 font-medium"
+              >
+                Sign in to your portal &rarr;
+              </a>
+            </p>
           )}
         </div>
       </div>

@@ -1023,6 +1023,97 @@ export const STEP_TYPE_META: Record<StepType, { label: string; color: string; ca
 };
 
 // ============================================================================
+// Portal Types
+// ============================================================================
+
+export type EmailTemplateType = 'TASK_ASSIGNED' | 'TASK_REMINDER' | 'FLOW_COMPLETED';
+
+export interface PortalSettings {
+  flowExperience?: {
+    headerImage?: string;
+    viewMode?: string;
+    welcomeMessage?: string;
+  };
+  startLink?: {
+    initTitle?: string;
+    initSubtitle?: string;
+    startButtonLabel?: string;
+    completedImage?: string;
+    completedTitle?: string;
+    completedSubtitle?: string;
+  };
+  allowSelfServiceFlowStart?: boolean;
+  showWorkspaceSummary?: boolean;
+}
+
+export interface PortalBranding {
+  logoUrl?: string;
+  primaryColor?: string;
+  accentColor?: string;
+  companyName?: string;
+}
+
+export interface Portal {
+  id: string;
+  organizationId: string;
+  name: string;
+  slug: string;
+  description?: string;
+  isDefault: boolean;
+  settings?: PortalSettings;
+  brandingOverrides?: PortalBranding;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PortalFlow {
+  id: string;
+  portalId: string;
+  flowId: string;
+  displayTitle?: string;
+  displayDescription?: string;
+  sortOrder: number;
+  enabled: boolean;
+  flow?: {
+    id: string;
+    name: string;
+    description?: string;
+    status: string;
+  };
+}
+
+export interface EmailTemplate {
+  id?: string;
+  organizationId?: string;
+  portalId?: string;
+  templateType: EmailTemplateType;
+  subject: string;
+  heading: string;
+  body: string;
+  buttonLabel?: string;
+  enabled: boolean;
+  isDefault?: boolean;
+}
+
+export interface PortalDashboardData {
+  summary: {
+    new: number;
+    inProgress: number;
+    due: number;
+    completed: number;
+  };
+  workspaces: Array<{
+    id: string;
+    name: string;
+    templateName: string;
+    status: string;
+    progress: { completed: number; total: number };
+    dueAt?: string;
+    nextTaskToken?: string;
+  }>;
+}
+
+// ============================================================================
 // Assignee Portal Types
 // ============================================================================
 

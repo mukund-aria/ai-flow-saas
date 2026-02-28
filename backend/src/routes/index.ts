@@ -27,6 +27,8 @@ import integrationsRouter from './integrations.js';
 import embedRouter from './embed.js';
 import galleryRouter from './gallery.js';
 import analyzeRouter from './analyze.js';
+import portalsRouter from './portals.js';
+import emailTemplatesRouter from './email-templates.js';
 import { orgScope } from '../middleware/org-scope.js';
 
 const router = Router();
@@ -96,6 +98,12 @@ router.use('/integrations', integrationsRouter);
 
 // Gallery API (curated template gallery with import)
 router.use('/gallery', galleryRouter);
+
+// Portals API (assignee portal management)
+router.use('/portals', portalsRouter);
+
+// Email Templates API (email template customization)
+router.use('/email-templates', emailTemplatesRouter);
 
 // Flows API (workflow execution — active instances)
 // Note: POST /api/templates/:templateId/flows is handled by runsRouter

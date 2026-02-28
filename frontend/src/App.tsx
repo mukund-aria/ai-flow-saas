@@ -23,6 +23,7 @@
 
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { AssigneeAuthProvider } from '@/contexts/AssigneeAuthContext';
 import { CoordinatorLayout } from '@/layouts/CoordinatorLayout';
 // import { PublicLayout } from '@/layouts/PublicLayout';
 import {
@@ -48,6 +49,10 @@ import {
 } from '@/pages';
 import { TemplateDetailPage } from '@/pages/TemplateDetailPage';
 import { EmbedStartPage } from '@/pages/EmbedStartPage';
+import { PortalLoginPage } from '@/pages/portal/PortalLoginPage';
+import { PortalLayout } from '@/pages/portal/PortalLayout';
+import { PortalDashboardPage } from '@/pages/portal/PortalDashboardPage';
+import { PortalFlowCatalogPage } from '@/pages/portal/PortalFlowCatalogPage';
 
 // ============================================================================
 // Protected Route Component
@@ -127,6 +132,13 @@ function AppRoutes() {
       />
       <Route path="/task/:token" element={<AssigneeTaskPage />} />
       <Route path="/embed/:embedId" element={<EmbedStartPage />} />
+
+      {/* Assignee Portal Routes */}
+      <Route path="/portal/:slug/login" element={<AssigneeAuthProvider><PortalLoginPage /></AssigneeAuthProvider>} />
+      <Route path="/portal/:slug" element={<AssigneeAuthProvider><PortalLayout /></AssigneeAuthProvider>}>
+        <Route index element={<PortalDashboardPage />} />
+        <Route path="start" element={<PortalFlowCatalogPage />} />
+      </Route>
 
       {/* Protected Routes - Coordinator Portal */}
       <Route

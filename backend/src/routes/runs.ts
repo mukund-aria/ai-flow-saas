@@ -51,6 +51,12 @@ router.get(
             email: true,
           },
         },
+        portal: {
+          columns: { id: true, name: true },
+        },
+        startedByContact: {
+          columns: { id: true, name: true },
+        },
         stepExecutions: {
           columns: {
             id: true,
@@ -166,9 +172,17 @@ router.get(
         : null;
 
       // Strip stepExecutions and large flow fields from response to keep payload small
-      const { stepExecutions: _se, ...rest } = run as any;
+      const { stepExecutions: _se, portal: _p, startedByContact: _sbc, ...rest } = run as any;
       const { definition: _def, templateCoordinatorIds: _tc, ...flowSlim } = rest.flow || {};
-      return { ...rest, flow: flowSlim, totalSteps, currentStepAssignee, currentStep };
+      return {
+        ...rest,
+        flow: flowSlim,
+        totalSteps,
+        currentStepAssignee,
+        currentStep,
+        portalName: (run as any).portal?.name || undefined,
+        startedByContactName: (run as any).startedByContact?.name || undefined,
+      };
     });
 
     res.json({

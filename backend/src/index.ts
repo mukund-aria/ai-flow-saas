@@ -22,6 +22,7 @@ import publicTaskRouter from './routes/public-task.js';
 import publicStartRouter from './routes/public-start.js';
 import webhooksRouter from './routes/webhooks.js';
 import publicEmbedRouter from './routes/public-embed.js';
+import publicPortalRouter from './routes/public-portal.js';
 import { initScheduler } from './services/scheduler.js';
 import { initFlowScheduler } from './services/flow-scheduler.js';
 
@@ -186,6 +187,7 @@ app.use('/api/webhooks/flows', webhooksRouter);
 
 // Public embed API (embedded flow start pages)
 app.use('/api/public/embed', publicEmbedRouter);
+app.use('/api/public/portal', publicPortalRouter);
 
 // ============================================================================
 // API Routes (protected in production)

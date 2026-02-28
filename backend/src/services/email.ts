@@ -7,6 +7,9 @@
 
 import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
+import { db, emailTemplates } from '../db/index.js';
+import type { EmailTemplateType } from '../db/index.js';
+import { eq, and, isNull } from 'drizzle-orm';
 
 // --- SMTP (Gmail) transport --- prioritized when configured
 const smtpTransport = process.env.SMTP_HOST
@@ -68,6 +71,89 @@ async function sendEmail(to: string, subject: string, html: string) {
   // Priority 3: Console logging (dev mode)
   console.log(`[Email] (dev mode) To: ${to}, Subject: ${subject}`);
   console.log(`[Email] HTML preview: ${html.substring(0, 200)}...`);
+}
+
+// ============================================================================
+// Template Resolution
+// ============================================================================
+
+const SYSTEM_DEFAULTS: Record<string, { subject: string; heading: string; body: string; buttonLabel: string }> = {
+  TASK_ASSIGNED: {
+    subject: 'Action required: {{stepName}}',
+    heading: 'You have a new task',
+    body: 'Hi {{contactName}}, you\'ve been assigned a task in <strong>{{flowName}}</strong>.',
+    buttonLabel: 'Complete Task',
+  },
+  TASK_REMINDER: {
+    subject: 'Reminder: {{stepName}} is due {{dueDate}}',
+    heading: 'Friendly Reminder',
+    body: 'Hi {{contactName}}, your task in <strong>{{flowName}}</strong> is {{dueDate}}.',
+    buttonLabel: 'Complete Task',
+  },
+  FLOW_COMPLETED: {
+    subject: 'Flow completed: {{flowName}}',
+    heading: 'Flow Completed',
+    body: 'Hi {{contactName}}, the flow <strong>{{flowName}}</strong> has been completed successfully.',
+    buttonLabel: 'View Details',
+  },
+};
+
+export { SYSTEM_DEFAULTS as EMAIL_SYSTEM_DEFAULTS };
+
+export async function resolveTemplate(
+  orgId: string,
+  templateType: string,
+  portalId?: string | null
+): Promise<{ subject: string; heading: string; body: string; buttonLabel: string }> {
+  // 1. Check for portal-specific override
+  if (portalId) {
+    const portalTemplate = await db.query.emailTemplates.findFirst({
+      where: and(
+        eq(emailTemplates.organizationId, orgId),
+        eq(emailTemplates.portalId, portalId),
+        eq(emailTemplates.templateType, templateType as EmailTemplateType),
+        eq(emailTemplates.enabled, true)
+      ),
+    });
+    if (portalTemplate) {
+      return { subject: portalTemplate.subject, heading: portalTemplate.heading, body: portalTemplate.body, buttonLabel: portalTemplate.buttonLabel || SYSTEM_DEFAULTS[templateType]?.buttonLabel || 'Continue' };
+    }
+  }
+
+  // 2. Fallback to org-level template
+  const orgTemplate = await db.query.emailTemplates.findFirst({
+    where: and(
+      eq(emailTemplates.organizationId, orgId),
+      isNull(emailTemplates.portalId),
+      eq(emailTemplates.templateType, templateType as EmailTemplateType),
+      eq(emailTemplates.enabled, true)
+    ),
+  });
+  if (orgTemplate) {
+    return { subject: orgTemplate.subject, heading: orgTemplate.heading, body: orgTemplate.body, buttonLabel: orgTemplate.buttonLabel || SYSTEM_DEFAULTS[templateType]?.buttonLabel || 'Continue' };
+  }
+
+  // 3. Fallback to system defaults
+  return SYSTEM_DEFAULTS[templateType] || SYSTEM_DEFAULTS.TASK_ASSIGNED;
+}
+
+function substituteVariables(text: string, vars: Record<string, string>): string {
+  return text.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] || `{{${key}}}`);
+}
+
+export function renderEmailHtml(heading: string, body: string, buttonLabel: string, buttonUrl: string): string {
+  return `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 0;">
+      <h2 style="color: #111; margin-bottom: 16px;">${heading}</h2>
+      <div style="color: #555; line-height: 1.6;">${body}</div>
+      <a href="${buttonUrl}" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+        ${buttonLabel}
+      </a>
+      <p style="color: #999; font-size: 13px; margin-top: 24px;">
+        This is an automated notification from ServiceFlow.
+      </p>
+    </div>
+  `;
 }
 
 // ============================================================================
