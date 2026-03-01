@@ -43,7 +43,7 @@ export function ProposalBanner({
 
   // Stats
   const stepCount = workflow.steps?.length || 0;
-  const roleCount = workflow.assigneePlaceholders?.length || 0;
+  const roleCount = workflow.roles?.length || 0;
   const phaseCount = workflow.milestones?.length || 0;
 
   // Assumptions

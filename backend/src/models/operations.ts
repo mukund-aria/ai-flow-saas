@@ -6,7 +6,7 @@
  */
 
 import type { Step, BranchPath, DecisionOutcome, BranchCondition, TerminateStatus } from './steps.js';
-import type { AssigneePlaceholder, Resolution, RoleOptions } from './assignees.js';
+import type { Role, Resolution, RoleOptions } from './assignees.js';
 
 // ============================================================================
 // Operation Types
@@ -45,6 +45,10 @@ export type OperationType =
   | 'ADD_MILESTONE'
   | 'REMOVE_MILESTONE'
   | 'UPDATE_MILESTONE'
+  | 'ADD_ROLE'
+  | 'REMOVE_ROLE'
+  | 'UPDATE_ROLE'
+  // Backward-compatible aliases
   | 'ADD_ASSIGNEE_PLACEHOLDER'
   | 'REMOVE_ASSIGNEE_PLACEHOLDER'
   | 'UPDATE_ASSIGNEE_PLACEHOLDER';
@@ -247,12 +251,19 @@ export interface UpdateFlowNameOperation {
 }
 
 // ============================================================================
-// Assignee Placeholder Operations
+// Role Operations
 // ============================================================================
 
-export interface AddAssigneePlaceholderOperation {
-  op: 'ADD_ASSIGNEE_PLACEHOLDER';
-  placeholder: {
+export interface AddRoleOperation {
+  op: 'ADD_ROLE' | 'ADD_ASSIGNEE_PLACEHOLDER';
+  role: {
+    roleId?: string;
+    name: string;
+    resolution?: Resolution;
+    roleOptions?: RoleOptions;
+  };
+  /** @deprecated Use role instead */
+  placeholder?: {
     placeholderId?: string;
     name: string;
     resolution?: Resolution;
@@ -260,20 +271,31 @@ export interface AddAssigneePlaceholderOperation {
   };
 }
 
-export interface RemoveAssigneePlaceholderOperation {
-  op: 'REMOVE_ASSIGNEE_PLACEHOLDER';
-  placeholderId: string;
+export interface RemoveRoleOperation {
+  op: 'REMOVE_ROLE' | 'REMOVE_ASSIGNEE_PLACEHOLDER';
+  roleId: string;
+  /** @deprecated Use roleId instead */
+  placeholderId?: string;
 }
 
-export interface UpdateAssigneePlaceholderOperation {
-  op: 'UPDATE_ASSIGNEE_PLACEHOLDER';
-  placeholderId: string;
+export interface UpdateRoleOperation {
+  op: 'UPDATE_ROLE' | 'UPDATE_ASSIGNEE_PLACEHOLDER';
+  roleId: string;
+  /** @deprecated Use roleId instead */
+  placeholderId?: string;
   updates: {
     name?: string;
     resolution?: Resolution;
     roleOptions?: RoleOptions;
   };
 }
+
+/** @deprecated Use AddRoleOperation instead */
+export type AddAssigneePlaceholderOperation = AddRoleOperation;
+/** @deprecated Use RemoveRoleOperation instead */
+export type RemoveAssigneePlaceholderOperation = RemoveRoleOperation;
+/** @deprecated Use UpdateRoleOperation instead */
+export type UpdateAssigneePlaceholderOperation = UpdateRoleOperation;
 
 // ============================================================================
 // Union Type for All Operations
@@ -312,10 +334,10 @@ export type Operation =
   | UpdateMilestoneOperation
   // Flow metadata
   | UpdateFlowNameOperation
-  // Assignee placeholders
-  | AddAssigneePlaceholderOperation
-  | RemoveAssigneePlaceholderOperation
-  | UpdateAssigneePlaceholderOperation;
+  // Roles (formerly assignee placeholders)
+  | AddRoleOperation
+  | RemoveRoleOperation
+  | UpdateRoleOperation;
 
 // ============================================================================
 // Operation Result

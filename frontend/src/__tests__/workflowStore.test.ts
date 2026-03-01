@@ -19,7 +19,7 @@ describe('workflowStore', () => {
       expect(workflow!.name).toBe('Untitled Template');
       expect(workflow!.steps).toEqual([]);
       expect(workflow!.milestones).toEqual([]);
-      expect(workflow!.assigneePlaceholders).toEqual([]);
+      expect(workflow!.roles).toEqual([]);
       expect(workflow!.description).toBe('');
       expect(workflow!.flowId).toMatch(/^flow-/);
     });
@@ -263,61 +263,61 @@ describe('workflowStore', () => {
   });
 
   // ============================================================================
-  // addAssigneePlaceholder
+  // addRole
   // ============================================================================
 
-  describe('addAssigneePlaceholder', () => {
+  describe('addRole', () => {
     beforeEach(() => {
       useWorkflowStore.getState().initEmptyWorkflow();
     });
 
-    it('adds a placeholder with the given role name', () => {
-      useWorkflowStore.getState().addAssigneePlaceholder('Client');
+    it('adds a role with the given name', () => {
+      useWorkflowStore.getState().addRole('Client');
 
       const { workflow } = useWorkflowStore.getState();
-      expect(workflow!.assigneePlaceholders).toHaveLength(1);
-      expect(workflow!.assigneePlaceholders[0].roleName).toBe('Client');
-      expect(workflow!.assigneePlaceholders[0].placeholderId).toMatch(/^role-/);
+      expect(workflow!.roles).toHaveLength(1);
+      expect(workflow!.roles[0].name).toBe('Client');
+      expect(workflow!.roles[0].roleId).toMatch(/^role-/);
     });
 
-    it('adds multiple placeholders', () => {
-      useWorkflowStore.getState().addAssigneePlaceholder('Client');
-      useWorkflowStore.getState().addAssigneePlaceholder('Manager');
+    it('adds multiple roles', () => {
+      useWorkflowStore.getState().addRole('Client');
+      useWorkflowStore.getState().addRole('Manager');
 
       const { workflow } = useWorkflowStore.getState();
-      expect(workflow!.assigneePlaceholders).toHaveLength(2);
-      expect(workflow!.assigneePlaceholders[0].roleName).toBe('Client');
-      expect(workflow!.assigneePlaceholders[1].roleName).toBe('Manager');
+      expect(workflow!.roles).toHaveLength(2);
+      expect(workflow!.roles[0].name).toBe('Client');
+      expect(workflow!.roles[1].name).toBe('Manager');
     });
 
     it('includes description when provided', () => {
-      useWorkflowStore.getState().addAssigneePlaceholder('Client', 'External customer');
+      useWorkflowStore.getState().addRole('Client', 'External customer');
 
       const { workflow } = useWorkflowStore.getState();
-      expect(workflow!.assigneePlaceholders[0].description).toBe('External customer');
+      expect(workflow!.roles[0].description).toBe('External customer');
     });
   });
 
   // ============================================================================
-  // removeAssigneePlaceholder
+  // removeRole
   // ============================================================================
 
-  describe('removeAssigneePlaceholder', () => {
+  describe('removeRole', () => {
     beforeEach(() => {
       useWorkflowStore.getState().initEmptyWorkflow();
-      useWorkflowStore.getState().addAssigneePlaceholder('Client');
-      useWorkflowStore.getState().addAssigneePlaceholder('Manager');
+      useWorkflowStore.getState().addRole('Client');
+      useWorkflowStore.getState().addRole('Manager');
     });
 
-    it('removes the placeholder with the given id', () => {
+    it('removes the role with the given id', () => {
       const { workflow } = useWorkflowStore.getState();
-      const clientId = workflow!.assigneePlaceholders[0].placeholderId;
+      const clientId = workflow!.roles[0].roleId;
 
-      useWorkflowStore.getState().removeAssigneePlaceholder(clientId);
+      useWorkflowStore.getState().removeRole(clientId);
 
       const updated = useWorkflowStore.getState().workflow;
-      expect(updated!.assigneePlaceholders).toHaveLength(1);
-      expect(updated!.assigneePlaceholders[0].roleName).toBe('Manager');
+      expect(updated!.roles).toHaveLength(1);
+      expect(updated!.roles[0].name).toBe('Manager');
     });
 
     it('clears assignee from steps that reference the removed role', () => {
@@ -330,9 +330,9 @@ describe('workflowStore', () => {
       // Verify assignment
       expect(useWorkflowStore.getState().workflow!.steps[0].config.assignee).toBe('Client');
 
-      // Remove the 'Client' placeholder
-      const clientId = useWorkflowStore.getState().workflow!.assigneePlaceholders[0].placeholderId;
-      useWorkflowStore.getState().removeAssigneePlaceholder(clientId);
+      // Remove the 'Client' role
+      const clientId = useWorkflowStore.getState().workflow!.roles[0].roleId;
+      useWorkflowStore.getState().removeRole(clientId);
 
       // The step's assignee should be cleared
       const updated = useWorkflowStore.getState().workflow;
@@ -346,9 +346,9 @@ describe('workflowStore', () => {
       useWorkflowStore.getState().updateStep(workflow.steps[0].stepId, { assignee: 'Client' });
       useWorkflowStore.getState().updateStep(workflow.steps[1].stepId, { assignee: 'Manager' });
 
-      // Remove Client placeholder
-      const clientId = useWorkflowStore.getState().workflow!.assigneePlaceholders[0].placeholderId;
-      useWorkflowStore.getState().removeAssigneePlaceholder(clientId);
+      // Remove Client role
+      const clientId = useWorkflowStore.getState().workflow!.roles[0].roleId;
+      useWorkflowStore.getState().removeRole(clientId);
 
       const updated = useWorkflowStore.getState().workflow;
       expect(updated!.steps[0].config.assignee).toBeUndefined();

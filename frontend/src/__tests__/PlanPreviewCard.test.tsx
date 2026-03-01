@@ -3,7 +3,7 @@
  *
  * Tests the plan preview card handles:
  * - Valid workflows
- * - Missing/null assigneePlaceholders
+ * - Missing/null roles
  * - Missing/null steps
  * - Malformed step configs
  */
@@ -129,7 +129,7 @@ describe('PlanPreviewCard', () => {
   });
 
   // ============================================================================
-  // Edge Case Tests - This is what catches bugs like assigneePlaceholders
+  // Edge Case Tests - This is what catches bugs like missing roles
   // ============================================================================
 
   describe('Edge Cases', () => {
@@ -181,7 +181,7 @@ describe('PlanPreviewCard', () => {
           name: 'Empty Workflow',
           steps: [],
           milestones: [],
-          assigneePlaceholders: [],
+          roles: [],
         },
         message: 'Empty workflow',
       };
@@ -197,7 +197,7 @@ describe('PlanPreviewCard', () => {
       expect(screen.getByText('No steps defined')).toBeInTheDocument();
     });
 
-    it('handles workflow with null assigneePlaceholders', () => {
+    it('handles workflow with null roles', () => {
       const planWithNullAssignees: PendingPlan = {
         planId: 'plan-null',
         workflow: {
@@ -206,7 +206,7 @@ describe('PlanPreviewCard', () => {
           steps: [{ stepId: 's1', type: 'TODO', config: { name: 'Task' } }],
           milestones: [],
           // @ts-expect-error - Testing null case
-          assigneePlaceholders: null,
+          roles: null,
         },
         message: 'Test',
       };
@@ -226,7 +226,7 @@ describe('PlanPreviewCard', () => {
       expect(screen.getByText('Null Assignees')).toBeInTheDocument();
     });
 
-    it('handles workflow with undefined assigneePlaceholders', () => {
+    it('handles workflow with undefined roles', () => {
       const planWithUndefinedAssignees: PendingPlan = {
         planId: 'plan-undef',
         workflow: {
@@ -234,7 +234,7 @@ describe('PlanPreviewCard', () => {
           name: 'Undefined Assignees',
           steps: [{ stepId: 's1', type: 'TODO', config: { name: 'Task' } }],
           milestones: [],
-          // Intentionally missing assigneePlaceholders
+          // Intentionally missing roles
         } as unknown as Flow,
         message: 'Test',
       };
@@ -268,7 +268,7 @@ describe('PlanPreviewCard', () => {
             },
           ],
           milestones: [],
-          assigneePlaceholders: [],
+          roles: [],
         },
         message: 'Test',
       };
@@ -300,7 +300,7 @@ describe('PlanPreviewCard', () => {
             },
           ],
           milestones: [],
-          assigneePlaceholders: [],
+          roles: [],
         },
         message: 'Test',
       };

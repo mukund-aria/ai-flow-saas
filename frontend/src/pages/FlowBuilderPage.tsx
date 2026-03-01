@@ -152,7 +152,7 @@ export function FlowBuilderPage() {
             description: flowDef.description || template.description || '',
             steps: flowDef.steps || [],
             milestones: flowDef.milestones || [],
-            assigneePlaceholders: flowDef.assigneePlaceholders || [],
+            roles: flowDef.roles || [],
             parameters: flowDef.parameters,
             triggerConfig: flowDef.triggerConfig,
             settings: flowDef.settings,
@@ -651,7 +651,7 @@ export function FlowBuilderPage() {
             />
             <div className="absolute right-0 top-0 bottom-0 w-[400px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-hidden animate-in slide-in-from-right duration-200">
               <RoleConfigPanel
-                placeholderId={selectedRoleId}
+                roleId={selectedRoleId}
                 onClose={() => setSelectedRoleId(null)}
               />
             </div>

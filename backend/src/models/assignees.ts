@@ -90,15 +90,18 @@ export interface RoleOptions {
 }
 
 // ============================================================================
-// Assignee Placeholder (Template-level definition)
+// Role (Template-level definition)
 // ============================================================================
 
-export interface AssigneePlaceholder {
-  placeholderId: string;
+export interface Role {
+  roleId: string;
   name: string;                   // Display name (e.g., "Client", "Account Manager")
   resolution: Resolution;
   roleOptions: RoleOptions;
 }
+
+/** @deprecated Use Role instead */
+export type AssigneePlaceholder = Role;
 
 // ============================================================================
 // Assignee Reference (Used in steps)
@@ -106,7 +109,9 @@ export interface AssigneePlaceholder {
 
 export interface AssigneeRef {
   mode: 'PLACEHOLDER';
-  placeholderId: string;
+  roleId: string;
+  /** @deprecated Use roleId instead */
+  placeholderId?: string;
 }
 
 // For steps that support multiple assignees
@@ -129,12 +134,12 @@ export interface FlowVariable {
 // Factory Functions
 // ============================================================================
 
-export function createContactTbdPlaceholder(
-  placeholderId: string,
+export function createContactTbdRole(
+  roleId: string,
   name: string
-): AssigneePlaceholder {
+): Role {
   return {
-    placeholderId,
+    roleId,
     name,
     resolution: { type: 'CONTACT_TBD' },
     roleOptions: {
@@ -144,10 +149,13 @@ export function createContactTbdPlaceholder(
   };
 }
 
-export function createAssigneeRef(placeholderId: string): AssigneeRef {
+/** @deprecated Use createContactTbdRole instead */
+export const createContactTbdPlaceholder = createContactTbdRole;
+
+export function createAssigneeRef(roleId: string): AssigneeRef {
   return {
     mode: 'PLACEHOLDER',
-    placeholderId,
+    roleId,
   };
 }
 

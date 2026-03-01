@@ -22,7 +22,7 @@ import { listContacts } from '@/lib/api';
 import type { Contact } from '@/lib/api';
 
 interface RoleConfigPanelProps {
-  placeholderId: string;
+  roleId: string;
   onClose: () => void;
 }
 
@@ -86,11 +86,11 @@ const ADVANCED_OPTIONS: ResolutionOption[] = [
 
 const ALL_OPTIONS = [...DIRECT_OPTIONS, ...DATA_SOURCE_OPTIONS, ...ADVANCED_OPTIONS];
 
-export function RoleConfigPanel({ placeholderId, onClose }: RoleConfigPanelProps) {
-  const { workflow, updateAssigneePlaceholder } = useWorkflowStore();
-  const assignees = workflow?.assigneePlaceholders || [];
-  const assignee = assignees.find(a => a.placeholderId === placeholderId);
-  const assigneeIndex = assignees.findIndex(a => a.placeholderId === placeholderId);
+export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
+  const { workflow, updateRole } = useWorkflowStore();
+  const assignees = workflow?.roles || [];
+  const assignee = assignees.find(a => a.roleId === roleId);
+  const assigneeIndex = assignees.findIndex(a => a.roleId === roleId);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
@@ -145,8 +145,8 @@ export function RoleConfigPanel({ placeholderId, onClose }: RoleConfigPanelProps
 
   const handleNameSave = () => {
     const trimmed = nameValue.trim();
-    if (trimmed && !assignees.some(a => a.placeholderId !== placeholderId && a.roleName.toLowerCase() === trimmed.toLowerCase())) {
-      updateAssigneePlaceholder(placeholderId, { roleName: trimmed });
+    if (trimmed && !assignees.some(a => a.roleId !== roleId && a.name.toLowerCase() === trimmed.toLowerCase())) {
+      updateRole(roleId, { name: trimmed });
     }
     setIsEditingName(false);
   };
@@ -158,18 +158,18 @@ export function RoleConfigPanel({ placeholderId, onClose }: RoleConfigPanelProps
       setDropdownOpen(false);
       return;
     }
-    updateAssigneePlaceholder(placeholderId, { resolution: newResolution });
+    updateRole(roleId, { resolution: newResolution });
     setDropdownOpen(false);
   };
 
   const handleResolutionUpdate = (updates: Partial<Resolution>) => {
-    updateAssigneePlaceholder(placeholderId, {
+    updateRole(roleId, {
       resolution: { ...assignee.resolution, type: resType, ...updates },
     });
   };
 
   const handleToggleCoordinator = () => {
-    updateAssigneePlaceholder(placeholderId, {
+    updateRole(roleId, {
       roleOptions: {
         coordinatorToggle: !assignee.roleOptions?.coordinatorToggle,
         allowViewAllActions: assignee.roleOptions?.allowViewAllActions || false,
@@ -178,7 +178,7 @@ export function RoleConfigPanel({ placeholderId, onClose }: RoleConfigPanelProps
   };
 
   const handleToggleViewAll = () => {
-    updateAssigneePlaceholder(placeholderId, {
+    updateRole(roleId, {
       roleOptions: {
         coordinatorToggle: assignee.roleOptions?.coordinatorToggle || false,
         allowViewAllActions: !assignee.roleOptions?.allowViewAllActions,
@@ -195,7 +195,7 @@ export function RoleConfigPanel({ placeholderId, onClose }: RoleConfigPanelProps
             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
             style={{ backgroundColor: getRoleColor(assigneeIndex) }}
           >
-            {getRoleInitials(assignee.roleName)}
+            {getRoleInitials(assignee.name)}
           </span>
           <div>
             <div className="text-[11px] text-gray-400 font-medium">Assignee configuration</div>
@@ -214,10 +214,10 @@ export function RoleConfigPanel({ placeholderId, onClose }: RoleConfigPanelProps
               />
             ) : (
               <button
-                onClick={() => { setNameValue(assignee.roleName); setIsEditingName(true); }}
+                onClick={() => { setNameValue(assignee.name); setIsEditingName(true); }}
                 className="text-base font-semibold text-gray-900 hover:text-violet-700 transition-colors text-left"
               >
-                {assignee.roleName}
+                {assignee.name}
               </button>
             )}
           </div>
@@ -237,7 +237,7 @@ export function RoleConfigPanel({ placeholderId, onClose }: RoleConfigPanelProps
           <div className="text-xs text-gray-500 font-medium mb-2">Role type</div>
           <div className="flex rounded-lg border border-gray-200 overflow-hidden">
             <button
-              onClick={() => updateAssigneePlaceholder(placeholderId, { roleType: 'coordinator' })}
+              onClick={() => updateRole(roleId, { roleType: 'coordinator' })}
               className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors ${
                 (assignee.roleType || 'assignee') === 'coordinator'
                   ? 'bg-violet-50 text-violet-700 border-r border-gray-200'
@@ -248,7 +248,7 @@ export function RoleConfigPanel({ placeholderId, onClose }: RoleConfigPanelProps
               Coordinator
             </button>
             <button
-              onClick={() => updateAssigneePlaceholder(placeholderId, { roleType: 'assignee' })}
+              onClick={() => updateRole(roleId, { roleType: 'assignee' })}
               className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium transition-colors ${
                 (assignee.roleType || 'assignee') === 'assignee'
                   ? 'bg-violet-50 text-violet-700'

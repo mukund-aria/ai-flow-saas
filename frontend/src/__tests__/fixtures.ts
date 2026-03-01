@@ -38,9 +38,9 @@ export const VALID_WORKFLOW: Flow = {
     },
   ],
   milestones: [],
-  assigneePlaceholders: [
-    { placeholderId: 'p-1', roleName: 'Client' },
-    { placeholderId: 'p-2', roleName: 'Manager' },
+  roles: [
+    { roleId: 'p-1', name: 'Client' },
+    { roleId: 'p-2', name: 'Manager' },
   ],
 };
 
@@ -69,7 +69,7 @@ export const WORKFLOW_NO_ASSIGNEES: Flow = {
     },
   ],
   milestones: [],
-  assigneePlaceholders: [], // Empty array
+  roles: [], // Empty array
 };
 
 export const WORKFLOW_NULL_ASSIGNEES: Flow = {
@@ -84,7 +84,7 @@ export const WORKFLOW_NULL_ASSIGNEES: Flow = {
   ],
   milestones: [],
   // @ts-expect-error - Simulating LLM returning null
-  assigneePlaceholders: null,
+  roles: null,
 };
 
 export const WORKFLOW_UNDEFINED_ASSIGNEES = {
@@ -98,7 +98,7 @@ export const WORKFLOW_UNDEFINED_ASSIGNEES = {
     },
   ],
   milestones: [],
-  // Intentionally missing assigneePlaceholders to simulate LLM omission
+  // Intentionally missing roles to simulate LLM omission
 } as unknown as Flow;
 
 export const WORKFLOW_NO_STEPS: Flow = {
@@ -106,7 +106,7 @@ export const WORKFLOW_NO_STEPS: Flow = {
   name: 'No Steps Workflow',
   steps: [],
   milestones: [],
-  assigneePlaceholders: [],
+  roles: [],
 };
 
 export const WORKFLOW_NULL_STEPS: Flow = {
@@ -115,7 +115,7 @@ export const WORKFLOW_NULL_STEPS: Flow = {
   // @ts-expect-error - Simulating LLM returning null
   steps: null,
   milestones: [],
-  assigneePlaceholders: [],
+  roles: [],
 };
 
 // ============================================================================
@@ -155,7 +155,7 @@ export const WORKFLOW_MALFORMED_STEPS: Flow = {
     },
   ],
   milestones: [],
-  assigneePlaceholders: [{ placeholderId: 'p-1', roleName: 'User' }],
+  roles: [{ roleId: 'p-1', name: 'User' }],
 };
 
 // ============================================================================

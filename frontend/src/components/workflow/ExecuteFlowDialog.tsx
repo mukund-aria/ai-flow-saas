@@ -32,7 +32,7 @@ import { Button } from '@/components/ui/button';
 import { listContacts, createContact, startFlow, getTemplate, listTeamMembers } from '@/lib/api';
 import type { Contact, TeamMember } from '@/lib/api';
 import { getRoleColor, getRoleInitials } from '@/types';
-import type { AssigneePlaceholder, KickoffConfig, FormField } from '@/types';
+import type { Role, KickoffConfig, FormField } from '@/types';
 import { cn } from '@/lib/utils';
 import { FlowPreviewTimeline } from './FlowPreviewTimeline';
 
@@ -492,9 +492,9 @@ export function ExecuteFlowDialog({
   }, [open, template.id, template.definition]);
 
   // ---- Derived data from template definition ----
-  const assigneePlaceholders: AssigneePlaceholder[] = useMemo(() => {
+  const roles: Role[] = useMemo(() => {
     if (!fullDefinition) return [];
-    return (fullDefinition.assigneePlaceholders as AssigneePlaceholder[]) ?? [];
+    return (fullDefinition.roles as Role[]) ?? [];
   }, [fullDefinition]);
 
   const kickoffConfig: KickoffConfig | null = useMemo(() => {
@@ -520,7 +520,7 @@ export function ExecuteFlowDialog({
     return counts;
   }, [fullDefinition]);
 
-  const hasRoles = assigneePlaceholders.length > 0;
+  const hasRoles = roles.length > 0;
   const hasKickoffForm = kickoffFields.length > 0;
   const [roleAssignments, setRoleAssignments] = useState<
     Record<string, string | null>
@@ -586,11 +586,11 @@ export function ExecuteFlowDialog({
       const meContact = contacts.find((c) => c.type === 'ADMIN') ?? contacts[0];
       if (meContact) {
         const assignments: Record<string, string | null> = {};
-        assigneePlaceholders.forEach((p) => {
+        roles.forEach((p) => {
           // Only assign CONTACT_TBD roles — others are auto-resolved
           const resType = p.resolution?.type;
           if (!resType || resType === 'CONTACT_TBD') {
-            assignments[p.roleName] = meContact.id;
+            assignments[p.name] = meContact.id;
           }
         });
         setRoleAssignments(assignments);
@@ -733,7 +733,7 @@ export function ExecuteFlowDialog({
               </p>
 
               {/* Assign all to me — only show when there are CONTACT_TBD roles */}
-              {contacts.length > 0 && assigneePlaceholders.some((p) => !p.resolution?.type || p.resolution.type === 'CONTACT_TBD') && (
+              {contacts.length > 0 && roles.some((p) => !p.resolution?.type || p.resolution.type === 'CONTACT_TBD') && (
                 <label className="flex items-center gap-2 mb-4 px-3 py-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                   <Checkbox
                     checked={assignAllToMe}
@@ -753,7 +753,7 @@ export function ExecuteFlowDialog({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {assigneePlaceholders.map((placeholder, index) => {
+                  {roles.map((placeholder, index) => {
                     const resolutionType = placeholder.resolution?.type;
                     const isManual = !resolutionType || resolutionType === 'CONTACT_TBD';
                     const isCoordinator = placeholder.roleType === 'coordinator' || placeholder.roleOptions?.coordinatorToggle;
@@ -802,16 +802,16 @@ export function ExecuteFlowDialog({
                       : contacts;
 
                     return (
-                      <div key={placeholder.placeholderId}>
+                      <div key={placeholder.roleId}>
                         <div className="flex items-center gap-2 mb-1.5">
                           <span
                             className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
                             style={{ backgroundColor: getRoleColor(index) }}
                           >
-                            {getRoleInitials(placeholder.roleName)}
+                            {getRoleInitials(placeholder.name)}
                           </span>
                           <span className="text-sm font-medium text-gray-700">
-                            {placeholder.roleName}
+                            {placeholder.name}
                           </span>
                           {isCoordinator ? (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-violet-50 border border-violet-200 rounded text-[10px] font-medium text-violet-700">
@@ -833,20 +833,20 @@ export function ExecuteFlowDialog({
                         <p className="text-xs text-gray-400 ml-8">
                           {isCoordinator
                             ? 'Full run access: view all steps, reassign, and chat'
-                            : `Assigned to ${stepsPerRole[placeholder.roleName] || 0} steps`}
+                            : `Assigned to ${stepsPerRole[placeholder.name] || 0} steps`}
                         </p>
                         <div className="ml-8 mt-1.5">
                           {isManual ? (
                             <ContactDropdown
                               contacts={memberContacts}
-                              value={roleAssignments[placeholder.roleName] ?? null}
+                              value={roleAssignments[placeholder.name] ?? null}
                               onChange={(contactId) =>
-                                handleRoleAssignment(placeholder.roleName, contactId)
+                                handleRoleAssignment(placeholder.name, contactId)
                               }
                               onContactCreated={handleContactCreated}
                               placeholder={isCoordinator
-                                ? `Select org member for ${placeholder.roleName}...`
-                                : `Select contact for ${placeholder.roleName}...`}
+                                ? `Select org member for ${placeholder.name}...`
+                                : `Select contact for ${placeholder.name}...`}
                             />
                           ) : (
                             <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
@@ -855,9 +855,9 @@ export function ExecuteFlowDialog({
                             </div>
                           )}
                         </div>
-                        {isManual && !roleAssignments[placeholder.roleName] && (stepsPerRole[placeholder.roleName] || 0) > 0 && !isCoordinator && (
+                        {isManual && !roleAssignments[placeholder.name] && (stepsPerRole[placeholder.name] || 0) > 0 && !isCoordinator && (
                           <p className="text-xs text-amber-500 mt-1 ml-8">
-                            This role has {stepsPerRole[placeholder.roleName]} steps that won't be assigned
+                            This role has {stepsPerRole[placeholder.name]} steps that won't be assigned
                           </p>
                         )}
                       </div>
@@ -912,7 +912,7 @@ export function ExecuteFlowDialog({
                 <div className="mt-3 ml-6">
                   <FlowPreviewTimeline
                     steps={(fullDefinition.steps as Array<{ stepId: string; type: string; config?: { name?: string; assignee?: string } }>) || []}
-                    assigneePlaceholders={assigneePlaceholders}
+                    roles={roles}
                   />
                 </div>
               )}

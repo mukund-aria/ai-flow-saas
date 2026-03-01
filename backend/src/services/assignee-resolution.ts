@@ -7,7 +7,7 @@
 
 import { db, contacts, flowRuns, stepExecutions } from '../db/index.js';
 import { eq, and, sql } from 'drizzle-orm';
-import type { Resolution, AssigneePlaceholder } from '../models/assignees.js';
+import type { Resolution, Role } from '../models/assignees.js';
 
 export interface ResolvedAssignee {
   contactId?: string;
@@ -28,29 +28,29 @@ export interface AssigneeResolutionContext {
  * Returns a map of roleName -> { contactId?, userId? }
  */
 export async function resolveAssignees(
-  placeholders: AssigneePlaceholder[],
+  roles: Role[],
   ctx: AssigneeResolutionContext
 ): Promise<Record<string, ResolvedAssignee>> {
   const resolved: Record<string, ResolvedAssignee> = {};
 
-  for (const placeholder of placeholders) {
-    const result = await resolveOne(placeholder, ctx);
-    resolved[placeholder.name] = result;
+  for (const role of roles) {
+    const result = await resolveOne(role, ctx);
+    resolved[role.name] = result;
   }
 
   return resolved;
 }
 
 async function resolveOne(
-  placeholder: AssigneePlaceholder,
+  role: Role,
   ctx: AssigneeResolutionContext
 ): Promise<ResolvedAssignee> {
-  const resolution = placeholder.resolution;
+  const resolution = role.resolution;
   if (!resolution) return {};
 
   switch (resolution.type) {
     case 'CONTACT_TBD':
-      return resolveTbd(placeholder.name, ctx);
+      return resolveTbd(role.name, ctx);
 
     case 'FIXED_CONTACT':
       return resolveFixedContact(resolution.email, ctx.organizationId);

@@ -52,7 +52,7 @@ export function PlanSummaryCard({
 
   // Stats
   const steps = Array.isArray(workflow?.steps) ? workflow.steps : [];
-  const assignees = Array.isArray(workflow?.assigneePlaceholders) ? workflow.assigneePlaceholders : [];
+  const assignees = Array.isArray(workflow?.roles) ? workflow.roles : [];
   const milestones = Array.isArray(workflow?.milestones) ? workflow.milestones : [];
   const stepCount = steps.length;
   const roleCount = assignees.length;

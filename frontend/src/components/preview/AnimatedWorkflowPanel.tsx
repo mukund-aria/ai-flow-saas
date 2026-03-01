@@ -64,7 +64,7 @@ export function AnimatedWorkflowPanel({ workflow, isBuilding }: AnimatedWorkflow
             <StepCard
               step={step}
               index={index}
-              assigneePlaceholders={workflow.assigneePlaceholders}
+              roles={workflow.roles}
             />
             {index < visibleSteps.length - 1 && (
               <div className="flex justify-center py-1">

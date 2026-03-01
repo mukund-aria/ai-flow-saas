@@ -6,7 +6,7 @@
  */
 
 import type { Step, StepType } from './steps.js';
-import type { AssigneePlaceholder, FlowVariable } from './assignees.js';
+import type { Role, FlowVariable } from './assignees.js';
 
 // ============================================================================
 // Flow (Top-level)
@@ -23,7 +23,7 @@ export interface Flow {
   dueDates?: FlowDueDates;
 
   milestones: Milestone[];
-  assigneePlaceholders: AssigneePlaceholder[];
+  roles: Role[];
   constraints: FlowConstraints;
 
   steps: Step[];  // Main path - ordered list
@@ -453,7 +453,7 @@ export function createEmptyFlow(flowId: string, name: string): Flow {
     milestones: [
       { milestoneId: 'ms_default', name: 'Main Process', sequence: 1 },
     ],
-    assigneePlaceholders: [],
+    roles: [],
     constraints: {
       maxParallelBranches: 3,
       maxDecisionOutcomes: 3,

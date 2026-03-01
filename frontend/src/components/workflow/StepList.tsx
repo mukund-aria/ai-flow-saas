@@ -101,7 +101,7 @@ interface MilestoneContainerProps {
   onSetAddPopoverIndex: (index: number | null) => void;
   onAddStep: (index: number, stepType: StepType) => void;
   onAddMilestone?: (afterIndex: number) => void;
-  assigneePlaceholders: Flow['assigneePlaceholders'];
+  roles: Flow['roles'];
   workflow: Flow;
   totalSteps: number;
   lastStepRef: React.RefObject<HTMLDivElement | null>;
@@ -119,7 +119,7 @@ function MilestoneContainer({
   onSetAddPopoverIndex,
   onAddStep,
   onAddMilestone,
-  assigneePlaceholders,
+  roles,
   workflow,
   totalSteps,
   lastStepRef,
@@ -169,7 +169,7 @@ function MilestoneContainer({
                     index={globalIndex}
                     assigneeIndex={assigneeIndex}
                     editMode={editMode}
-                    assigneePlaceholders={assigneePlaceholders}
+                    roles={roles}
                     stepNumber={String(globalIndex + 1)}
                     changeStatus={proposalChangeMap ? getStepChangeStatus(step, proposalChangeMap) : undefined}
                   />
@@ -191,7 +191,7 @@ function MilestoneContainer({
                   index={globalIndex}
                   assigneeIndex={assigneeIndex}
                   editMode={editMode}
-                  assigneePlaceholders={assigneePlaceholders}
+                  roles={roles}
                   stepNumber={String(globalIndex + 1)}
                   changeStatus={proposalChangeMap ? getStepChangeStatus(step, proposalChangeMap) : undefined}
                 />
@@ -297,8 +297,8 @@ export function StepList({ workflow, editMode = false, proposalChangeMap }: Step
 
   // Build assignee index map for consistent colors
   const assigneeIndices = new Map<string, number>();
-  workflow.assigneePlaceholders?.forEach((a, i) => {
-    assigneeIndices.set(a.roleName, i);
+  workflow.roles?.forEach((a, i) => {
+    assigneeIndices.set(a.name, i);
   });
 
   const handleAddStep = (index: number, stepType: StepType) => {
@@ -331,7 +331,7 @@ export function StepList({ workflow, editMode = false, proposalChangeMap }: Step
           onSetAddPopoverIndex={setAddPopoverIndex}
           onAddStep={handleAddStep}
           onAddMilestone={handleAddMilestone}
-          assigneePlaceholders={workflow.assigneePlaceholders || []}
+          roles={workflow.roles || []}
           workflow={workflow}
           totalSteps={steps.length}
           lastStepRef={lastStepRef}

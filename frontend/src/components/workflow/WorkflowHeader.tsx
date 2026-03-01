@@ -11,7 +11,7 @@ interface WorkflowHeaderProps {
 }
 
 export function WorkflowHeader({ workflow, editMode = false }: WorkflowHeaderProps) {
-  const assignees = workflow.assigneePlaceholders || [];
+  const assignees = workflow.roles || [];
   const { updateFlowMetadata } = useWorkflowStore();
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(workflow.name);
@@ -99,17 +99,17 @@ export function WorkflowHeader({ workflow, editMode = false }: WorkflowHeaderPro
         <div className="flex flex-wrap gap-2 mt-3">
           {assignees.map((assignee, index) => (
             <div
-              key={assignee.placeholderId}
+              key={assignee.roleId}
               className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded-lg border"
             >
               <span
                 className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
                 style={{ backgroundColor: getRoleColor(index) }}
               >
-                {getRoleInitials(assignee.roleName)}
+                {getRoleInitials(assignee.name)}
               </span>
               <div>
-                <p className="text-xs font-medium text-gray-900">{assignee.roleName}</p>
+                <p className="text-xs font-medium text-gray-900">{assignee.name}</p>
                 <p className="text-[10px] text-gray-500">
                   {assignee.description || 'Contact TBD'}
                 </p>

@@ -26,7 +26,6 @@ interface EmbedFlowInfo {
       options?: string[];
     }>;
   };
-  assigneePlaceholders?: Array<{ name: string; description?: string }>;
   roles?: Array<{ name: string; description?: string }>;
   branding?: {
     logoUrl?: string;

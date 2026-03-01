@@ -36,9 +36,9 @@ import type {
   RemoveMilestoneOperation,
   UpdateMilestoneOperation,
   UpdateFlowNameOperation,
-  AddAssigneePlaceholderOperation,
-  RemoveAssigneePlaceholderOperation,
-  UpdateAssigneePlaceholderOperation,
+  AddRoleOperation,
+  RemoveRoleOperation,
+  UpdateRoleOperation,
 } from '../models/operations.js';
 import { isBranchStep, isDecisionStep } from '../models/steps.js';
 import {
@@ -163,13 +163,16 @@ function applyOperation(flow: Flow, operation: Operation): OperationResult {
       case 'UPDATE_FLOW_NAME':
         return applyUpdateFlowName(flow, operation);
 
-      // Assignee placeholder operations
+      // Role operations (with backward-compatible aliases)
+      case 'ADD_ROLE':
       case 'ADD_ASSIGNEE_PLACEHOLDER':
-        return applyAddAssigneePlaceholder(flow, operation);
+        return applyAddRole(flow, operation as AddRoleOperation);
+      case 'REMOVE_ROLE':
       case 'REMOVE_ASSIGNEE_PLACEHOLDER':
-        return applyRemoveAssigneePlaceholder(flow, operation);
+        return applyRemoveRole(flow, operation as RemoveRoleOperation);
+      case 'UPDATE_ROLE':
       case 'UPDATE_ASSIGNEE_PLACEHOLDER':
-        return applyUpdateAssigneePlaceholder(flow, operation);
+        return applyUpdateRole(flow, operation as UpdateRoleOperation);
 
       default:
         return {
@@ -844,29 +847,39 @@ function applyUpdateFlowName(
 }
 
 // ============================================================================
-// Assignee Placeholder Operations
+// Role Operations
 // ============================================================================
 
-function applyAddAssigneePlaceholder(
+function applyAddRole(
   flow: Flow,
-  op: AddAssigneePlaceholderOperation
+  op: AddRoleOperation
 ): OperationResult {
-  const placeholderId = op.placeholder.placeholderId || `role-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-
-  // Check for duplicate name
-  if (flow.assigneePlaceholders.some(p => p.name === op.placeholder.name)) {
+  // Support both new 'role' field and legacy 'placeholder' field
+  const roleData = op.role || op.placeholder;
+  if (!roleData) {
     return {
       success: false,
       operation: op,
-      error: `Assignee placeholder with name "${op.placeholder.name}" already exists`,
+      error: 'ADD_ROLE operation must have a "role" object',
     };
   }
 
-  flow.assigneePlaceholders.push({
-    placeholderId,
-    name: op.placeholder.name,
-    resolution: op.placeholder.resolution || { type: 'CONTACT_TBD' },
-    roleOptions: op.placeholder.roleOptions || {
+  const roleId = roleData.roleId || (roleData as any).placeholderId || `role-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+  // Check for duplicate name
+  if (flow.roles.some(r => r.name === roleData.name)) {
+    return {
+      success: false,
+      operation: op,
+      error: `Role with name "${roleData.name}" already exists`,
+    };
+  }
+
+  flow.roles.push({
+    roleId,
+    name: roleData.name,
+    resolution: roleData.resolution || { type: 'CONTACT_TBD' },
+    roleOptions: roleData.roleOptions || {
       coordinatorToggle: false,
       allowViewAllActions: false,
     },
@@ -875,59 +888,57 @@ function applyAddAssigneePlaceholder(
   return { success: true, operation: op };
 }
 
-function applyRemoveAssigneePlaceholder(
+function applyRemoveRole(
   flow: Flow,
-  op: RemoveAssigneePlaceholderOperation
+  op: RemoveRoleOperation
 ): OperationResult {
-  const index = flow.assigneePlaceholders.findIndex(
-    p => p.placeholderId === op.placeholderId
-  );
+  const id = op.roleId || op.placeholderId;
+  const index = flow.roles.findIndex(r => r.roleId === id);
   if (index === -1) {
     return {
       success: false,
       operation: op,
-      error: `Assignee placeholder not found: ${op.placeholderId}`,
+      error: `Role not found: ${id}`,
     };
   }
 
-  flow.assigneePlaceholders.splice(index, 1);
+  flow.roles.splice(index, 1);
 
   return { success: true, operation: op };
 }
 
-function applyUpdateAssigneePlaceholder(
+function applyUpdateRole(
   flow: Flow,
-  op: UpdateAssigneePlaceholderOperation
+  op: UpdateRoleOperation
 ): OperationResult {
-  const placeholder = flow.assigneePlaceholders.find(
-    p => p.placeholderId === op.placeholderId
-  );
-  if (!placeholder) {
+  const id = op.roleId || op.placeholderId;
+  const role = flow.roles.find(r => r.roleId === id);
+  if (!role) {
     return {
       success: false,
       operation: op,
-      error: `Assignee placeholder not found: ${op.placeholderId}`,
+      error: `Role not found: ${id}`,
     };
   }
 
   if (op.updates.name !== undefined) {
     // Check for duplicate name (excluding self)
-    if (flow.assigneePlaceholders.some(
-      p => p.name === op.updates.name && p.placeholderId !== op.placeholderId
+    if (flow.roles.some(
+      r => r.name === op.updates.name && r.roleId !== id
     )) {
       return {
         success: false,
         operation: op,
-        error: `Assignee placeholder with name "${op.updates.name}" already exists`,
+        error: `Role with name "${op.updates.name}" already exists`,
       };
     }
-    placeholder.name = op.updates.name;
+    role.name = op.updates.name;
   }
   if (op.updates.resolution !== undefined) {
-    placeholder.resolution = op.updates.resolution;
+    role.resolution = op.updates.resolution;
   }
   if (op.updates.roleOptions !== undefined) {
-    placeholder.roleOptions = { ...placeholder.roleOptions, ...op.updates.roleOptions };
+    role.roleOptions = { ...role.roleOptions, ...op.updates.roleOptions };
   }
 
   return { success: true, operation: op };

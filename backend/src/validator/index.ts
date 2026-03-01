@@ -684,23 +684,24 @@ function validateTerminateSteps(flow: Flow, addIssue: IssueAdder): void {
  * Validate assignee references
  */
 function validateAssignees(flow: Flow, addIssue: IssueAdder): void {
-  const validPlaceholderIds = new Set(
-    flow.assigneePlaceholders?.map(p => p.placeholderId) ?? []
+  const validRoleIds = new Set(
+    flow.roles?.map(r => r.roleId) ?? []
   );
 
   function validateAssigneeRef(
-    ref: { mode: string; placeholderId: string } | unknown,
+    ref: { mode: string; roleId?: string; placeholderId?: string } | unknown,
     path: string
   ): void {
     if (!ref || typeof ref !== 'object') return;
 
-    const assigneeRef = ref as { mode?: string; placeholderId?: string };
-    if (assigneeRef.mode === 'PLACEHOLDER' && assigneeRef.placeholderId) {
-      if (!validPlaceholderIds.has(assigneeRef.placeholderId)) {
+    const assigneeRef = ref as { mode?: string; roleId?: string; placeholderId?: string };
+    const refId = assigneeRef.roleId || assigneeRef.placeholderId;
+    if (assigneeRef.mode === 'PLACEHOLDER' && refId) {
+      if (!validRoleIds.has(refId)) {
         addIssue({
           path,
           rule: 'INVALID_REFERENCE',
-          message: `Invalid assignee placeholder: ${assigneeRef.placeholderId}`,
+          message: `Invalid role reference: ${refId}`,
           severity: 'error',
         });
       }

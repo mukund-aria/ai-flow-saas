@@ -35,15 +35,15 @@ export const sampleWorkflow: Flow = {
     { milestoneId: 'ms2', name: 'Review', sequence: 2 },
   ],
 
-  assigneePlaceholders: [
+  roles: [
     {
-      placeholderId: 'role_client',
+      roleId: 'role_client',
       name: 'Client',
       resolution: { type: 'CONTACT_TBD' },
       roleOptions: { allowViewAllActions: false, coordinatorToggle: false },
     },
     {
-      placeholderId: 'role_manager',
+      roleId: 'role_manager',
       name: 'Manager',
       resolution: { type: 'WORKSPACE_INITIALIZER' },
       roleOptions: { allowViewAllActions: true, coordinatorToggle: true },
@@ -69,7 +69,7 @@ export const sampleWorkflow: Flow = {
       milestoneId: 'ms1',
       title: 'Client Intake Form',
       description: 'Please fill out this form',
-      assignees: { mode: 'PLACEHOLDER', placeholderId: 'role_client' },
+      assignees: { mode: 'PLACEHOLDER', roleId: 'role_client' },
       form: {
         fields: [
           { key: 'client_name', type: 'TEXT_SINGLE_LINE', label: 'Name', required: true },
@@ -81,7 +81,7 @@ export const sampleWorkflow: Flow = {
       type: 'DECISION',
       milestoneId: 'ms1',
       title: 'Approve Client?',
-      assignee: { mode: 'PLACEHOLDER', placeholderId: 'role_manager' },
+      assignee: { mode: 'PLACEHOLDER', roleId: 'role_manager' },
       outcomes: [
         {
           outcomeId: 'o_yes',
@@ -107,7 +107,7 @@ export const sampleWorkflow: Flow = {
       type: 'APPROVAL',
       milestoneId: 'ms2',
       title: 'Final Approval',
-      assignees: { mode: 'PLACEHOLDER', placeholderId: 'role_manager' },
+      assignees: { mode: 'PLACEHOLDER', roleId: 'role_manager' },
       approval: {
         completion: { mode: 'ONE' },
         assigneeOrder: 'PARALLEL',
@@ -144,7 +144,7 @@ export const invalidWorkflow: Flow = {
     { milestoneId: 'ms1', name: 'Main', sequence: 1 },
   ],
 
-  assigneePlaceholders: [],
+  roles: [],
 
   constraints: {
     maxParallelBranches: 3,
@@ -165,7 +165,7 @@ export const invalidWorkflow: Flow = {
       milestoneId: 'ms1',
       title: 'Invalid Decision',
       // Decision should have single assignee, not array - but we're using any for testing
-      assignee: { mode: 'PLACEHOLDER', placeholderId: 'nonexistent_role' } as any,
+      assignee: { mode: 'PLACEHOLDER', roleId: 'nonexistent_role' } as any,
       outcomes: [
         { outcomeId: 'o1', label: 'One', steps: [] },
         // Only 1 outcome - should have at least 2

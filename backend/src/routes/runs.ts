@@ -105,13 +105,13 @@ router.get(
 
           // (c) User is assigned to a coordinator role on this run
           const definition = flow?.definition as any;
-          const assigneePlaceholders: Array<{ roleName: string; roleType?: string; roleOptions?: { coordinatorToggle?: boolean } }> =
-            definition?.assigneePlaceholders || [];
+          const roles: Array<{ roleName: string; roleType?: string; roleOptions?: { coordinatorToggle?: boolean } }> =
+            definition?.roles || definition?.assigneePlaceholders || [];
           const roleAssignments: Record<string, string> = (run.roleAssignments as Record<string, string>) || {};
 
           // Find coordinator role names (explicit roleType='coordinator' OR legacy coordinatorToggle)
           const coordinatorRoleNames = new Set(
-            assigneePlaceholders
+            roles
               .filter(p =>
                 p.roleType === 'coordinator' || p.roleOptions?.coordinatorToggle
               )
@@ -477,8 +477,8 @@ router.post(
       })
       .returning();
 
-    // Resolve assignee placeholders using the resolution service
-    const assigneePlaceholders = (definition as any)?.assigneePlaceholders || [];
+    // Resolve roles using the resolution service
+    const flowRoles = (definition as any)?.roles || (definition as any)?.assigneePlaceholders || [];
     const { resolveAssignees } = await import('../services/assignee-resolution.js');
 
     // Flow variables convention: flow variables are stored as a nested object
@@ -486,7 +486,7 @@ router.post(
     // persisted alongside kickoff form data and accessed for DDR resolution and
     // assignee resolution. The frontend does not currently send flowVariables in
     // kickoffData -- this is a TODO for when flow variables UI is implemented.
-    const resolvedAssignees = await resolveAssignees(assigneePlaceholders, {
+    const resolvedAssignees = await resolveAssignees(flowRoles, {
       organizationId: resolvedOrgId,
       startedByUserId: userId,
       roleAssignments: roleAssignments as Record<string, string> | undefined,

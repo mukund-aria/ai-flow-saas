@@ -338,6 +338,7 @@ export function FlowRunDetailPage() {
   const [refetchKey, setRefetchKey] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [rolesByPerson, setRolesByPerson] = useState<Map<string, { name: string; roleType: string }[]>>(new Map());
 
   // Onboarding: step 4 is completed when the coordinator actually acts on a step
   // (see handleActOnStep below)
@@ -356,7 +357,24 @@ export function FlowRunDetailPage() {
         const definition = (data as any).flow?.definition as {
           steps?: Array<{ stepId: string; type: string; config?: { name?: string; description?: string } }>;
           milestones?: Array<{ milestoneId: string; name: string; afterStepIndex: number }>;
+          roles?: Array<{ roleId: string; name: string; roleType?: string }>;
         } | undefined;
+
+        // Build reverse map: personId → role info (for sidebar role badges)
+        const roleAssignments = (data as any).roleAssignments as Record<string, string> | undefined;
+        const defRoles = definition?.roles || [];
+        const personRoleMap = new Map<string, { name: string; roleType: string }[]>();
+        if (roleAssignments && defRoles.length > 0) {
+          for (const [roleName, personId] of Object.entries(roleAssignments)) {
+            if (!personId) continue;
+            const roleDef = defRoles.find(r => r.name === roleName);
+            const roleType = roleDef?.roleType || 'assignee';
+            const existing = personRoleMap.get(personId) || [];
+            existing.push({ name: roleName, roleType });
+            personRoleMap.set(personId, existing);
+          }
+        }
+        setRolesByPerson(personRoleMap);
         const defSteps = definition?.steps || [];
         const defMilestones = definition?.milestones || [];
 
@@ -1181,6 +1199,19 @@ export function FlowRunDetailPage() {
                     <div>
                       <p className="text-sm font-medium text-gray-700">{run.startedBy.name}</p>
                       <p className="text-xs text-gray-400">{run.startedBy.email}</p>
+                      {rolesByPerson.get(run.startedBy.id)?.map((role, i) => (
+                        <span
+                          key={i}
+                          className={cn(
+                            'inline-block text-xs px-1.5 py-0.5 rounded mr-1 mt-1',
+                            role.roleType === 'coordinator'
+                              ? 'bg-violet-100 text-violet-700'
+                              : 'bg-blue-100 text-blue-700'
+                          )}
+                        >
+                          {role.name}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -1191,14 +1222,27 @@ export function FlowRunDetailPage() {
                 <div>
                   <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">Assignees</p>
                   <div className="space-y-2">
-                    {Array.from(assignees.entries()).map(([id, a]) => (
-                      <div key={id} className="flex items-center gap-2">
+                    {Array.from(assignees.entries()).map(([personId, a]) => (
+                      <div key={personId} className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-600">
                           {a.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-700">{a.name}</p>
                           <p className="text-xs text-gray-400">{a.type === 'contact' ? 'External' : 'Team member'}</p>
+                          {rolesByPerson.get(personId)?.map((role, i) => (
+                            <span
+                              key={i}
+                              className={cn(
+                                'inline-block text-xs px-1.5 py-0.5 rounded mr-1 mt-1',
+                                role.roleType === 'coordinator'
+                                  ? 'bg-violet-100 text-violet-700'
+                                  : 'bg-blue-100 text-blue-700'
+                              )}
+                            >
+                              {role.name}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     ))}

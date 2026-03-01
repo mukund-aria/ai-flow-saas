@@ -592,7 +592,7 @@ export function generateWorkflowContext(workflow: unknown): string {
   const flow = workflow as {
     name?: string;
     steps?: Array<{ stepId: string; type: string; config?: { name?: string } }>;
-    assigneePlaceholders?: Array<{ placeholderId: string; name?: string; roleName?: string }>;
+    roles?: Array<{ roleId: string; name?: string; roleName?: string }>;
   };
 
   let stepList = '';
@@ -609,11 +609,11 @@ export function generateWorkflowContext(workflow: unknown): string {
   }
 
   let roleList = '';
-  if (flow.assigneePlaceholders?.length) {
+  if (flow.roles?.length) {
     roleList = `\n## Roles\n`;
-    flow.assigneePlaceholders.forEach(role => {
+    flow.roles.forEach(role => {
       const name = role.name || role.roleName || 'Unnamed';
-      roleList += `- "${name}" - ID: ${role.placeholderId}\n`;
+      roleList += `- "${name}" - ID: ${role.roleId}\n`;
     });
   }
 

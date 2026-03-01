@@ -52,7 +52,7 @@ describe('parseAIResponse', () => {
           name: 'Test Flow',
           steps: [],
           milestones: [],
-          assigneePlaceholders: [],
+          roles: [],
         },
         message: 'Created successfully',
       });

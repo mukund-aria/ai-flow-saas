@@ -234,8 +234,8 @@ export function summarizeConversation(session: ConversationSession): string {
       .join(', ')}.\n`;
 
     // Note assignees
-    if (workflow.assigneePlaceholders.length > 0) {
-      summary += `Assignees: ${workflow.assigneePlaceholders
+    if (workflow.roles.length > 0) {
+      summary += `Assignees: ${workflow.roles
         .map(a => a.name)
         .join(', ')}.\n`;
     }

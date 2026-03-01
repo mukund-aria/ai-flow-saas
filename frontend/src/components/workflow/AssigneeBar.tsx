@@ -49,25 +49,25 @@ function getChipResolutionLabel(resType: ResolutionType, resolution?: { email?: 
 }
 
 interface AssigneeBarProps {
-  onRoleClick?: (placeholderId: string) => void;
+  onRoleClick?: (roleId: string) => void;
   selectedRoleId?: string | null;
 }
 
 export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
-  const { workflow, addAssigneePlaceholder, removeAssigneePlaceholder } = useWorkflowStore();
+  const { workflow, addRole, removeRole } = useWorkflowStore();
   const [isAdding, setIsAdding] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
 
   if (!workflow) return null;
 
-  const assignees = workflow.assigneePlaceholders || [];
+  const assignees = workflow.roles || [];
 
   const handleAdd = () => {
     if (!newRoleName.trim()) return;
-    if (assignees.some(a => a.roleName.toLowerCase() === newRoleName.trim().toLowerCase())) {
+    if (assignees.some(a => a.name.toLowerCase() === newRoleName.trim().toLowerCase())) {
       return;
     }
-    addAssigneePlaceholder(newRoleName.trim());
+    addRole(newRoleName.trim());
     setNewRoleName('');
     setIsAdding(false);
   };
@@ -93,12 +93,12 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
         const chipLabel = getChipResolutionLabel(resType, assignee.resolution);
         const isCoordinator = assignee.roleOptions?.coordinatorToggle;
         const canViewAll = assignee.roleOptions?.allowViewAllActions;
-        const isSelected = selectedRoleId === assignee.placeholderId;
+        const isSelected = selectedRoleId === assignee.roleId;
 
         return (
           <div
-            key={assignee.placeholderId}
-            onClick={() => onRoleClick?.(assignee.placeholderId)}
+            key={assignee.roleId}
+            onClick={() => onRoleClick?.(assignee.roleId)}
             className={`group relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
               isSelected
                 ? 'bg-violet-50 border border-violet-300 shadow-sm'
@@ -109,11 +109,11 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
               className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
               style={{ backgroundColor: getRoleColor(index) }}
             >
-              {getRoleInitials(assignee.roleName)}
+              {getRoleInitials(assignee.name)}
             </span>
             <div className="flex flex-col leading-tight">
               <span className={`text-xs font-semibold ${isSelected ? 'text-violet-700' : 'text-gray-800'}`}>
-                {assignee.roleName}
+                {assignee.name}
               </span>
               <span className="text-[9px] text-gray-400">{chipLabel}</span>
             </div>
@@ -127,7 +127,7 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
               <Eye className="w-3 h-3 text-blue-500 shrink-0" aria-label="Can view all actions" />
             )}
             <button
-              onClick={(e) => { e.stopPropagation(); removeAssigneePlaceholder(assignee.placeholderId); }}
+              onClick={(e) => { e.stopPropagation(); removeRole(assignee.roleId); }}
               className="p-0.5 rounded-full text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all shrink-0"
               title="Remove role"
             >

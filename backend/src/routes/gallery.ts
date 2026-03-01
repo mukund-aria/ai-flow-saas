@@ -151,9 +151,9 @@ function convertStepConfig(step: GalleryTemplateStep): Record<string, unknown> {
  * Convert a rich gallery template into a full flow definition for saving as DRAFT.
  */
 function galleryTemplateToDefinition(template: GalleryTemplate) {
-  // Create assignee placeholders from roles
-  const assigneePlaceholders = template.roles.map((roleName, i) => ({
-    placeholderId: generatePlaceholderId(i),
+  // Create roles from template role names
+  const roles = template.roles.map((roleName, i) => ({
+    roleId: generatePlaceholderId(i),
     roleName,
     resolutionType: 'CONTACT_TBD' as const,
   }));
@@ -246,7 +246,7 @@ function galleryTemplateToDefinition(template: GalleryTemplate) {
   return {
     steps,
     milestones,
-    assigneePlaceholders,
+    roles,
     kickoff: {},
     parameters: [],
     sourceGalleryId: template.id,

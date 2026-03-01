@@ -269,7 +269,7 @@ describe('Conversation Summary', () => {
         flowId: 'flow_1',
         name: 'Test Workflow',
         steps: [],
-        assigneePlaceholders: [],
+        roles: [],
       } as unknown as Flow;
       const session = createSession(workflow);
 

@@ -266,8 +266,10 @@ function validateWorkflowStructure(workflow: Record<string, unknown>): ResponseV
     errors.push({ field: 'milestones', message: 'must be an array' });
   }
 
-  if (workflow.assigneePlaceholders && !Array.isArray(workflow.assigneePlaceholders)) {
-    errors.push({ field: 'assigneePlaceholders', message: 'must be an array' });
+  // Accept both 'roles' (new) and 'assigneePlaceholders' (legacy)
+  const rolesField = workflow.roles || workflow.assigneePlaceholders;
+  if (rolesField && !Array.isArray(rolesField)) {
+    errors.push({ field: 'roles', message: 'must be an array' });
   }
 
   return { valid: errors.length === 0, errors };

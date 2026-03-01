@@ -174,13 +174,13 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                 required: ['type', 'config']
               }
             },
-            assigneePlaceholders: {
+            roles: {
               type: 'array',
               description: 'Roles involved in the workflow. Each role resolves to a contact at runtime.',
               items: {
                 type: 'object',
                 properties: {
-                  placeholderId: { type: 'string' },
+                  roleId: { type: 'string' },
                   roleName: { type: 'string', description: 'Name of the role (e.g., "Client", "Manager")' },
                   description: { type: 'string', description: 'Description of who fills this role' },
                   resolution: {
@@ -274,7 +274,7 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
               }
             }
           },
-          required: ['name', 'steps', 'assigneePlaceholders']
+          required: ['name', 'steps', 'roles']
         },
         message: {
           type: 'string',
@@ -376,7 +376,7 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                   'ADD_OUTCOME', 'REMOVE_OUTCOME',
                   'UPDATE_GOTO_TARGET',
                   'UPDATE_FLOW_NAME', 'UPDATE_FLOW_METADATA',
-                  'ADD_ASSIGNEE_PLACEHOLDER', 'REMOVE_ASSIGNEE_PLACEHOLDER', 'UPDATE_ASSIGNEE_PLACEHOLDER',
+                  'ADD_ROLE', 'REMOVE_ROLE', 'UPDATE_ROLE',
                   'ADD_MILESTONE', 'REMOVE_MILESTONE', 'UPDATE_MILESTONE', 'MOVE_TO_MILESTONE',
                   'UPDATE_FLOW_SETTINGS', 'UPDATE_TRIGGER_CONFIG', 'UPDATE_PERMISSIONS'
                 ],
@@ -399,7 +399,7 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                     description: 'Assignee reference - who performs this step',
                     properties: {
                       mode: { type: 'string', enum: ['PLACEHOLDER'], description: 'Always PLACEHOLDER' },
-                      placeholderId: { type: 'string', description: 'ID of the assignee placeholder (role)' }
+                      roleId: { type: 'string', description: 'ID of the role' }
                     }
                   }
                 }
@@ -408,11 +408,11 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                 type: 'object',
                 description: 'Updates to apply (for update operations)'
               },
-              placeholder: {
+              role: {
                 type: 'object',
-                description: 'Assignee placeholder definition (for ADD_ASSIGNEE_PLACEHOLDER)',
+                description: 'Role definition (for ADD_ROLE)',
                 properties: {
-                  placeholderId: { type: 'string', description: 'Optional unique ID for the placeholder' },
+                  roleId: { type: 'string', description: 'Optional unique ID for the role' },
                   name: { type: 'string', description: 'Display name for the role (e.g., "Manager", "Reviewer")' },
                   resolution: {
                     type: 'object',
@@ -435,7 +435,7 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                 },
                 required: ['name']
               },
-              placeholderId: { type: 'string', description: 'Placeholder ID (for REMOVE/UPDATE_ASSIGNEE_PLACEHOLDER)' },
+              roleId: { type: 'string', description: 'Role ID (for REMOVE_ROLE/UPDATE_ROLE)' },
               name: { type: 'string', description: 'New name (for UPDATE_FLOW_NAME)' },
               milestone: {
                 type: 'object',

@@ -52,17 +52,17 @@ function buildSections(workflow: Flow, currentStepIndex?: number): DDRSection[] 
   }
 
   // 2. Role Fields
-  const assignees = workflow.assigneePlaceholders;
+  const assignees = workflow.roles;
   if (assignees && assignees.length > 0) {
     const roleItems: DDRItem[] = [];
     for (const assignee of assignees) {
       roleItems.push({
-        token: `{Role: ${assignee.roleName} / Name}`,
-        label: `${assignee.roleName} - Name`,
+        token: `{Role: ${assignee.name} / Name}`,
+        label: `${assignee.name} - Name`,
       });
       roleItems.push({
-        token: `{Role: ${assignee.roleName} / Email}`,
-        label: `${assignee.roleName} - Email`,
+        token: `{Role: ${assignee.name} / Email}`,
+        label: `${assignee.name} - Email`,
       });
     }
     sections.push({

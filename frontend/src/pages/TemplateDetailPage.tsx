@@ -31,7 +31,7 @@ import {
   getRoleColor,
   getRoleInitials,
   type Step,
-  type AssigneePlaceholder,
+  type Role,
 } from '@/types';
 
 // ============================================================================
@@ -148,13 +148,12 @@ export function TemplateDetailPage() {
   const definition = template?.definition as
     | {
         steps?: Step[];
-        assigneePlaceholders?: AssigneePlaceholder[];
+        roles?: Role[];
         setupInstructions?: string;
       }
     | undefined;
   const steps: Step[] = definition?.steps || [];
-  const assigneePlaceholders: AssigneePlaceholder[] =
-    definition?.assigneePlaceholders || [];
+  const roles: Role[] = definition?.roles || [];
   const setupInstructions: string | undefined = definition?.setupInstructions;
 
   // Fetch template and runs
@@ -392,8 +391,8 @@ export function TemplateDetailPage() {
                   category: 'unknown',
                 };
                 const assigneeRole = step.config.assignee;
-                const roleIndex = assigneePlaceholders.findIndex(
-                  (p) => p.roleName === assigneeRole
+                const roleIndex = roles.findIndex(
+                  (p) => p.name === assigneeRole
                 );
 
                 return (
@@ -469,27 +468,27 @@ export function TemplateDetailPage() {
           <div className="px-6 py-4 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900">Roles</h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              {assigneePlaceholders.length}{' '}
-              {assigneePlaceholders.length === 1 ? 'role' : 'roles'} defined
+              {roles.length}{' '}
+              {roles.length === 1 ? 'role' : 'roles'} defined
             </p>
           </div>
 
-          {assigneePlaceholders.length > 0 ? (
+          {roles.length > 0 ? (
             <div className="p-4 space-y-3">
-              {assigneePlaceholders.map((placeholder, index) => (
+              {roles.map((placeholder, index) => (
                 <div
-                  key={placeholder.placeholderId}
+                  key={placeholder.roleId}
                   className="flex items-center gap-3 p-3 rounded-lg bg-gray-50"
                 >
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
                     style={{ backgroundColor: getRoleColor(index) }}
                   >
-                    {getRoleInitials(placeholder.roleName)}
+                    {getRoleInitials(placeholder.name)}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {placeholder.roleName}
+                      {placeholder.name}
                     </p>
                     {placeholder.description && (
                       <p className="text-xs text-gray-500 truncate mt-0.5">

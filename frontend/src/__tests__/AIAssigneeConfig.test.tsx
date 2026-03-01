@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StepConfigPanel } from '@/components/workflow/StepConfigPanel';
-import type { Step, AssigneePlaceholder } from '@/types';
+import type { Step, Role } from '@/types';
 
-const mockPlaceholders: AssigneePlaceholder[] = [
-  { placeholderId: 'role-1', roleName: 'Client' },
+const mockPlaceholders: Role[] = [
+  { roleId: 'role-1', name: 'Client' },
 ];
 
 function makeStep(type: string, config: Record<string, unknown> = {}): Step {
@@ -33,7 +33,7 @@ describe('AIAssigneeConfigSection (via StepConfigPanel)', () => {
     render(
       <StepConfigPanel
         step={makeStep('FORM')}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -49,7 +49,7 @@ describe('AIAssigneeConfigSection (via StepConfigPanel)', () => {
     render(
       <StepConfigPanel
         step={makeStep('DECISION')}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -65,7 +65,7 @@ describe('AIAssigneeConfigSection (via StepConfigPanel)', () => {
     render(
       <StepConfigPanel
         step={makeStep('FILE_REQUEST')}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -81,7 +81,7 @@ describe('AIAssigneeConfigSection (via StepConfigPanel)', () => {
     render(
       <StepConfigPanel
         step={makeStep('APPROVAL')}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -97,7 +97,7 @@ describe('AIAssigneeConfigSection (via StepConfigPanel)', () => {
     render(
       <StepConfigPanel
         step={makeStep('FORM')}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -125,7 +125,7 @@ describe('AIAssigneeConfigSection (via StepConfigPanel)', () => {
     render(
       <StepConfigPanel
         step={makeStep('TODO')}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -142,7 +142,7 @@ describe('AIAssigneeConfigSection (via StepConfigPanel)', () => {
     render(
       <StepConfigPanel
         step={makeStep('FORM')}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />

@@ -241,12 +241,12 @@ router.get(
 
     const definition = flow.definition as {
       steps?: Array<{ id: string; name?: string; type?: string; config?: Record<string, unknown> }>;
-      assigneePlaceholders?: Array<{ role: string; label?: string }>;
+      roles?: Array<{ role: string; label?: string }>;
       kickoff?: { fields?: Array<{ key: string; label?: string; type?: string; required?: boolean }> };
     } | null;
 
     // Extract assignee placeholders (roles that need to be mapped to contacts)
-    const assigneePlaceholders = definition?.assigneePlaceholders || [];
+    const roles = definition?.roles || [];
 
     // Extract kickoff form fields
     const kickoffFields = definition?.kickoff?.fields || [];
@@ -256,7 +256,7 @@ router.get(
       data: {
         flowId: flow.id,
         flowName: flow.name,
-        assigneePlaceholders,
+        roles,
         kickoffFields,
       },
     });

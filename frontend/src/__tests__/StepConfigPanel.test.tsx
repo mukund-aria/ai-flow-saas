@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StepConfigPanel } from '@/components/workflow/StepConfigPanel';
-import type { Step, AssigneePlaceholder } from '@/types';
+import type { Step, Role } from '@/types';
 
 const mockStep: Step = {
   stepId: 'step-1',
@@ -13,9 +13,9 @@ const mockStep: Step = {
   },
 };
 
-const mockPlaceholders: AssigneePlaceholder[] = [
-  { placeholderId: 'role-1', roleName: 'Client' },
-  { placeholderId: 'role-2', roleName: 'Manager' },
+const mockPlaceholders: Role[] = [
+  { roleId: 'role-1', name: 'Client' },
+  { roleId: 'role-2', name: 'Manager' },
 ];
 
 describe('StepConfigPanel', () => {
@@ -31,7 +31,7 @@ describe('StepConfigPanel', () => {
     render(
       <StepConfigPanel
         step={mockStep}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -46,7 +46,7 @@ describe('StepConfigPanel', () => {
     render(
       <StepConfigPanel
         step={mockStep}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -63,7 +63,7 @@ describe('StepConfigPanel', () => {
     render(
       <StepConfigPanel
         step={mockStep}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -89,7 +89,7 @@ describe('StepConfigPanel', () => {
     render(
       <StepConfigPanel
         step={mockStep}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -104,7 +104,7 @@ describe('StepConfigPanel', () => {
     render(
       <StepConfigPanel
         step={mockStep}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -123,7 +123,7 @@ describe('StepConfigPanel', () => {
     render(
       <StepConfigPanel
         step={mockStep}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -150,7 +150,7 @@ describe('StepConfigPanel', () => {
     render(
       <StepConfigPanel
         step={stepWithAssignee}
-        assigneePlaceholders={mockPlaceholders}
+        roles={mockPlaceholders}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />
@@ -164,7 +164,7 @@ describe('StepConfigPanel', () => {
     render(
       <StepConfigPanel
         step={mockStep}
-        assigneePlaceholders={[]}
+        roles={[]}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
       />

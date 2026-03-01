@@ -55,8 +55,7 @@ router.get(
     // Extract info from definition
     const definition = flow.definition as Record<string, unknown> | null;
     const kickoff = (definition as any)?.kickoff || null;
-    const assigneePlaceholders = (definition as any)?.assigneePlaceholders || [];
-    const roles = (definition as any)?.roles || [];
+    const roles = (definition as any)?.roles || (definition as any)?.assigneePlaceholders || [];
 
     // Get organization branding if available
     let branding = null;
@@ -74,7 +73,6 @@ router.get(
         name: flow.name,
         description: flow.description,
         kickoff,
-        assigneePlaceholders,
         roles,
         branding,
       },

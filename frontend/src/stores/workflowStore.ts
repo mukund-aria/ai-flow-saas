@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Flow, Step, StepType, StepConfig, KickoffConfig, FlowSettings, FlowPermissions, FlowDueDates, PendingProposal, AssigneePlaceholder } from '@/types';
+import type { Flow, Step, StepType, StepConfig, KickoffConfig, FlowSettings, FlowPermissions, FlowDueDates, PendingProposal, Role } from '@/types';
 
 const MAX_HISTORY = 50;
 
@@ -30,10 +30,10 @@ interface WorkflowStore {
   updateStep: (stepId: string, updates: Partial<StepConfig>) => void;
   moveStep: (stepId: string, newIndex: number) => void;
   duplicateStep: (stepId: string) => void;
-  // Assignee management
-  addAssigneePlaceholder: (roleName: string, description?: string) => void;
-  removeAssigneePlaceholder: (placeholderId: string) => void;
-  updateAssigneePlaceholder: (placeholderId: string, updates: Partial<Omit<AssigneePlaceholder, 'placeholderId'>>) => void;
+  // Role management
+  addRole: (name: string, description?: string) => void;
+  removeRole: (roleId: string) => void;
+  updateRole: (roleId: string, updates: Partial<Omit<Role, 'roleId'>>) => void;
   updateFlowMetadata: (updates: Partial<Pick<Flow, 'name' | 'description' | 'workspaceNameTemplate'>>) => void;
   updateNotificationSettings: (notifications: Record<string, unknown>) => void;
   // New: Kickoff, Settings, Permissions
@@ -124,7 +124,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => {
           description: '',
           steps: [],
           milestones: [],
-          assigneePlaceholders: [],
+          roles: [],
         },
         past: [],
         future: [],
@@ -217,15 +217,15 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => {
       set({ workflow: { ...workflow, steps } });
     },
 
-    addAssigneePlaceholder: (roleName, description) => {
+    addRole: (name, description) => {
       const { workflow } = get();
       if (!workflow) return;
 
       pushHistory();
 
-      const placeholder: AssigneePlaceholder = {
-        placeholderId: `role-${Date.now()}-${++stepCounter}`,
-        roleName,
+      const role: Role = {
+        roleId: `role-${Date.now()}-${++stepCounter}`,
+        name,
         description,
         roleType: 'assignee',
         roleOptions: { coordinatorToggle: false, allowViewAllActions: false },
@@ -234,64 +234,64 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => {
       set({
         workflow: {
           ...workflow,
-          assigneePlaceholders: [...(workflow.assigneePlaceholders || []), placeholder],
+          roles: [...(workflow.roles || []), role],
         },
       });
     },
 
-    removeAssigneePlaceholder: (placeholderId) => {
+    removeRole: (roleId) => {
       const { workflow } = get();
       if (!workflow) return;
 
       pushHistory();
 
-      const assigneePlaceholders = (workflow.assigneePlaceholders || []).filter(
-        (a) => a.placeholderId !== placeholderId
+      const roles = (workflow.roles || []).filter(
+        (a) => a.roleId !== roleId
       );
 
       // Also clear assignee from any steps that reference the removed role
-      const removedRole = (workflow.assigneePlaceholders || []).find(
-        (a) => a.placeholderId === placeholderId
+      const removedRole = (workflow.roles || []).find(
+        (a) => a.roleId === roleId
       );
 
       let steps = workflow.steps;
       if (removedRole) {
         steps = steps.map((s) =>
-          s.config.assignee === removedRole.roleName
+          s.config.assignee === removedRole.name
             ? { ...s, config: { ...s.config, assignee: undefined } }
             : s
         );
       }
 
-      set({ workflow: { ...workflow, assigneePlaceholders, steps } });
+      set({ workflow: { ...workflow, roles, steps } });
     },
 
-    updateAssigneePlaceholder: (placeholderId, updates) => {
+    updateRole: (roleId, updates) => {
       const { workflow } = get();
       if (!workflow) return;
 
       pushHistory();
 
-      const assigneePlaceholders = (workflow.assigneePlaceholders || []).map(a =>
-        a.placeholderId === placeholderId ? { ...a, ...updates } : a
+      const roles = (workflow.roles || []).map(a =>
+        a.roleId === roleId ? { ...a, ...updates } : a
       );
 
-      // If roleName changed, update step assignee references
+      // If name changed, update step assignee references
       let steps = workflow.steps;
-      if (updates.roleName) {
-        const oldPlaceholder = (workflow.assigneePlaceholders || []).find(
-          a => a.placeholderId === placeholderId
+      if (updates.name) {
+        const oldRole = (workflow.roles || []).find(
+          a => a.roleId === roleId
         );
-        if (oldPlaceholder) {
+        if (oldRole) {
           steps = steps.map(s =>
-            s.config.assignee === oldPlaceholder.roleName
-              ? { ...s, config: { ...s.config, assignee: updates.roleName } }
+            s.config.assignee === oldRole.name
+              ? { ...s, config: { ...s.config, assignee: updates.name } }
               : s
           );
         }
       }
 
-      set({ workflow: { ...workflow, assigneePlaceholders, steps } });
+      set({ workflow: { ...workflow, roles, steps } });
     },
 
     updateFlowMetadata: (updates) => {

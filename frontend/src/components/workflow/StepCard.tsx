@@ -6,7 +6,7 @@ import { ChangeStatusBadge } from './ChangeStatusBadge';
 import { GripVertical, Pencil, Trash2, Copy, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkflowStore } from '@/stores/workflowStore';
-import type { Step, AssigneePlaceholder } from '@/types';
+import type { Step, Role } from '@/types';
 import type { StepChangeStatus } from '@/lib/proposal-utils';
 import { STEP_TYPE_META, getRoleColor, getRoleInitials } from '@/types';
 import { useSortable } from '@dnd-kit/sortable';
@@ -36,14 +36,14 @@ interface StepCardProps {
   index: number;
   assigneeIndex?: number;
   editMode?: boolean;
-  assigneePlaceholders?: AssigneePlaceholder[];
+  roles?: Role[];
   /** Display string like "1", "9.1", "9.2.1" for nested numbering */
   stepNumber?: string;
   /** Change status from proposal mode diff */
   changeStatus?: StepChangeStatus;
 }
 
-export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePlaceholders = [], stepNumber, changeStatus }: StepCardProps) {
+export function StepCard({ step, index, assigneeIndex = 0, editMode, roles = [], stepNumber, changeStatus }: StepCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const { removeStep, updateStep, duplicateStep } = useWorkflowStore();
 
@@ -96,7 +96,7 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
         {editMode && isEditing && (
           <StepConfigPanel
             step={step}
-            assigneePlaceholders={assigneePlaceholders}
+            roles={roles}
             onSave={(stepId, updates) => { updateStep(stepId, updates); setIsEditing(false); }}
             onCancel={() => setIsEditing(false)}
           />
@@ -245,7 +245,7 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, assigneePla
       {editMode && isEditing && (
         <StepConfigPanel
           step={step}
-          assigneePlaceholders={assigneePlaceholders}
+          roles={roles}
           onSave={(stepId, updates) => {
             updateStep(stepId, updates);
             setIsEditing(false);

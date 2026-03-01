@@ -64,7 +64,7 @@ export function FormBuilderPage() {
             description: flowDef.description || template.description || '',
             steps: flowDef.steps || [],
             milestones: flowDef.milestones || [],
-            assigneePlaceholders: flowDef.assigneePlaceholders || [],
+            roles: flowDef.roles || [],
             parameters: flowDef.parameters,
             triggerConfig: flowDef.triggerConfig,
             settings: flowDef.settings,

@@ -15,7 +15,7 @@ interface BranchLayoutProps {
   /** Parent step number prefix, e.g. "9" so children become "9.1", "9.2" */
   parentNumber?: string;
   editMode?: boolean;
-  assigneePlaceholders?: Step['config']['assignee'][];
+  roles?: Step['config']['assignee'][];
   /** Change info map for proposal mode diff badges */
   proposalChangeMap?: Map<string, ChangeInfo>;
 }
@@ -42,7 +42,7 @@ export function BranchLayout({
   depth = 0,
   parentNumber,
   editMode,
-  assigneePlaceholders,
+  roles,
   proposalChangeMap,
 }: BranchLayoutProps) {
   const paths = step.config?.paths || step.config?.outcomes || [];
@@ -176,7 +176,7 @@ export function BranchLayout({
                           depth={depth + 1}
                           parentNumber={nestedStepNumber}
                           editMode={editMode}
-                          assigneePlaceholders={assigneePlaceholders}
+                          roles={roles}
                           proposalChangeMap={proposalChangeMap}
                         />
                       )}

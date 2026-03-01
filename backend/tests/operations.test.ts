@@ -25,7 +25,7 @@ describe('applyOperations', () => {
           type: 'TODO',
           milestoneId: 'ms1',
           title: 'New TODO',
-          assignees: { mode: 'PLACEHOLDER', placeholderId: 'role_client' },
+          assignees: { mode: 'PLACEHOLDER', roleId: 'role_client' },
         } as any,
       };
 

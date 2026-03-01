@@ -297,8 +297,8 @@ function ensureWorkflowIds(workflow: Flow): void {
   if (!Array.isArray(workflow.milestones)) {
     workflow.milestones = [];
   }
-  if (!Array.isArray(workflow.assigneePlaceholders)) {
-    workflow.assigneePlaceholders = [];
+  if (!Array.isArray(workflow.roles)) {
+    workflow.roles = [];
   }
 
   // Ensure milestone IDs if milestones exist
@@ -368,11 +368,11 @@ function ensureWorkflowIds(workflow: Flow): void {
     }
   }
 
-  // Ensure assignee placeholder IDs
-  let assigneeCounter = 1;
-  for (const assignee of workflow.assigneePlaceholders) {
-    if (!assignee.placeholderId) {
-      assignee.placeholderId = `assignee_${assigneeCounter++}`;
+  // Ensure role IDs
+  let roleCounter = 1;
+  for (const role of workflow.roles) {
+    if (!role.roleId) {
+      role.roleId = `role_${roleCounter++}`;
     }
   }
 }

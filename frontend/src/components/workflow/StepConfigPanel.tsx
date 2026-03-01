@@ -7,7 +7,7 @@ import { DDRTextInput } from './DDRTextInput';
 import { Plus, X, GripVertical, Sparkles, ChevronUp, ChevronDown, Info, ExternalLink } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import type {
-  Step, StepConfig, AssigneePlaceholder, FormField, BranchPath, DecisionOutcome,
+  Step, StepConfig, Role, FormField, BranchPath, DecisionOutcome,
   QuestionnaireConfig, QuestionnaireQuestion, ESignConfig, FileRequestConfig,
   PDFFormConfig,
   AIAutomationConfig, AIInputField, AIOutputField, AIActionType, AIFieldType,
@@ -19,7 +19,7 @@ import type {
 
 interface StepConfigPanelProps {
   step: Step;
-  assigneePlaceholders: AssigneePlaceholder[];
+  roles: Role[];
   onSave: (stepId: string, updates: Partial<StepConfig>) => void;
   onCancel: () => void;
 }
@@ -1486,7 +1486,7 @@ function AIAssigneeConfigSection({
 // Main StepConfigPanel
 // ============================================================================
 
-export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }: StepConfigPanelProps) {
+export function StepConfigPanel({ step, roles, onSave, onCancel }: StepConfigPanelProps) {
   const workflow = useWorkflowStore((s) => s.workflow);
   const [name, setName] = useState(step.config.name || '');
   const [description, setDescription] = useState(step.config.description || '');
@@ -1838,9 +1838,9 @@ export function StepConfigPanel({ step, assigneePlaceholders, onSave, onCancel }
             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
           >
             <option value="">Unassigned</option>
-            {assigneePlaceholders.map((a) => (
-              <option key={a.placeholderId} value={a.roleName}>
-                {a.roleName}
+            {roles.map((a) => (
+              <option key={a.roleId} value={a.name}>
+                {a.name}
               </option>
             ))}
           </select>

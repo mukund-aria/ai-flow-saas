@@ -19,7 +19,7 @@ export interface Flow {
   dueDates?: FlowDueDates;
   steps: Step[];
   milestones: Milestone[];
-  assigneePlaceholders: AssigneePlaceholder[];
+  roles: Role[];
   parameters?: Parameter[];
   triggerConfig?: TriggerConfig;
   /** User IDs of template coordinators who can see ALL runs of this template */
@@ -665,9 +665,9 @@ export interface RoleOptions {
   allowViewAllActions: boolean;
 }
 
-export interface AssigneePlaceholder {
-  placeholderId: string;
-  roleName: string;
+export interface Role {
+  roleId: string;
+  name: string;
   description?: string;
   resolution?: Resolution;
   roleOptions?: RoleOptions;
@@ -675,6 +675,7 @@ export interface AssigneePlaceholder {
    *  Defaults to 'assignee' for backward compatibility. */
   roleType?: RoleType;
 }
+
 
 export interface Parameter {
   parameterId: string;
@@ -785,7 +786,7 @@ export interface EditOperation {
     | 'ADD_STEP_AFTER' | 'ADD_STEP_BEFORE' | 'REMOVE_STEP' | 'UPDATE_STEP' | 'MOVE_STEP'
     | 'ADD_PATH_STEP_AFTER' | 'ADD_PATH_STEP_BEFORE'
     | 'UPDATE_FLOW_METADATA' | 'UPDATE_FLOW_NAME'
-    | 'ADD_ASSIGNEE_PLACEHOLDER' | 'REMOVE_ASSIGNEE_PLACEHOLDER' | 'UPDATE_ASSIGNEE_PLACEHOLDER'
+    | 'ADD_ROLE' | 'REMOVE_ROLE' | 'UPDATE_ROLE'
     | 'ADD_MILESTONE' | 'REMOVE_MILESTONE' | 'UPDATE_MILESTONE';
   stepId?: string;
   afterStepId?: string;
@@ -794,9 +795,9 @@ export interface EditOperation {
   pathId?: string;
   step?: Partial<Step> & { title?: string };  // Include title for new schema
   updates?: Record<string, unknown>;
-  // Assignee placeholder operations
-  placeholder?: { name: string; placeholderId?: string };
-  placeholderId?: string;
+  // Role operations
+  placeholder?: { name: string; roleId?: string };
+  roleId?: string;
   // Milestone operations
   milestone?: { name: string; milestoneId?: string; sequence?: number };
   milestoneId?: string;

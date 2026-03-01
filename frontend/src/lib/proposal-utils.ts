@@ -160,10 +160,10 @@ export function summarizeOperations(operations: EditOperation[], workflowSteps: 
       if (op.milestone?.name) addedMilestones.push(op.milestone.name);
     } else if (op.op === 'REMOVE_MILESTONE' || op.op === 'UPDATE_MILESTONE') {
       hasMilestoneChanges = true;
-    } else if (op.op === 'ADD_ASSIGNEE_PLACEHOLDER') {
+    } else if (op.op === 'ADD_ROLE') {
       if (op.placeholder?.name) addedRoles.push(op.placeholder.name);
-    } else if (op.op === 'REMOVE_ASSIGNEE_PLACEHOLDER') {
-      removedRoles.push(op.placeholderId || 'role');
+    } else if (op.op === 'REMOVE_ROLE') {
+      removedRoles.push(op.roleId || 'role');
     } else if (
       op.op === 'ADD_STEP_AFTER' ||
       op.op === 'ADD_STEP_BEFORE' ||

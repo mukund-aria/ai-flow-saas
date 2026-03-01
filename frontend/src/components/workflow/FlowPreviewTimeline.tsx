@@ -7,7 +7,7 @@
 
 import { StepIcon } from './StepIcon';
 import { getRoleColor } from '@/types';
-import type { AssigneePlaceholder } from '@/types';
+import type { Role } from '@/types';
 
 interface FlowPreviewTimelineProps {
   steps: Array<{
@@ -18,13 +18,13 @@ interface FlowPreviewTimelineProps {
       assignee?: string;
     };
   }>;
-  assigneePlaceholders: AssigneePlaceholder[];
+  roles: Role[];
 }
 
-export function FlowPreviewTimeline({ steps, assigneePlaceholders }: FlowPreviewTimelineProps) {
+export function FlowPreviewTimeline({ steps, roles }: FlowPreviewTimelineProps) {
   const roleColorMap = new Map<string, string>();
-  assigneePlaceholders.forEach((p, i) => {
-    roleColorMap.set(p.roleName, getRoleColor(i));
+  roles.forEach((p, i) => {
+    roleColorMap.set(p.name, getRoleColor(i));
   });
 
   return (

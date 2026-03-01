@@ -25,21 +25,21 @@ const RESOLUTION_LABELS: Record<string, string> = {
 };
 
 export function AssigneeManager() {
-  const { workflow, addAssigneePlaceholder, removeAssigneePlaceholder, updateAssigneePlaceholder, setWorkflow } = useWorkflowStore();
+  const { workflow, addRole, removeRole, updateRole, setWorkflow } = useWorkflowStore();
   const [newRoleName, setNewRoleName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
 
   if (!workflow) return null;
 
-  const assignees = workflow.assigneePlaceholders || [];
+  const assignees = workflow.roles || [];
 
   const handleAdd = () => {
     if (!newRoleName.trim()) return;
-    if (assignees.some(a => a.roleName.toLowerCase() === newRoleName.trim().toLowerCase())) {
+    if (assignees.some(a => a.name.toLowerCase() === newRoleName.trim().toLowerCase())) {
       return;
     }
-    addAssigneePlaceholder(newRoleName.trim());
+    addRole(newRoleName.trim());
     setNewRoleName('');
     setIsAdding(false);
   };
@@ -54,12 +54,12 @@ export function AssigneeManager() {
     }
   };
 
-  const handleResolutionChange = (placeholderId: string, resolution: Resolution) => {
+  const handleResolutionChange = (roleId: string, resolution: Resolution) => {
     if (!workflow) return;
-    const updatedPlaceholders = assignees.map(a =>
-      a.placeholderId === placeholderId ? { ...a, resolution } : a
+    const updatedRoles = assignees.map(a =>
+      a.roleId === roleId ? { ...a, resolution } : a
     );
-    setWorkflow({ ...workflow, assigneePlaceholders: updatedPlaceholders });
+    setWorkflow({ ...workflow, roles: updatedRoles });
   };
 
   return (
@@ -87,19 +87,19 @@ export function AssigneeManager() {
       {/* Assignee list */}
       <div className="space-y-2">
         {assignees.map((assignee, index) => (
-          <div key={assignee.placeholderId} className="border border-gray-100 rounded-lg overflow-hidden">
+          <div key={assignee.roleId} className="border border-gray-100 rounded-lg overflow-hidden">
             <div
               className="flex items-center gap-2 px-3 py-2 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
-              onClick={() => setExpandedRole(expandedRole === assignee.placeholderId ? null : assignee.placeholderId)}
+              onClick={() => setExpandedRole(expandedRole === assignee.roleId ? null : assignee.roleId)}
             >
               <span
                 className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
                 style={{ backgroundColor: getRoleColor(index) }}
               >
-                {getRoleInitials(assignee.roleName)}
+                {getRoleInitials(assignee.name)}
               </span>
               <span className="text-sm font-medium text-gray-700 flex-1 truncate">
-                {assignee.roleName}
+                {assignee.name}
               </span>
               {(assignee.roleType || 'assignee') === 'coordinator' && (
                 <span className="text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded font-medium flex items-center gap-0.5">
@@ -110,7 +110,7 @@ export function AssigneeManager() {
               <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
                 {RESOLUTION_LABELS[assignee.resolution?.type || 'CONTACT_TBD']}
               </span>
-              {expandedRole === assignee.placeholderId ? (
+              {expandedRole === assignee.roleId ? (
                 <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
               ) : (
                 <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
@@ -118,7 +118,7 @@ export function AssigneeManager() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  removeAssigneePlaceholder(assignee.placeholderId);
+                  removeRole(assignee.roleId);
                 }}
                 className="p-1 rounded text-gray-400 hover:text-red-500 transition-all"
                 title="Remove role"
@@ -128,18 +128,18 @@ export function AssigneeManager() {
             </div>
 
             {/* Resolution type editor + Advanced options */}
-            {expandedRole === assignee.placeholderId && (
+            {expandedRole === assignee.roleId && (
               <div className="px-3 py-3 border-t border-gray-100 bg-white space-y-3">
                 <ResolutionTypeEditor
                   resolution={assignee.resolution || { type: 'CONTACT_TBD' }}
-                  onChange={(resolution) => handleResolutionChange(assignee.placeholderId, resolution)}
+                  onChange={(resolution) => handleResolutionChange(assignee.roleId, resolution)}
                   kickoff={workflow.kickoff}
                 />
 
                 {/* Advanced (Optional) section */}
                 <AdvancedRoleOptions
                   roleOptions={assignee.roleOptions || { coordinatorToggle: false, allowViewAllActions: false }}
-                  onChange={(roleOptions) => updateAssigneePlaceholder(assignee.placeholderId, { roleOptions })}
+                  onChange={(roleOptions) => updateRole(assignee.roleId, { roleOptions })}
                 />
               </div>
             )}
