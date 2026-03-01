@@ -14,7 +14,8 @@
  * - /templates/:id : Template detail (edit)
  * - /flows : Flows list (active instances)
  * - /flows/:id : Flow detail
- * - /reports : Analytics dashboard
+ * - /manage : Analytics & performance dashboard
+ * - /reports : Redirects to /manage
  * - /contacts : Contact management
  * - /schedules : Coming soon
  * - /integrations : Coming soon
@@ -37,7 +38,7 @@ import {
   FlowBuilderPage,
   FlowRunsPage,
   FlowRunDetailPage,
-  ReportsPage,
+  ManagePage,
   ContactsPage,
   SchedulesPage,
   IntegrationsPage,
@@ -218,7 +219,8 @@ function AppRoutes() {
         <Route path="templates/:id/detail" element={<TemplateDetailPage />} />
         <Route path="flows" element={<FlowRunsPage />} />
         <Route path="flows/:id" element={<FlowRunDetailPage />} />
-        <Route path="reports" element={<ReportsPage />} />
+        <Route path="manage" element={<ManagePage />} />
+        <Route path="reports" element={<Navigate to="/manage" replace />} />
         <Route path="contacts" element={<ContactsPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="accounts/:id" element={<AccountDetailPage />} />

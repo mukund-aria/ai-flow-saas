@@ -8,6 +8,7 @@ export { FlowBuilderPage } from './FlowBuilderPage';
 export { FlowRunsPage } from './FlowRunsPage';
 export { FlowRunDetailPage } from './FlowRunDetailPage';
 export { ReportsPage } from './ReportsPage';
+export { ManagePage } from './ManagePage';
 export { ContactsPage } from './ContactsPage';
 export { SchedulesPage } from './SchedulesPage';
 export { IntegrationsPage } from './IntegrationsPage';

@@ -837,6 +837,191 @@ export async function getBottleneckReport(range: string = 'month'): Promise<Bott
 }
 
 // ============================================================================
+// Manage Analytics API (Pulse, Flows Performance, Accounts, People)
+// ============================================================================
+
+export interface PulseData {
+  performanceScore: {
+    score: number;
+    previousScore: number;
+    trend: 'up' | 'down' | 'stable';
+    topContributor: string;
+    factors: {
+      onTimeRate: number;
+      slaCompliance: number;
+      cycleTimeTrend: number;
+      escalationRate: number;
+      completionRate: number;
+    };
+  };
+  metrics: {
+    throughput: { value: number; trend: number[]; periodChange: number };
+    avgCycleTimeMs: { value: number; trend: number[]; periodChange: number };
+    onTimeRate: { value: number; trend: number[]; periodChange: number };
+    slaCompliance: { value: number; trend: number[]; periodChange: number };
+  };
+  throughputChart: {
+    labels: string[];
+    completedOnTime: number[];
+    completedLate: number[];
+  };
+  efficiencyChart: {
+    labels: string[];
+    avgCycleTimeMs: number[];
+    p25: number[];
+    p75: number[];
+  };
+  periodComparison: {
+    current: { started: number; completed: number; avgCycleTimeMs: number; slaBreaches: number; escalations: number; remindersSent: number };
+    previous: { started: number; completed: number; avgCycleTimeMs: number; slaBreaches: number; escalations: number; remindersSent: number };
+  };
+}
+
+export interface FlowPerformanceData {
+  templates: Array<{
+    templateId: string;
+    templateName: string;
+    runsInPeriod: number;
+    completed: number;
+    completionRate: number;
+    avgCycleTimeMs: number;
+    previousAvgCycleTimeMs: number;
+    onTimeRate: number;
+    slaCompliance: number;
+    bottleneckStep: { name: string; avgDurationMs: number } | null;
+    completionRateTrend: number[];
+  }>;
+  drillDown?: {
+    stepTimings: Array<{
+      stepIndex: number;
+      stepName: string;
+      stepType: string;
+      avgDurationMs: number;
+      medianDurationMs: number;
+      p90DurationMs: number;
+      count: number;
+      slaBreachCount: number;
+    }>;
+    completionFunnel: Array<{
+      stepIndex: number;
+      stepName: string;
+      reachedCount: number;
+      completedCount: number;
+    }>;
+    cycleTimeDistribution: {
+      min: number;
+      p25: number;
+      median: number;
+      p75: number;
+      max: number;
+    };
+  };
+}
+
+export interface AccountAnalyticsData {
+  accounts: Array<{
+    accountId: string;
+    accountName: string;
+    domain: string | null;
+    activeFlows: number;
+    completedInPeriod: number;
+    avgCycleTimeMs: number;
+    orgAvgCycleTimeMs: number;
+    onTimeRate: number;
+    avgResponsivenessMs: number;
+    engagementTrend: number[];
+  }>;
+  drillDown?: {
+    engagementTimeline: Array<{ weekLabel: string; started: number; completed: number }>;
+    vsOrgAverage: {
+      cycleTime: { account: number; org: number };
+      onTimeRate: { account: number; org: number };
+      slaCompliance: { account: number; org: number };
+    };
+    contactBreakdown: Array<{
+      contactId: string;
+      contactName: string;
+      pendingTasks: number;
+      completedInPeriod: number;
+      avgResponseTimeMs: number;
+      onTimeRate: number;
+    }>;
+    signals: Array<{
+      type: string;
+      message: string;
+      severity: 'info' | 'warning' | 'positive';
+    }>;
+  };
+}
+
+export interface PeopleAnalyticsData {
+  workloadChart: Array<{
+    personId: string;
+    name: string;
+    type: 'member' | 'assignee';
+    completed: number;
+    pending: number;
+    overdue: number;
+  }>;
+  members: Array<{
+    userId: string;
+    name: string;
+    picture: string | null;
+    runsManaged: number;
+    avgCycleTimeMs: number;
+    teamAvgCycleTimeMs: number;
+    completionRate: number;
+    loadLevel: 'LOW' | 'MODERATE' | 'HIGH' | 'HEAVY';
+  }>;
+  assignees: Array<{
+    contactId: string;
+    name: string;
+    accountName: string | null;
+    completedInPeriod: number;
+    avgResponseTimeMs: number;
+    onTimeRate: number;
+    remindersReceived: number;
+    efficiencyScore: number;
+  }>;
+  insights: {
+    fastestResponders: Array<{ name: string; avgResponseTimeMs: number }>;
+    improvementOpportunities: Array<{ name: string; efficiencyScore: number; reason: string }>;
+  };
+}
+
+export async function getPulseData(range: string = 'week'): Promise<PulseData> {
+  const res = await fetch(`${API_BASE}/reports/pulse?range=${range}`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch pulse data');
+  return data.data;
+}
+
+export async function getFlowPerformance(range: string = 'week', templateId?: string): Promise<FlowPerformanceData> {
+  const params = new URLSearchParams({ range });
+  if (templateId) params.set('templateId', templateId);
+  const res = await fetch(`${API_BASE}/reports/flows/performance?${params}`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch flow performance');
+  return data.data;
+}
+
+export async function getAccountAnalytics(range: string = 'week', accountId?: string): Promise<AccountAnalyticsData> {
+  const params = new URLSearchParams({ range });
+  if (accountId) params.set('accountId', accountId);
+  const res = await fetch(`${API_BASE}/reports/accounts/analytics?${params}`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch account analytics');
+  return data.data;
+}
+
+export async function getPeopleAnalytics(range: string = 'week'): Promise<PeopleAnalyticsData> {
+  const res = await fetch(`${API_BASE}/reports/people/analytics?range=${range}`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch people analytics');
+  return data.data;
+}
+
+// ============================================================================
 // Schedules API
 // ============================================================================
 
