@@ -160,10 +160,10 @@ These are concrete gaps in the current codebase that need to be addressed regard
 
 | # | Gap | Effort | Blocks |
 |---|-----|--------|--------|
-| 1 | CI/CD pipeline (GitHub Actions: lint, type-check, test on PR) | Small | Everything |
+| 1 | ~~CI/CD pipeline~~ | ~~Small~~ | ✅ Railway auto-deploys from GitHub |
 | 2 | E-Sign integration (DocuSign/HelloSign) — marked "Coming Soon" in builder | Medium | Legal templates |
 | 3 | Multi-instance SSE (Redis-backed event bus) | Medium | Production scaling |
-| 4 | Database migrations (replace `drizzle-kit push` with versioned migrations) | Small | Production deploys |
+| 4 | ~~Database migrations (versioned migrations)~~ | ~~Small~~ | ✅ Done — drizzle-kit generate + migrate on startup |
 | 5 | SAML/SSO (schema exists, no routes/services) | Medium | Enterprise deals (Phase 2) |
 | 6 | Rate limiting on authenticated API endpoints | Small | Production security |
 | 7 | Billing / payment integration (Stripe) | Medium | Revenue |
