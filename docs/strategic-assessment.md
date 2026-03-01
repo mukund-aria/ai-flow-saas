@@ -24,9 +24,9 @@
 | File storage | 80% | Supabase when configured, local fallback |
 | Integrations (Slack/Teams/Webhook) | 80% | CRUD + test send, outgoing HMAC-signed dispatch |
 | Assignee portal (9 step types) | 85% | Form, Approval, FileRequest, Decision, Acknowledgement, ESign, Questionnaire, PdfForm, WebApp — with progress tracking, chat, journey view |
-| Coordinator portal pages | 80% | All pages hit real APIs, not stubs |
+| Coordinator portal pages | 85% | All pages hit real APIs, full analytics dashboard, gallery |
 | Reports / Analytics | 85% | 4-tab Manage page: performance scoring, trend sparklines, drill-downs, step waterfall, completion funnel, account signals, efficiency scores. Still single-org — no cross-tenant benchmarks or predictive SLAs. |
-| Schedules | 75% | CRUD, cron presets, timezone, enable/disable |
+| Schedules | 90% | CRUD, cron presets, timezone, enable/disable, next-run calculation, BullMQ execution |
 | E-Sign | 30% | Text signature capture only, marked "Coming Soon" in builder |
 | CI/CD | 0% | No pipeline exists |
 | Test coverage | 40% | Tests exist (15 files), no CI to run them |
@@ -95,12 +95,7 @@ This approach lets the market pull us into verticals organically without betting
 **Priority: High**
 **Impact: Defensible moat from proprietary data**
 
-**Already built (intra-org analytics):**
-- ~~Bottleneck detection~~ — step timing waterfall, completion funnel, bottleneck step identification per template
-- ~~Trend analysis~~ — period-over-period comparison, sparkline trends, engagement timelines
-- ~~Efficiency scoring~~ — composite performance score (0-100), assignee efficiency scores, load levels
-- ~~Relationship signals~~ — auto-generated natural-language insights about account and people trends
-- ~~Comparative context~~ — account vs org average, member vs team average
+**Already built:** Intra-org analytics — bottleneck detection, trend analysis, efficiency scoring, relationship signals, comparative context (account vs org average). This is table stakes, not a moat.
 
 **Still needed (the actual moat — cross-org intelligence):**
 - **Benchmark analytics:** "Your client onboarding takes 14 days. Top 10% do it in 6." — requires opt-in multi-tenant data aggregation
@@ -152,9 +147,8 @@ Per-seat pricing caps upside. Our model:
 **Impact: ACV expansion to $50K+**
 
 Enterprise features to build when traction justifies it:
-- SAML/SSO (required for any deal >$30K ACV)
+- SAML/SSO (required for any deal >$30K ACV) — schema exists, needs routes/services
 - RBAC with custom roles
-- Audit log UI (data exists, no frontend)
 - SOC 2 Type II compliance
 - Data export / portability
 
@@ -167,26 +161,75 @@ These are concrete gaps in the current codebase that need to be addressed regard
 | # | Gap | Effort | Blocks |
 |---|-----|--------|--------|
 | 1 | CI/CD pipeline (GitHub Actions: lint, type-check, test on PR) | Small | Everything |
-| 2 | ~~AI automation step execution (AI_EXTRACT, AI_SUMMARIZE, etc.)~~ | ~~Medium~~ | ✅ Done — 5 AI types wired (AI_TRANSCRIBE coming soon), human review toggle added |
-| 3 | E-Sign integration (DocuSign/HelloSign) — marked "Coming Soon" in builder | Medium | Legal templates |
-| 4 | Multi-instance SSE (Redis-backed event bus) | Medium | Production scaling |
-| 5 | Database migrations (replace `drizzle-kit push` with versioned migrations) | Small | Production deploys |
-| 6 | SAML/SSO | Medium | Enterprise deals (Phase 2) |
-| 7 | ~~Audit log UI for coordinators~~ | ~~Small~~ | ✅ Done |
-| 8 | Rate limiting on API endpoints | Small | Production security |
-| 9 | ~~AI flow completion summary UI (backend exists, no frontend)~~ | ~~Small~~ | ✅ Done |
-| 10 | ~~Mobile-responsive assignee portal~~ | ~~Medium~~ | ✅ Done |
+| 2 | E-Sign integration (DocuSign/HelloSign) — marked "Coming Soon" in builder | Medium | Legal templates |
+| 3 | Multi-instance SSE (Redis-backed event bus) | Medium | Production scaling |
+| 4 | Database migrations (replace `drizzle-kit push` with versioned migrations) | Small | Production deploys |
+| 5 | SAML/SSO (schema exists, no routes/services) | Medium | Enterprise deals (Phase 2) |
+| 6 | Rate limiting on authenticated API endpoints | Small | Production security |
+| 7 | Billing / payment integration (Stripe) | Medium | Revenue |
+| 8 | User-generated template marketplace (gallery exists, no publish flow) | Medium | Network effects |
 
 ---
 
-## 5. Summary
+## 5. Valuation Assessment
 
-**What we have:** A strong Series A product — real tech, real execution engine, real AI integration. Better than 95% of startups at this stage. The assignee portal already includes progress tracking, chat, journey view, and AI assistance.
+### Current stage: Pre-revenue, strong product
 
-**What we need:** Category ownership. The AI builder gets us in the door. The workflow data intelligence keeps us irreplaceable. The assignee portal is our viral engine — every "Powered by ServiceFlow" click is a potential customer.
+The codebase (~91K LoC) represents 6-9 months of full-time engineering output. The product is functionally complete enough to run real workflows end-to-end — this is not a prototype or landing page.
+
+### What exists vs. what's missing for revenue
+
+| Have | Missing |
+|------|---------|
+| Full execution engine with 9 step types | Billing integration (Stripe) |
+| AI builder with tool-use streaming | Payment flow / subscription management |
+| Two-portal model (coordinator + assignee) | User-generated template marketplace |
+| 4-tab analytics dashboard | Cross-org intelligence layer |
+| Curated template gallery | E-Sign integration (DocuSign) |
+| Notification pipeline (email, SSE, Slack/Teams) | CI/CD pipeline |
+| Contact/account management | SAML/SSO implementation (schema exists) |
+| Schedule automation (BullMQ) | Rate limiting on authenticated routes |
+
+### Realistic valuation ranges
+
+**Pre-revenue / pre-launch (today):** $2-5M
+- Strong for a pre-revenue product: real execution engine, not vaporware
+- Comparable to well-built MVPs with clear market positioning
+- Risk: no paying customers yet, no proven PMF
+
+**With early traction (10-50 paying orgs, $5-15K MRR):** $8-20M (Seed)
+- AI-native positioning commands premium multiples in current market
+- Two-portal model is a genuine UX moat — hard to replicate quickly
+- Viral loop through assignee portal is a measurable growth lever
+
+**With growth traction ($50-200K MRR, growing 15%+ MoM):** $25-60M (Series A)
+- Comparable: Dubsado raised at ~$50M with similar client-ops positioning
+- Intelligence layer (cross-org benchmarks) would push to upper range
+- Template marketplace with network effects could justify 2-3x premium
+
+**Path to $100M+:** Requires all of:
+- Cross-org intelligence layer generating proprietary insights
+- Template/integration marketplace with community contributions
+- 500+ orgs, $1M+ ARR, clear category ownership
+- Enterprise tier with SAML/SSO landing $30K+ ACV deals
+
+### Biggest valuation multipliers (in priority order)
+
+1. **Billing + first paying customer** — transforms from project to business overnight
+2. **Cross-org intelligence** — transforms from analytics tool to data moat
+3. **Template marketplace** — transforms from product to platform
+4. **Enterprise readiness (SSO/SAML)** — unlocks $30K+ ACV deals
+
+---
+
+## 6. Summary
+
+**What we have:** A strong Series A-ready product — real execution engine, AI builder, two-portal model, analytics dashboard, notification pipeline. Better than 95% of startups at this stage. The gap is revenue infrastructure, not product capability.
+
+**What we need:** A billing integration and first paying customers. Everything else (intelligence layer, marketplace, enterprise features) compounds from there — but none of it matters without revenue.
 
 **The bet:** Stay horizontal for maximum TAM, build the intelligence layer for defensibility, make the assignee portal so good it sells itself. Enterprise features come in Phase 2 once traction proves the model.
 
-**Revenue:** Per flow credits + AI credits. Free/Business/Enterprise tiers where only credits change. Simple, scalable, aligned with value.
+**Revenue model (defined, not yet implemented):** Per flow credits + AI credits. Free/Business/Enterprise tiers where only credits and limits change. Platform fee + marketplace cut on template/integration purchases.
 
-The bones are there. The question is execution speed, not technical feasibility.
+**Realistic next milestone:** Ship Stripe billing → launch → get to 10 paying orgs → prove PMF → raise seed at $8-20M.
