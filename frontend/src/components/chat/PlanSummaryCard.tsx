@@ -60,7 +60,7 @@ export function PlanSummaryCard({
 
   // Change summary (edit mode)
   const changeSummary = isEdit ? summarizeOperations(operations, steps) : [];
-  const { maxSummaryLines, maxVisibleAssumptions } = COPILOT_SETTINGS.banner;
+  const { maxSummaryLines } = COPILOT_SETTINGS.banner;
   const visibleSummary = changeSummary.slice(0, maxSummaryLines);
   const hiddenCount = changeSummary.length - maxSummaryLines;
 
@@ -139,7 +139,7 @@ export function PlanSummaryCard({
                 isEdit ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'
               )}
             >
-              {isEdit ? 'Edit' : 'New'}
+              {isEdit ? 'Proposed Changes' : 'Draft Plan'}
             </span>
           </div>
         </div>
@@ -191,14 +191,9 @@ export function PlanSummaryCard({
             </button>
             {showAssumptions && (
               <ul className="mt-1 ml-4 space-y-0.5 text-xs text-gray-500">
-                {assumptions.slice(0, maxVisibleAssumptions).map((a, i) => (
+                {assumptions.map((a, i) => (
                   <li key={i} className="list-disc">{a}</li>
                 ))}
-                {assumptions.length > maxVisibleAssumptions && (
-                  <li className="text-gray-400">
-                    and {assumptions.length - maxVisibleAssumptions} more...
-                  </li>
-                )}
               </ul>
             )}
           </div>
@@ -206,9 +201,14 @@ export function PlanSummaryCard({
 
         {/* Panel cue for large edits / creates */}
         {!small && (
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
-            <ArrowRight className="w-3 h-3" />
-            <span>Review workflow in the panel</span>
+          <div className={cn(
+            'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium',
+            isEdit
+              ? 'bg-amber-50 text-amber-700 border border-amber-200'
+              : 'bg-violet-50 text-violet-700 border border-violet-200'
+          )}>
+            <ArrowRight className="w-4 h-4 shrink-0" />
+            <span>Review the full workflow in the right panel</span>
           </div>
         )}
       </div>

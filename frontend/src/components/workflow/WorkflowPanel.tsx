@@ -109,12 +109,20 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
 
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
+        // Ctrl/Cmd + scroll = zoom
         e.preventDefault();
         if (e.deltaY < 0) {
           setZoomLevel((prev) => Math.min(MAX_ZOOM, Math.round((prev + ZOOM_STEP) * 10) / 10));
         } else {
           setZoomLevel((prev) => Math.max(MIN_ZOOM, Math.round((prev - ZOOM_STEP) * 10) / 10));
         }
+      } else {
+        // Regular scroll = pan vertically (and horizontally with shift)
+        e.preventDefault();
+        setPanOffset((prev) => ({
+          x: prev.x - (e.shiftKey ? e.deltaY : e.deltaX),
+          y: prev.y - (e.shiftKey ? 0 : e.deltaY),
+        }));
       }
     };
 

@@ -48,7 +48,7 @@ export function ProposalBanner({
 
   // Assumptions
   const assumptions = plan.assumptions || [];
-  const { maxSummaryLines, maxVisibleAssumptions } = COPILOT_SETTINGS.banner;
+  const { maxSummaryLines } = COPILOT_SETTINGS.banner;
 
   // Truncate change summary
   const visibleSummary = operationSummary.slice(0, maxSummaryLines);
@@ -100,19 +100,13 @@ export function ProposalBanner({
             <Sparkles className={cn('w-4 h-4', isEdit ? 'text-amber-600' : 'text-violet-600')} />
           </div>
           <div className="min-w-0">
+            <p className={cn(
+              'text-xs font-semibold uppercase tracking-wide',
+              isEdit ? 'text-amber-600' : 'text-violet-600'
+            )}>
+              {isEdit ? 'Proposed Changes' : 'Draft Plan'}
+            </p>
             <h3 className="text-sm font-semibold text-gray-900 truncate">{workflow.name}</h3>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span
-                className={cn(
-                  'inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded',
-                  isEdit
-                    ? 'bg-amber-100 text-amber-700'
-                    : 'bg-violet-100 text-violet-700'
-                )}
-              >
-                {isEdit ? 'Edit' : 'New'}
-              </span>
-            </div>
           </div>
         </div>
       </div>
@@ -192,14 +186,9 @@ export function ProposalBanner({
           </button>
           {showAssumptions && (
             <ul className="mt-1 ml-4 space-y-0.5 text-xs text-gray-500">
-              {assumptions.slice(0, maxVisibleAssumptions).map((a, i) => (
+              {assumptions.map((a, i) => (
                 <li key={i} className="list-disc">{a}</li>
               ))}
-              {assumptions.length > maxVisibleAssumptions && (
-                <li className="text-gray-400">
-                  and {assumptions.length - maxVisibleAssumptions} more...
-                </li>
-              )}
             </ul>
           )}
         </div>
