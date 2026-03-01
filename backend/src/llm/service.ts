@@ -731,9 +731,6 @@ ${currentWorkflow
             yield { type: 'thinking', status: 'Designing workflow structure...', step: 3 };
             emittedStep3 = true;
           }
-        } else if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-          // Stream the AI's conversational preamble text in real-time
-          yield { type: 'content', chunk: event.delta.text };
         } else if (event.type === 'content_block_delta' && event.delta.type === 'input_json_delta') {
           // Accumulate the tool input JSON
           toolInputJson += event.delta.partial_json;
@@ -745,6 +742,9 @@ ${currentWorkflow
           // Yield empty chunk to keep connection alive (no raw JSON shown to user)
           yield { type: 'content', chunk: '' };
         }
+        // Note: text_delta events are intentionally NOT streamed to the frontend.
+        // All content arrives through the tool use result (mode/workflow/respond events).
+        // Streaming text_delta caused raw JSON to leak into the UI.
       }
 
       // Get final message for usage stats
@@ -811,8 +811,6 @@ ${currentWorkflow
               yield { type: 'thinking', status: 'Designing workflow structure...', step: 7 };
               emittedFollowUpDesign = true;
             }
-          } else if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-            yield { type: 'content', chunk: event.delta.text };
           } else if (event.type === 'content_block_delta' && event.delta.type === 'input_json_delta') {
             followUpToolInputJson += event.delta.partial_json;
             yield { type: 'content', chunk: '' };
