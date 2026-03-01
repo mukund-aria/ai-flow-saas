@@ -107,6 +107,8 @@ This approach lets the market pull us into verticals organically without betting
 - **Predictive SLAs:** "This flow is likely to miss its deadline based on current velocity." — requires statistical modeling on historical execution data
 - **AI-suggested optimizations:** "3 firms similar to yours eliminated Step 5 and saw 20% faster completion." — requires LLM analysis of anonymized cross-org patterns
 
+**Data privacy approach:** Cross-org intelligence must be built on aggregated, anonymized statistics — never raw workflow data. The model is Salesforce/HubSpot/Stripe-style benchmarks: compute medians and percentiles across cohorts, surface them as industry benchmarks. No individual workflow, step name, or assignee data ever leaves the org boundary. This should be opt-in ("Turn on Industry Benchmarks"), with an explicit opt-out for enterprise customers whose DPAs prohibit any cross-tenant computation. The value exchange must be clear: you contribute anonymized stats, you get to see where you rank.
+
 The intra-org analytics are table stakes. The cross-org intelligence is what makes us irreplaceable.
 
 ### Initiative 2: Build network effects
