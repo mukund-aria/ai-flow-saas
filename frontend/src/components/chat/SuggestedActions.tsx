@@ -27,7 +27,7 @@ export function SuggestedActions({ actions, onActionClick, pendingPlanId }: Sugg
       case 'edit_plan':
         return {
           icon: <Pencil className="w-3.5 h-3.5" />,
-          className: 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200',
+          className: 'bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200',
         };
       case 'prompt':
       default:

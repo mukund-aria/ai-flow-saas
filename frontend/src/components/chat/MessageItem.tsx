@@ -134,7 +134,7 @@ export function MessageItem({
         className={cn(
           'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
           isUser
-            ? 'bg-blue-100 text-blue-600'
+            ? 'bg-violet-100 text-violet-600'
             : 'bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25'
         )}
       >
@@ -159,9 +159,9 @@ export function MessageItem({
                 </span>
               </div>
             ) : (
-              <div className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                <FileText className="w-4 h-4 text-blue-600" />
-                <span className="text-base text-blue-700 font-medium">
+              <div className="inline-flex items-center gap-2 px-3 py-2 bg-violet-50 border border-violet-200 rounded-lg">
+                <FileText className="w-4 h-4 text-violet-600" />
+                <span className="text-base text-violet-700 font-medium">
                   {message.attachment.name}
                 </span>
               </div>
@@ -175,7 +175,7 @@ export function MessageItem({
             className={cn(
               'inline-block px-4 py-2 rounded-2xl',
               isUser
-                ? 'bg-blue-600 text-white rounded-br-md'
+                ? 'bg-violet-600 text-white rounded-br-md'
                 : 'bg-gray-100 text-gray-900 rounded-bl-md'
             )}
           >

@@ -157,7 +157,7 @@ export function ChatInput({
     <div className="bg-white px-4 py-3">
       {/* File Preview - Floating card above input */}
       {pendingFile && (
-        <div className="mb-3 p-3 bg-gradient-to-r from-violet-50 to-blue-50 rounded-xl border border-violet-100 shadow-sm">
+        <div className="mb-3 p-3 bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl border border-violet-100 shadow-sm">
           <div className="flex items-center gap-3">
             {previewUrl ? (
               <img
@@ -191,10 +191,10 @@ export function ChatInput({
       {/* Modern Input Container */}
       <div
         className={cn(
-          'flex items-end gap-2 p-2 rounded-2xl border bg-gray-50/80 transition-all duration-200',
-          'hover:bg-gray-50 hover:border-gray-300',
-          'focus-within:bg-white focus-within:border-violet-300 focus-within:ring-2 focus-within:ring-violet-100',
-          'shadow-sm hover:shadow',
+          'flex items-end gap-2 p-2 rounded-2xl border border-gray-200 bg-white transition-all duration-200',
+          'hover:border-gray-300 hover:shadow-sm',
+          'focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100',
+          'shadow-sm',
           disabled && 'opacity-60 pointer-events-none'
         )}
       >

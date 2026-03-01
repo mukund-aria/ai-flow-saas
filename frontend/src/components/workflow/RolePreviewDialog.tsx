@@ -527,7 +527,7 @@ function GenericPreviewContent({ step }: { step: Step }) {
 
 function PreviewButton({ label }: { label: string }) {
   return (
-    <div className="w-full py-2 rounded-md bg-blue-100 text-blue-600 text-xs font-medium text-center cursor-default">
+    <div className="w-full py-2 rounded-md bg-violet-100 text-violet-600 text-xs font-medium text-center cursor-default">
       {label}
     </div>
   );

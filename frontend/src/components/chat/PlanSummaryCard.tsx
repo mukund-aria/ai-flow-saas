@@ -91,16 +91,16 @@ export function PlanSummaryCard({
     );
   }
 
-  // Saved change request state — blue display
+  // Saved change request state
   if (savedChangeRequest) {
     return (
-      <Card className="overflow-hidden border-blue-200 bg-blue-50/50">
+      <Card className="overflow-hidden border-violet-200 bg-violet-50/50">
         <div className="p-3">
           <div className="flex items-center gap-2 mb-1">
-            <Pencil className="w-3.5 h-3.5 text-blue-600" />
-            <span className="text-xs font-medium text-blue-700">Changes requested</span>
+            <Pencil className="w-3.5 h-3.5 text-violet-600" />
+            <span className="text-xs font-medium text-violet-700">Changes requested</span>
           </div>
-          <p className="text-xs text-blue-600 ml-5 line-clamp-2">{savedChangeRequest}</p>
+          <p className="text-xs text-violet-600 ml-5 line-clamp-2">{savedChangeRequest}</p>
         </div>
       </Card>
     );

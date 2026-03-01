@@ -214,7 +214,7 @@ export function StepCard({ step, index, assigneeIndex = 0, editMode, roles = [],
                 </button>
                 <button
                   onClick={handleDuplicate}
-                  className="p-1 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                  className="p-1 rounded text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
                   title="Duplicate step"
                 >
                   <Copy className="w-3.5 h-3.5" />

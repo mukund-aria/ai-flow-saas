@@ -672,8 +672,8 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                         {selectedTemplate.setupInstructions && (
                           <div className="mb-8">
                             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Step-by-step instructions</h3>
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                              <p className="text-sm text-blue-800 leading-relaxed">{selectedTemplate.setupInstructions}</p>
+                            <div className="bg-violet-50 border border-violet-200 rounded-lg p-4">
+                              <p className="text-sm text-violet-800 leading-relaxed">{selectedTemplate.setupInstructions}</p>
                             </div>
                           </div>
                         )}

@@ -27,14 +27,14 @@ export function FlowStartCard({ workflow, editMode, onConfigClick }: FlowStartCa
 
   return (
     <Card
-      className={`w-[320px] border-l-4 border-l-blue-500 bg-white shadow-sm rounded-lg overflow-hidden ${
-        editMode ? 'cursor-pointer hover:shadow-md hover:border-l-blue-600 transition-all group' : ''
+      className={`w-[320px] border-l-4 border-l-violet-500 bg-white shadow-sm rounded-lg overflow-hidden ${
+        editMode ? 'cursor-pointer hover:shadow-md hover:border-l-violet-600 transition-all group' : ''
       }`}
       onClick={editMode ? onConfigClick : undefined}
     >
       {/* Header row */}
-      <div className="bg-blue-50/60 px-4 py-2.5 flex items-center gap-2 border-b border-gray-100">
-        <PlayCircle className="w-4 h-4 text-blue-500" />
+      <div className="bg-violet-50/60 px-4 py-2.5 flex items-center gap-2 border-b border-gray-100">
+        <PlayCircle className="w-4 h-4 text-violet-500" />
         <span className="text-sm font-medium text-gray-600 flex-1">Flow Start</span>
         {editMode && (
           <Settings2 className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -52,8 +52,8 @@ export function FlowStartCard({ workflow, editMode, onConfigClick }: FlowStartCa
         {/* Show kickoff form indicator */}
         {hasKickoffForm && (
           <div className="mt-1.5 flex items-center gap-1.5">
-            <FileText className="w-3 h-3 text-blue-500" />
-            <span className="text-xs text-blue-600 font-medium">
+            <FileText className="w-3 h-3 text-violet-500" />
+            <span className="text-xs text-violet-600 font-medium">
               Kickoff form: {workflow.kickoff!.kickoffFormFields!.length} fields
             </span>
           </div>

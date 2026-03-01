@@ -136,9 +136,9 @@ function Checkbox({ checked, onChange, label, children }: { checked: boolean; on
 
 function InfoCallout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-2 px-3 py-2.5 bg-blue-50 border border-blue-100 rounded-lg">
-      <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-      <p className="text-xs text-blue-700">{children}</p>
+    <div className="flex items-start gap-2 px-3 py-2.5 bg-violet-50 border border-violet-100 rounded-lg">
+      <Info className="w-4 h-4 text-violet-500 mt-0.5 shrink-0" />
+      <p className="text-xs text-violet-700">{children}</p>
     </div>
   );
 }

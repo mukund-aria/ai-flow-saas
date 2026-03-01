@@ -326,8 +326,8 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                     {/* Embed HTML */}
                     <div className="border border-gray-200 rounded-lg hover:border-violet-200 transition-colors">
                       <div className="flex items-center gap-3 p-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                          <Code className="w-4 h-4 text-blue-600" />
+                        <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
+                          <Code className="w-4 h-4 text-violet-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900">Embed HTML</p>
@@ -335,7 +335,7 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                         </div>
                         <button
                           onClick={() => handleCopy(embedSnippet, 'embed')}
-                          className="p-1.5 border border-gray-200 rounded-md hover:bg-white text-gray-400 hover:text-blue-600 transition-colors shrink-0"
+                          className="p-1.5 border border-gray-200 rounded-md hover:bg-white text-gray-400 hover:text-violet-600 transition-colors shrink-0"
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>

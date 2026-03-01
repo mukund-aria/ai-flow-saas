@@ -63,7 +63,7 @@ export function MessageList({
 
   return (
     <ScrollArea className="flex-1 px-4">
-      <div className="py-4 space-y-1">
+      <div className="py-4 space-y-3">
         {/* Welcome message is always the first message in the conversation */}
         {/* Only show example prompts before conversation starts */}
         <WelcomeMessage

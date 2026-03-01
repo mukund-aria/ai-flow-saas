@@ -131,7 +131,7 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
               <Shield className="w-3.5 h-3.5 text-violet-500 shrink-0" aria-label="Coordinator" />
             )}
             {canViewAll && (
-              <Eye className="w-3.5 h-3.5 text-blue-500 shrink-0" aria-label="Can view all actions" />
+              <Eye className="w-3.5 h-3.5 text-violet-500 shrink-0" aria-label="Can view all actions" />
             )}
             <button
               onClick={(e) => { e.stopPropagation(); setPreviewRoleId(assignee.roleId); }}

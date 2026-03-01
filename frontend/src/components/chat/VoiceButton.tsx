@@ -44,9 +44,9 @@ export function VoiceButton({ isListening, error, onClick, disabled }: VoiceButt
         title={errorMessage || (isListening ? 'Stop recording' : 'Start voice input')}
         className={cn(
           'shrink-0 p-2 rounded-xl transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-purple-200',
+          'focus:outline-none focus:ring-2 focus:ring-violet-200',
           // Default state
-          !isListening && !hasError && 'text-gray-400 hover:text-purple-500 hover:bg-purple-50',
+          !isListening && !hasError && 'text-gray-400 hover:text-violet-500 hover:bg-violet-50',
           // Listening state - pulsing red
           isListening && 'text-white bg-red-500 hover:bg-red-600 animate-pulse',
           // Error state
