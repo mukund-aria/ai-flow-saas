@@ -568,8 +568,8 @@ export interface AIReviewResult {
 
 export interface AIFlowSummary {
   summary: string;
-  keyDecisions: Array<{ step: string; decision: string }>;
-  timeline: Array<{ step: string; duration: string }>;
+  keyDecisions: string[];
+  timeline: Array<{ step: string; completedAt: string; outcome: string }>;
   generatedAt: string;
 }
 

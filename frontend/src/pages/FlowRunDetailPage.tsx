@@ -35,6 +35,7 @@ import { useOnboardingStore } from '@/stores/onboardingStore';
 import { FlowRunChatPanel } from '@/components/flow-chat/FlowRunChatPanel';
 import { useFlowRunChatStore } from '@/stores/flowRunChatStore';
 import { AuditTimeline } from '@/components/flows/AuditTimeline';
+import { FlowCompletionSummary } from '@/components/flows/FlowCompletionSummary';
 import { ReassignStepDialog } from '@/components/flows/ReassignStepDialog';
 import type { StepType } from '@/types';
 import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
@@ -1233,6 +1234,11 @@ export function FlowRunDetailPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* AI Completion Summary */}
+          {run.status === 'COMPLETED' && id && (
+            <FlowCompletionSummary runId={id} />
           )}
 
           {/* Audit Timeline */}

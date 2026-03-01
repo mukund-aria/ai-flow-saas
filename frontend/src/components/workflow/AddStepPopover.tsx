@@ -64,14 +64,18 @@ export function AddStepPopover({ open, onOpenChange, onSelect, onAddMilestone }:
           </div>
           {group.types.map((type) => {
             const meta = STEP_TYPE_META[type];
+            const isComingSoon = type === 'ESIGN';
             return (
               <button
                 key={type}
                 onClick={() => {
+                  if (isComingSoon) return;
                   onSelect(type);
                   onOpenChange(false);
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition-colors text-left"
+                className={`w-full flex items-center gap-3 px-3 py-2 transition-colors text-left ${
+                  isComingSoon ? 'opacity-50 cursor-default' : 'hover:bg-gray-50'
+                }`}
               >
                 <div
                   className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -80,10 +84,16 @@ export function AddStepPopover({ open, onOpenChange, onSelect, onAddMilestone }:
                   <StepIcon type={type} className="w-3.5 h-3.5" style={{ color: meta.color }} />
                 </div>
                 <span className="text-sm text-gray-700 font-medium">{meta.label}</span>
-                <div
-                  className="w-2 h-2 rounded-full ml-auto shrink-0"
-                  style={{ backgroundColor: meta.color }}
-                />
+                {isComingSoon ? (
+                  <span className="ml-auto text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">
+                    Soon
+                  </span>
+                ) : (
+                  <div
+                    className="w-2 h-2 rounded-full ml-auto shrink-0"
+                    style={{ backgroundColor: meta.color }}
+                  />
+                )}
               </button>
             );
           })}

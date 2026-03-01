@@ -52,17 +52,23 @@ const STEP_GROUPS: StepGroup[] = [
   },
 ];
 
+// Step types that are not yet fully implemented
+const COMING_SOON_TYPES = new Set<StepType>(['ESIGN']);
+
 function DraggablePaletteItem({ type }: { type: StepType }) {
   const meta = STEP_TYPE_META[type];
   const { addStep } = useWorkflowStore();
   const workflow = useWorkflowStore((s) => s.workflow);
+  const isComingSoon = COMING_SOON_TYPES.has(type);
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `palette:${type}`,
     data: { type: 'palette-item', stepType: type },
+    disabled: isComingSoon,
   });
 
   const handleClick = () => {
+    if (isComingSoon) return;
     const insertIndex = workflow?.steps?.length ?? 0;
     addStep(insertIndex, type);
   };
@@ -71,11 +77,12 @@ function DraggablePaletteItem({ type }: { type: StepType }) {
     <button
       ref={setNodeRef}
       onClick={handleClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md hover:bg-gray-50 transition-colors text-left group cursor-grab active:cursor-grabbing ${
-        isDragging ? 'opacity-40' : ''
-      }`}
-      {...listeners}
-      {...attributes}
+      className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-md transition-colors text-left group ${
+        isComingSoon
+          ? 'opacity-50 cursor-default'
+          : 'hover:bg-gray-50 cursor-grab active:cursor-grabbing'
+      } ${isDragging ? 'opacity-40' : ''}`}
+      {...(isComingSoon ? {} : { ...listeners, ...attributes })}
     >
       <div
         className="w-6 h-6 rounded flex items-center justify-center shrink-0"
@@ -84,10 +91,16 @@ function DraggablePaletteItem({ type }: { type: StepType }) {
         <StepIcon type={type} className="w-3.5 h-3.5" style={{ color: meta.color }} />
       </div>
       <span className="text-sm text-gray-700 group-hover:text-gray-900">{meta.label}</span>
-      <div
-        className="w-1.5 h-1.5 rounded-full ml-auto shrink-0 opacity-60"
-        style={{ backgroundColor: meta.color }}
-      />
+      {isComingSoon ? (
+        <span className="ml-auto text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">
+          Soon
+        </span>
+      ) : (
+        <div
+          className="w-1.5 h-1.5 rounded-full ml-auto shrink-0 opacity-60"
+          style={{ backgroundColor: meta.color }}
+        />
+      )}
     </button>
   );
 }

@@ -1204,6 +1204,24 @@ export async function getFlowAuditLog(runId: string): Promise<AuditLogEntry[]> {
 }
 
 // ============================================================================
+// Flow Run AI Summary
+// ============================================================================
+
+export interface FlowRunSummary {
+  summary: string;
+  keyDecisions: string[];
+  timeline: Array<{ step: string; completedAt: string; outcome: string }>;
+  generatedAt: string;
+}
+
+export async function getFlowRunSummary(runId: string): Promise<FlowRunSummary | null> {
+  const res = await fetch(`${API_BASE}/flows/${runId}/summary`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch summary');
+  return data.data;
+}
+
+// ============================================================================
 // Step Reassignment API
 // ============================================================================
 
