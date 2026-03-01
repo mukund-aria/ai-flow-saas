@@ -336,6 +336,8 @@ export function FlowRunDetailPage() {
   const [showSettingsSidebar, setShowSettingsSidebar] = useState(false);
   const [reassigningStep, setReassigningStep] = useState<{ stepId: string; currentAssignee?: { name: string; type: 'contact' | 'user' } } | null>(null);
   const [refetchKey, setRefetchKey] = useState(0);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Onboarding: step 4 is completed when the coordinator actually acts on a step
   // (see handleActOnStep below)
@@ -455,11 +457,14 @@ export function FlowRunDetailPage() {
   });
 
   // Handle cancel run
-  const handleCancelRun = async () => {
-    if (!run || !window.confirm('Are you sure you want to cancel this flow? This cannot be undone.')) {
-      return;
-    }
+  const handleCancelRun = () => {
+    setShowCancelConfirm(true);
+  };
 
+  const confirmCancelRun = async () => {
+    if (!run) return;
+    setShowCancelConfirm(false);
+    setActionError(null);
     try {
       setIsCancelling(true);
       const updated = await cancelFlow(run.id);
@@ -472,8 +477,8 @@ export function FlowRunDetailPage() {
         };
       });
       setSteps(updatedSteps);
-    } catch (err) {
-      console.error('Failed to cancel run:', err);
+    } catch {
+      setActionError('Failed to cancel flow. Please try again.');
     } finally {
       setIsCancelling(false);
     }
@@ -493,8 +498,8 @@ export function FlowRunDetailPage() {
       setSteps(prev => prev.map(s =>
         s.id === step.id ? { ...s, reminderCount: (s.reminderCount || 0) + 1 } : s
       ));
-    } catch (err) {
-      console.error('Failed to send reminder:', err);
+    } catch {
+      setActionError('Failed to send reminder.');
     } finally {
       setSendingReminder(null);
     }
@@ -508,8 +513,8 @@ export function FlowRunDetailPage() {
       const token = await getStepActToken(run.id, step.stepId);
       useOnboardingStore.getState().completeCompleteAction();
       window.open(`/task/${token}`, '_blank');
-    } catch (err) {
-      console.error('Failed to get action token:', err);
+    } catch {
+      setActionError('Failed to open task. Please try again.');
     } finally {
       setActingOnStep(null);
     }
@@ -565,6 +570,12 @@ export function FlowRunDetailPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
           <p className="font-medium">Error loading flow</p>
           <p className="text-sm mt-1">{error || 'Flow not found'}</p>
+          <button
+            onClick={() => setRefetchKey((k) => k + 1)}
+            className="mt-3 px-4 py-1.5 text-sm font-medium bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -809,6 +820,44 @@ export function FlowRunDetailPage() {
           <span className="text-[120px] font-black text-gray-200/40 -rotate-12 select-none whitespace-nowrap">
             TEST FLOW
           </span>
+        </div>
+      )}
+
+      {/* Action error banner */}
+      {actionError && (
+        <div className="mb-4 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {actionError}
+          <button onClick={() => setActionError(null)} className="ml-auto text-red-400 hover:text-red-600">
+            <XCircle className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Cancel confirmation dialog */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowCancelConfirm(false)} />
+          <div className="relative bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Cancel Flow</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to cancel this flow? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Keep Running
+              </button>
+              <button
+                onClick={confirmCancelRun}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Cancel Flow
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

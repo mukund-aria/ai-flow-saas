@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Users, Mail, Shield, UserPlus, Loader2, Trash2 } from 'lucide-react';
+import { Users, Mail, Shield, UserPlus, Loader2, Trash2, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -38,6 +38,7 @@ export function TeamPage() {
   const [inviteRole, setInviteRole] = useState<'MEMBER' | 'ADMIN'>('MEMBER');
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
+  const [confirmRevokeId, setConfirmRevokeId] = useState<string | null>(null);
 
   const isAdmin = user?.role === 'ADMIN';
 
@@ -89,15 +90,23 @@ export function TeamPage() {
     }
   };
 
-  const handleRevokeInvite = async (id: string) => {
+  const handleRevokeInvite = (id: string) => {
+    setConfirmRevokeId(id);
+  };
+
+  const confirmRevoke = async () => {
+    if (!confirmRevokeId) return;
+    const id = confirmRevokeId;
+    setConfirmRevokeId(null);
     try {
-      await fetch(`${API_BASE}/team/invite/${id}`, {
+      const res = await fetch(`${API_BASE}/team/invite/${id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
+      if (!res.ok) throw new Error('Failed to revoke invite');
       fetchTeam();
-    } catch (err) {
-      console.error('Failed to revoke invite:', err);
+    } catch {
+      setError('Failed to revoke invitation. Please try again.');
     }
   };
 
@@ -152,6 +161,43 @@ export function TeamPage() {
             </Button>
           </form>
           {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+        </div>
+      )}
+
+      {/* Error banner (for non-form errors like revoke failures) */}
+      {error && !isSending && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 ml-2">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Revoke invitation confirmation */}
+      {confirmRevokeId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmRevokeId(null)} />
+          <div className="relative bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Revoke Invitation</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to revoke this invitation? The recipient will no longer be able to join.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmRevokeId(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRevoke}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Revoke
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

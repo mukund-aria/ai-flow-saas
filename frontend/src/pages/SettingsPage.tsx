@@ -24,6 +24,7 @@ export function SettingsPage() {
   const [orgName, setOrgName] = useState(user?.organizationName || '');
   const [orgSaving, setOrgSaving] = useState(false);
   const [orgSaved, setOrgSaved] = useState(false);
+  const [orgError, setOrgError] = useState('');
   const orgDirty = orgName.trim() !== (user?.organizationName || '');
 
   useEffect(() => {
@@ -33,13 +34,14 @@ export function SettingsPage() {
   const saveOrgName = useCallback(async () => {
     if (!user?.activeOrganizationId || !orgName.trim()) return;
     setOrgSaving(true);
+    setOrgError('');
     try {
       await updateOrganization(user.activeOrganizationId, { name: orgName.trim() });
       await checkAuth();
       setOrgSaved(true);
       setTimeout(() => setOrgSaved(false), 2000);
-    } catch (err) {
-      console.error('Failed to update organization:', err);
+    } catch {
+      setOrgError('Failed to save organization name. Please try again.');
     } finally {
       setOrgSaving(false);
     }
@@ -160,6 +162,9 @@ export function SettingsPage() {
                 </Button>
               </div>
             </div>
+            {orgError && (
+              <p className="text-sm text-red-600">{orgError}</p>
+            )}
             {user?.role !== 'ADMIN' && (
               <p className="text-sm text-gray-500">
                 Contact your administrator to change organization settings.

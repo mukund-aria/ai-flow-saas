@@ -160,14 +160,20 @@ export function HomePage() {
 
   const [attentionItems, setAttentionItems] = useState<AttentionItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [attentionError, setAttentionError] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  useEffect(() => {
+  const loadAttentionItems = () => {
+    setAttentionError(false);
     getAttentionItems()
       .then((data) => setAttentionItems(data))
-      .catch(() => {})
+      .catch(() => setAttentionError(true))
       .finally(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    loadAttentionItems();
   }, []);
 
   // Apply attention settings filter, then show top 5
@@ -367,7 +373,17 @@ export function HomePage() {
             </Link>
           </div>
 
-          {displayItems.length === 0 ? (
+          {attentionError ? (
+            <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
+              <p className="text-sm text-gray-500 mb-2">Could not load attention items.</p>
+              <button
+                onClick={loadAttentionItems}
+                className="text-sm text-violet-600 hover:text-violet-700 font-medium"
+              >
+                Try again
+              </button>
+            </div>
+          ) : displayItems.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
               <p className="text-sm text-gray-400">No items need your attention right now.</p>
             </div>

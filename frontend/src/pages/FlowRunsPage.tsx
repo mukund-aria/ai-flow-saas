@@ -310,6 +310,8 @@ export function FlowRunsPage() {
   const [remindingRunId, setRemindingRunId] = useState<string | null>(null);
   const [remindedRunId, setRemindedRunId] = useState<string | null>(null);
   const [actingRunId, setActingRunId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
 
   // Bulk remind state
   const [isBulkReminding, setIsBulkReminding] = useState(false);
@@ -422,6 +424,14 @@ export function FlowRunsPage() {
   };
 
   const handleCancel = async (id: string) => {
+    setConfirmCancelId(id);
+  };
+
+  const confirmCancel = async () => {
+    if (!confirmCancelId) return;
+    const id = confirmCancelId;
+    setConfirmCancelId(null);
+    setActionError(null);
     try {
       await cancelFlow(id);
       const [flowData, attention] = await Promise.all([
@@ -431,7 +441,7 @@ export function FlowRunsPage() {
       setRuns(flowData);
       setAttentionItems(attention);
     } catch {
-      // ignore
+      setActionError('Failed to cancel flow. Please try again.');
     }
   };
 
@@ -445,7 +455,7 @@ export function FlowRunsPage() {
       setRemindedRunId(run.id);
       setTimeout(() => setRemindedRunId(null), 2000);
     } catch {
-      // ignore
+      setActionError('Failed to send reminder.');
     } finally {
       setRemindingRunId(null);
     }
@@ -458,7 +468,7 @@ export function FlowRunsPage() {
       const token = await getStepActToken(run.id, run.currentStep.stepId);
       window.open(`/task/${token}`, '_blank');
     } catch {
-      // ignore
+      setActionError('Failed to open task. Please try again.');
     } finally {
       setActingRunId(null);
     }
@@ -612,6 +622,29 @@ export function FlowRunsPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
           <p className="font-medium">Error loading flows</p>
           <p className="text-sm mt-1">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setIsLoading(true);
+              Promise.all([
+                listFlows(),
+                getAttentionItems().catch(() => [] as AttentionItem[]),
+                listTemplates().catch(() => [] as Template[]),
+                listContacts().catch(() => [] as Contact[]),
+              ])
+                .then(([flowData, attention, tmpl, cts]) => {
+                  setRuns(flowData);
+                  setAttentionItems(attention);
+                  setTemplates(tmpl);
+                  setContactsList(cts);
+                })
+                .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load flows'))
+                .finally(() => setIsLoading(false));
+            }}
+            className="mt-3 px-4 py-1.5 text-sm font-medium bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -735,6 +768,44 @@ export function FlowRunsPage() {
           onReset={resetToDefaults}
         />
       </div>
+
+      {/* Action error banner */}
+      {actionError && (
+        <div className="mb-4 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {actionError}
+          <button onClick={() => setActionError(null)} className="ml-auto text-red-400 hover:text-red-600">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Cancel confirmation dialog */}
+      {confirmCancelId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmCancelId(null)} />
+          <div className="relative bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Cancel Flow</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to cancel this flow? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmCancelId(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Keep Running
+              </button>
+              <button
+                onClick={confirmCancel}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Cancel Flow
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Run List */}
       {filteredRuns.length > 0 ? (

@@ -204,6 +204,23 @@ function AddContactDialog({ open, onOpenChange, onSubmit }: AddContactDialogProp
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Full Name */}
+          <div>
+            <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-1">
+              Full Name
+            </label>
+            <input
+              id="contact-name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Sarah Chen"
+              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow"
+              autoFocus
+            />
+          </div>
+
           {/* Email */}
           <div>
             <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -252,22 +269,6 @@ function AddContactDialog({ open, onOpenChange, onSubmit }: AddContactDialogProp
             </div>
           </div>
 
-          {/* Full Name */}
-          <div>
-            <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
-            </label>
-            <input
-              id="contact-name"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Sarah Chen"
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow"
-            />
-          </div>
-
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2">
             <Button
@@ -311,6 +312,7 @@ export function ContactsPage() {
   });
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Fetch contacts and workloads on mount
   useEffect(() => {
@@ -333,6 +335,16 @@ export function ContactsPage() {
     fetchData();
   }, []);
 
+  // Refresh workloads
+  const refreshWorkloads = async () => {
+    try {
+      const w = await getContactWorkloads();
+      setWorkloads(w);
+    } catch {
+      // Non-critical, silently ignore
+    }
+  };
+
   // Handle sort
   const handleSort = (field: SortField) => {
     setSortConfig((prev) => ({
@@ -345,14 +357,22 @@ export function ContactsPage() {
   const handleAddContact = async (contact: { name: string; email: string; type: ContactTypeKey }) => {
     const newContact = await createContact(contact);
     setContacts((prev) => [...prev, newContact]);
+    refreshWorkloads();
   };
 
   // Handle delete contact
   const handleDeleteContact = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this contact?')) return;
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     try {
       await deleteContact(id);
       setContacts((prev) => prev.filter((c) => c.id !== id));
+      refreshWorkloads();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete contact');
     }
@@ -364,6 +384,7 @@ export function ContactsPage() {
     try {
       const updated = await toggleContactStatus(contact.id, newStatus);
       setContacts((prev) => prev.map((c) => (c.id === contact.id ? updated : c)));
+      refreshWorkloads();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update contact status');
     }
@@ -451,6 +472,33 @@ export function ContactsPage() {
         onOpenChange={setShowAddDialog}
         onSubmit={handleAddContact}
       />
+
+      {/* Delete confirmation dialog */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmDeleteId(null)} />
+          <div className="relative bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Contact</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to delete this contact? Any active task assignments will be affected.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Inline error banner for action errors */}
       {error && contacts.length > 0 && (

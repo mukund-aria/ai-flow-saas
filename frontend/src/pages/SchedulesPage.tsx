@@ -128,6 +128,7 @@ export function SchedulesPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [triggering, setTriggering] = useState<string | null>(null);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // New schedule form state
   const [formFlowId, setFormFlowId] = useState('');
@@ -207,8 +208,14 @@ export function SchedulesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (deleting) return;
+  const handleDelete = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId || deleting) return;
+    const id = confirmDeleteId;
+    setConfirmDeleteId(null);
     try {
       setDeleting(id);
       await deleteSchedule(id);
@@ -415,6 +422,33 @@ export function SchedulesPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmDeleteId(null)} />
+          <div className="relative bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Schedule</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to delete this schedule? Future runs will no longer be triggered.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

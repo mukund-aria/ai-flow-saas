@@ -258,16 +258,19 @@ function FlowReportTab() {
   const navigate = useNavigate();
   const [data, setData] = useState<FlowReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     setIsLoading(true);
+    setError(false);
     getFlowReports()
       .then(setData)
-      .catch((err) => console.error('Failed to fetch flow reports:', err))
+      .catch(() => setError(true))
       .finally(() => setIsLoading(false));
   }, []);
 
   if (isLoading) return <LoadingSpinner />;
+  if (error) return <EmptyState message="Failed to load flow reports. Please refresh to try again." />;
   if (data.length === 0) return <EmptyState message="No flow data yet. Start some flows to see reports here." />;
 
   return (
@@ -327,16 +330,19 @@ function AssigneeReportTab() {
   const navigate = useNavigate();
   const [data, setData] = useState<AssigneeReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     setIsLoading(true);
+    setError(false);
     getAssigneeReports()
       .then(setData)
-      .catch((err) => console.error('Failed to fetch assignee reports:', err))
+      .catch(() => setError(true))
       .finally(() => setIsLoading(false));
   }, []);
 
   if (isLoading) return <LoadingSpinner />;
+  if (error) return <EmptyState message="Failed to load assignee reports. Please refresh to try again." />;
   if (data.length === 0) return <EmptyState message="No assignee data yet. Assign tasks to contacts to see reports here." />;
 
   return (
@@ -405,16 +411,19 @@ function AssigneeReportTab() {
 function MemberReportTab() {
   const [data, setData] = useState<MemberReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     setIsLoading(true);
+    setError(false);
     getMemberReports()
       .then(setData)
-      .catch((err) => console.error('Failed to fetch member reports:', err))
+      .catch(() => setError(true))
       .finally(() => setIsLoading(false));
   }, []);
 
   if (isLoading) return <LoadingSpinner />;
+  if (error) return <EmptyState message="Failed to load member reports. Please refresh to try again." />;
   if (data.length === 0) return <EmptyState message="No member data yet. Start some flows to see coordinator activity here." />;
 
   return (
@@ -466,20 +475,23 @@ function SLAReportTab() {
   const [slaData, setSlaData] = useState<SLAReport | null>(null);
   const [bottlenecks, setBottlenecks] = useState<BottleneckReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [range, setRange] = useState<TimeRange>('week');
 
   useEffect(() => {
     setIsLoading(true);
+    setError(false);
     Promise.all([getSLAReport(range), getBottleneckReport(range)])
       .then(([sla, bn]) => {
         setSlaData(sla);
         setBottlenecks(bn);
       })
-      .catch((err) => console.error('Failed to fetch SLA data:', err))
+      .catch(() => setError(true))
       .finally(() => setIsLoading(false));
   }, [range]);
 
   if (isLoading) return <LoadingSpinner />;
+  if (error) return <EmptyState message="Failed to load SLA data. Please try again." />;
   if (!slaData) return <EmptyState message="Unable to load SLA data. Please try again." />;
 
   const { overall, templateBreakdown } = slaData;
@@ -669,12 +681,14 @@ export function ReportsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('week');
   const [summary, setSummary] = useState<ReportSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState(false);
 
   useEffect(() => {
     setIsLoading(true);
+    setDashboardError(false);
     getReportSummary(timeRange)
       .then(setSummary)
-      .catch((err) => console.error('Failed to fetch report summary:', err))
+      .catch(() => setDashboardError(true))
       .finally(() => setIsLoading(false));
   }, [timeRange]);
 
@@ -740,8 +754,8 @@ export function ReportsPage() {
         <>
           {isLoading ? (
             <LoadingSpinner />
-          ) : !summary ? (
-            <EmptyState message="Unable to load dashboard data. Please try again." />
+          ) : dashboardError || !summary ? (
+            <EmptyState message="Failed to load dashboard data. Please refresh to try again." />
           ) : (
             <div className="space-y-8">
               {/* Workspace Status Section */}
