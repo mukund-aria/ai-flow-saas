@@ -12,6 +12,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api';
 interface UseRealtimeUpdatesOptions {
   onRunUpdated?: (data: any) => void;
   onStepCompleted?: (data: any) => void;
+  onStepAIReviewReady?: (data: any) => void;
   onRunStarted?: (data: any) => void;
   onRunCompleted?: (data: any) => void;
 }
@@ -49,6 +50,13 @@ export function useRealtimeUpdates(options?: UseRealtimeUpdatesOptions): { conne
       try {
         const data = JSON.parse(e.data);
         optionsRef.current?.onStepCompleted?.(data);
+      } catch { /* ignore parse errors */ }
+    });
+
+    es.addEventListener('step.ai_review_ready', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        optionsRef.current?.onStepAIReviewReady?.(data);
       } catch { /* ignore parse errors */ }
     });
 

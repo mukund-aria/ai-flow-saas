@@ -14,6 +14,7 @@ import { eq } from 'drizzle-orm';
 import { stepRegistry } from '../config/step-registry.js';
 import { resolveDDR, type DDRContext } from './ddr-resolver.js';
 import { sseManager } from './sse-manager.js';
+import { executeAIStep } from './ai-executor.js';
 
 const MAX_AUTO_EXEC_CHAIN = 50;
 
@@ -21,7 +22,7 @@ const MAX_AUTO_EXEC_CHAIN = 50;
 // Types
 // ============================================================================
 
-interface RunContext {
+export interface RunContext {
   id: string;
   name: string;
   organizationId: string;
@@ -185,6 +186,36 @@ export async function maybeAutoExecute(
         run
       );
 
+      // Check if this AI step requires human review before completing
+      const stepConfig = (currentStepDef.config as Record<string, unknown>) || {};
+      const aiConfig = stepConfig.aiAutomation as Record<string, unknown> | undefined;
+      if (aiConfig?.humanReview && !resultData.skipped) {
+        // Store the AI output as a draft — step stays IN_PROGRESS for human review
+        await db
+          .update(stepExecutions)
+          .set({
+            resultData: {
+              _aiDraft: resultData,
+              _awaitingReview: true,
+              _aiExecutedAt: new Date().toISOString(),
+            },
+          })
+          .where(eq(stepExecutions.id, currentStepExecId));
+
+        sseManager.emit(run.organizationId, {
+          type: 'step.ai_review_ready',
+          data: {
+            flowRunId: run.id,
+            stepExecId: currentStepExecId,
+            stepType: currentType,
+            timestamp: new Date().toISOString(),
+          },
+        });
+
+        console.log(`[AutoExec] AI step ${currentStepExecId} awaiting human review`);
+        break; // Stop the chain — human needs to review before continuing
+      }
+
       // Re-fetch the run to get fresh state
       const freshRun = await db.query.flowRuns.findFirst({
         where: eq(flowRuns.id, run.id),
@@ -300,11 +331,12 @@ async function executeAutomation(
     case 'AI_CUSTOM_PROMPT':
     case 'AI_EXTRACT':
     case 'AI_SUMMARIZE':
-    case 'AI_TRANSCRIBE':
     case 'AI_TRANSLATE':
     case 'AI_WRITE':
-      console.warn(`[AutoExec] AI step type ${stepType} auto-execution not yet implemented. Skipping.`);
-      return { skipped: true, reason: 'AI auto-execution not yet implemented' };
+      return executeAIStep(stepType, config, run);
+    case 'AI_TRANSCRIBE':
+      console.warn('[AutoExec] AI_TRANSCRIBE requires audio processing — not yet supported.');
+      return { skipped: true, reason: 'AI transcription coming soon' };
     default:
       console.warn(`[AutoExec] Unknown auto-completing step type: ${stepType}. Skipping.`);
       return { skipped: true, reason: `Unknown step type: ${stepType}` };

@@ -15,7 +15,7 @@
 | Auth (Google OAuth + OTP email) | 85% | Passport.js, rate-limited OTP, email whitelist |
 | Flow/template CRUD | 90% | Full lifecycle, org scoping, access control |
 | Execution engine (human steps) | 85% | Branch routing, parallel steps, sub-flows, DDR |
-| Execution engine (automation steps) | 60% | REST_API/webhook/MCP real; AI step types stubbed |
+| Execution engine (automation steps) | 85% | REST_API/webhook/MCP/AI real; AI_TRANSCRIBE deferred, human review supported |
 | LLM / AI builder | 90% | Tool-use streaming, prompt caching, vision/PDF support |
 | Email service | 90% | 3-tier fallback (SMTP → Resend → console), 12+ template types |
 | Magic links | 90% | Token validation, full context resolution, branding |
@@ -167,7 +167,7 @@ These are concrete gaps in the current codebase that need to be addressed regard
 | # | Gap | Effort | Blocks |
 |---|-----|--------|--------|
 | 1 | CI/CD pipeline (GitHub Actions: lint, type-check, test on PR) | Small | Everything |
-| 2 | AI automation step execution (AI_EXTRACT, AI_SUMMARIZE, etc.) | Medium | Intelligence layer |
+| 2 | ~~AI automation step execution (AI_EXTRACT, AI_SUMMARIZE, etc.)~~ | ~~Medium~~ | ✅ Done — 5 AI types wired (AI_TRANSCRIBE coming soon), human review toggle added |
 | 3 | E-Sign integration (DocuSign/HelloSign) — marked "Coming Soon" in builder | Medium | Legal templates |
 | 4 | Multi-instance SSE (Redis-backed event bus) | Medium | Production scaling |
 | 5 | Database migrations (replace `drizzle-kit push` with versioned migrations) | Small | Production deploys |

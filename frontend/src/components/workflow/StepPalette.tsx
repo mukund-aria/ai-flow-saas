@@ -53,7 +53,7 @@ const STEP_GROUPS: StepGroup[] = [
 ];
 
 // Step types that are not yet fully implemented
-const COMING_SOON_TYPES = new Set<StepType>(['ESIGN']);
+const COMING_SOON_TYPES = new Set<StepType>(['ESIGN', 'AI_TRANSCRIBE']);
 
 function DraggablePaletteItem({ type }: { type: StepType }) {
   const meta = STEP_TYPE_META[type];

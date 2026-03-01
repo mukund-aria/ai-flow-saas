@@ -1501,4 +1501,100 @@ router.post(
   })
 );
 
+// ============================================================================
+// POST /api/flows/:id/steps/:stepId/approve-ai - Approve AI draft output
+// ============================================================================
+
+router.post(
+  '/:id/steps/:stepId/approve-ai',
+  asyncHandler(async (req, res) => {
+    const runId = req.params.id as string;
+    const stepId = req.params.stepId as string;
+    const { editedOutput } = req.body;
+    const orgId = req.organizationId;
+
+    const run = await db.query.flowRuns.findFirst({
+      where: orgId
+        ? and(eq(flowRuns.id, runId), eq(flowRuns.organizationId, orgId))
+        : eq(flowRuns.id, runId),
+      with: {
+        flow: true,
+        stepExecutions: {
+          orderBy: [stepExecutions.stepIndex],
+        },
+      },
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+      });
+      return;
+    }
+
+    if (run.status !== 'IN_PROGRESS') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Run is not in progress' },
+      });
+      return;
+    }
+
+    const stepExecution = run.stepExecutions.find((se) => se.stepId === stepId);
+
+    if (!stepExecution) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Step execution not found' },
+      });
+      return;
+    }
+
+    const currentResult = (stepExecution.resultData || {}) as Record<string, unknown>;
+    if (!currentResult._awaitingReview) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Step is not awaiting AI review' },
+      });
+      return;
+    }
+
+    // Use the edited output if provided, otherwise use the original AI draft
+    const aiDraft = currentResult._aiDraft as Record<string, unknown>;
+    const finalOutput = editedOutput || aiDraft;
+
+    const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
+    const stepDefs = (definition?.steps || []) as any[];
+
+    const result = await completeStepAndAdvance({
+      stepExecutionId: stepExecution.id,
+      resultData: {
+        ...finalOutput,
+        _reviewedAt: new Date().toISOString(),
+        _wasEdited: !!editedOutput,
+      },
+      run: run as any,
+      stepDefs,
+    });
+
+    logAction({
+      flowRunId: runId,
+      action: 'AI_OUTPUT_APPROVED',
+      details: { stepId, wasEdited: !!editedOutput },
+    });
+
+    const updatedRun = await db.query.flowRuns.findFirst({
+      where: eq(flowRuns.id, runId),
+      with: {
+        flow: { columns: { id: true, name: true } },
+        startedBy: { columns: { id: true, name: true, email: true } },
+        stepExecutions: { orderBy: [stepExecutions.stepIndex] },
+      },
+    });
+
+    res.json({ success: true, data: updatedRun });
+  })
+);
+
 export default router;

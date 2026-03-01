@@ -26,10 +26,12 @@ import {
   ExternalLink,
   UserPlus,
   GitBranch,
+  Sparkles,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepIcon } from '@/components/workflow/StepIcon';
-import { getFlow, cancelFlow, getStepActToken, type Flow } from '@/lib/api';
+import { getFlow, cancelFlow, getStepActToken, approveAIDraft, type Flow } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { FlowRunChatPanel } from '@/components/flow-chat/FlowRunChatPanel';
@@ -246,6 +248,104 @@ function ResultDataViewer({ data }: { data: Record<string, unknown> }) {
           </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ============================================================================
+// AI Review Panel
+// ============================================================================
+
+function AIReviewPanel({
+  runId,
+  stepId,
+  draft,
+  onApproved,
+}: {
+  runId: string;
+  stepId: string;
+  draft: Record<string, unknown>;
+  onApproved: () => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedValues, setEditedValues] = useState<Record<string, string>>({});
+  const [isApproving, setIsApproving] = useState(false);
+
+  // Filter out internal fields (executedAt, etc.)
+  const outputEntries = Object.entries(draft).filter(
+    ([key]) => !key.startsWith('_') && key !== 'executedAt' && key !== 'skipped' && key !== 'reason'
+  );
+
+  const handleApprove = async () => {
+    setIsApproving(true);
+    try {
+      const editedOutput = isEditing && Object.keys(editedValues).length > 0
+        ? { ...draft, ...editedValues }
+        : undefined;
+      await approveAIDraft(runId, stepId, editedOutput);
+      onApproved();
+    } catch (err) {
+      console.error('Failed to approve AI output:', err);
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  return (
+    <div className="mt-2 ml-12 bg-gradient-to-br from-violet-50 to-indigo-50 rounded-lg border border-violet-200 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-6 h-6 rounded-md bg-violet-100 flex items-center justify-center">
+          <Sparkles className="w-3 h-3 text-violet-600" />
+        </div>
+        <span className="text-sm font-semibold text-violet-900">AI Output — Awaiting Review</span>
+      </div>
+
+      <div className="space-y-2 mb-4">
+        {outputEntries.map(([key, value]) => (
+          <div key={key}>
+            <label className="text-xs font-medium text-gray-500 capitalize block mb-0.5">
+              {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')}
+            </label>
+            {isEditing ? (
+              <textarea
+                value={editedValues[key] ?? String(value ?? '')}
+                onChange={(e) => setEditedValues({ ...editedValues, [key]: e.target.value })}
+                rows={typeof value === 'string' && value.length > 100 ? 4 : 2}
+                className="w-full px-2.5 py-1.5 border border-violet-200 rounded-md text-sm bg-white focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
+              />
+            ) : (
+              <p className="text-sm text-gray-700 bg-white/60 rounded px-2.5 py-1.5 border border-violet-100">
+                {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value ?? '')}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          onClick={handleApprove}
+          disabled={isApproving}
+          size="sm"
+          className="bg-violet-600 hover:bg-violet-700 text-white gap-1.5"
+        >
+          {isApproving ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="w-3.5 h-3.5" />
+          )}
+          Approve & Continue
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsEditing(!isEditing)}
+          className="gap-1.5 text-xs"
+        >
+          <Pencil className="w-3 h-3" />
+          {isEditing ? 'Cancel Edit' : 'Edit Output'}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -495,6 +595,11 @@ export function FlowRunDetailPage() {
         setRefetchKey((k) => k + 1);
       }
     },
+    onStepAIReviewReady: (data) => {
+      if (data.flowRunId === id) {
+        setRefetchKey((k) => k + 1);
+      }
+    },
     onRunStarted: (data) => {
       if (data.flowRunId === id) {
         setRefetchKey((k) => k + 1);
@@ -718,7 +823,14 @@ export function FlowRunDetailPage() {
             >
               {step.name}
             </h3>
-            {getStepStatusBadge(step.status)}
+            {step.status === 'IN_PROGRESS' && step.resultData?._awaitingReview ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">
+                <Sparkles className="w-3 h-3" />
+                AI Review
+              </span>
+            ) : (
+              getStepStatusBadge(step.status)
+            )}
             {step.status === 'COMPLETED' && step.resultData && (
               <span className="text-xs text-gray-400 ml-1">
                 {step.type === 'FORM' ? `${Object.keys(step.resultData).filter(k => k !== '_meta').length} fields submitted` :
@@ -884,6 +996,16 @@ export function FlowRunDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Review Panel — shown when step is IN_PROGRESS with AI draft awaiting review */}
+      {step.status === 'IN_PROGRESS' && step.resultData?._awaitingReview && step.resultData._aiDraft && run && (
+        <AIReviewPanel
+          runId={run.id}
+          stepId={step.stepId}
+          draft={step.resultData._aiDraft as Record<string, unknown>}
+          onApproved={() => setRefetchKey((k) => k + 1)}
+        />
+      )}
 
       {/* Expanded result data */}
       {expandedResults.has(step.id) && step.resultData && (

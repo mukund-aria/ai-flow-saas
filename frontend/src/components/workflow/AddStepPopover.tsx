@@ -64,7 +64,7 @@ export function AddStepPopover({ open, onOpenChange, onSelect, onAddMilestone }:
           </div>
           {group.types.map((type) => {
             const meta = STEP_TYPE_META[type];
-            const isComingSoon = type === 'ESIGN';
+            const isComingSoon = type === 'ESIGN' || type === 'AI_TRANSCRIBE';
             return (
               <button
                 key={type}

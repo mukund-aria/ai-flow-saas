@@ -802,6 +802,29 @@ function AIAutomationConfigEditor({
           </button>
         </div>
       </div>
+
+      {/* Human Review Toggle */}
+      <div className="border-t border-gray-100 pt-4">
+        <label className="flex items-center justify-between cursor-pointer group">
+          <div>
+            <span className="text-xs font-medium text-gray-600">Human review</span>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              Pause for a coordinator to review and edit the AI output before it's used downstream
+            </p>
+          </div>
+          <div className="relative">
+            <input
+              type="checkbox"
+              checked={config.humanReview ?? false}
+              onChange={(e) => onChange({ ...config, humanReview: e.target.checked })}
+              className="sr-only"
+            />
+            <div className={`w-9 h-5 rounded-full transition-colors ${config.humanReview ? 'bg-violet-500' : 'bg-gray-200'}`}>
+              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform mt-0.5 ${config.humanReview ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+            </div>
+          </div>
+        </label>
+      </div>
     </div>
   );
 }

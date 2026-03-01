@@ -488,6 +488,25 @@ export async function completeStep(runId: string, stepId: string, resultData?: R
 }
 
 /**
+ * Approve (or edit and approve) AI draft output for a step
+ */
+export async function approveAIDraft(
+  runId: string,
+  stepId: string,
+  editedOutput?: Record<string, unknown>
+): Promise<Flow> {
+  const res = await fetch(`${API_BASE}/flows/${runId}/steps/${stepId}/approve-ai`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ editedOutput }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to approve AI output');
+  return data.data;
+}
+
+/**
  * Duplicate a template
  */
 export async function duplicateTemplate(id: string): Promise<Template> {

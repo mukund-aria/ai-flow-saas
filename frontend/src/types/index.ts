@@ -450,6 +450,7 @@ export interface AIAutomationConfig {
   knowledgeSources: string[];
   prompt: string;
   outputFields: AIOutputField[];
+  humanReview?: boolean;
 }
 
 export interface SystemEmailConfig {
