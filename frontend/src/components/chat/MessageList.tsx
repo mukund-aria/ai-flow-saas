@@ -50,7 +50,7 @@ export function MessageList({
       bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }, 50);
     return () => clearTimeout(timer);
-  }, [messages, messages.length, streamingContent, isThinking]);
+  }, [messages, messages.length, streamingContent, isThinking, thinkingSteps.length]);
 
   // Check if conversation has started (user has sent a message)
   const conversationStarted = messages.length > 0;

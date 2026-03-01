@@ -195,7 +195,7 @@ export function ChatInput({
           'hover:border-gray-300 hover:shadow-sm',
           'focus-within:border-violet-400 focus-within:ring-2 focus-within:ring-violet-100',
           'shadow-sm',
-          disabled && 'opacity-60 pointer-events-none'
+          disabled && !isStreaming && 'opacity-60 pointer-events-none'
         )}
       >
         <input
