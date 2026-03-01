@@ -37,7 +37,6 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { STEP_TYPE_META } from '@/types';
 import { StepIcon } from '@/components/workflow/StepIcon';
-import { HelpWidget } from '@/components/ui/HelpWidget';
 
 type BuilderMode = 'ai' | 'manual';
 
@@ -811,8 +810,6 @@ export function FlowBuilderPage() {
         )}
       </div>
 
-      {/* Help Widget */}
-      <HelpWidget />
     </div>
   );
 }

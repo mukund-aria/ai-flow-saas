@@ -157,7 +157,7 @@ export function ChatInput({
     <div className="bg-white px-4 py-3">
       {/* File Preview - Floating card above input */}
       {pendingFile && (
-        <div className="mb-3 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-100 shadow-sm">
+        <div className="mb-3 p-3 bg-gradient-to-r from-violet-50 to-blue-50 rounded-xl border border-violet-100 shadow-sm">
           <div className="flex items-center gap-3">
             {previewUrl ? (
               <img
@@ -167,7 +167,7 @@ export function ChatInput({
               />
             ) : (
               <div className="w-14 h-14 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                <Image className="w-6 h-6 text-purple-400" />
+                <Image className="w-6 h-6 text-violet-400" />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -193,7 +193,7 @@ export function ChatInput({
         className={cn(
           'flex items-end gap-2 p-2 rounded-2xl border bg-gray-50/80 transition-all duration-200',
           'hover:bg-gray-50 hover:border-gray-300',
-          'focus-within:bg-white focus-within:border-purple-300 focus-within:ring-2 focus-within:ring-purple-100',
+          'focus-within:bg-white focus-within:border-violet-300 focus-within:ring-2 focus-within:ring-violet-100',
           'shadow-sm hover:shadow',
           disabled && 'opacity-60 pointer-events-none'
         )}
@@ -213,8 +213,8 @@ export function ChatInput({
           title="Upload diagram or document"
           className={cn(
             'shrink-0 p-2 rounded-xl transition-all duration-200',
-            'text-gray-400 hover:text-purple-500 hover:bg-purple-50',
-            'focus:outline-none focus:ring-2 focus:ring-purple-200'
+            'text-gray-400 hover:text-violet-500 hover:bg-violet-50',
+            'focus:outline-none focus:ring-2 focus:ring-violet-200'
           )}
         >
           <Paperclip className="w-5 h-5" />
@@ -273,9 +273,9 @@ export function ChatInput({
             disabled={disabled || !hasContent}
             className={cn(
               'shrink-0 p-2.5 rounded-xl transition-all duration-200',
-              'focus:outline-none focus:ring-2 focus:ring-purple-200',
+              'focus:outline-none focus:ring-2 focus:ring-violet-200',
               hasContent
-                ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm hover:shadow'
+                ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm hover:shadow'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             )}
           >
@@ -284,10 +284,6 @@ export function ChatInput({
         )}
       </div>
 
-      {/* Hint Text */}
-      <p className="mt-2 text-xs text-gray-400 text-center">
-        Press Enter to send, Shift+Enter for new line
-      </p>
     </div>
   );
 }

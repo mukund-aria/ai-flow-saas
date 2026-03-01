@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Minus, Plus, Maximize2 } from 'lucide-react';
-import { WorkflowHeader } from './WorkflowHeader';
 import { FlowStartCard } from './FlowStartCard';
 import { StepList } from './StepList';
 import { StepConnector } from './StepConnector';
@@ -271,33 +270,30 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
     );
   }
 
-  // Read-only mode (AI chat preview) -- keep header for context
+  // Read-only mode (AI chat preview) — no header (title/status already in page header bar)
   return (
     <div
       ref={containerRef}
       data-canvas-root
-      className="flex flex-col h-full relative"
+      className="flex-1 h-full relative overflow-hidden bg-dotted-grid bg-[#FAFAF9]"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
       style={{ cursor: canvasCursor }}
     >
-      <WorkflowHeader workflow={workflow} editMode={false} />
-      <div className="flex-1 overflow-hidden bg-dotted-grid bg-[#FAFAF9] relative">
-        <div
-          className="p-4 flex flex-col items-center min-w-fit"
-          style={{ transform: canvasTransform, transformOrigin: 'top center' }}
-        >
-          {/* Flow Start Card */}
-          <FlowStartCard workflow={workflow} />
+      <div
+        className="p-6 flex flex-col items-center min-w-fit"
+        style={{ transform: canvasTransform, transformOrigin: 'top center' }}
+      >
+        {/* Flow Start Card */}
+        <FlowStartCard workflow={workflow} />
 
-          {/* Connector */}
-          <StepConnector />
+        {/* Connector */}
+        <StepConnector />
 
-          {/* Step List */}
-          <StepList workflow={workflow} editMode={false} />
-        </div>
+        {/* Step List */}
+        <StepList workflow={workflow} editMode={false} />
       </div>
       {zoomControls}
     </div>
