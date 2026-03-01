@@ -35,6 +35,7 @@ import { getRoleColor, getRoleInitials } from '@/types';
 import type { Role, KickoffConfig, FormField } from '@/types';
 import { cn } from '@/lib/utils';
 import { FlowPreviewTimeline } from './FlowPreviewTimeline';
+import { FeatureTooltip } from '@/components/ui/FeatureTooltip';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -725,7 +726,9 @@ export function ExecuteFlowDialog({
               <div className="flex items-center gap-2 mb-3">
                 <Users className="w-4 h-4 text-gray-500" />
                 <h3 className="text-sm font-semibold text-gray-900">
-                  Assign Roles
+                  <FeatureTooltip content="Assign a real person to each role. Roles marked 'TBD' need to be filled before starting." side="right">
+                    <span>Assign Roles</span>
+                  </FeatureTooltip>
                 </h3>
               </div>
               <p className="text-xs text-gray-500 mb-3">

@@ -7,10 +7,12 @@
  */
 
 import { useState } from 'react';
-import { Plus, X, UserCheck, PlayCircle, FileText, RefreshCw, UserPlus, Variable, GitBranch, Shield, Eye } from 'lucide-react';
+import { Plus, X, UserCheck, PlayCircle, FileText, RefreshCw, UserPlus, Variable, GitBranch, Shield, Eye, ScanEye } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
+import { FeatureTooltip } from '@/components/ui/FeatureTooltip';
 import { getRoleColor, getRoleInitials } from '@/types';
 import type { ResolutionType } from '@/types';
+import { RolePreviewDialog } from './RolePreviewDialog';
 
 export const RESOLUTION_ICONS: Record<ResolutionType, typeof UserCheck> = {
   CONTACT_TBD: UserPlus,
@@ -57,6 +59,7 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
   const { workflow, addRole, removeRole } = useWorkflowStore();
   const [isAdding, setIsAdding] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
+  const [previewRoleId, setPreviewRoleId] = useState<string | null>(null);
 
   if (!workflow) return null;
 
@@ -84,7 +87,11 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
 
   return (
     <div className="flex items-center gap-2 px-6 py-2 bg-gray-50 border-b border-gray-200 min-h-[44px]">
-      <span className="text-xs font-medium text-gray-500 mr-1 shrink-0">Roles:</span>
+      <span className="text-xs font-medium text-gray-500 mr-1 shrink-0">
+        <FeatureTooltip content="Roles represent the participants in your workflow. Click a role to configure who fills it." side="bottom">
+          <span>Roles:</span>
+        </FeatureTooltip>
+      </span>
 
       {/* Assignee avatars */}
       {assignees.map((assignee, index) => {
@@ -126,6 +133,13 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
             {canViewAll && (
               <Eye className="w-3 h-3 text-blue-500 shrink-0" aria-label="Can view all actions" />
             )}
+            <button
+              onClick={(e) => { e.stopPropagation(); setPreviewRoleId(assignee.roleId); }}
+              className="p-0.5 rounded-full text-gray-300 hover:text-violet-600 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+              title={`Preview ${assignee.name}'s experience`}
+            >
+              <ScanEye className="w-3 h-3" />
+            </button>
             <button
               onClick={(e) => { e.stopPropagation(); removeRole(assignee.roleId); }}
               className="p-0.5 rounded-full text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all shrink-0"
@@ -178,6 +192,22 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
           Add role
         </button>
       )}
+
+      {/* Role Preview Dialog */}
+      {previewRoleId && (() => {
+        const role = assignees.find(a => a.roleId === previewRoleId);
+        const roleIdx = assignees.findIndex(a => a.roleId === previewRoleId);
+        if (!role) return null;
+        return (
+          <RolePreviewDialog
+            open={true}
+            onOpenChange={(open) => { if (!open) setPreviewRoleId(null); }}
+            steps={workflow.steps}
+            role={role}
+            roleIndex={roleIdx}
+          />
+        );
+      })()}
     </div>
   );
 }

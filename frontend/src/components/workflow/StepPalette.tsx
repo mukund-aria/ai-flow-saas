@@ -16,6 +16,7 @@ import { STEP_TYPE_META } from '@/types';
 import type { StepType } from '@/types';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { useDraggable } from '@dnd-kit/core';
+import { FeatureTooltip } from '@/components/ui/FeatureTooltip';
 
 interface StepPaletteProps {
   onSwitchToAI: () => void;
@@ -114,6 +115,13 @@ function MilestonePaletteItem() {
   );
 }
 
+const GROUP_TOOLTIPS: Record<string, string> = {
+  Actions: 'Steps that require a person to do something — fill a form, approve, upload files.',
+  AI: 'AI-powered steps that run automatically — extract data, summarize, generate content.',
+  Automations: 'System steps that execute without human input — send emails, call APIs, apply business rules.',
+  Controls: 'Flow logic — conditional branching, parallel paths, loops, and sub-flows.',
+};
+
 export function StepPalette({ onSwitchToAI }: StepPaletteProps) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
@@ -166,7 +174,13 @@ export function StepPalette({ onSwitchToAI }: StepPaletteProps) {
                 ) : (
                   <ChevronDown className="w-3 h-3 shrink-0" />
                 )}
-                {group.label}
+                {GROUP_TOOLTIPS[group.label] ? (
+                  <FeatureTooltip content={GROUP_TOOLTIPS[group.label]} side="right">
+                    <span>{group.label}</span>
+                  </FeatureTooltip>
+                ) : (
+                  group.label
+                )}
               </button>
 
               {/* Group items */}

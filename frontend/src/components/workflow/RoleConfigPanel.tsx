@@ -13,13 +13,15 @@ import {
   X, ChevronUp, ChevronDown, Search, Plus, Trash2,
   UserPlus, UserCheck, PlayCircle, FileText,
   Variable, GitBranch, RefreshCw, Database,
-  Shield, UserCircle,
+  Shield, UserCircle, Eye, Users, Building2,
 } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { getRoleColor, getRoleInitials } from '@/types';
-import type { ResolutionType, Resolution, FormField, FlowVariable } from '@/types';
-import { listContacts } from '@/lib/api';
-import type { Contact } from '@/lib/api';
+import type { ResolutionType, Resolution, FormField, FlowVariable, CompletionMode } from '@/types';
+import { listContacts, listContactGroups, listAccounts } from '@/lib/api';
+import type { Contact, ContactGroup, Account } from '@/lib/api';
+import { FeatureTooltip } from '@/components/ui/FeatureTooltip';
+import { RolePreviewDialog } from './RolePreviewDialog';
 
 interface RoleConfigPanelProps {
   roleId: string;
@@ -69,6 +71,21 @@ const DATA_SOURCE_OPTIONS: ResolutionOption[] = [
   },
 ];
 
+const GROUP_OPTIONS: ResolutionOption[] = [
+  {
+    type: 'CONTACT_GROUP',
+    label: 'Contact group',
+    icon: Users,
+    description: 'Assign to all members of a contact group. Configure completion mode (any one, all, or majority).',
+  },
+  {
+    type: 'ACCOUNT_CONTACTS',
+    label: 'Account contacts',
+    icon: Building2,
+    description: 'Assign to all active contacts in an account. Configure completion mode.',
+  },
+];
+
 const ADVANCED_OPTIONS: ResolutionOption[] = [
   {
     type: 'RULES',
@@ -84,7 +101,7 @@ const ADVANCED_OPTIONS: ResolutionOption[] = [
   },
 ];
 
-const ALL_OPTIONS = [...DIRECT_OPTIONS, ...DATA_SOURCE_OPTIONS, ...ADVANCED_OPTIONS];
+const ALL_OPTIONS = [...DIRECT_OPTIONS, ...DATA_SOURCE_OPTIONS, ...GROUP_OPTIONS, ...ADVANCED_OPTIONS];
 
 export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
   const { workflow, updateRole } = useWorkflowStore();
@@ -97,6 +114,7 @@ export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
   const [assigneeExpanded, setAssigneeExpanded] = useState(true);
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -222,19 +240,32 @@ export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
             )}
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors shrink-0"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => setPreviewOpen(true)}
+            className="p-1 rounded-lg text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+            title={`Preview ${assignee.name}'s experience`}
+          >
+            <Eye className="w-5 h-5" />
+          </button>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         {/* Role Type Section */}
         <div className="border-b border-gray-100 px-6 py-4">
-          <div className="text-xs text-gray-500 font-medium mb-2">Role type</div>
+          <div className="text-xs text-gray-500 font-medium mb-2">
+            <FeatureTooltip content="Coordinators see the full run dashboard. Assignees only see their assigned tasks via secure email links." side="right">
+              <span>Role type</span>
+            </FeatureTooltip>
+          </div>
           <div className="flex rounded-lg border border-gray-200 overflow-hidden">
             <button
               onClick={() => updateRole(roleId, { roleType: 'coordinator' })}
@@ -278,7 +309,11 @@ export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
 
           {assigneeExpanded && (
             <div className="px-6 pb-5 space-y-4">
-              <div className="text-xs text-gray-500 font-medium">Select assignee</div>
+              <div className="text-xs text-gray-500 font-medium">
+                <FeatureTooltip content="How this role maps to a real person when the flow starts. 'Contact TBD' lets the coordinator choose at runtime." side="right">
+                  <span>Select assignee</span>
+                </FeatureTooltip>
+              </div>
 
               {/* Resolution dropdown */}
               <div className="relative" ref={dropdownRef}>
@@ -310,6 +345,19 @@ export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
                       From data sources
                     </div>
                     {DATA_SOURCE_OPTIONS.map((opt) => (
+                      <DropdownItem
+                        key={opt.type}
+                        option={opt}
+                        isActive={opt.type === resType}
+                        onClick={() => handleResolutionSelect(opt.type)}
+                      />
+                    ))}
+
+                    {/* Group assignment */}
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 border-t border-b border-gray-100">
+                      Group assignment
+                    </div>
+                    {GROUP_OPTIONS.map((opt) => (
                       <DropdownItem
                         key={opt.type}
                         option={opt}
@@ -406,6 +454,15 @@ export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
           )}
         </div>
       </div>
+
+      {/* Role Preview Dialog */}
+      <RolePreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        steps={workflow?.steps || []}
+        role={assignee}
+        roleIndex={assigneeIndex}
+      />
     </div>
   );
 }
@@ -493,6 +550,12 @@ function ResolutionSubConfig({ resType, resolution, onUpdate, kickoffFields, flo
           flowVariables={flowVariables}
         />
       );
+
+    case 'CONTACT_GROUP':
+      return <ContactGroupConfig resolution={resolution} onUpdate={onUpdate} />;
+
+    case 'ACCOUNT_CONTACTS':
+      return <AccountContactsConfig resolution={resolution} onUpdate={onUpdate} />;
 
     default:
       return null;
@@ -988,6 +1051,148 @@ function RulesConfig({
           ))}
         </select>
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Contact Group Config
+// ============================================================================
+
+function ContactGroupConfig({
+  resolution,
+  onUpdate,
+}: {
+  resolution?: Resolution;
+  onUpdate: (updates: Partial<Resolution>) => void;
+}) {
+  const [groups, setGroups] = useState<ContactGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    listContactGroups()
+      .then(setGroups)
+      .catch(() => setGroups([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <p className="text-xs text-gray-400 italic">Loading groups...</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Contact group</label>
+        <select
+          value={resolution?.groupId || ''}
+          onChange={(e) => onUpdate({ groupId: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-violet-500"
+        >
+          <option value="">Select a group</option>
+          {groups.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name} ({g.memberCount ?? 0} members)
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <CompletionModeSelector
+        value={(resolution?.completionMode || 'ANY_ONE') as CompletionMode}
+        onChange={(mode) => onUpdate({ completionMode: mode })}
+      />
+
+      <p className="text-xs text-gray-400 italic">
+        All members of the selected group will be assigned this step.
+      </p>
+    </div>
+  );
+}
+
+// ============================================================================
+// Account Contacts Config
+// ============================================================================
+
+function AccountContactsConfig({
+  resolution,
+  onUpdate,
+}: {
+  resolution?: Resolution;
+  onUpdate: (updates: Partial<Resolution>) => void;
+}) {
+  const [accountsList, setAccountsList] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    listAccounts()
+      .then(setAccountsList)
+      .catch(() => setAccountsList([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <p className="text-xs text-gray-400 italic">Loading accounts...</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Account</label>
+        <select
+          value={resolution?.accountId || ''}
+          onChange={(e) => onUpdate({ accountId: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-violet-500"
+        >
+          <option value="">Select an account</option>
+          {accountsList.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name} {a.domain ? `(${a.domain})` : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <CompletionModeSelector
+        value={(resolution?.completionMode || 'ANY_ONE') as CompletionMode}
+        onChange={(mode) => onUpdate({ completionMode: mode })}
+      />
+
+      <p className="text-xs text-gray-400 italic">
+        All active contacts in the selected account will be assigned this step.
+      </p>
+    </div>
+  );
+}
+
+// ============================================================================
+// Completion Mode Selector (shared by group assignment types)
+// ============================================================================
+
+function CompletionModeSelector({
+  value,
+  onChange,
+}: {
+  value: CompletionMode;
+  onChange: (mode: CompletionMode) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-600 mb-1">Completion mode</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as CompletionMode)}
+        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-violet-500"
+      >
+        <option value="ANY_ONE">Any one completes</option>
+        <option value="ALL">All must complete</option>
+        <option value="MAJORITY">Majority must complete</option>
+      </select>
+      <p className="text-xs text-gray-400 mt-1">
+        {value === 'ANY_ONE' && 'Step advances when any single assignee completes it.'}
+        {value === 'ALL' && 'Step advances only when every assignee completes it.'}
+        {value === 'MAJORITY' && 'Step advances when more than half of assignees complete it.'}
+      </p>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Settings, Shield, Users, Bell, Clock, Code2, Search, Check } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
+import { FeatureTooltip } from '@/components/ui/FeatureTooltip';
 import { FlowPermissionsEditor } from './FlowPermissionsEditor';
 import { AssigneeExperienceEditor } from './AssigneeExperienceEditor';
 import { FlowNotificationSettingsPanel } from './FlowNotificationSettings';
@@ -153,7 +154,9 @@ function GeneralTab({
       {/* Workspace Name Template */}
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1">
-          Workspace Name Template
+          <FeatureTooltip content="Auto-name runs using form data. Example: 'Onboarding - {Kickoff / Client Name}'" side="right">
+            <span>Workspace Name Template</span>
+          </FeatureTooltip>
         </label>
         <input
           type="text"

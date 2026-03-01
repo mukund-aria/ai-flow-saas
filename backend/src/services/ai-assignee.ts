@@ -124,21 +124,19 @@ export interface AIPrepareResult {
 }
 
 /**
- * Use AI to pre-fill form fields based on context from prior steps.
+ * Build the AI Prepare prompt from a step definition and DDR context.
+ * Pure function — no DB access.
  */
-export async function runAIPrepare(
-  stepExecId: string,
+export function buildAIPreparePrompt(
   stepDef: Record<string, unknown>,
-  flowRunId: string
-): Promise<AIPrepareResult> {
-  try {
-    const context = await buildDDRContext(flowRunId);
-    const config = (stepDef.config || stepDef) as Record<string, unknown>;
-    const formFields = (config.formFields || []) as Array<Record<string, unknown>>;
-    const aiPrepareConfig = config.aiPrepare as Record<string, unknown> | undefined;
-    const customPrompt = (aiPrepareConfig?.prompt as string) || '';
+  context: DDRContext
+): string {
+  const config = (stepDef.config || stepDef) as Record<string, unknown>;
+  const formFields = (config.formFields || []) as Array<Record<string, unknown>>;
+  const aiPrepareConfig = config.aiPrepare as Record<string, unknown> | undefined;
+  const customPrompt = (aiPrepareConfig?.prompt as string) || '';
 
-    const prompt = `You are an AI assistant helping pre-fill a form in a business workflow.
+  return `You are an AI assistant helping pre-fill a form in a business workflow.
 
 ## Workflow Context
 - Flow: ${context.flowName}
@@ -160,6 +158,43 @@ Respond in JSON format:
   "confidence": 0.0 to 1.0,
   "reasoning": "Brief explanation of how values were derived"
 }`;
+}
+
+/**
+ * Parse the AI Prepare response into a result object.
+ */
+function parseAIPrepareResponse(text: string): AIPrepareResult {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      status: 'COMPLETED',
+      prefilledFields: parsed.prefilledFields || {},
+      confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.5,
+      reasoning: parsed.reasoning || '',
+      preparedAt: new Date().toISOString(),
+    };
+  }
+  return {
+    status: 'FAILED',
+    prefilledFields: {},
+    confidence: 0,
+    reasoning: 'Could not parse AI response',
+    preparedAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Use AI to pre-fill form fields based on context from prior steps.
+ */
+export async function runAIPrepare(
+  stepExecId: string,
+  stepDef: Record<string, unknown>,
+  flowRunId: string
+): Promise<AIPrepareResult> {
+  try {
+    const context = await buildDDRContext(flowRunId);
+    const prompt = buildAIPreparePrompt(stepDef, context);
 
     const response = await anthropic.messages.create({
       model: HAIKU_MODEL,
@@ -172,27 +207,7 @@ Respond in JSON format:
       .map((b) => b.text)
       .join('');
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    let result: AIPrepareResult;
-
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      result = {
-        status: 'COMPLETED',
-        prefilledFields: parsed.prefilledFields || {},
-        confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.5,
-        reasoning: parsed.reasoning || '',
-        preparedAt: new Date().toISOString(),
-      };
-    } else {
-      result = {
-        status: 'FAILED',
-        prefilledFields: {},
-        confidence: 0,
-        reasoning: 'Could not parse AI response',
-        preparedAt: new Date().toISOString(),
-      };
-    }
+    const result = parseAIPrepareResponse(text);
 
     // Store result in step execution
     const stepExec = await db.query.stepExecutions.findFirst({
@@ -250,34 +265,34 @@ export interface AIAdviseResult {
 /**
  * Use AI to recommend an action for a step (decision, approval, etc.).
  */
-export async function runAIAdvise(
-  stepExecId: string,
+/**
+ * Build the AI Advise prompt from a step definition and DDR context.
+ * Pure function — no DB access.
+ */
+export function buildAIAdvisePrompt(
   stepDef: Record<string, unknown>,
-  flowRunId: string
-): Promise<AIAdviseResult> {
-  try {
-    const context = await buildDDRContext(flowRunId);
-    const config = (stepDef.config || stepDef) as Record<string, unknown>;
-    const stepType = (stepDef.type as string) || 'UNKNOWN';
-    const aiAdviseConfig = config.aiAdvise as Record<string, unknown> | undefined;
-    const customPrompt = (aiAdviseConfig?.prompt as string) || '';
+  context: DDRContext
+): string {
+  const config = (stepDef.config || stepDef) as Record<string, unknown>;
+  const stepType = (stepDef.type as string) || 'UNKNOWN';
+  const aiAdviseConfig = config.aiAdvise as Record<string, unknown> | undefined;
+  const customPrompt = (aiAdviseConfig?.prompt as string) || '';
 
-    // Build type-specific context
-    let typeContext = '';
-    if (stepType === 'DECISION') {
-      const outcomes = (config.outcomes || config.options || []) as Array<Record<string, unknown>>;
-      typeContext = `\n## Decision Options\n${JSON.stringify(outcomes, null, 2)}`;
-    } else if (stepType === 'APPROVAL') {
-      typeContext = '\n## Approval Options\nThe assignee can APPROVE or REJECT this step.';
-    } else if (stepType === 'FORM') {
-      const formFields = (config.formFields || []) as Array<Record<string, unknown>>;
-      typeContext = `\n## Form Fields\n${JSON.stringify(formFields, null, 2)}`;
-    } else if (stepType === 'FILE_REQUEST') {
-      const fileConfig = (config.fileRequest || config) as Record<string, unknown>;
-      typeContext = `\n## File Request\nRequired files: ${JSON.stringify(fileConfig.requiredFileTypes || fileConfig.description || 'Not specified')}`;
-    }
+  let typeContext = '';
+  if (stepType === 'DECISION') {
+    const outcomes = (config.outcomes || config.options || []) as Array<Record<string, unknown>>;
+    typeContext = `\n## Decision Options\n${JSON.stringify(outcomes, null, 2)}`;
+  } else if (stepType === 'APPROVAL') {
+    typeContext = '\n## Approval Options\nThe assignee can APPROVE or REJECT this step.';
+  } else if (stepType === 'FORM') {
+    const formFields = (config.formFields || []) as Array<Record<string, unknown>>;
+    typeContext = `\n## Form Fields\n${JSON.stringify(formFields, null, 2)}`;
+  } else if (stepType === 'FILE_REQUEST') {
+    const fileConfig = (config.fileRequest || config) as Record<string, unknown>;
+    typeContext = `\n## File Request\nRequired files: ${JSON.stringify(fileConfig.requiredFileTypes || fileConfig.description || 'Not specified')}`;
+  }
 
-    const prompt = `You are an AI advisor helping with a ${stepType} step in a business workflow.
+  return `You are an AI advisor helping with a ${stepType} step in a business workflow.
 
 ## Workflow Context
 - Flow: ${context.flowName}
@@ -296,6 +311,40 @@ Respond in JSON format:
   "reasoning": "Why this recommendation makes sense given the context",
   "supportingData": { "relevant key": "supporting detail" }
 }`;
+}
+
+/**
+ * Parse the AI Advise response into a result object.
+ */
+function parseAIAdviseResponse(text: string): AIAdviseResult {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      status: 'COMPLETED',
+      recommendation: parsed.recommendation || '',
+      reasoning: parsed.reasoning || '',
+      supportingData: parsed.supportingData || {},
+      advisedAt: new Date().toISOString(),
+    };
+  }
+  return {
+    status: 'FAILED',
+    recommendation: '',
+    reasoning: 'Could not parse AI response',
+    supportingData: {},
+    advisedAt: new Date().toISOString(),
+  };
+}
+
+export async function runAIAdvise(
+  stepExecId: string,
+  stepDef: Record<string, unknown>,
+  flowRunId: string
+): Promise<AIAdviseResult> {
+  try {
+    const context = await buildDDRContext(flowRunId);
+    const prompt = buildAIAdvisePrompt(stepDef, context);
 
     const response = await anthropic.messages.create({
       model: HAIKU_MODEL,
@@ -308,27 +357,7 @@ Respond in JSON format:
       .map((b) => b.text)
       .join('');
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    let result: AIAdviseResult;
-
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      result = {
-        status: 'COMPLETED',
-        recommendation: parsed.recommendation || '',
-        reasoning: parsed.reasoning || '',
-        supportingData: parsed.supportingData || {},
-        advisedAt: new Date().toISOString(),
-      };
-    } else {
-      result = {
-        status: 'FAILED',
-        recommendation: '',
-        reasoning: 'Could not parse AI response',
-        supportingData: {},
-        advisedAt: new Date().toISOString(),
-      };
-    }
+    const result = parseAIAdviseResponse(text);
 
     // Store result
     const stepExec = await db.query.stepExecutions.findFirst({
@@ -382,20 +411,19 @@ export interface AIReviewResult {
 }
 
 /**
- * Use AI to review a submission before marking a step as completed.
+ * Build the AI Review prompt from a step definition and submitted data.
+ * Pure function — no DB access.
  */
-export async function runAIReview(
-  stepExecId: string,
+export function buildAIReviewPrompt(
   stepDef: Record<string, unknown>,
   submittedData: Record<string, unknown>
-): Promise<AIReviewResult> {
-  try {
-    const config = (stepDef.config || stepDef) as Record<string, unknown>;
-    const aiReviewConfig = config.aiReview as Record<string, unknown> | undefined;
-    const criteria = (aiReviewConfig?.criteria as string) ||
-      'Review the submission for completeness, accuracy, and quality. Check that all required information is present and properly formatted.';
+): string {
+  const config = (stepDef.config || stepDef) as Record<string, unknown>;
+  const aiReviewConfig = config.aiReview as Record<string, unknown> | undefined;
+  const criteria = (aiReviewConfig?.criteria as string) ||
+    'Review the submission for completeness, accuracy, and quality. Check that all required information is present and properly formatted.';
 
-    const prompt = `You are reviewing a submission in a business workflow step.
+  return `You are reviewing a submission in a business workflow step.
 
 ## Step Type: ${(stepDef.type as string) || 'FORM'}
 ## Step Name: ${(config.name as string) || 'Unknown'}
@@ -414,6 +442,37 @@ Respond in JSON format:
   "feedback": "Brief overall assessment",
   "issues": ["List of specific issues if any"]
 }`;
+}
+
+/**
+ * Parse the AI Review response into a result object.
+ */
+function parseAIReviewResponse(text: string): AIReviewResult {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      status: parsed.status === 'REVISION_NEEDED' ? 'REVISION_NEEDED' : 'APPROVED',
+      feedback: parsed.feedback || 'Review complete.',
+      issues: Array.isArray(parsed.issues) ? parsed.issues : [],
+      reviewedAt: new Date().toISOString(),
+    };
+  }
+  return {
+    status: 'APPROVED',
+    feedback: 'Review complete. Submission appears acceptable.',
+    issues: [],
+    reviewedAt: new Date().toISOString(),
+  };
+}
+
+export async function runAIReview(
+  stepExecId: string,
+  stepDef: Record<string, unknown>,
+  submittedData: Record<string, unknown>
+): Promise<AIReviewResult> {
+  try {
+    const prompt = buildAIReviewPrompt(stepDef, submittedData);
 
     const response = await anthropic.messages.create({
       model: HAIKU_MODEL,
@@ -426,25 +485,7 @@ Respond in JSON format:
       .map((b) => b.text)
       .join('');
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    let result: AIReviewResult;
-
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      result = {
-        status: parsed.status === 'REVISION_NEEDED' ? 'REVISION_NEEDED' : 'APPROVED',
-        feedback: parsed.feedback || 'Review complete.',
-        issues: Array.isArray(parsed.issues) ? parsed.issues : [],
-        reviewedAt: new Date().toISOString(),
-      };
-    } else {
-      result = {
-        status: 'APPROVED',
-        feedback: 'Review complete. Submission appears acceptable.',
-        issues: [],
-        reviewedAt: new Date().toISOString(),
-      };
-    }
+    const result = parseAIReviewResponse(text);
 
     // Store result
     const stepExec = await db.query.stepExecutions.findFirst({
@@ -461,7 +502,6 @@ Respond in JSON format:
     return result;
   } catch (error) {
     console.error('[AI Review] Error:', error);
-    // On failure, approve by default to not block workflow
     const fallbackResult: AIReviewResult = {
       status: 'APPROVED',
       feedback: 'AI review could not be completed. Submission accepted by default.',
@@ -764,4 +804,89 @@ Keep responses concise and relevant.`;
     res.write(`data: ${JSON.stringify({ type: 'error', content: 'Chat service temporarily unavailable.' })}\n\n`);
     res.end();
   }
+}
+
+// ============================================================================
+// Test / Preview Functions (No DB writes)
+// ============================================================================
+
+export interface AITestContext {
+  kickoffData?: Record<string, unknown>;
+  priorStepOutputs?: Record<string, Record<string, unknown>>;
+}
+
+/**
+ * Build a DDRContext from test sample data (no DB access).
+ */
+function buildTestDDRContext(context?: AITestContext): DDRContext {
+  return {
+    kickoffData: context?.kickoffData || {},
+    stepOutputs: context?.priorStepOutputs || {},
+    roleAssignments: {},
+    workspace: 'Test Workspace',
+    flowName: 'Test Flow',
+    currentStep: null,
+  };
+}
+
+/**
+ * Extract text from an Anthropic API response.
+ */
+function extractResponseText(response: Anthropic.Message): string {
+  return response.content
+    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .map((b) => b.text)
+    .join('');
+}
+
+/**
+ * Test AI Review with sample data — no DB writes.
+ */
+export async function testAIReview(
+  stepDef: Record<string, unknown>,
+  sampleData: Record<string, unknown>,
+  _context?: AITestContext
+): Promise<AIReviewResult> {
+  const prompt = buildAIReviewPrompt(stepDef, sampleData);
+  const response = await anthropic.messages.create({
+    model: HAIKU_MODEL,
+    max_tokens: 1024,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  return parseAIReviewResponse(extractResponseText(response));
+}
+
+/**
+ * Test AI Prepare with sample context — no DB writes.
+ */
+export async function testAIPrepare(
+  stepDef: Record<string, unknown>,
+  context?: AITestContext
+): Promise<AIPrepareResult> {
+  const ddrContext = buildTestDDRContext(context);
+  const prompt = buildAIPreparePrompt(stepDef, ddrContext);
+  const response = await anthropic.messages.create({
+    model: HAIKU_MODEL,
+    max_tokens: 1024,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  return parseAIPrepareResponse(extractResponseText(response));
+}
+
+/**
+ * Test AI Advise with sample data — no DB writes.
+ */
+export async function testAIAdvise(
+  stepDef: Record<string, unknown>,
+  _sampleData: Record<string, unknown>,
+  context?: AITestContext
+): Promise<AIAdviseResult> {
+  const ddrContext = buildTestDDRContext(context);
+  const prompt = buildAIAdvisePrompt(stepDef, ddrContext);
+  const response = await anthropic.messages.create({
+    model: HAIKU_MODEL,
+    max_tokens: 1024,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  return parseAIAdviseResponse(extractResponseText(response));
 }

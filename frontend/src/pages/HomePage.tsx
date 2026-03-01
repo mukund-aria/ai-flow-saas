@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { getAttentionItems, type AttentionItem, type TrackingStatus } from '@/lib/api';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { useAttentionSettings, filterByAttentionSettings } from '@/hooks/useAttentionSettings';
+import { FeatureTooltip } from '@/components/ui/FeatureTooltip';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -358,7 +359,11 @@ export function HomePage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-red-500" />
-              <h2 className="text-base font-semibold text-gray-900">Attention Needed</h2>
+              <h2 className="text-base font-semibold text-gray-900">
+                <FeatureTooltip content="Items here need your action — overdue tasks, stalled steps, or pending approvals across all your flows." side="right">
+                  <span>Attention Needed</span>
+                </FeatureTooltip>
+              </h2>
               {filteredItems.length > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
                   {filteredItems.length}

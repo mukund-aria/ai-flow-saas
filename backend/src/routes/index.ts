@@ -29,6 +29,7 @@ import galleryRouter from './gallery.js';
 import analyzeRouter from './analyze.js';
 import portalsRouter from './portals.js';
 import emailTemplatesRouter from './email-templates.js';
+import aiTestRouter from './ai-test.js';
 import { orgScope } from '../middleware/org-scope.js';
 
 const router = Router();
@@ -41,6 +42,9 @@ router.use('/team', teamRouter);
 
 // Analyze API (no org-scope needed — pure computation, no DB access)
 router.use('/analyze', analyzeRouter);
+
+// AI Test API (no org-scope needed — dry-run AI features, no DB writes)
+router.use('/ai', aiTestRouter);
 
 // Apply org-scope to all data-scoped routes below
 router.use(orgScope);
