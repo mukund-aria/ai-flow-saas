@@ -846,9 +846,9 @@ export function FlowDetailPage() {
           {step.assignee && !step.isGroupAssignment && (
             <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
               <div className="w-5 h-5 rounded-full bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center text-[10px] font-bold text-violet-700">
-                {step.assignee.name.charAt(0).toUpperCase()}
+                {(step.assignee.name || '?').charAt(0).toUpperCase()}
               </div>
-              <span>{step.assignee.name}</span>
+              <span>{step.assignee.name || 'Unassigned'}</span>
               {step.assignee.type === 'contact' && (
                 <span className="text-xs text-gray-400">(external)</span>
               )}
@@ -879,9 +879,9 @@ export function FlowDetailPage() {
                     title={ga.email}
                   >
                     <div className="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center text-[8px] font-bold text-violet-700">
-                      {ga.name.charAt(0).toUpperCase()}
+                      {(ga.name || '?').charAt(0).toUpperCase()}
                     </div>
-                    <span>{ga.name}</span>
+                    <span>{ga.name || 'Unknown'}</span>
                     {ga.status === 'COMPLETED' && <span className="text-green-500">✓</span>}
                   </div>
                 ))}
@@ -1414,7 +1414,7 @@ export function FlowDetailPage() {
                     {Array.from(assignees.entries()).map(([personId, a]) => (
                       <div key={personId} className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-600">
-                          {a.name.charAt(0).toUpperCase()}
+                          {(a.name || '?').charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-700">{a.name}</p>

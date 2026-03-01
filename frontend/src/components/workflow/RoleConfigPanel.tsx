@@ -845,7 +845,7 @@ function RoundRobinConfig({
                     className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-violet-50 transition-colors"
                   >
                     <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold shrink-0">
-                      {c.name.charAt(0).toUpperCase()}
+                      {(c.name || '?').charAt(0).toUpperCase()}
                     </span>
                     <span className="truncate text-gray-700">{c.name}</span>
                     <span className="text-xs text-gray-400 truncate">{c.email}</span>

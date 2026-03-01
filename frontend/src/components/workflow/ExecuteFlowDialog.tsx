@@ -101,7 +101,7 @@ function ContactDropdown({
 
     setCreating(true);
     try {
-      const name = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      const name = (email || '').split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) || 'Contact';
       const newContact = await createContact({
         name,
         email,
@@ -147,7 +147,7 @@ function ContactDropdown({
         {selectedContact ? (
           <span className="flex items-center gap-2 truncate">
             <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold shrink-0">
-              {selectedContact.name.charAt(0).toUpperCase()}
+              {(selectedContact.name || '?').charAt(0).toUpperCase()}
             </span>
             <span className="truncate text-gray-900">
               {selectedContact.name}
@@ -202,7 +202,7 @@ function ContactDropdown({
                 }`}
               >
                 <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold shrink-0">
-                  {contact.name.charAt(0).toUpperCase()}
+                  {(contact.name || '?').charAt(0).toUpperCase()}
                 </span>
                 <span className="flex flex-col items-start min-w-0">
                   <span className="text-gray-900 truncate w-full">

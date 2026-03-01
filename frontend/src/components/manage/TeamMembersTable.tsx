@@ -42,7 +42,7 @@ export function TeamMembersTable({ members }: Props) {
                         <img src={m.picture} alt={m.name} className="w-7 h-7 rounded-full" />
                       ) : (
                         <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-500">
-                          {m.name.charAt(0)}
+                          {(m.name || '?').charAt(0)}
                         </div>
                       )}
                       <span className="font-medium text-gray-900">{m.name}</span>

@@ -365,12 +365,13 @@ function AssigneeReportTab() {
           <tbody>
             {data.map((assignee) => {
               const progress = assignee.tasks > 0 ? Math.round((assignee.completed / assignee.tasks) * 100) : 0;
-              const initials = assignee.name
+              const initials = (assignee.name || '??')
                 .split(' ')
+                .filter((w) => w)
                 .map((n) => n[0])
                 .join('')
                 .slice(0, 2)
-                .toUpperCase();
+                .toUpperCase() || '??';
               return (
                 <tr key={assignee.contactId} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="px-6 py-4">

@@ -131,7 +131,7 @@ export function OrgSelectPage() {
                 {/* Avatar */}
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-semibold text-sm">
-                    {org.name.charAt(0).toUpperCase()}
+                    {(org.name || '?').charAt(0).toUpperCase()}
                   </span>
                 </div>
 

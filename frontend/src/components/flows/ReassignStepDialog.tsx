@@ -98,7 +98,7 @@ export function ReassignStepDialog({
         {currentAssignee && (
           <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg text-sm">
             <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
-              {currentAssignee.name.charAt(0).toUpperCase()}
+              {(currentAssignee.name || '?').charAt(0).toUpperCase()}
             </div>
             <span className="text-gray-600">
               Currently assigned to{' '}
@@ -191,7 +191,7 @@ export function ReassignStepDialog({
                           : 'bg-gray-100 text-gray-600'
                       )}
                     >
-                      {contact.name.charAt(0).toUpperCase()}
+                      {(contact.name || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{contact.name}</p>

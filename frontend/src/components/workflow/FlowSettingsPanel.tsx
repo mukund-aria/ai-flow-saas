@@ -459,7 +459,7 @@ function TemplateCoordinatorsEditor() {
           {selectedMembers.map((m) => (
             <span key={m.id} className="inline-flex items-center gap-1 px-2 py-1 bg-violet-50 border border-violet-200 rounded-md text-xs text-violet-700">
               <span className="w-4 h-4 rounded-full bg-violet-200 text-violet-700 flex items-center justify-center text-xs font-bold shrink-0">
-                {m.name.charAt(0).toUpperCase()}
+                {(m.name || '?').charAt(0).toUpperCase()}
               </span>
               {m.name}
               <button onClick={() => removeMember(m.id)} className="text-violet-400 hover:text-red-500 ml-0.5">
@@ -515,7 +515,7 @@ function TemplateCoordinatorsEditor() {
                       }`}
                     >
                       <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold shrink-0">
-                        {m.name.charAt(0).toUpperCase()}
+                        {(m.name || '?').charAt(0).toUpperCase()}
                       </span>
                       <div className="flex-1 min-w-0">
                         <span className="text-gray-900 truncate block">{m.name}</span>

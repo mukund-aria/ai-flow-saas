@@ -55,5 +55,6 @@ export function getStepTypeLabel(stepType: string): string {
 }
 
 export function getInitials(name: string): string {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  if (!name || !name.trim()) return '??';
+  return name.split(' ').filter(w => w).map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
 }

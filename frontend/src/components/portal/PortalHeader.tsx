@@ -40,7 +40,7 @@ export function PortalHeader() {
             <p className="text-xs text-gray-500">{contact.email}</p>
           </div>
           <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 text-sm font-semibold">
-            {contact.name.charAt(0).toUpperCase()}
+            {(contact.name || '?').charAt(0).toUpperCase()}
           </div>
           <button
             onClick={logout}

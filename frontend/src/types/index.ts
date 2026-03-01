@@ -1163,9 +1163,10 @@ export function getRoleColor(index: number): string {
 }
 
 export function getRoleInitials(name: string): string {
-  const words = name.split(/\s+/);
+  if (!name || !name.trim()) return '??';
+  const words = name.trim().split(/\s+/);
   if (words.length >= 2) {
     return (words[0][0] + words[1][0]).toUpperCase();
   }
-  return name.slice(0, 2).toUpperCase();
+  return name.trim().slice(0, 2).toUpperCase();
 }

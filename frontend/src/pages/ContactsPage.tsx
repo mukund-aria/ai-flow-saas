@@ -81,12 +81,14 @@ function formatRelativeDate(dateString?: string): string {
 
 // Get initials from name
 function getInitials(name: string): string {
+  if (!name || !name.trim()) return '??';
   return name
     .split(' ')
+    .filter((w) => w)
     .map((n) => n[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2);
+    .slice(0, 2) || '??';
 }
 
 // Sortable column header component
