@@ -73,7 +73,7 @@ export function errorHandler(
   _next: NextFunction
 ): void {
   // Log error for debugging
-  console.error(`[API Error] ${req.method} ${req.path}:`, err.message);
+  console.error(`[API Error] ${req.method} ${req.path}:`, err.message, err.stack);
 
   if (err instanceof APIError) {
     const response: ErrorResponse = {
@@ -101,12 +101,13 @@ export function errorHandler(
     return;
   }
 
-  // Unknown error - return generic 500
+  // Unknown error - include details in dev mode
+  const isProduction = process.env.NODE_ENV === 'production';
   const response: ErrorResponse = {
     success: false,
     error: {
       code: 'INTERNAL_ERROR',
-      message: 'An unexpected error occurred',
+      message: isProduction ? 'An unexpected error occurred' : err.message,
     },
   };
   res.status(500).json(response);

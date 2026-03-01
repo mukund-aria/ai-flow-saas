@@ -15,14 +15,17 @@ interface Props {
 export function OverviewTab({ range }: Props) {
   const [data, setData] = useState<PulseData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
-    setError(false);
+    setError(null);
     getPulseData(range)
       .then(setData)
-      .catch(() => setError(true))
+      .catch((err) => {
+        console.error('[OverviewTab] Failed to load pulse data:', err);
+        setError(err?.message || 'Unknown error');
+      })
       .finally(() => setIsLoading(false));
   }, [range]);
 
@@ -39,6 +42,7 @@ export function OverviewTab({ range }: Props) {
       <div className="flex flex-col items-center justify-center py-16 text-gray-400">
         <BarChart3 className="w-12 h-12 mb-3" />
         <p className="text-sm">Failed to load overview data. Please refresh to try again.</p>
+        {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
       </div>
     );
   }

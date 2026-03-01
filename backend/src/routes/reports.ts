@@ -89,7 +89,7 @@ router.get(
     // Fetch step executions for action metrics
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT ${flowRuns.id} FROM ${flowRuns} WHERE ${flowRuns.organizationId} = ${orgId})`
+        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
         : undefined,
     });
 
@@ -289,7 +289,7 @@ router.get(
     // Get step executions that are assigned to contacts
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT ${flowRuns.id} FROM ${flowRuns} WHERE ${flowRuns.organizationId} = ${orgId}) AND ${stepExecutions.assignedToContactId} IS NOT NULL`
+        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId}) AND ${stepExecutions.assignedToContactId} IS NOT NULL`
         : sql`${stepExecutions.assignedToContactId} IS NOT NULL`,
       with: {
         assignedToContact: true,
@@ -398,7 +398,7 @@ router.get(
     // Fetch completed step executions within the time range, with their flow run + flow info
     const completedSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowRunId} IN (SELECT ${flowRuns.id} FROM ${flowRuns} WHERE ${flowRuns.organizationId} = ${orgId})`
+        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
         : sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.completedAt} >= ${cutoff}`,
       with: {
         flowRun: { with: { flow: true } },
@@ -533,7 +533,7 @@ router.get(
     // Fetch completed steps with time data
     const completedSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.timeToComplete} IS NOT NULL AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowRunId} IN (SELECT ${flowRuns.id} FROM ${flowRuns} WHERE ${flowRuns.organizationId} = ${orgId})`
+        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.timeToComplete} IS NOT NULL AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
         : sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.timeToComplete} IS NOT NULL AND ${stepExecutions.completedAt} >= ${cutoff}`,
       with: {
         flowRun: { with: { flow: true } },
@@ -703,7 +703,7 @@ router.get(
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT ${flowRuns.id} FROM ${flowRuns} WHERE ${flowRuns.organizationId} = ${orgId})`
+        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
         : undefined,
     });
 
@@ -1030,7 +1030,7 @@ router.get(
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT ${flowRuns.id} FROM ${flowRuns} WHERE ${flowRuns.organizationId} = ${orgId})`
+        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
         : undefined,
       with: {
         flowRun: { with: { flow: true } },
@@ -1295,7 +1295,7 @@ router.get(
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT ${flowRuns.id} FROM ${flowRuns} WHERE ${flowRuns.organizationId} = ${orgId})`
+        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
         : undefined,
       with: {
         assignedToContact: true,
@@ -1623,7 +1623,7 @@ router.get(
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT ${flowRuns.id} FROM ${flowRuns} WHERE ${flowRuns.organizationId} = ${orgId})`
+        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
         : undefined,
       with: {
         assignedToContact: { with: { account: true } },
