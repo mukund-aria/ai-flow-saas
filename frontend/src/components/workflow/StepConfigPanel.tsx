@@ -85,7 +85,7 @@ function BranchPathsEditor({
           Add Branch
         </button>
       </div>
-      <p className="text-[11px] text-gray-400 mb-2">{labelHint}</p>
+      <p className="text-xs text-gray-400 mb-2">{labelHint}</p>
       <div className="space-y-2">
         {paths.map((path, index) => (
           <div key={path.pathId} className="flex items-center gap-2">
@@ -97,7 +97,7 @@ function BranchPathsEditor({
               placeholder={`Branch ${index + 1} label`}
               className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
             />
-            <span className="text-[10px] text-gray-400 shrink-0">
+            <span className="text-xs text-gray-400 shrink-0">
               {path.steps?.length || 0} steps
             </span>
             <button
@@ -162,13 +162,13 @@ function DecisionOutcomesEditor({
           Add Outcome
         </button>
       </div>
-      <p className="text-[11px] text-gray-400 mb-2">
+      <p className="text-xs text-gray-400 mb-2">
         The assignee selects one outcome. Each outcome can have follow-up steps.
       </p>
       <div className="space-y-2">
         {outcomes.map((outcome, index) => (
           <div key={outcome.outcomeId} className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+            <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center shrink-0">
               {index + 1}
             </span>
             <input
@@ -178,7 +178,7 @@ function DecisionOutcomesEditor({
               placeholder={`Outcome ${index + 1}`}
               className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
             />
-            <span className="text-[10px] text-gray-400 shrink-0">
+            <span className="text-xs text-gray-400 shrink-0">
               {outcome.steps?.length || 0} steps
             </span>
             <button
@@ -212,7 +212,7 @@ function ApprovalOptionsEditor({
       <label className="text-xs font-medium text-gray-600 block mb-2">
         Approval Options
       </label>
-      <p className="text-[11px] text-gray-400 mb-2">
+      <p className="text-xs text-gray-400 mb-2">
         The assignee will choose one of these responses.
       </p>
       <div className="space-y-2">
@@ -315,7 +315,7 @@ function QuestionnaireConfigEditor({
         {config.questions.map((q, index) => (
           <div key={q.questionId} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
             <div className="flex items-start gap-2 mb-2">
-              <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+              <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                 {index + 1}
               </span>
               <div className="flex-1 space-y-2">
@@ -361,7 +361,7 @@ function QuestionnaireConfigEditor({
                   <div className="space-y-1">
                     {(q.choices || []).map((choice, ci) => (
                       <div key={ci} className="flex items-center gap-1.5">
-                        <span className="text-[10px] text-gray-400 w-4 text-right">{ci + 1}.</span>
+                        <span className="text-xs text-gray-400 w-4 text-right">{ci + 1}.</span>
                         <input
                           type="text"
                           value={choice}
@@ -388,7 +388,7 @@ function QuestionnaireConfigEditor({
                     <button
                       type="button"
                       onClick={() => updateQuestion(index, { choices: [...(q.choices || []), ''] })}
-                      className="text-[11px] text-violet-600 hover:text-violet-700 font-medium"
+                      className="text-xs text-violet-600 hover:text-violet-700 font-medium"
                     >
                       + Add choice
                     </button>
@@ -777,7 +777,7 @@ function AIAutomationConfigEditor({
                   >
                     <span className="text-xs text-gray-400 font-mono">{field.type}{field.type === 'FILE' && field.fileFormat ? `/${field.fileFormat}` : ''}</span>
                     <span className="text-sm text-gray-700 flex-1 truncate">{field.name || 'Unnamed field'}</span>
-                    {field.required && <span className="text-[10px] text-red-400">required</span>}
+                    {field.required && <span className="text-xs text-red-400">required</span>}
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); removeOutputField(index); }}
@@ -808,7 +808,7 @@ function AIAutomationConfigEditor({
         <label className="flex items-center justify-between cursor-pointer group">
           <div>
             <span className="text-xs font-medium text-gray-600">Human review</span>
-            <p className="text-[11px] text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-400 mt-0.5">
               Pause for a coordinator to review and edit the AI output before it's used downstream
             </p>
           </div>
@@ -1121,17 +1121,17 @@ function BusinessRuleConfigEditor({
             Add rule
           </button>
         </div>
-        <p className="text-[11px] text-gray-400 mb-2">When conditions match, set output values.</p>
+        <p className="text-xs text-gray-400 mb-2">When conditions match, set output values.</p>
         <div className="space-y-2">
           {config.rules.map((rule, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-2.5 bg-gray-50">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-semibold text-gray-400 uppercase">Rule {index + 1}</span>
+                <span className="text-xs font-semibold text-gray-400 uppercase">Rule {index + 1}</span>
                 <button type="button" onClick={() => removeRule(index)} className="p-0.5 text-gray-300 hover:text-red-500">
                   <X className="w-3 h-3" />
                 </button>
               </div>
-              <p className="text-[11px] text-gray-500 mb-1">WHEN: (condition key = value)</p>
+              <p className="text-xs text-gray-500 mb-1">WHEN: (condition key = value)</p>
               <div className="flex gap-1.5 mb-2">
                 <input
                   type="text"
@@ -1146,7 +1146,7 @@ function BusinessRuleConfigEditor({
                   className="flex-1 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
                 />
               </div>
-              <p className="text-[11px] text-gray-500 mb-1">SET: (output key = value)</p>
+              <p className="text-xs text-gray-500 mb-1">SET: (output key = value)</p>
               <div className="flex gap-1.5">
                 <input
                   type="text"
@@ -1295,7 +1295,7 @@ function DueDateEditor({
                 key={m.id}
                 type="button"
                 onClick={() => handleModeChange(m.id)}
-                className={`flex-1 px-2 py-1.5 text-[11px] font-medium transition-colors ${
+                className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
                   mode === m.id
                     ? 'bg-violet-50 text-violet-700 border-violet-200'
                     : 'bg-white text-gray-500 hover:bg-gray-50'
@@ -1434,7 +1434,7 @@ function AIAssigneeConfigSection({
             <label className="flex items-center justify-between cursor-pointer flex-1">
               <div>
                 <span className="text-sm font-medium text-gray-700">AI Prepare</span>
-                <p className="text-[11px] text-gray-500">Pre-fill form fields from prior step data</p>
+                <p className="text-xs text-gray-500">Pre-fill form fields from prior step data</p>
               </div>
               <input
                 type="checkbox"
@@ -1472,7 +1472,7 @@ function AIAssigneeConfigSection({
             <label className="flex items-center justify-between cursor-pointer flex-1">
               <div>
                 <span className="text-sm font-medium text-gray-700">AI Advise</span>
-                <p className="text-[11px] text-gray-500">Show AI recommendation before assignee acts</p>
+                <p className="text-xs text-gray-500">Show AI recommendation before assignee acts</p>
               </div>
               <input
                 type="checkbox"
@@ -1510,7 +1510,7 @@ function AIAssigneeConfigSection({
             <label className="flex items-center justify-between cursor-pointer flex-1">
               <div>
                 <span className="text-sm font-medium text-gray-700">AI Review</span>
-                <p className="text-[11px] text-gray-500">Validate submission before completing step</p>
+                <p className="text-xs text-gray-500">Validate submission before completing step</p>
               </div>
               <input
                 type="checkbox"
@@ -2067,7 +2067,7 @@ export function StepConfigPanel({ step, roles, onSave, onCancel }: StepConfigPan
 
           {/* Template Selector */}
           <div className="mb-3">
-            <label className="block text-[11px] font-medium text-gray-500 uppercase tracking-wider mb-1">
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
               Flow Template *
             </label>
             <select
@@ -2095,7 +2095,7 @@ export function StepConfigPanel({ step, roles, onSave, onCancel }: StepConfigPan
               />
               <span className="text-sm text-gray-700">Wait for sub-flow to complete</span>
             </label>
-            <p className="text-[11px] text-gray-400 mt-1 ml-6.5">
+            <p className="text-xs text-gray-400 mt-1 ml-6.5">
               Parent flow pauses until the sub-flow finishes
             </p>
           </div>
@@ -2103,7 +2103,7 @@ export function StepConfigPanel({ step, roles, onSave, onCancel }: StepConfigPan
           {/* Input Mappings */}
           <div className="mb-3">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Input Mappings
               </label>
               <button
@@ -2118,7 +2118,7 @@ export function StepConfigPanel({ step, roles, onSave, onCancel }: StepConfigPan
                 Add
               </button>
             </div>
-            <p className="text-[10px] text-gray-400 mb-2">
+            <p className="text-xs text-gray-400 mb-2">
               Pass data from parent flow into the sub-flow's kickoff fields
             </p>
             {subFlowConfig.inputMappings.length === 0 ? (
@@ -2169,7 +2169,7 @@ export function StepConfigPanel({ step, roles, onSave, onCancel }: StepConfigPan
           {/* Output Mappings */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Output Mappings
               </label>
               <button
@@ -2184,7 +2184,7 @@ export function StepConfigPanel({ step, roles, onSave, onCancel }: StepConfigPan
                 Add
               </button>
             </div>
-            <p className="text-[10px] text-gray-400 mb-2">
+            <p className="text-xs text-gray-400 mb-2">
               Capture data from the sub-flow back into the parent flow
             </p>
             {subFlowConfig.outputMappings.length === 0 ? (
@@ -2377,7 +2377,7 @@ export function StepConfigPanel({ step, roles, onSave, onCancel }: StepConfigPan
                 {skipConditionEnabled && (
                   <div className="mt-2 ml-6.5 space-y-2 pl-1 border-l-2 border-violet-200">
                     <div className="pl-3">
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Source (DDR token)</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Source (DDR token)</label>
                       <input
                         type="text"
                         value={skipConditionSource}
@@ -2387,7 +2387,7 @@ export function StepConfigPanel({ step, roles, onSave, onCancel }: StepConfigPan
                       />
                     </div>
                     <div className="pl-3">
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Operator</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Operator</label>
                       <select
                         value={skipConditionOperator}
                         onChange={(e) => setSkipConditionOperator(e.target.value)}
@@ -2407,7 +2407,7 @@ export function StepConfigPanel({ step, roles, onSave, onCancel }: StepConfigPan
                     </div>
                     {skipConditionOperator !== 'is_empty' && skipConditionOperator !== 'not_empty' && (
                       <div className="pl-3">
-                        <label className="block text-[11px] font-medium text-gray-500 mb-1">Value</label>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Value</label>
                         <input
                           type="text"
                           value={skipConditionValue}

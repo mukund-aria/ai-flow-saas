@@ -250,7 +250,7 @@ export function DDRPicker({
                   )}
                   {section.icon}
                   <span className="flex-1 text-left">{section.title}</span>
-                  <span className="text-[10px] font-normal text-gray-300">
+                  <span className="text-xs font-normal text-gray-300">
                     {section.items.length}
                   </span>
                 </button>
@@ -281,7 +281,7 @@ export function DDRPicker({
 
       {/* Footer */}
       <div className="px-3 py-1.5 border-t border-gray-100 bg-gray-50 rounded-b-xl">
-        <p className="text-[10px] text-gray-400">
+        <p className="text-xs text-gray-400">
           {totalItems} reference{totalItems !== 1 ? 's' : ''} available
         </p>
       </div>

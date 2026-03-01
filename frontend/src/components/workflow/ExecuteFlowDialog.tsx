@@ -147,7 +147,7 @@ function ContactDropdown({
       >
         {selectedContact ? (
           <span className="flex items-center gap-2 truncate">
-            <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+            <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center text-xs font-bold shrink-0">
               {selectedContact.name.charAt(0).toUpperCase()}
             </span>
             <span className="truncate text-gray-900">
@@ -202,7 +202,7 @@ function ContactDropdown({
                   contact.id === value ? 'bg-violet-50' : ''
                 }`}
               >
-                <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+                <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold shrink-0">
                   {contact.name.charAt(0).toUpperCase()}
                 </span>
                 <span className="flex flex-col items-start min-w-0">
@@ -808,7 +808,7 @@ export function ExecuteFlowDialog({
                       <div key={placeholder.roleId}>
                         <div className="flex items-center gap-2 mb-1.5">
                           <span
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                             style={{ backgroundColor: getRoleColor(index) }}
                           >
                             {getRoleInitials(placeholder.name)}
@@ -817,12 +817,12 @@ export function ExecuteFlowDialog({
                             {placeholder.name}
                           </span>
                           {isCoordinator ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-violet-50 border border-violet-200 rounded text-[10px] font-medium text-violet-700">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-violet-50 border border-violet-200 rounded text-xs font-medium text-violet-700">
                               <Shield className="w-3 h-3" />
                               Coordinator
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded text-[10px] font-medium text-gray-500">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded text-xs font-medium text-gray-500">
                               <UserCircle className="w-3 h-3" />
                               Assignee
                             </span>

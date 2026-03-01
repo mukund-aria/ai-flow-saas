@@ -356,7 +356,7 @@ export function ResolutionTypeEditor({
                     key={email}
                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg group"
                   >
-                    <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-xs font-bold shrink-0">
                       {index + 1}
                     </span>
                     <span className="text-sm text-gray-700 flex-1 truncate">

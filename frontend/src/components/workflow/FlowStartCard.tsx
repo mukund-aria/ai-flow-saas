@@ -27,23 +27,23 @@ export function FlowStartCard({ workflow, editMode, onConfigClick }: FlowStartCa
 
   return (
     <Card
-      className={`w-[260px] border-l-4 border-l-blue-500 bg-white shadow-sm rounded-lg overflow-hidden ${
+      className={`w-[320px] border-l-4 border-l-blue-500 bg-white shadow-sm rounded-lg overflow-hidden ${
         editMode ? 'cursor-pointer hover:shadow-md hover:border-l-blue-600 transition-all group' : ''
       }`}
       onClick={editMode ? onConfigClick : undefined}
     >
       {/* Header row */}
-      <div className="bg-blue-50/60 px-3 py-1.5 flex items-center gap-2 border-b border-gray-100">
-        <PlayCircle className="w-3.5 h-3.5 text-blue-500" />
-        <span className="text-xs font-medium text-gray-600 flex-1">Flow Start</span>
+      <div className="bg-blue-50/60 px-4 py-2.5 flex items-center gap-2 border-b border-gray-100">
+        <PlayCircle className="w-4 h-4 text-blue-500" />
+        <span className="text-sm font-medium text-gray-600 flex-1">Flow Start</span>
         {editMode && (
           <Settings2 className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
         )}
       </div>
-      <div className="px-3 py-2.5">
+      <div className="px-4 py-3">
         <div className="flex items-center gap-1.5">
-          <ModeIcon className="w-3.5 h-3.5 text-gray-400" />
-          <span className="text-xs text-gray-500 flex-1">{modeInfo.description}</span>
+          <ModeIcon className="w-4 h-4 text-gray-400" />
+          <span className="text-sm text-gray-500 flex-1">{modeInfo.description}</span>
           {editMode && (
             <ChevronRight className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
           )}
@@ -53,7 +53,7 @@ export function FlowStartCard({ workflow, editMode, onConfigClick }: FlowStartCa
         {hasKickoffForm && (
           <div className="mt-1.5 flex items-center gap-1.5">
             <FileText className="w-3 h-3 text-blue-500" />
-            <span className="text-[11px] text-blue-600 font-medium">
+            <span className="text-xs text-blue-600 font-medium">
               Kickoff form: {workflow.kickoff!.kickoffFormFields!.length} fields
             </span>
           </div>
@@ -62,7 +62,7 @@ export function FlowStartCard({ workflow, editMode, onConfigClick }: FlowStartCa
         {/* Show variable count */}
         {variableCount > 0 && (
           <div className="mt-1 flex items-center gap-1.5">
-            <span className="text-[11px] text-gray-500">
+            <span className="text-xs text-gray-500">
               {variableCount} flow variable{variableCount > 1 ? 's' : ''}
             </span>
           </div>

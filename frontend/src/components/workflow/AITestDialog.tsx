@@ -362,7 +362,7 @@ export function AITestDialog({ open, onClose, step, initialTab }: AITestDialogPr
               <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider block mb-2">
                 Context (Optional)
               </span>
-              <p className="text-[11px] text-gray-500 mb-1.5">
+              <p className="text-xs text-gray-500 mb-1.5">
                 Simulate prior step data. JSON with kickoffData and/or priorStepOutputs.
               </p>
               <textarea

@@ -96,7 +96,7 @@ export function EmbedConfig({ templateId, existingEmbedId }: EmbedConfigProps) {
       <div className="flex items-center gap-2">
         <Code2 className="w-4 h-4 text-violet-500" />
         <h3 className="text-sm font-medium text-gray-700">Embed & Share</h3>
-        <span className="ml-auto text-[10px] font-medium px-1.5 py-0.5 bg-green-100 text-green-700 rounded">
+        <span className="ml-auto text-xs font-medium px-1.5 py-0.5 bg-green-100 text-green-700 rounded">
           Enabled
         </span>
       </div>

@@ -165,7 +165,7 @@ function GeneralTab({
           placeholder="e.g. Onboarding - {Kickoff / Client Name}"
           className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
         />
-        <p className="mt-1 text-[11px] text-gray-400">
+        <p className="mt-1 text-xs text-gray-400">
           Use {'{Kickoff / Field}'} for dynamic naming
         </p>
       </div>
@@ -196,7 +196,7 @@ function GeneralTab({
         />
         <div>
           <span className="text-sm font-medium text-gray-700">Auto-archive completed flows</span>
-          <p className="text-[11px] text-gray-400 mt-0.5">
+          <p className="text-xs text-gray-400 mt-0.5">
             Automatically archive flows after they are completed
           </p>
         </div>
@@ -212,7 +212,7 @@ function GeneralTab({
         />
         <div>
           <span className="text-sm font-medium text-gray-700">Enable chat assistance</span>
-          <p className="text-[11px] text-gray-400 mt-0.5">
+          <p className="text-xs text-gray-400 mt-0.5">
             Allow AI chat assistance within flows for coordinators
           </p>
         </div>
@@ -290,7 +290,7 @@ function FlowDueDatesTab({ dueDates, onUpdate }: FlowDueDatesTabProps) {
         />
         <div>
           <span className="text-sm font-medium text-gray-700">Set a flow-level deadline</span>
-          <p className="text-[11px] text-gray-400 mt-0.5">
+          <p className="text-xs text-gray-400 mt-0.5">
             Define when this flow should be completed by
           </p>
         </div>
@@ -379,7 +379,7 @@ function FlowDueDatesTab({ dueDates, onUpdate }: FlowDueDatesTabProps) {
           <div className="border-t border-gray-100" />
 
           {/* Info text */}
-          <p className="text-[11px] text-gray-400 leading-relaxed">
+          <p className="text-xs text-gray-400 leading-relaxed">
             Step-level due dates can reference this deadline using the &quot;Before Flow Due&quot; mode in each step&apos;s due date settings.
           </p>
         </div>
@@ -448,7 +448,7 @@ function TemplateCoordinatorsEditor() {
         <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
           Template Coordinators
         </h4>
-        <p className="text-[11px] text-gray-400">
+        <p className="text-xs text-gray-400">
           These users can see ALL runs of this template and view template-level reports.
         </p>
       </div>
@@ -458,7 +458,7 @@ function TemplateCoordinatorsEditor() {
         <div className="flex flex-wrap gap-1.5">
           {selectedMembers.map((m) => (
             <span key={m.id} className="inline-flex items-center gap-1 px-2 py-1 bg-violet-50 border border-violet-200 rounded-md text-xs text-violet-700">
-              <span className="w-4 h-4 rounded-full bg-violet-200 text-violet-700 flex items-center justify-center text-[9px] font-bold shrink-0">
+              <span className="w-4 h-4 rounded-full bg-violet-200 text-violet-700 flex items-center justify-center text-xs font-bold shrink-0">
                 {m.name.charAt(0).toUpperCase()}
               </span>
               {m.name}
@@ -514,14 +514,14 @@ function TemplateCoordinatorsEditor() {
                         isSelected ? 'bg-violet-50' : 'hover:bg-gray-50'
                       }`}
                     >
-                      <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+                      <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold shrink-0">
                         {m.name.charAt(0).toUpperCase()}
                       </span>
                       <div className="flex-1 min-w-0">
                         <span className="text-gray-900 truncate block">{m.name}</span>
                         <span className="text-gray-400 text-xs truncate block">{m.email}</span>
                       </div>
-                      <span className="text-[10px] text-gray-400 px-1.5 py-0.5 bg-gray-50 rounded shrink-0">
+                      <span className="text-xs text-gray-400 px-1.5 py-0.5 bg-gray-50 rounded shrink-0">
                         {m.role}
                       </span>
                       {isSelected && (

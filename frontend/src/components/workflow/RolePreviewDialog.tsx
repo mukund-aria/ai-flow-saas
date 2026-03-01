@@ -162,11 +162,11 @@ function OtherStepPlaceholder({
           <span className="text-xs text-gray-400 italic truncate">
             {step.config.name || `Step ${index + 1}`}
           </span>
-          <span className="text-[10px] text-gray-300 shrink-0">
+          <span className="text-xs text-gray-300 shrink-0">
             {meta?.label || step.type}
           </span>
           {step.config.assignee && (
-            <span className="text-[10px] text-gray-300 shrink-0">
+            <span className="text-xs text-gray-300 shrink-0">
               ({step.config.assignee})
             </span>
           )}
@@ -222,7 +222,7 @@ function AssignedStepPreview({
             {step.config.name || `Step ${index + 1}`}
           </span>
           <span
-            className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0"
+            className="text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0"
             style={{
               backgroundColor: `${meta?.color || roleColor}15`,
               color: meta?.color || roleColor,
@@ -293,13 +293,13 @@ function FormPreviewContent({ step }: { step: Step }) {
           </label>
           {field.type === 'TEXT_MULTI_LINE' ? (
             <div className="w-full h-14 border border-gray-200 rounded-md bg-white px-2 py-1.5">
-              <span className="text-[10px] text-gray-300">
+              <span className="text-xs text-gray-300">
                 {field.placeholder || 'Multi-line text input'}
               </span>
             </div>
           ) : field.type === 'SINGLE_SELECT' || field.type === 'DROPDOWN' ? (
             <div className="w-full border border-gray-200 rounded-md bg-white px-2 py-1.5 flex items-center justify-between">
-              <span className="text-[10px] text-gray-300">Select...</span>
+              <span className="text-xs text-gray-300">Select...</span>
               <svg className="w-3 h-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
@@ -309,11 +309,11 @@ function FormPreviewContent({ step }: { step: Step }) {
               {(field.options || []).slice(0, 3).map((opt) => (
                 <div key={opt.value} className="flex items-center gap-2 px-2 py-1 border border-gray-200 rounded-md bg-white">
                   <div className="w-3.5 h-3.5 rounded border border-gray-300" />
-                  <span className="text-[10px] text-gray-500">{opt.label}</span>
+                  <span className="text-xs text-gray-500">{opt.label}</span>
                 </div>
               ))}
               {(field.options || []).length > 3 && (
-                <span className="text-[10px] text-gray-300 pl-1">
+                <span className="text-xs text-gray-300 pl-1">
                   +{(field.options || []).length - 3} more
                 </span>
               )}
@@ -321,15 +321,15 @@ function FormPreviewContent({ step }: { step: Step }) {
           ) : field.type === 'FILE_UPLOAD' ? (
             <div className="border border-dashed border-gray-200 rounded-md bg-white px-2 py-2 text-center">
               <Upload className="w-3.5 h-3.5 text-gray-300 mx-auto mb-0.5" />
-              <span className="text-[10px] text-gray-300">Upload file</span>
+              <span className="text-xs text-gray-300">Upload file</span>
             </div>
           ) : field.type === 'SIGNATURE' ? (
             <div className="border border-dashed border-gray-200 rounded-md bg-white px-2 py-3 text-center">
-              <span className="text-[10px] text-gray-300 italic">Signature pad</span>
+              <span className="text-xs text-gray-300 italic">Signature pad</span>
             </div>
           ) : (
             <div className="w-full border border-gray-200 rounded-md bg-white px-2 py-1.5">
-              <span className="text-[10px] text-gray-300">
+              <span className="text-xs text-gray-300">
                 {field.placeholder || `Enter ${field.label.toLowerCase()}`}
               </span>
             </div>
@@ -371,7 +371,7 @@ function FileRequestPreviewContent({ step }: { step: Step }) {
       <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center">
         <Upload className="w-5 h-5 text-gray-300 mx-auto mb-1" />
         <p className="text-xs text-gray-400">Drag & drop or click to upload</p>
-        <p className="text-[10px] text-gray-300 mt-0.5">
+        <p className="text-xs text-gray-300 mt-0.5">
           Max {config?.maxFiles || 5} files
         </p>
       </div>
@@ -463,10 +463,10 @@ function QuestionnairePreviewContent({ step }: { step: Step }) {
           </p>
           {q.answerType === 'YES_NO' ? (
             <div className="flex gap-2">
-              <div className="flex-1 py-1.5 rounded-md border border-gray-200 text-center text-[10px] text-gray-400">
+              <div className="flex-1 py-1.5 rounded-md border border-gray-200 text-center text-xs text-gray-400">
                 Yes
               </div>
-              <div className="flex-1 py-1.5 rounded-md border border-gray-200 text-center text-[10px] text-gray-400">
+              <div className="flex-1 py-1.5 rounded-md border border-gray-200 text-center text-xs text-gray-400">
                 No
               </div>
             </div>
@@ -475,19 +475,19 @@ function QuestionnairePreviewContent({ step }: { step: Step }) {
               {(q.choices || []).slice(0, 3).map((choice, i) => (
                 <div key={i} className="flex items-center gap-2 px-2 py-1 border border-gray-200 rounded-md bg-white">
                   <div className={`w-3.5 h-3.5 border border-gray-300 ${q.answerType === 'SINGLE_SELECT' ? 'rounded-full' : 'rounded'}`} />
-                  <span className="text-[10px] text-gray-500">{choice}</span>
+                  <span className="text-xs text-gray-500">{choice}</span>
                 </div>
               ))}
             </div>
           ) : (
             <div className="w-full border border-gray-200 rounded-md bg-white px-2 py-1.5">
-              <span className="text-[10px] text-gray-300">Type your answer...</span>
+              <span className="text-xs text-gray-300">Type your answer...</span>
             </div>
           )}
         </div>
       ))}
       {questions.length > 3 && (
-        <p className="text-[10px] text-gray-300 text-center">
+        <p className="text-xs text-gray-300 text-center">
           +{questions.length - 3} more questions
         </p>
       )}

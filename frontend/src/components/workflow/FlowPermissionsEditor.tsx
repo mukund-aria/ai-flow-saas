@@ -66,7 +66,7 @@ export function FlowPermissionsEditor() {
         <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
           Access Control
         </h4>
-        <p className="text-[11px] text-gray-400">
+        <p className="text-xs text-gray-400">
           Control who can execute, edit, and coordinate this template
         </p>
       </div>
@@ -77,7 +77,7 @@ export function FlowPermissionsEditor() {
           <div key={row.key} className="space-y-2">
             <div>
               <label className="text-sm font-medium text-gray-700">{row.label}</label>
-              <p className="text-[11px] text-gray-400">{row.description}</p>
+              <p className="text-xs text-gray-400">{row.description}</p>
             </div>
 
             <div className="space-y-1.5 ml-1">
@@ -107,7 +107,7 @@ export function FlowPermissionsEditor() {
                   placeholder="user@example.com, user2@example.com"
                   className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
-                <p className="mt-1 text-[11px] text-gray-400">
+                <p className="mt-1 text-xs text-gray-400">
                   Comma-separated email addresses or user IDs
                 </p>
               </div>

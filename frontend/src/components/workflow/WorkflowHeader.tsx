@@ -78,7 +78,7 @@ export function WorkflowHeader({ workflow, editMode = false }: WorkflowHeaderPro
       </div>
 
       {/* Stats Row */}
-      <div className="flex items-center gap-3 text-xs text-gray-500">
+      <div className="flex items-center gap-3 text-sm text-gray-500">
         <span>{workflow.steps.length} step{workflow.steps.length !== 1 ? 's' : ''}</span>
         {workflow.milestones.length > 0 && (
           <>
@@ -103,14 +103,14 @@ export function WorkflowHeader({ workflow, editMode = false }: WorkflowHeaderPro
               className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded-lg border"
             >
               <span
-                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold"
                 style={{ backgroundColor: getRoleColor(index) }}
               >
                 {getRoleInitials(assignee.name)}
               </span>
               <div>
-                <p className="text-xs font-medium text-gray-900">{assignee.name}</p>
-                <p className="text-[10px] text-gray-500">
+                <p className="text-sm font-medium text-gray-900">{assignee.name}</p>
+                <p className="text-xs text-gray-500">
                   {assignee.description || 'Contact TBD'}
                 </p>
               </div>

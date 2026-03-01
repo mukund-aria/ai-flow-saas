@@ -86,8 +86,8 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
   };
 
   return (
-    <div className="flex items-center gap-2 px-6 py-2 bg-gray-50 border-b border-gray-200 min-h-[44px]">
-      <span className="text-xs font-medium text-gray-500 mr-1 shrink-0">
+    <div className="flex items-center gap-2 px-6 py-2.5 bg-gray-50 border-b border-gray-200 min-h-[52px]">
+      <span className="text-sm font-medium text-gray-500 mr-1 shrink-0">
         <FeatureTooltip content="Roles represent the participants in your workflow. Click a role to configure who fills it." side="bottom">
           <span>Roles:</span>
         </FeatureTooltip>
@@ -106,46 +106,46 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
           <div
             key={assignee.roleId}
             onClick={() => onRoleClick?.(assignee.roleId)}
-            className={`group relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer transition-all ${
+            className={`group relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg cursor-pointer transition-all ${
               isSelected
                 ? 'bg-violet-50 border border-violet-300 shadow-sm'
                 : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm'
             }`}
           >
             <span
-              className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0"
               style={{ backgroundColor: getRoleColor(index) }}
             >
               {getRoleInitials(assignee.name)}
             </span>
             <div className="flex flex-col leading-tight">
-              <span className={`text-xs font-semibold ${isSelected ? 'text-violet-700' : 'text-gray-800'}`}>
+              <span className={`text-sm font-semibold ${isSelected ? 'text-violet-700' : 'text-gray-800'}`}>
                 {assignee.name}
               </span>
-              <span className="text-[9px] text-gray-400">{chipLabel}</span>
+              <span className="text-xs text-gray-400">{chipLabel}</span>
             </div>
             {ResIcon && (
-              <ResIcon className="w-3 h-3 text-gray-400 shrink-0" />
+              <ResIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
             )}
             {isCoordinator && (
-              <Shield className="w-3 h-3 text-violet-500 shrink-0" aria-label="Coordinator" />
+              <Shield className="w-3.5 h-3.5 text-violet-500 shrink-0" aria-label="Coordinator" />
             )}
             {canViewAll && (
-              <Eye className="w-3 h-3 text-blue-500 shrink-0" aria-label="Can view all actions" />
+              <Eye className="w-3.5 h-3.5 text-blue-500 shrink-0" aria-label="Can view all actions" />
             )}
             <button
               onClick={(e) => { e.stopPropagation(); setPreviewRoleId(assignee.roleId); }}
               className="p-0.5 rounded-full text-gray-300 hover:text-violet-600 opacity-0 group-hover:opacity-100 transition-all shrink-0"
               title={`Preview ${assignee.name}'s experience`}
             >
-              <ScanEye className="w-3 h-3" />
+              <ScanEye className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); removeRole(assignee.roleId); }}
               className="p-0.5 rounded-full text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all shrink-0"
               title="Remove role"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         );
@@ -186,7 +186,7 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
       ) : (
         <button
           onClick={() => setIsAdding(true)}
-          className="flex items-center gap-1 px-2 py-1 rounded-full border border-dashed border-gray-300 text-xs text-gray-500 hover:border-violet-400 hover:text-violet-600 transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-dashed border-gray-300 text-sm text-gray-500 hover:border-violet-400 hover:text-violet-600 transition-colors"
         >
           <Plus className="w-3 h-3" />
           Add role

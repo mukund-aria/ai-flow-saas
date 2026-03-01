@@ -188,14 +188,14 @@ export function PDFFormConfigEditor({ config, onChange }: PDFFormConfigEditorPro
 
                       {/* PDF field name chip + type */}
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-mono rounded">
+                        <span className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 text-gray-500 text-xs font-mono rounded">
                           {field.pdfFieldName}
                         </span>
-                        <span className="text-[10px] text-gray-400">
+                        <span className="text-xs text-gray-400">
                           {FIELD_TYPE_LABELS[field.fieldType || 'text']}
                         </span>
                         {field.options && field.options.length > 0 && (
-                          <span className="text-[10px] text-gray-400">
+                          <span className="text-xs text-gray-400">
                             ({field.options.length} options)
                           </span>
                         )}

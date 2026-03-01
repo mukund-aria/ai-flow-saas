@@ -213,7 +213,7 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-900">{option.label}</span>
                       {option.comingSoon && (
-                        <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                        <span className="text-xs font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
                           Coming soon
                         </span>
                       )}
@@ -341,7 +341,7 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                         </button>
                       </div>
                       <div className="px-3 pb-3">
-                        <pre className="p-2 bg-gray-50 rounded-md text-[11px] text-gray-600 overflow-x-auto whitespace-pre-wrap break-all font-mono">
+                        <pre className="p-2 bg-gray-50 rounded-md text-xs text-gray-600 overflow-x-auto whitespace-pre-wrap break-all font-mono">
                           {embedSnippet}
                         </pre>
                         {copiedField === 'embed' && (
@@ -375,7 +375,7 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                   </h3>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Title</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
                       <input
                         type="text"
                         value={startLinkConfig.initTitle}
@@ -385,7 +385,7 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Subtitle</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Subtitle</label>
                       <input
                         type="text"
                         value={startLinkConfig.initSubtitle}
@@ -395,7 +395,7 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Button Label</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Button Label</label>
                       <input
                         type="text"
                         value={startLinkConfig.buttonLabel}
@@ -414,7 +414,7 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                   </h3>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Title</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
                       <input
                         type="text"
                         value={startLinkConfig.completionTitle}
@@ -424,7 +424,7 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-gray-500 mb-1">Subtitle</label>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Subtitle</label>
                       <input
                         type="text"
                         value={startLinkConfig.completionSubtitle}
@@ -473,7 +473,7 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                     >
                       {/* Key input */}
                       <div>
-                        <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                        <label className="block text-xs font-medium text-gray-500 mb-1">
                           Key
                         </label>
                         <input
@@ -488,7 +488,7 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
                       {/* Type + Required row */}
                       <div className="flex items-end gap-3">
                         <div className="flex-1">
-                          <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                          <label className="block text-xs font-medium text-gray-500 mb-1">
                             Type
                           </label>
                           <select
@@ -520,7 +520,7 @@ export function FlowStartConfigPanel({ onClose }: FlowStartConfigPanelProps) {
 
                       {/* Description */}
                       <div>
-                        <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                        <label className="block text-xs font-medium text-gray-500 mb-1">
                           Description
                         </label>
                         <input

@@ -102,12 +102,12 @@ export function AssigneeManager() {
                 <span className="text-sm font-medium text-gray-800 truncate block">
                   {assignee.name}
                 </span>
-                <span className="text-[11px] text-gray-400">
+                <span className="text-xs text-gray-400">
                   {RESOLUTION_LABELS[assignee.resolution?.type || 'CONTACT_TBD']}
                 </span>
               </div>
               {(assignee.roleType || 'assignee') === 'coordinator' && (
-                <span className="text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded font-medium flex items-center gap-0.5">
+                <span className="text-xs text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded font-medium flex items-center gap-0.5">
                   <Shield className="w-2.5 h-2.5" />
                   Coord
                 </span>
@@ -240,7 +240,7 @@ function AdvancedRoleOptions({
                 <Shield className="w-3.5 h-3.5 text-gray-400" />
                 Coordinator
               </div>
-              <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">
+              <p className="text-xs text-gray-400 mt-0.5 leading-tight">
                 Grant "Coordinate" permission to allow the assignee to monitor progress and manage actions.
               </p>
             </div>
@@ -265,7 +265,7 @@ function AdvancedRoleOptions({
                 <UsersRound className="w-3.5 h-3.5 text-gray-400" />
                 Allow viewing other assignee's actions
               </div>
-              <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">
+              <p className="text-xs text-gray-400 mt-0.5 leading-tight">
                 Once enabled, the assignee can see all user actions, helping them track the current progress of the flow.
               </p>
             </div>

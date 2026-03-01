@@ -76,7 +76,7 @@ function InfoTooltip({ text }: { text: string }) {
   return (
     <span className="relative group">
       <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
-      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-52 px-2.5 py-1.5 text-[11px] leading-snug text-white bg-gray-800 rounded-lg shadow-lg z-50 pointer-events-none">
+      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block w-52 px-2.5 py-1.5 text-xs leading-snug text-white bg-gray-800 rounded-lg shadow-lg z-50 pointer-events-none">
         {text}
         <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
       </span>
@@ -381,7 +381,7 @@ function ChannelIntegrationsSection({
           <div className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-gray-400" />
             <span className="text-sm font-medium text-gray-500">Microsoft Teams</span>
-            <span className="px-1.5 py-0.5 text-[10px] font-medium text-gray-400 bg-gray-100 rounded">Coming soon</span>
+            <span className="px-1.5 py-0.5 text-xs font-medium text-gray-400 bg-gray-100 rounded">Coming soon</span>
           </div>
           <Toggle checked={false} onChange={() => {}} />
         </div>
@@ -463,7 +463,7 @@ function OutgoingWebhooksSection({
           <Globe className="w-4 h-4 text-gray-600" />
           <span className="text-sm font-medium text-gray-800">Outgoing Webhooks</span>
           {endpoints.length > 0 && (
-            <span className="px-1.5 py-0.5 text-[10px] font-medium text-violet-600 bg-violet-50 rounded">
+            <span className="px-1.5 py-0.5 text-xs font-medium text-violet-600 bg-violet-50 rounded">
               {endpoints.length}
             </span>
           )}

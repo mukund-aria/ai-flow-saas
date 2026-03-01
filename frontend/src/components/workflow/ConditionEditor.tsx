@@ -34,7 +34,7 @@ export function ConditionEditor({ condition, onChange }: ConditionEditorProps) {
     <div className="space-y-2">
       {/* Source (DDR token) */}
       <div>
-        <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
           Source (DDR reference)
         </label>
         <input
@@ -48,7 +48,7 @@ export function ConditionEditor({ condition, onChange }: ConditionEditorProps) {
 
       {/* Operator */}
       <div>
-        <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+        <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
           Operator
         </label>
         <select
@@ -75,7 +75,7 @@ export function ConditionEditor({ condition, onChange }: ConditionEditorProps) {
       {/* Value (hidden for unary operators) */}
       {!isUnary && (
         <div>
-          <label className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">
             Value
           </label>
           <input

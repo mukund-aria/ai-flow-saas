@@ -188,7 +188,7 @@ export function DDRTextInput({
 
       {/* Helper hint */}
       {hasTokens && (
-        <p className="mt-1 text-[10px] text-gray-400">
+        <p className="mt-1 text-xs text-gray-400">
           Contains dynamic references that will resolve at runtime
         </p>
       )}

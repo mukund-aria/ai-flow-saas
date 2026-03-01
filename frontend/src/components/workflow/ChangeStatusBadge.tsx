@@ -10,7 +10,7 @@ export function ChangeStatusBadge({ status }: { status: StepChangeStatus }) {
   if (status === 'unchanged') return null;
   const config = BADGE_CONFIG[status];
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-semibold rounded border ${config.className}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded border ${config.className}`}>
       {config.label}
     </span>
   );

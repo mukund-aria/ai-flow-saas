@@ -104,7 +104,7 @@ export function ProposalBanner({
             <div className="flex items-center gap-2 mt-0.5">
               <span
                 className={cn(
-                  'inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold rounded',
+                  'inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded',
                   isEdit
                     ? 'bg-amber-100 text-amber-700'
                     : 'bg-violet-100 text-violet-700'
@@ -118,14 +118,14 @@ export function ProposalBanner({
       </div>
 
       {/* Stats row */}
-      <div className="flex items-center gap-3 text-xs text-gray-500">
+      <div className="flex items-center gap-3 text-sm text-gray-500">
         <span className="flex items-center gap-1">
-          <Layers className="w-3 h-3" />
+          <Layers className="w-3.5 h-3.5" />
           {stepCount} step{stepCount !== 1 ? 's' : ''}
         </span>
         {roleCount > 0 && (
           <span className="flex items-center gap-1">
-            <Users className="w-3 h-3" />
+            <Users className="w-3.5 h-3.5" />
             {roleCount} role{roleCount !== 1 ? 's' : ''}
           </span>
         )}

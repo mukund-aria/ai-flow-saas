@@ -216,7 +216,7 @@ export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
             {getRoleInitials(assignee.name)}
           </span>
           <div>
-            <div className="text-[11px] text-gray-400 font-medium">Assignee configuration</div>
+            <div className="text-xs text-gray-400 font-medium">Assignee configuration</div>
             {isEditingName ? (
               <input
                 ref={nameInputRef}
@@ -290,7 +290,7 @@ export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
               Assignee
             </button>
           </div>
-          <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
+          <p className="text-xs text-gray-400 mt-2 leading-relaxed">
             {(assignee.roleType || 'assignee') === 'coordinator'
               ? 'Full access to this flow run. Can view all steps, reassign, and chat.'
               : 'Can only complete their assigned tasks. Accessed via magic link.'}
@@ -341,7 +341,7 @@ export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
                     ))}
 
                     {/* Data sources group */}
-                    <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 border-t border-b border-gray-100 mt-1">
+                    <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 border-t border-b border-gray-100 mt-1">
                       From data sources
                     </div>
                     {DATA_SOURCE_OPTIONS.map((opt) => (
@@ -354,7 +354,7 @@ export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
                     ))}
 
                     {/* Group assignment */}
-                    <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 border-t border-b border-gray-100">
+                    <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 border-t border-b border-gray-100">
                       Group assignment
                     </div>
                     {GROUP_OPTIONS.map((opt) => (
@@ -367,7 +367,7 @@ export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
                     ))}
 
                     {/* Advanced logic group */}
-                    <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 border-t border-b border-gray-100">
+                    <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 border-t border-b border-gray-100">
                       Advanced logic
                     </div>
                     {ADVANCED_OPTIONS.map((opt) => (
@@ -625,7 +625,7 @@ function InsertDataPicker({ open, onClose, onSelect, kickoffFields, flowVariable
         )}
         {filteredFields.length > 0 && (
           <>
-            <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 flex items-center gap-1.5">
+            <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 flex items-center gap-1.5">
               <FileText className="w-3 h-3" /> Kickoff Form
             </div>
             {filteredFields.map((f) => (
@@ -635,14 +635,14 @@ function InsertDataPicker({ open, onClose, onSelect, kickoffFields, flowVariable
                 className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-violet-50 transition-colors flex items-center gap-2"
               >
                 <span className="truncate">{f.label}</span>
-                <span className="text-[10px] text-gray-400 shrink-0">{f.type}</span>
+                <span className="text-xs text-gray-400 shrink-0">{f.type}</span>
               </button>
             ))}
           </>
         )}
         {filteredVars.length > 0 && (
           <>
-            <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 flex items-center gap-1.5">
+            <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 flex items-center gap-1.5">
               <Database className="w-3 h-3" /> Workspace
             </div>
             {filteredVars.map((v) => (
@@ -653,7 +653,7 @@ function InsertDataPicker({ open, onClose, onSelect, kickoffFields, flowVariable
               >
                 <Variable className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                 <span className="truncate">{v.key}</span>
-                <span className="text-[10px] text-gray-400 shrink-0">{v.type}</span>
+                <span className="text-xs text-gray-400 shrink-0">{v.type}</span>
               </button>
             ))}
           </>
@@ -844,7 +844,7 @@ function RoundRobinConfig({
                     onClick={() => { toggleContact(c.email); setSearch(''); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-violet-50 transition-colors"
                   >
-                    <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] font-bold shrink-0">
+                    <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold shrink-0">
                       {c.name.charAt(0).toUpperCase()}
                     </span>
                     <span className="truncate text-gray-700">{c.name}</span>

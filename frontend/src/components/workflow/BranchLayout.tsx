@@ -18,6 +18,8 @@ interface BranchLayoutProps {
   roles?: Step['config']['assignee'][];
   /** Change info map for proposal mode diff badges */
   proposalChangeMap?: Map<string, ChangeInfo>;
+  /** Callback when a step is clicked in edit mode */
+  onStepClick?: (stepId: string) => void;
 }
 
 type PathOrOutcome = BranchPath | DecisionOutcome;
@@ -44,6 +46,7 @@ export function BranchLayout({
   editMode,
   roles,
   proposalChangeMap,
+  onStepClick,
 }: BranchLayoutProps) {
   const paths = step.config?.paths || step.config?.outcomes || [];
   const isParallel = step.type === 'PARALLEL_BRANCH';
@@ -94,18 +97,18 @@ export function BranchLayout({
             const pathId = getPathId(path);
 
             return (
-              <div key={pathId} className="flex flex-col items-center min-w-[280px]">
+              <div key={pathId} className="flex flex-col items-center min-w-[340px]">
                 {/* Vertical line from horizontal connector */}
                 <div className="w-[2px] h-8 bg-gray-300" />
 
                 {/* Branch Label */}
-                <div className="text-gray-600 text-xs font-medium px-2 py-0.5 mb-2">
+                <div className="text-gray-600 text-sm font-medium px-3 py-1 mb-2">
                   {path.label || `${isDecision ? 'Outcome' : 'Branch'} ${pathIndex + 1}`}
                 </div>
 
                 {/* Add button at top of branch */}
-                <button className="w-6 h-6 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center hover:border-blue-500 hover:text-blue-500 transition-colors mb-2">
-                  <Plus className="w-3 h-3" />
+                <button className="w-7 h-7 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center hover:border-blue-500 hover:text-blue-500 transition-colors mb-2">
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
 
                 {/* Steps in this branch */}
@@ -163,6 +166,7 @@ export function BranchLayout({
                           stepNumber={nestedStepNumber}
                           editMode={editMode}
                           changeStatus={proposalChangeMap ? getStepChangeStatus(nestedStep, proposalChangeMap) : undefined}
+                          onStepClick={onStepClick}
                         />
                       </div>
 
@@ -178,6 +182,7 @@ export function BranchLayout({
                           editMode={editMode}
                           roles={roles}
                           proposalChangeMap={proposalChangeMap}
+                          onStepClick={onStepClick}
                         />
                       )}
                     </div>
@@ -189,7 +194,7 @@ export function BranchLayout({
 
                 {/* Empty state for branches with no steps */}
                 {pathSteps.length === 0 && (
-                  <div className="w-full p-4 border-2 border-dashed border-gray-300 bg-white/80 rounded-lg py-6 text-center text-xs text-gray-400">
+                  <div className="w-full p-4 border-2 border-dashed border-gray-300 bg-white/80 rounded-lg py-6 text-center text-sm text-gray-400">
                     No steps yet
                   </div>
                 )}

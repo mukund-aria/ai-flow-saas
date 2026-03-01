@@ -213,9 +213,9 @@ body {
 
 /* Dotted grid background — warm canvas like Moxo production */
 .bg-dotted-grid {
-  background-color: #fafaf8;
-  background-image: radial-gradient(circle, #d6d3d1 0.8px, transparent 0.8px);
-  background-size: 20px 20px;
+  background-color: #FAFAF9;
+  background-image: radial-gradient(circle, #e0ddd9 0.7px, transparent 0.7px);
+  background-size: 22px 22px;
 }
 
 /* Scrollbar styling */

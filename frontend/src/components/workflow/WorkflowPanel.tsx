@@ -13,6 +13,8 @@ interface WorkflowPanelProps {
   onStartConfigClick?: () => void;
   onApproveProposal?: () => void;
   onRequestProposalChanges?: (changes: string) => void;
+  /** Callback when a step is clicked in edit mode (opens slide-over config) */
+  onStepClick?: (stepId: string) => void;
 }
 
 const MIN_ZOOM = 0.5;
@@ -35,7 +37,7 @@ function isInteractiveTarget(target: HTMLElement): boolean {
   return false;
 }
 
-export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveProposal, onRequestProposalChanges }: WorkflowPanelProps) {
+export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveProposal, onRequestProposalChanges, onStepClick }: WorkflowPanelProps) {
   const workflow = useWorkflowStore((state) => state.workflow);
   const pendingProposal = useWorkflowStore((state) => state.pendingProposal);
   const proposalViewMode = useWorkflowStore((state) => state.proposalViewMode);
@@ -183,7 +185,7 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
       <div
         ref={containerRef}
         data-canvas-root
-        className="flex-1 h-full relative overflow-hidden bg-dotted-grid"
+        className="flex-1 h-full relative overflow-hidden bg-dotted-grid bg-[#FAFAF9]"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -233,7 +235,7 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
       <div
         ref={containerRef}
         data-canvas-root
-        className="flex-1 h-full relative overflow-hidden bg-dotted-grid"
+        className="flex-1 h-full relative overflow-hidden bg-dotted-grid bg-[#FAFAF9]"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -244,23 +246,24 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
           className="p-6 flex flex-col items-center min-w-fit"
           style={{ transform: canvasTransform, transformOrigin: 'top center' }}
         >
+          {/* Flow Start Card — always visible */}
+          <FlowStartCard
+            workflow={workflow}
+            editMode
+            onConfigClick={onStartConfigClick}
+          />
+
+          {/* Connector */}
+          <StepConnector
+            showAddButton={workflow.steps.length === 0}
+            onAdd={undefined}
+            dropId={workflow.steps.length === 0 ? 'drop-zone-0' : undefined}
+          />
+
           {workflow.steps.length === 0 ? (
             <EmptyWorkflow editMode={editMode} />
           ) : (
-            <>
-              {/* Flow Start Card */}
-              <FlowStartCard
-                workflow={workflow}
-                editMode
-                onConfigClick={onStartConfigClick}
-              />
-
-              {/* Connector */}
-              <StepConnector />
-
-              {/* Step List */}
-              <StepList workflow={workflow} editMode={editMode} />
-            </>
+            <StepList workflow={workflow} editMode={editMode} onStepClick={onStepClick} />
           )}
         </div>
         {zoomControls}
@@ -281,7 +284,7 @@ export function WorkflowPanel({ editMode = false, onStartConfigClick, onApproveP
       style={{ cursor: canvasCursor }}
     >
       <WorkflowHeader workflow={workflow} editMode={false} />
-      <div className="flex-1 overflow-hidden bg-dotted-grid relative">
+      <div className="flex-1 overflow-hidden bg-dotted-grid bg-[#FAFAF9] relative">
         <div
           className="p-4 flex flex-col items-center min-w-fit"
           style={{ transform: canvasTransform, transformOrigin: 'top center' }}

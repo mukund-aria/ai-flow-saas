@@ -33,7 +33,7 @@ export function AssigneeExperienceEditor() {
         <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
           Assignee Portal
         </h4>
-        <p className="text-[11px] text-gray-400">
+        <p className="text-xs text-gray-400">
           Configure how external assignees experience their tasks
         </p>
       </div>
@@ -54,7 +54,7 @@ export function AssigneeExperienceEditor() {
           rows={3}
           className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
         />
-        <p className="mt-1 text-[11px] text-gray-400 text-right">
+        <p className="mt-1 text-xs text-gray-400 text-right">
           {welcomeLength}/{WELCOME_MAX}
         </p>
       </div>
@@ -71,7 +71,7 @@ export function AssigneeExperienceEditor() {
         />
         <div>
           <span className="text-sm font-medium text-gray-700">Enable chat for assignees</span>
-          <p className="text-[11px] text-gray-400 mt-0.5">
+          <p className="text-xs text-gray-400 mt-0.5">
             Allow external assignees to chat with the coordinator within their task portal
           </p>
         </div>
@@ -95,7 +95,7 @@ export function AssigneeExperienceEditor() {
             />
             <div>
               <span className="text-sm font-medium text-gray-700">Spotlight</span>
-              <p className="text-[11px] text-gray-400 mt-0.5">
+              <p className="text-xs text-gray-400 mt-0.5">
                 Show one task at a time
               </p>
             </div>
@@ -111,7 +111,7 @@ export function AssigneeExperienceEditor() {
             />
             <div>
               <span className="text-sm font-medium text-gray-700">Gallery</span>
-              <p className="text-[11px] text-gray-400 mt-0.5">
+              <p className="text-xs text-gray-400 mt-0.5">
                 Show all tasks in a grid
               </p>
             </div>

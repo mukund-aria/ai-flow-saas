@@ -435,7 +435,7 @@ export function FormPreview({
                           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                             Field Properties
                           </span>
-                          <span className="text-[10px] text-gray-400 font-mono">{field.type}</span>
+                          <span className="text-xs text-gray-400 font-mono">{field.type}</span>
                         </div>
 
                         {/* Label */}

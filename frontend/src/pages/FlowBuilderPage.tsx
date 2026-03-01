@@ -16,6 +16,7 @@ import { StepPalette } from '@/components/workflow/StepPalette';
 import { FlowSettingsPanel } from '@/components/workflow/FlowSettingsPanel';
 import { FlowStartConfigPanel } from '@/components/workflow/FlowStartConfigPanel';
 import { RoleConfigPanel } from '@/components/workflow/RoleConfigPanel';
+import { StepConfigSlideOver } from '@/components/workflow/StepConfigSlideOver';
 import { useChat } from '@/hooks/useChat';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { usePreviewStore } from '@/stores/previewStore';
@@ -46,7 +47,7 @@ export function FlowBuilderPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { sendMessage, startNewChat, handleApprovePlan, handleRequestChanges } = useChat();
+  const { sendMessage, startNewChat, handleApprovePlan, handleRequestChanges, cancelGeneration } = useChat();
   const { workflow, savedFlowId, savedFlowStatus, isSaving, setSavedFlow, setWorkflow, setSaving, initEmptyWorkflow, updateFlowMetadata } = useWorkflowStore();
   const { previewWorkflow, clearPreview } = usePreviewStore();
   const { completeBuildTemplate } = useOnboardingStore();
@@ -59,6 +60,7 @@ export function FlowBuilderPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [showStartConfig, setShowStartConfig] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const previewLoadedRef = useRef(false);
   const templateLoadedRef = useRef(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -115,9 +117,16 @@ export function FlowBuilderPage() {
       return next;
     });
 
-    // Clear proposal when switching to manual mode
     if (mode === 'manual') {
+      // Clear proposal when switching to manual mode
       useWorkflowStore.getState().clearProposal();
+      // Abort active AI stream
+      cancelGeneration();
+    }
+
+    if (mode === 'ai') {
+      // Auto-expand chat when switching back to AI
+      setIsChatCollapsed(false);
     }
 
     // Initialize empty workflow when switching to manual mode if none exists
@@ -294,6 +303,7 @@ export function FlowBuilderPage() {
         setShowSettings(false);
         setShowStartConfig(false);
         setSelectedRoleId(null);
+        setSelectedStepId(null);
       }
     };
 
@@ -504,12 +514,12 @@ export function FlowBuilderPage() {
           )}
 
           {/* Version + Status badges */}
-          <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-gray-100 text-gray-500 shrink-0">
+          <span className="px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-500 shrink-0">
             V1
           </span>
           {savedFlowStatus && (
             <span
-              className={`px-1.5 py-0.5 text-[10px] font-medium rounded shrink-0 ${
+              className={`px-2 py-0.5 text-xs font-medium rounded shrink-0 ${
                 savedFlowStatus === 'ACTIVE'
                   ? 'bg-green-100 text-green-700'
                   : savedFlowStatus === 'DRAFT'
@@ -529,32 +539,42 @@ export function FlowBuilderPage() {
         </div>
 
         {/* Center: AI/Manual toggle */}
-        <FeatureTooltip content="Switch between AI-assisted and manual editing. AI mode lets you describe changes in chat." side="bottom">
-          <div className="flex items-center bg-gray-100 rounded-lg p-0.5 shrink-0">
+        <div className="relative flex items-center bg-gray-100 rounded-lg p-0.5 shrink-0">
+          {/* Animated sliding indicator */}
+          <div
+            className="absolute top-0.5 bottom-0.5 rounded-md bg-white shadow-sm ring-1 ring-violet-200 transition-all duration-200 ease-in-out"
+            style={{
+              width: 'calc(50% - 2px)',
+              left: builderMode === 'ai' ? '2px' : 'calc(50%)',
+            }}
+          />
+          <FeatureTooltip content="Describe changes in chat and AI builds your flow" side="bottom">
             <button
               onClick={() => handleModeChange('ai')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 builderMode === 'ai'
-                  ? 'bg-white text-violet-700 shadow-sm'
+                  ? 'text-violet-700'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Sparkles className="w-3 h-3" />
+              <Sparkles className="w-4 h-4" />
               AI
             </button>
+          </FeatureTooltip>
+          <FeatureTooltip content="Drag-and-drop steps to build your flow" side="bottom">
             <button
               onClick={() => handleModeChange('manual')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                 builderMode === 'manual'
-                  ? 'bg-white text-violet-700 shadow-sm'
+                  ? 'text-violet-700'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <PenLine className="w-3 h-3" />
+              <PenLine className="w-4 h-4" />
               Manual
             </button>
-          </div>
-        </FeatureTooltip>
+          </FeatureTooltip>
+        </div>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 shrink-0 ml-4">
@@ -664,6 +684,22 @@ export function FlowBuilderPage() {
             </div>
           </>
         )}
+
+        {/* Step Config Slide-over */}
+        {selectedStepId && (
+          <>
+            <div
+              className="absolute inset-0 bg-black/10 z-30"
+              onClick={() => setSelectedStepId(null)}
+            />
+            <div className="absolute right-0 top-0 bottom-0 w-[480px] bg-white border-l border-gray-200 shadow-xl z-40 overflow-hidden animate-in slide-in-from-right duration-200">
+              <StepConfigSlideOver
+                stepId={selectedStepId}
+                onClose={() => setSelectedStepId(null)}
+              />
+            </div>
+          </>
+        )}
         {builderMode === 'ai' ? (
           <div className={`flex flex-1 overflow-hidden ${isResizing ? 'select-none' : ''}`}>
             {/* AI mode: Chat panel + Resizable Divider + Canvas */}
@@ -746,7 +782,16 @@ export function FlowBuilderPage() {
           >
             <StepPalette onSwitchToAI={() => handleModeChange('ai')} />
             <div className="flex-1 bg-gray-50 overflow-auto">
-              <WorkflowPanel editMode onStartConfigClick={() => setShowStartConfig(true)} />
+              <WorkflowPanel
+                editMode
+                onStartConfigClick={() => setShowStartConfig(true)}
+                onStepClick={(stepId) => {
+                  setSelectedStepId(stepId);
+                  setShowSettings(false);
+                  setShowStartConfig(false);
+                  setSelectedRoleId(null);
+                }}
+              />
             </div>
 
             {/* Drag overlay for palette items */}

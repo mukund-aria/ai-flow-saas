@@ -490,7 +490,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                     {/* Left: Step Flow Visualization */}
                     <div className="w-72 border-r border-gray-100 bg-gray-50/50 overflow-y-auto shrink-0">
                       <div className="p-5">
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-4">Flow Preview</p>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Flow Preview</p>
                         <div className="space-y-0">
                           {selectedTemplate.steps.map((step, i) => {
                             if (step.type === 'MILESTONE') {
@@ -498,7 +498,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                                 <div key={i} className="py-1.5">
                                   <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-100 rounded-md">
                                     <Flag className="w-3 h-3 text-gray-500 shrink-0" />
-                                    <span className="text-[10px] font-semibold text-gray-600 uppercase tracking-wider truncate">{step.name}</span>
+                                    <span className="text-xs font-semibold text-gray-600 uppercase tracking-wider truncate">{step.name}</span>
                                   </div>
                                 </div>
                               );
@@ -542,7 +542,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                                   </div>
                                   <div className="min-w-0 pt-1 pb-2">
                                     <p className="text-xs font-medium text-gray-700 leading-tight truncate">{step.name}</p>
-                                    <p className="text-[10px] text-gray-400 truncate">{step.assigneeRole}</p>
+                                    <p className="text-xs text-gray-400 truncate">{step.assigneeRole}</p>
                                   </div>
                                 </div>
                                 {hasPaths && step.samplePaths && (
@@ -552,11 +552,11 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                                       return (
                                       <div key={pi} className="flex items-center gap-1.5">
                                         <div className={`w-2 h-2 rounded-full ${step.type === 'PARALLEL_BRANCH' ? 'bg-green-400' : 'bg-amber-400'}`} />
-                                        <span className="text-[10px] text-gray-500 truncate">
+                                        <span className="text-xs text-gray-500 truncate">
                                           {p.label}{hasGoto ? '' : p.steps && p.steps.length > 0 ? ` (${p.steps.length})` : ''}
                                         </span>
                                         {hasGoto && (
-                                          <span className="text-[10px] text-amber-600 font-medium">&#8617;</span>
+                                          <span className="text-xs text-amber-600 font-medium">&#8617;</span>
                                         )}
                                       </div>
                                       );
@@ -745,7 +745,7 @@ export function TemplateGalleryDialog({ open, onOpenChange, onTemplateImported }
                             {Array.from(new Set(selectedTemplate.steps.filter(s => s.type !== 'MILESTONE').map(s => s.type))).map(type => {
                               const StepIcon = STEP_TYPE_ICONS[type] || FileText;
                               return (
-                                <span key={type} className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded ${STEP_TYPE_COLORS[type] || 'bg-gray-100 text-gray-600'}`}>
+                                <span key={type} className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded ${STEP_TYPE_COLORS[type] || 'bg-gray-100 text-gray-600'}`}>
                                   <StepIcon className="w-2.5 h-2.5" />
                                   {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                 </span>
