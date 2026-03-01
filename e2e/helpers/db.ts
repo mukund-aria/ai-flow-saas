@@ -42,7 +42,7 @@ export async function getStepExecutionByStepId(
   stepId: string
 ) {
   const result = await pool.query(
-    'SELECT id, step_id, step_index, status FROM step_executions WHERE flow_run_id = $1 AND step_id = $2',
+    'SELECT id, step_id, step_index, status, result_data FROM step_executions WHERE flow_run_id = $1 AND step_id = $2',
     [flowRunId, stepId]
   );
   return result.rows[0] ?? null;

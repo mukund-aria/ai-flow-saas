@@ -7,10 +7,11 @@
  * Steps tested:
  * 1. FORM — Client fills information (browser)
  * 2. APPROVAL — Coordinator approves (API)
- * 3. FILE_REQUEST — Client uploads document (browser)
- * 4. TODO — Coordinator completes checklist (API)
- * 5. ACKNOWLEDGEMENT — Client accepts terms (browser)
- * 6. DECISION — Client chooses package (browser)
+ * 3. AI_CUSTOM_PROMPT — AI generates welcome summary (auto-completes)
+ * 4. FILE_REQUEST — Client uploads document (browser)
+ * 5. TODO — Coordinator completes checklist (API)
+ * 6. ACKNOWLEDGEMENT — Client accepts terms (browser)
+ * 7. DECISION — Client chooses package (browser)
  */
 
 import { test, expect } from '@playwright/test';
@@ -110,6 +111,19 @@ test.describe.serial('Client Onboarding Journey', () => {
       decision: 'APPROVED',
     });
     expect(res.success).toBe(true);
+  });
+
+  test('AI_CUSTOM_PROMPT — AI generates welcome summary', async () => {
+    // AI step auto-completes — just wait for it to finish
+    await db.waitForStepStatus(runId, 'step-ai-summary', 'COMPLETED', 30000);
+
+    // Verify the AI produced output
+    const stepExec = await db.getStepExecutionByStepId(runId, 'step-ai-summary');
+    expect(stepExec.result_data).toBeTruthy();
+    const result = typeof stepExec.result_data === 'string'
+      ? JSON.parse(stepExec.result_data)
+      : stepExec.result_data;
+    expect(result.welcomeMessage || result.result).toBeTruthy();
   });
 
   test('FILE_REQUEST — Client uploads document', async ({ page }) => {

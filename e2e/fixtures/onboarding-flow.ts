@@ -2,7 +2,7 @@
  * Onboarding Flow Fixture
  *
  * "Client Onboarding" flow definition covering all key step types:
- * FORM, APPROVAL, FILE_REQUEST, TODO, ACKNOWLEDGEMENT, DECISION
+ * FORM, APPROVAL, AI_CUSTOM_PROMPT, FILE_REQUEST, TODO, ACKNOWLEDGEMENT, DECISION
  *
  * Two roles: Client (assignee) and Coordinator (coordinator).
  */
@@ -54,6 +54,42 @@ export const CLIENT_ONBOARDING_FLOW = {
         name: 'Manager Approval',
         description: 'Review and approve the client information',
         assignee: 'Coordinator',
+      },
+    },
+    {
+      stepId: 'step-ai-summary',
+      type: 'AI_CUSTOM_PROMPT',
+      config: {
+        name: 'Generate Welcome Summary',
+        description: 'AI generates a welcome summary based on client info',
+        aiAutomation: {
+          actionType: 'CUSTOM_PROMPT',
+          inputFields: [
+            {
+              fieldId: 'in-name',
+              name: 'Client Name',
+              type: 'TEXT',
+              value: '{Client Information / Full Name}',
+            },
+            {
+              fieldId: 'in-email',
+              name: 'Client Email',
+              type: 'TEXT',
+              value: '{Client Information / Email Address}',
+            },
+          ],
+          knowledgeSources: [],
+          prompt: 'Write a short one-sentence welcome message for this new client.',
+          outputFields: [
+            {
+              fieldId: 'out-welcome',
+              name: 'welcomeMessage',
+              type: 'TEXT',
+              required: true,
+              description: 'A personalized welcome message',
+            },
+          ],
+        },
       },
     },
     {
