@@ -341,13 +341,8 @@ export type StepType =
   | 'SYSTEM_CHAT_MESSAGE'
   | 'SYSTEM_UPDATE_WORKSPACE'
   | 'BUSINESS_RULE'
-  | 'INTEGRATION_AIRTABLE'
-  | 'INTEGRATION_CLICKUP'
-  | 'INTEGRATION_DROPBOX'
-  | 'INTEGRATION_GMAIL'
-  | 'INTEGRATION_GOOGLE_DRIVE'
-  | 'INTEGRATION_GOOGLE_SHEETS'
-  | 'INTEGRATION_WRIKE';
+  | 'REST_API'
+  | 'MCP_SERVER';
 
 export interface StepConfig {
   name: string;
@@ -1013,13 +1008,8 @@ export const STEP_TYPE_META: Record<StepType, { label: string; color: string; ca
   SYSTEM_CHAT_MESSAGE: { label: 'Chat Message', color: '#6b7280', category: 'automation' },
   SYSTEM_UPDATE_WORKSPACE: { label: 'Update Workspace', color: '#6b7280', category: 'automation' },
   BUSINESS_RULE: { label: 'Business Rule', color: '#6b7280', category: 'automation' },
-  INTEGRATION_AIRTABLE: { label: 'Airtable', color: '#18BFFF', category: 'automation' },
-  INTEGRATION_CLICKUP: { label: 'ClickUp', color: '#7B68EE', category: 'automation' },
-  INTEGRATION_DROPBOX: { label: 'Dropbox', color: '#0061FF', category: 'automation' },
-  INTEGRATION_GMAIL: { label: 'Gmail', color: '#EA4335', category: 'automation' },
-  INTEGRATION_GOOGLE_DRIVE: { label: 'Google Drive', color: '#4285F4', category: 'automation' },
-  INTEGRATION_GOOGLE_SHEETS: { label: 'Google Sheets', color: '#34A853', category: 'automation' },
-  INTEGRATION_WRIKE: { label: 'Wrike', color: '#08CF65', category: 'automation' },
+  REST_API: { label: 'REST API', color: '#0ea5e9', category: 'automation' },
+  MCP_SERVER: { label: 'MCP Server', color: '#8b5cf6', category: 'automation' },
 };
 
 // ============================================================================

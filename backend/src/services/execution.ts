@@ -653,77 +653,15 @@ export async function propagateSubFlowCompletion(childRunId: string): Promise<vo
     resultData[mapping.parentOutputKey] = resolved;
   }
 
-  // Complete the parent step
-  await db.update(stepExecutions)
-    .set({
-      status: 'COMPLETED',
-      completedAt: new Date(),
-      resultData,
-    })
-    .where(eq(stepExecutions.id, parentStepExec.id));
-
-  // Notify and advance the parent flow
-  await onStepCompleted(parentStepExec, parentRun);
-  await updateFlowActivity(parentRun.id);
-
-  // Advance parent flow to next step
-  const { getNextStepExecutions } = await import('./step-advancement.js');
-  const nextStepIds = getNextStepExecutions(
-    parentStepExec as any,
-    parentRun.stepExecutions as any[],
-    parentStepDefs,
-    resultData
-  );
-
-  const nextStep = nextStepIds.length > 0
-    ? parentRun.stepExecutions.find(se => se.id === nextStepIds[0])
-    : undefined;
-
-  if (nextStep) {
-    await db.update(stepExecutions)
-      .set({ status: 'IN_PROGRESS', startedAt: new Date() })
-      .where(eq(stepExecutions.id, nextStep.id));
-
-    const nextStepDef = parentStepDefs.find((s: any) => (s.stepId || s.id) === nextStep.stepId);
-    const nextStepDue = nextStepDef?.due || nextStepDef?.config?.due;
-    const parentDueAt = parentRun.dueAt ? new Date(parentRun.dueAt) : null;
-    await onStepActivated(nextStep.id, nextStepDue, parentRun.flow?.definition as Record<string, unknown>, parentDueAt);
-
-    // If next step is a SUB_FLOW, handle it
-    if (nextStepDef?.type === 'SUB_FLOW') {
-      await handleSubFlowStep(nextStep.id, nextStepDef, parentRun);
-    }
-
-    // If next step has a contact assignee, create magic link
-    if (nextStep.assignedToContactId) {
-      const { createMagicLink } = await import('./magic-link.js');
-      const { sendMagicLink } = await import('./email.js');
-      const token = await createMagicLink(nextStep.id);
-      const contact = await db.query.contacts.findFirst({
-        where: eq(contacts.id, nextStep.assignedToContactId),
-      });
-      if (contact) {
-        await sendMagicLink({
-          to: contact.email,
-          contactName: contact.name,
-          stepName: `Step ${nextStep.stepIndex + 1}`,
-          flowName: parentRun.flow?.name || 'Flow',
-          token,
-        });
-      }
-    }
-
-    await db.update(flowRuns)
-      .set({ currentStepIndex: nextStep.stepIndex })
-      .where(eq(flowRuns.id, parentRun.id));
-  } else {
-    // No more steps - mark parent run as completed
-    await db.update(flowRuns)
-      .set({ status: 'COMPLETED', completedAt: new Date() })
-      .where(eq(flowRuns.id, parentRun.id));
-
-    await onFlowCompleted(parentRun);
-  }
+  // Complete the parent step and advance using shared helper
+  const { completeStepAndAdvance } = await import('./step-completion.js');
+  await completeStepAndAdvance({
+    stepExecutionId: parentStepExec.id,
+    resultData,
+    run: parentRun as any,
+    stepDefs: parentStepDefs,
+    skipAIReview: true,
+  });
 
   console.log(`[SubFlow] Propagated completion of child run ${childRunId} to parent step ${parentStepExec.id}`);
 }

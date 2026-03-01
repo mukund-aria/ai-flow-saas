@@ -38,7 +38,7 @@ const STEP_GROUPS: StepGroup[] = [
   },
   {
     label: 'Automations',
-    types: ['SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE'],
+    types: ['SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE', 'REST_API', 'MCP_SERVER'],
   },
   {
     label: 'Controls',
@@ -48,10 +48,6 @@ const STEP_GROUPS: StepGroup[] = [
     label: 'Layout',
     types: [],
     hasMilestone: true,
-  },
-  {
-    label: 'Integrations',
-    types: ['INTEGRATION_AIRTABLE', 'INTEGRATION_CLICKUP', 'INTEGRATION_DROPBOX', 'INTEGRATION_GMAIL', 'INTEGRATION_GOOGLE_DRIVE', 'INTEGRATION_GOOGLE_SHEETS', 'INTEGRATION_WRIKE'],
   },
 ];
 

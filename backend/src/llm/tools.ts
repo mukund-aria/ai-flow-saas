@@ -48,10 +48,7 @@ export const AI_RESPONSE_TOOLS: Anthropic.Tool[] = [
                       // System Automations
                       'SYSTEM_WEBHOOK', 'SYSTEM_EMAIL',
                       'SYSTEM_CHAT_MESSAGE', 'BUSINESS_RULE',
-                      // Integration Automations
-                      'INTEGRATION_AIRTABLE', 'INTEGRATION_CLICKUP', 'INTEGRATION_DROPBOX',
-                      'INTEGRATION_GMAIL', 'INTEGRATION_GOOGLE_DRIVE',
-                      'INTEGRATION_GOOGLE_SHEETS', 'INTEGRATION_WRIKE'
+                      'REST_API', 'MCP_SERVER'
                     ]
                   },
                   config: {

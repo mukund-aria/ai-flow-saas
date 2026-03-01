@@ -44,14 +44,8 @@ stepTypes:
       - SYSTEM_EMAIL
       - SYSTEM_CHAT_MESSAGE
       - BUSINESS_RULE
-    integrations:
-      - INTEGRATION_AIRTABLE
-      - INTEGRATION_CLICKUP
-      - INTEGRATION_DROPBOX
-      - INTEGRATION_GMAIL
-      - INTEGRATION_GOOGLE_DRIVE
-      - INTEGRATION_GOOGLE_SHEETS
-      - INTEGRATION_WRIKE
+      - REST_API
+      - MCP_SERVER
 
 branching:
   # Maximum number of parallel paths in a PARALLEL_BRANCH

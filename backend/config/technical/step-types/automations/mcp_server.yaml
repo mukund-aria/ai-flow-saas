@@ -1,0 +1,111 @@
+# MCP_SERVER Step Type Definition
+stepType: MCP_SERVER
+category: AUTOMATION
+displayName: "MCP Server"
+description: "Call tools on a Model Context Protocol server"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Description of the MCP tool call"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: serverUrl
+      type: string
+      required: true
+      description: "MCP server endpoint URL (SSE or Streamable HTTP)"
+
+    - name: toolName
+      type: string
+      required: true
+      description: "Name of the tool to call on the MCP server"
+
+    - name: arguments
+      type: keyValue[]
+      required: false
+      description: "Arguments to pass to the tool (supports DDR tokens in values)"
+
+    - name: timeout
+      type: number
+      required: false
+      default: 30000
+      description: "Timeout in milliseconds"
+
+    - name: outputMappings
+      type: array
+      required: false
+      description: "Extract specific fields from tool result"
+      items:
+        - name: resultJsonPath
+          type: string
+          description: "Dot-notation path into tool result (e.g. data.summary)"
+        - name: outputKey
+          type: string
+          description: "Key to store extracted value under"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "Completes when MCP tool returns a result"
+
+outputs:
+  - name: "result"
+    type: json
+    description: "Full tool result from MCP server"
+  - name: "toolName"
+    type: string
+    description: "Name of the tool that was called"
+
+validationRules:
+  - rule: "serverUrl is valid"
+    message: "MCP Server step requires a valid server URL"
+  - rule: "toolName is provided"
+    message: "MCP Server step requires a tool name"
+
+aiGuidance:
+  whenToUse: |
+    Use MCP_SERVER to call tools exposed by Model Context Protocol servers.
+    MCP servers provide standardized tool interfaces for AI and automation.
+    Examples: database queries via MCP, file system operations, custom tool servers.
+
+  whenNotToUse: |
+    - Standard REST APIs → use REST_API or SYSTEM_WEBHOOK
+    - Sending email → use SYSTEM_EMAIL
+    - AI text processing → use AI_* step types
+
+  seQuestions:
+    - "What MCP server should we connect to?"
+    - "Which tool should we call?"
+    - "What arguments does the tool need?"
+
+  editQuestions:
+    - question: "Change the MCP server URL?"
+      aspect: serverUrl
+    - question: "Change which tool to call?"
+      aspect: toolName
+    - question: "Change the tool arguments?"
+      aspect: arguments
+
+  defaults:
+    - "30 second timeout"
+    - "Coordinator-only visibility"
+
+  examples:
+    - trigger: "call MCP tool"
+      mapsTo: MCP_SERVER
+    - trigger: "use MCP server"
+      mapsTo: MCP_SERVER
+    - trigger: "run tool on server"
+      mapsTo: MCP_SERVER

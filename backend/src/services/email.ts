@@ -34,7 +34,7 @@ const resend = process.env.RESEND_API_KEY
 const resendFrom = process.env.RESEND_FROM_EMAIL || 'ServiceFlow <noreply@serviceflow.app>';
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-async function sendEmail(to: string, subject: string, html: string) {
+export async function sendEmail(to: string, subject: string, html: string) {
   // Priority 1: SMTP (Gmail) — can send to any address
   if (smtpTransport) {
     try {

@@ -9,7 +9,7 @@
 import type { Response } from 'express';
 
 export interface SSEEvent {
-  type: 'run.updated' | 'step.completed' | 'run.started' | 'run.completed' | 'attention.changed';
+  type: 'run.updated' | 'step.completed' | 'step.failed' | 'run.started' | 'run.completed' | 'attention.changed';
   data: Record<string, unknown>;
 }
 

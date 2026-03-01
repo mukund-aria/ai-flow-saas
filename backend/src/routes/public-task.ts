@@ -12,8 +12,7 @@ import { eq, and, isNull } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { validateMagicLink } from '../services/magic-link.js';
 import { logAction } from '../services/audit.js';
-import { onStepActivated, onStepCompleted, onFlowCompleted, updateFlowActivity, handleSubFlowStep } from '../services/execution.js';
-import { getNextStepExecutions } from '../services/step-advancement.js';
+import { completeStepAndAdvance } from '../services/step-completion.js';
 import { fileStorage } from '../services/file-storage.js';
 
 const router = Router();
@@ -160,15 +159,6 @@ router.post(
       }
     }
 
-    // Mark the step as completed
-    await db.update(stepExecutions)
-      .set({
-        status: 'COMPLETED',
-        resultData: resultData || {},
-        completedAt: new Date(),
-      })
-      .where(eq(stepExecutions.id, stepExec.id));
-
     // Mark magic link as used
     await db.update(magicLinks)
       .set({ usedAt: new Date() })
@@ -189,76 +179,18 @@ router.post(
     let resolvedNextStep: { id: string; assignedToContactId: string | null; stepIndex: number } | undefined;
 
     if (run) {
-      // Notify: step completed (cancel jobs, notify coordinator)
-      await onStepCompleted(stepExec, run);
-      await updateFlowActivity(run.id);
-
-      // Determine the next step(s) using the step advancement service
       const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
       const stepDefs = (definition?.steps || []) as any[];
-      const nextStepIds = getNextStepExecutions(
-        stepExec as any,
-        run.stepExecutions as any[],
+
+      const result = await completeStepAndAdvance({
+        stepExecutionId: stepExec.id,
+        resultData: resultData || {},
+        run: run as any,
         stepDefs,
-        resultData
-      );
-      const nextStep = nextStepIds.length > 0
-        ? run.stepExecutions.find(se => se.id === nextStepIds[0])
-        : undefined;
-      resolvedNextStep = nextStep;
+      });
 
-      if (nextStep) {
-        // Start the next step
-        await db.update(stepExecutions)
-          .set({ status: 'IN_PROGRESS', startedAt: new Date() })
-          .where(eq(stepExecutions.id, nextStep.id));
-
-        // Schedule notification jobs for the next step
-        const nextStepDef = definition?.steps?.find((s: any) => (s.stepId || s.id) === nextStep.stepId);
-        const nextStepDue = (nextStepDef as any)?.due || (nextStepDef as any)?.config?.due;
-        await onStepActivated(nextStep.id, nextStepDue, run.flow?.definition as Record<string, unknown>);
-
-        // If next step is a SUB_FLOW, start the child flow automatically
-        if ((nextStepDef as any)?.type === 'SUB_FLOW') {
-          await handleSubFlowStep(nextStep.id, nextStepDef as Record<string, unknown>, {
-            id: run.id,
-            organizationId: run.organizationId,
-            startedById: run.startedById,
-            flowId: run.flowId,
-            name: run.name,
-          });
-        }
-
-        await db.update(flowRuns)
-          .set({ currentStepIndex: nextStep.stepIndex })
-          .where(eq(flowRuns.id, run.id));
-
-        // If next step has a contact assignee, create magic link and send email
-        if (nextStep.assignedToContactId) {
-          const { createMagicLink } = await import('../services/magic-link.js');
-          const { sendMagicLink } = await import('../services/email.js');
-          const mlToken = await createMagicLink(nextStep.id);
-          const contact = await db.query.contacts.findFirst({
-            where: eq(contacts.id, nextStep.assignedToContactId),
-          });
-          if (contact) {
-            await sendMagicLink({
-              to: contact.email,
-              contactName: contact.name,
-              stepName: `Step ${nextStep.stepIndex + 1}`,
-              flowName: run.flow?.name || 'Flow',
-              token: mlToken,
-            });
-          }
-        }
-      } else {
-        // No more steps - mark run as completed
-        await db.update(flowRuns)
-          .set({ status: 'COMPLETED', completedAt: new Date() })
-          .where(eq(flowRuns.id, run.id));
-
-        // Notify: flow completed
-        await onFlowCompleted(run);
+      if (result.nextStepId) {
+        resolvedNextStep = run.stepExecutions.find(se => se.id === result.nextStepId) as any;
       }
     }
 

@@ -12,6 +12,7 @@ import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
 import { onStepActivated, onStepCompleted, onFlowCompleted, onFlowCancelled, onFlowStarted, updateFlowActivity, computeFlowDueAt, handleSubFlowStep } from '../services/execution.js';
 import { getNextStepExecutions } from '../services/step-advancement.js';
+import { completeStepAndAdvance } from '../services/step-completion.js';
 
 const router = Router();
 
@@ -592,6 +593,20 @@ router.post(
           name: runName,
         });
       }
+
+      // If first step auto-completes (automation step), execute it
+      try {
+        const { maybeAutoExecute } = await import('../services/automation-executor.js');
+        const freshRun = await db.query.flowRuns.findFirst({
+          where: eq(flowRuns.id, newRun.id),
+          with: { flow: true, stepExecutions: { orderBy: [stepExecutions.stepIndex] } },
+        });
+        if (freshRun) {
+          await maybeAutoExecute(firstStepExec.id, steps[0] as Record<string, unknown>, freshRun as any);
+        }
+      } catch (err) {
+        console.error('[RunStart] Auto-execute check failed:', err);
+      }
     }
 
     // Set initial activity timestamp
@@ -729,105 +744,19 @@ router.post(
       }
     }
 
-    // Mark the step as completed
-    await db
-      .update(stepExecutions)
-      .set({
-        status: 'COMPLETED',
-        resultData: resultData || {},
-        completedAt: new Date(),
-      })
-      .where(eq(stepExecutions.id, stepExecution.id));
-
-    // Notify: step completed (cancel jobs, notify coordinator)
-    await onStepCompleted(stepExecution, run);
-    await updateFlowActivity(runId);
-
-    // Determine the next step(s) using the step advancement service
-    const currentIndex = stepExecution.stepIndex;
-    const nextStepIds = getNextStepExecutions(
-      stepExecution as any,
-      run.stepExecutions as any[],
+    // Complete step and advance flow using shared helper
+    const result = await completeStepAndAdvance({
+      stepExecutionId: stepExecution.id,
+      resultData: resultData || {},
+      run: run as any,
       stepDefs,
-      resultData
-    );
-    const nextStepExecution = nextStepIds.length > 0
-      ? run.stepExecutions.find(se => se.id === nextStepIds[0])
-      : undefined;
-
-    if (nextStepExecution) {
-      // Start the next step
-      await db
-        .update(stepExecutions)
-        .set({
-          status: 'IN_PROGRESS',
-          startedAt: new Date(),
-        })
-        .where(eq(stepExecutions.id, nextStepExecution.id));
-
-      // Schedule notification jobs for the next step
-      const nextStepDef = definition?.steps?.find((s: any) => (s.stepId || s.id) === nextStepExecution.stepId);
-      const nextStepDue = (nextStepDef as any)?.due || (nextStepDef as any)?.config?.due;
-      // Pass flow-level dueAt so BEFORE_FLOW_DUE steps can be computed
-      const runDueAt = run.dueAt ? new Date(run.dueAt) : null;
-      await onStepActivated(nextStepExecution.id, nextStepDue, run.flow?.definition as Record<string, unknown>, runDueAt);
-
-      // If next step is a SUB_FLOW, start the child flow automatically
-      if ((nextStepDef as any)?.type === 'SUB_FLOW') {
-        await handleSubFlowStep(nextStepExecution.id, nextStepDef as Record<string, unknown>, {
-          id: run.id,
-          organizationId: run.organizationId,
-          startedById: run.startedById,
-          flowId: run.flowId,
-          name: run.name,
-        });
-      }
-
-      // If next step has a contact assignee, create magic link and send email
-      if (nextStepExecution.assignedToContactId) {
-        const { createMagicLink } = await import('../services/magic-link.js');
-        const { sendMagicLink } = await import('../services/email.js');
-        const token = await createMagicLink(nextStepExecution.id);
-        const contact = await db.query.contacts.findFirst({
-          where: eq(contacts.id, nextStepExecution.assignedToContactId),
-        });
-        if (contact) {
-          await sendMagicLink({
-            to: contact.email,
-            contactName: contact.name,
-            stepName: `Step ${nextStepExecution.stepIndex + 1}`,
-            flowName: run.flow?.name || 'Flow',
-            token,
-          });
-        }
-      }
-
-      // Update current step index on the run
-      await db
-        .update(flowRuns)
-        .set({
-          currentStepIndex: nextStepExecution.stepIndex,
-        })
-        .where(eq(flowRuns.id, runId));
-    } else {
-      // No more steps - mark run as completed
-      await db
-        .update(flowRuns)
-        .set({
-          status: 'COMPLETED',
-          completedAt: new Date(),
-        })
-        .where(eq(flowRuns.id, runId));
-
-      // Notify: flow completed
-      await onFlowCompleted(run);
-    }
+    });
 
     // Audit: step completed
     logAction({
       flowRunId: runId,
       action: 'STEP_COMPLETED',
-      details: { stepId, stepIndex: stepExecution.stepIndex, hasNextStep: !!nextStepExecution },
+      details: { stepId, stepIndex: stepExecution.stepIndex, hasNextStep: !!result.flowCompleted },
     });
 
     // Fetch the updated run

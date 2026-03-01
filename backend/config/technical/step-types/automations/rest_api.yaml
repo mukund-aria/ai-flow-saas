@@ -1,0 +1,156 @@
+# REST_API Step Type Definition
+stepType: REST_API
+category: AUTOMATION
+displayName: "REST API"
+description: "Make HTTP API calls with response parsing and output mapping"
+
+schema:
+  fields:
+    - name: title
+      type: string
+      required: true
+      description: "Description of the API call"
+
+    - name: description
+      type: string
+      required: false
+      description: "Additional context (coordinator-only)"
+
+    - name: url
+      type: string
+      required: true
+      description: "API endpoint URL (supports DDR tokens)"
+
+    - name: method
+      type: enum
+      required: false
+      default: GET
+      values: [GET, POST, PUT, PATCH, DELETE]
+      description: "HTTP method"
+
+    - name: headers
+      type: keyValue[]
+      required: false
+      description: "Custom HTTP headers (supports DDR tokens in values)"
+
+    - name: body
+      type: json
+      required: false
+      description: "Request body for POST/PUT/PATCH (supports DDR tokens)"
+
+    - name: auth
+      type: object
+      required: false
+      description: "Authentication configuration"
+      properties:
+        - name: type
+          type: enum
+          values: [none, bearer, basic]
+          default: none
+        - name: token
+          type: string
+          description: "Bearer token (supports DDR tokens)"
+        - name: username
+          type: string
+        - name: password
+          type: string
+
+    - name: timeout
+      type: number
+      required: false
+      default: 30000
+      description: "Request timeout in milliseconds"
+
+    - name: retryPolicy
+      type: object
+      required: false
+      description: "Retry configuration for failed requests"
+      properties:
+        - name: maxRetries
+          type: number
+          default: 0
+        - name: backoffMs
+          type: number
+          default: 1000
+
+    - name: outputMappings
+      type: array
+      required: false
+      description: "Extract specific fields from response JSON"
+      items:
+        - name: responseJsonPath
+          type: string
+          description: "Dot-notation path into response JSON (e.g. data.id)"
+        - name: outputKey
+          type: string
+          description: "Key to store extracted value under"
+
+    - name: visibility.coordinatorOnly
+      type: boolean
+      required: false
+      default: true
+
+completion:
+  autoCompletes: true
+  noAssignee: true
+  coordinatorOnly: true
+  description: "Completes when API returns a response"
+
+outputs:
+  - name: "response"
+    type: json
+    description: "Full response body"
+  - name: "statusCode"
+    type: number
+    description: "HTTP status code"
+  - name: "headers"
+    type: json
+    description: "Response headers"
+
+validationRules:
+  - rule: "url is valid"
+    message: "REST API step requires a valid URL"
+
+aiGuidance:
+  whenToUse: |
+    Use REST_API to call external HTTP APIs and capture their responses.
+    Unlike SYSTEM_WEBHOOK, REST_API parses the response and makes specific
+    fields available to subsequent steps via DDR and output mappings.
+    Examples: fetch data from a CRM, call a pricing API, look up records.
+
+  whenNotToUse: |
+    - Fire-and-forget notifications → use SYSTEM_WEBHOOK
+    - Sending email → use SYSTEM_EMAIL
+    - AI processing → use AI_* step types
+    - Calling an MCP server → use MCP_SERVER
+
+  seQuestions:
+    - "What API endpoint should we call?"
+    - "What data do you need from the response?"
+    - "Does the API require authentication?"
+
+  editQuestions:
+    - question: "Change the API endpoint URL?"
+      aspect: url
+    - question: "Change the HTTP method?"
+      aspect: method
+    - question: "Change the request body or headers?"
+      aspect: payload
+    - question: "Change which response fields to extract?"
+      aspect: outputMappings
+
+  defaults:
+    - "GET method"
+    - "30 second timeout"
+    - "No retries"
+    - "Coordinator-only visibility"
+
+  examples:
+    - trigger: "fetch from API"
+      mapsTo: REST_API
+    - trigger: "get data from"
+      mapsTo: REST_API
+    - trigger: "call REST endpoint"
+      mapsTo: REST_API
+    - trigger: "look up via API"
+      mapsTo: REST_API

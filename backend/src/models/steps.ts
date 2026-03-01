@@ -57,13 +57,8 @@ export type AutomationType =
   | 'SYSTEM_CHAT_MESSAGE'
   | 'SYSTEM_UPDATE_WORKSPACE'
   | 'BUSINESS_RULE'
-  | 'INTEGRATION_AIRTABLE'
-  | 'INTEGRATION_CLICKUP'
-  | 'INTEGRATION_DROPBOX'
-  | 'INTEGRATION_GMAIL'
-  | 'INTEGRATION_GOOGLE_DRIVE'
-  | 'INTEGRATION_GOOGLE_SHEETS'
-  | 'INTEGRATION_WRIKE';
+  | 'REST_API'
+  | 'MCP_SERVER';
 
 export type StepType = HumanActionType | ControlType | AutomationType;
 
@@ -497,21 +492,34 @@ export interface BusinessRuleStep extends BaseStep {
   outputs: StepOutput[];
 }
 
-// --- INTEGRATION ---
-export interface IntegrationStep extends BaseStep {
-  type: 'INTEGRATION_AIRTABLE' | 'INTEGRATION_CLICKUP' | 'INTEGRATION_DROPBOX' | 'INTEGRATION_GMAIL' | 'INTEGRATION_GOOGLE_DRIVE' | 'INTEGRATION_GOOGLE_SHEETS' | 'INTEGRATION_WRIKE';
+// --- REST_API ---
+export interface RestApiStep extends BaseStep {
+  type: 'REST_API';
   visibility?: VisibilityConfig;
-  integration: {
-    provider: string;
-    event: string;
-    accountId?: string;
-    fieldMappings: Array<{
-      targetField: string;
-      value: string;
-      isDynamic: boolean;
-    }>;
-    config: Record<string, unknown>;
+  api: {
+    url: string;
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    headers?: Record<string, string>;
+    body?: Record<string, unknown> | string;
+    auth?: { type: 'none' | 'bearer' | 'basic'; token?: string; username?: string; password?: string };
+    timeout?: number;
+    retryPolicy?: { maxRetries: number; backoffMs: number };
   };
+  outputMappings?: Array<{ responseJsonPath: string; outputKey: string }>;
+  outputs?: StepOutput[];
+}
+
+// --- MCP_SERVER ---
+export interface McpServerStep extends BaseStep {
+  type: 'MCP_SERVER';
+  visibility?: VisibilityConfig;
+  mcp: {
+    serverUrl: string;
+    toolName: string;
+    arguments?: Record<string, unknown>;
+    timeout?: number;
+  };
+  outputMappings?: Array<{ resultJsonPath: string; outputKey: string }>;
   outputs?: StepOutput[];
 }
 
@@ -562,7 +570,8 @@ export type Step =
   | SystemChatMessageStep
   | SystemUpdateWorkspaceStep
   | BusinessRuleStep
-  | IntegrationStep
+  | RestApiStep
+  | McpServerStep
   // Unknown
   | UnknownStep;
 
@@ -593,9 +602,7 @@ export function isAutomationStep(step: Step): boolean {
     'AI_TRANSCRIBE', 'AI_TRANSLATE', 'AI_WRITE',
     'SYSTEM_WEBHOOK', 'SYSTEM_EMAIL',
     'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE',
-    'INTEGRATION_AIRTABLE', 'INTEGRATION_CLICKUP', 'INTEGRATION_DROPBOX',
-    'INTEGRATION_GMAIL', 'INTEGRATION_GOOGLE_DRIVE', 'INTEGRATION_GOOGLE_SHEETS',
-    'INTEGRATION_WRIKE',
+    'REST_API', 'MCP_SERVER',
   ];
   return automations.includes(step.type);
 }

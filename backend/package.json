@@ -26,6 +26,7 @@
   "type": "module",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "@supabase/supabase-js": "^2.98.0",
     "@types/multer": "^2.0.0",
     "bullmq": "^5.69.3",
