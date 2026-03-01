@@ -7,7 +7,7 @@
 
 import { Router } from 'express';
 import { db, templates, flows, stepExecutions, contacts, users, accounts, flowAccounts } from '../db/index.js';
-import { eq, and, gte, lte, sql, count, desc, isNotNull } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, count, desc, isNotNull, inArray } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
 const router = Router();
@@ -15,6 +15,11 @@ const router = Router();
 // ============================================================================
 // Helpers
 // ============================================================================
+
+/** Returns a subquery selecting flow IDs for the given org, for use with inArray */
+function orgFlowIds(orgId: string) {
+  return db.select({ id: flows.id }).from(flows).where(eq(flows.organizationId, orgId));
+}
 
 function getDateRangeCutoff(range: string): Date {
   const now = new Date();
@@ -89,7 +94,7 @@ router.get(
     // Fetch step executions for action metrics
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
+        ? inArray(stepExecutions.flowId, orgFlowIds(orgId))
         : undefined,
     });
 
@@ -289,8 +294,8 @@ router.get(
     // Get step executions that are assigned to contacts
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId}) AND ${stepExecutions.assignedToContactId} IS NOT NULL`
-        : sql`${stepExecutions.assignedToContactId} IS NOT NULL`,
+        ? and(inArray(stepExecutions.flowId, orgFlowIds(orgId)), isNotNull(stepExecutions.assignedToContactId))
+        : isNotNull(stepExecutions.assignedToContactId),
       with: {
         assignedToContact: true,
       },
@@ -398,8 +403,8 @@ router.get(
     // Fetch completed step executions within the time range, with their flow + template info
     const completedSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
-        : sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.completedAt} >= ${cutoff}`,
+        ? and(eq(stepExecutions.status, 'COMPLETED'), gte(stepExecutions.completedAt, cutoff), inArray(stepExecutions.flowId, orgFlowIds(orgId)))
+        : and(eq(stepExecutions.status, 'COMPLETED'), gte(stepExecutions.completedAt, cutoff)),
       with: {
         flow: { with: { template: true } },
       },
@@ -533,8 +538,8 @@ router.get(
     // Fetch completed steps with time data
     const completedSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.timeToComplete} IS NOT NULL AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
-        : sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.timeToComplete} IS NOT NULL AND ${stepExecutions.completedAt} >= ${cutoff}`,
+        ? and(eq(stepExecutions.status, 'COMPLETED'), isNotNull(stepExecutions.timeToComplete), gte(stepExecutions.completedAt, cutoff), inArray(stepExecutions.flowId, orgFlowIds(orgId)))
+        : and(eq(stepExecutions.status, 'COMPLETED'), isNotNull(stepExecutions.timeToComplete), gte(stepExecutions.completedAt, cutoff)),
       with: {
         flow: { with: { template: true } },
         assignedToContact: true,
@@ -703,7 +708,7 @@ router.get(
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
+        ? inArray(stepExecutions.flowId, orgFlowIds(orgId))
         : undefined,
     });
 
@@ -1030,7 +1035,7 @@ router.get(
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
+        ? inArray(stepExecutions.flowId, orgFlowIds(orgId))
         : undefined,
       with: {
         flow: { with: { template: true } },
@@ -1295,7 +1300,7 @@ router.get(
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
+        ? inArray(stepExecutions.flowId, orgFlowIds(orgId))
         : undefined,
       with: {
         assignedToContact: true,
@@ -1623,7 +1628,7 @@ router.get(
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
+        ? inArray(stepExecutions.flowId, orgFlowIds(orgId))
         : undefined,
       with: {
         assignedToContact: { with: { account: true } },

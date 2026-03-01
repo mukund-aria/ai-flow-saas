@@ -8,12 +8,15 @@
  * - Google OAuth authentication
  */
 
+// Side-effect import: loads .env before any other modules evaluate
+// (DB client reads DATABASE_URL at import time)
+import 'dotenv/config';
+
 import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
 import apiRoutes from './routes/index.js';
 import { errorHandler } from './middleware/index.js';
 import { passport, configurePassport, authRoutes, requireAuth } from './auth/index.js';
@@ -30,8 +33,6 @@ import testSeedRouter from './routes/test-seed.js';
 import { initScheduler } from './services/scheduler.js';
 import { initFlowScheduler } from './services/flow-scheduler.js';
 import { ensureSandboxInfrastructure, startSandboxCleanup } from './services/sandbox.js';
-
-dotenv.config();
 
 const isProduction = process.env.NODE_ENV === 'production';
 
