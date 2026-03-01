@@ -8,6 +8,13 @@
       "when": 1772339512379,
       "tag": "0000_demonic_longshot",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772425912379,
+      "tag": "0001_rename_flows_to_templates",
+      "breakpoints": true
     }
   ]
 }
