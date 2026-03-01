@@ -12,7 +12,7 @@ export function SandboxBanner() {
   const navigate = useNavigate();
 
   const handleSignUp = () => {
-    navigate('/login?returnTo=/templates/new&fromPreview=true');
+    navigate(`/login?returnTo=${encodeURIComponent('/templates/new?fromPreview=true')}`);
   };
 
   return (

@@ -33,7 +33,7 @@ export function PostGenerationPanel({ workflow, prompt, sessionId, sandboxFlowId
     if (isAuthenticated) {
       navigate('/templates/new?fromPreview=true');
     } else {
-      navigate('/login?returnTo=/templates/new&fromPreview=true');
+      navigate(`/login?returnTo=${encodeURIComponent('/templates/new?fromPreview=true')}`);
     }
   };
 

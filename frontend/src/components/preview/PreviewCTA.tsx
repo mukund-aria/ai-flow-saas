@@ -31,7 +31,7 @@ export function PreviewCTA({ workflow, prompt, sessionId }: PreviewCTAProps) {
       navigate('/flows/new?fromPreview=true');
     } else {
       // Go to login with returnTo
-      navigate('/login?returnTo=/flows/new&fromPreview=true');
+      navigate(`/login?returnTo=${encodeURIComponent('/flows/new?fromPreview=true')}`);
     }
   };
 

@@ -60,7 +60,7 @@ export function FlowPreviewInline({
   const handleCTA = () => {
     if (workflow) {
       setPreview(workflow, prompt, sessionId || undefined);
-      navigate('/login?returnTo=/templates/new&fromPreview=true');
+      navigate(`/login?returnTo=${encodeURIComponent('/templates/new?fromPreview=true')}`);
     }
   };
 

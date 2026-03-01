@@ -11,12 +11,19 @@ import { FlowStartCard } from '@/components/workflow/FlowStartCard';
 import { StepConnector } from '@/components/workflow/StepConnector';
 import type { Flow } from '@/types';
 
+// Control flow step types to hide in preview mode
+const CONTROL_FLOW_TYPES = new Set([
+  'GOTO', 'GOTO_DESTINATION', 'TERMINATE', 'WAIT', 'SUB_FLOW',
+]);
+
 interface AnimatedWorkflowPanelProps {
   workflow: Flow;
   isBuilding?: boolean;
+  /** Hide GOTO, GOTO_DESTINATION, TERMINATE etc. from preview */
+  hideControlFlow?: boolean;
 }
 
-export function AnimatedWorkflowPanel({ workflow, isBuilding }: AnimatedWorkflowPanelProps) {
+export function AnimatedWorkflowPanel({ workflow, isBuilding, hideControlFlow }: AnimatedWorkflowPanelProps) {
   const [visibleCount, setVisibleCount] = useState(0);
 
   // Reveal steps one by one
@@ -25,7 +32,10 @@ export function AnimatedWorkflowPanel({ workflow, isBuilding }: AnimatedWorkflow
 
     // Start from 0 and reveal one at a time
     setVisibleCount(0);
-    const totalSteps = workflow.steps.length;
+    const stepsToShow = hideControlFlow
+      ? workflow.steps.filter(s => !CONTROL_FLOW_TYPES.has(s.type))
+      : workflow.steps;
+    const totalSteps = stepsToShow.length;
 
     let current = 0;
     const timer = setInterval(() => {
@@ -37,12 +47,17 @@ export function AnimatedWorkflowPanel({ workflow, isBuilding }: AnimatedWorkflow
     }, 500);
 
     return () => clearInterval(timer);
-  }, [workflow]);
+  }, [workflow, hideControlFlow]);
 
   if (!workflow) return null;
 
-  const visibleSteps = workflow.steps?.slice(0, visibleCount) || [];
-  const allRevealed = visibleCount >= (workflow.steps?.length || 0);
+  // Filter out control flow steps if requested (cleaner preview for public page)
+  const allSteps = hideControlFlow
+    ? (workflow.steps || []).filter(s => !CONTROL_FLOW_TYPES.has(s.type))
+    : (workflow.steps || []);
+
+  const visibleSteps = allSteps.slice(0, visibleCount);
+  const allRevealed = visibleCount >= allSteps.length;
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
