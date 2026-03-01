@@ -25,6 +25,10 @@ export type WebhookEndpointType = 'INCOMING' | 'OUTGOING';
 export type IntegrationType = 'SLACK_WEBHOOK' | 'TEAMS_WEBHOOK' | 'CUSTOM_WEBHOOK';
 export type EmailTemplateType = 'TASK_ASSIGNED' | 'TASK_REMINDER' | 'FLOW_COMPLETED';
 export type FlowRunAccountSource = 'AUTO' | 'MANUAL';
+export type SsoTarget = 'COORDINATOR' | 'ASSIGNEE';
+export type DomainVerificationStatus = 'PENDING' | 'VERIFIED' | 'FAILED';
+export type DomainVerificationMethod = 'DNS_TXT' | 'ADMIN_EMAIL';
+export type AuthMethod = 'google' | 'otp' | 'saml';
 export type CompletionMode = 'ANY_ONE' | 'ALL' | 'MAJORITY';
 export type RoleCompletionMode = 'ALL_ROLES' | 'SEQUENTIAL';
 export type StepExecutionAssigneeStatus = 'PENDING' | 'COMPLETED';
@@ -154,6 +158,7 @@ export const users = pgTable('users', {
   name: text('name').notNull(),
   picture: text('picture'),
   activeOrganizationId: text('active_organization_id').references(() => organizations.id),
+  authMethod: text('auth_method').$type<AuthMethod>(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -357,6 +362,64 @@ export const stepExecutionAssignees = pgTable('step_execution_assignees', {
   resultData: jsonb('result_data').$type<Record<string, unknown>>(),
   completedAt: timestamp('completed_at'),
   notifiedAt: timestamp('notified_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// SSO Configs (SAML IdP configuration per org/portal)
+// ============================================================================
+
+export const ssoConfigs = pgTable('sso_configs', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  portalId: text('portal_id').references(() => portals.id),
+  target: text('target').$type<SsoTarget>().notNull(),
+  idpEntityId: text('idp_entity_id').notNull(),
+  idpSsoUrl: text('idp_sso_url').notNull(),
+  idpCertificate: text('idp_certificate').notNull(),
+  idpSloUrl: text('idp_slo_url'),
+  spEntityId: text('sp_entity_id').notNull(),
+  spAcsUrl: text('sp_acs_url').notNull(),
+  enabled: boolean('enabled').default(false).notNull(),
+  enforced: boolean('enforced').default(false).notNull(),
+  autoProvision: boolean('auto_provision').default(true).notNull(),
+  sessionMaxAgeMinutes: integer('session_max_age_minutes').default(480).notNull(),
+  attributeMapping: jsonb('attribute_mapping').$type<{
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    displayName?: string;
+  }>(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('sso_config_org_portal_target_unique').on(table.organizationId, table.portalId, table.target),
+]);
+
+// ============================================================================
+// Org Domains (Verified email domains claimed by orgs)
+// ============================================================================
+
+export const orgDomains = pgTable('org_domains', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  domain: text('domain').notNull().unique(),
+  verificationStatus: text('verification_status').$type<DomainVerificationStatus>().default('PENDING').notNull(),
+  verificationMethod: text('verification_method').$type<DomainVerificationMethod>().default('DNS_TXT').notNull(),
+  verificationToken: text('verification_token').notNull().$defaultFn(() => crypto.randomUUID()),
+  verifiedAt: timestamp('verified_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// SAML Assertions (Replay prevention)
+// ============================================================================
+
+export const samlAssertions = pgTable('saml_assertions', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  assertionId: text('assertion_id').notNull().unique(),
+  ssoConfigId: text('sso_config_id').notNull().references(() => ssoConfigs.id),
+  expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -610,6 +673,8 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   assigneeSessions: many(assigneeSessions),
   accounts: many(accounts),
   contactGroups: many(contactGroups),
+  ssoConfigs: many(ssoConfigs),
+  orgDomains: many(orgDomains),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -906,6 +971,7 @@ export const portalsRelations = relations(portals, ({ one, many }) => ({
   contacts: many(contacts),
   emailTemplates: many(emailTemplates),
   assigneeSessions: many(assigneeSessions),
+  ssoConfigs: many(ssoConfigs),
 }));
 
 export const portalFlowsRelations = relations(portalFlows, ({ one }) => ({
@@ -1023,5 +1089,35 @@ export const magicLinksRelations = relations(magicLinks, ({ one }) => ({
   stepExecutionAssignee: one(stepExecutionAssignees, {
     fields: [magicLinks.stepExecutionAssigneeId],
     references: [stepExecutionAssignees.id],
+  }),
+}));
+
+// ============================================================================
+// SSO Relations
+// ============================================================================
+
+export const ssoConfigsRelations = relations(ssoConfigs, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [ssoConfigs.organizationId],
+    references: [organizations.id],
+  }),
+  portal: one(portals, {
+    fields: [ssoConfigs.portalId],
+    references: [portals.id],
+  }),
+  samlAssertions: many(samlAssertions),
+}));
+
+export const orgDomainsRelations = relations(orgDomains, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [orgDomains.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+export const samlAssertionsRelations = relations(samlAssertions, ({ one }) => ({
+  ssoConfig: one(ssoConfigs, {
+    fields: [samlAssertions.ssoConfigId],
+    references: [ssoConfigs.id],
   }),
 }));

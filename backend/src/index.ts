@@ -112,6 +112,9 @@ if (!isProduction) {
 // JSON body parser with size limit
 app.use(express.json({ limit: '2mb' }));
 
+// URL-encoded body parser (required for SAML POST callbacks)
+app.use(express.urlencoded({ extended: true }));
+
 // ============================================================================
 // Session & Authentication
 // ============================================================================

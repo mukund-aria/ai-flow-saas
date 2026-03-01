@@ -11,6 +11,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOTPAuth } from '@/hooks/useOTPAuth';
 import { OTPInput } from '@/components/auth/OTPInput';
+import { checkSso } from '@/lib/api';
 
 export function LoginPage() {
   const { isAuthenticated, isLoading: authLoading, checkAuth } = useAuth();
@@ -69,10 +70,29 @@ export function LoginPage() {
     return true;
   };
 
+  const [ssoAvailable, setSsoAvailable] = useState(false);
+  const [ssoRedirectUrl, setSsoRedirectUrl] = useState<string | null>(null);
+
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateEmail(email)) return;
     clearError();
+
+    // Check SSO first
+    try {
+      const ssoResult = await checkSso(email);
+      if (ssoResult.ssoRequired && ssoResult.redirectUrl) {
+        window.location.href = ssoResult.redirectUrl;
+        return;
+      }
+      if (ssoResult.ssoAvailable && ssoResult.redirectUrl) {
+        setSsoAvailable(true);
+        setSsoRedirectUrl(ssoResult.redirectUrl);
+      }
+    } catch {
+      // SSO check failed, proceed with OTP
+    }
+
     await sendOTP(email);
   };
 
@@ -129,6 +149,8 @@ export function LoginPage() {
               isLoading={isLoading}
               googleAuthUrl={googleAuthUrl}
               onSubmit={handleEmailSubmit}
+              ssoAvailable={ssoAvailable}
+              ssoRedirectUrl={ssoRedirectUrl}
             />
           )}
 
@@ -178,6 +200,8 @@ interface EmailStepProps {
   isLoading: boolean;
   googleAuthUrl: string;
   onSubmit: (e: React.FormEvent) => void;
+  ssoAvailable?: boolean;
+  ssoRedirectUrl?: string | null;
 }
 
 function EmailStep({
@@ -189,6 +213,8 @@ function EmailStep({
   isLoading,
   googleAuthUrl,
   onSubmit,
+  ssoAvailable,
+  ssoRedirectUrl,
 }: EmailStepProps) {
   const displayError = emailError || otpError;
 
@@ -318,6 +344,26 @@ function EmailStep({
           Continue with Google
         </span>
       </a>
+
+      {/* SSO button (shown when SSO is available but not enforced) */}
+      {ssoAvailable && ssoRedirectUrl && (
+        <a
+          href={ssoRedirectUrl}
+          className="
+            mt-3 w-full flex items-center justify-center gap-3 px-4 py-3
+            border-2 border-gray-200 rounded-xl
+            bg-white hover:bg-gray-50 hover:border-gray-300
+            transition-all duration-200 group
+          "
+        >
+          <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+          </svg>
+          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
+            Continue with SSO
+          </span>
+        </a>
+      )}
     </>
   );
 }

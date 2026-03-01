@@ -21,6 +21,7 @@ interface User {
   organizationName?: string | null;
   role?: string | null;
   needsOnboarding?: boolean;
+  authMethod?: 'google' | 'otp' | 'saml';
 }
 
 interface AuthContextType {
@@ -105,6 +106,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.ok) {
         // Re-check auth to get updated user
         await checkAuth();
+      } else {
+        const data = await response.json();
+        // Handle SSO re-auth requirement
+        if (data.error?.code === 'SSO_REAUTH_REQUIRED' && data.error?.ssoLoginUrl) {
+          window.location.href = data.error.ssoLoginUrl;
+          return;
+        }
       }
     } catch (err) {
       console.error('Org switch error:', err);

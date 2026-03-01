@@ -6,9 +6,10 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Layers, Loader2, ArrowRight, Mail } from 'lucide-react';
+import { Layers, Loader2, ArrowRight, Mail, KeyRound } from 'lucide-react';
 import { useAssigneeAuth } from '@/contexts/AssigneeAuthContext';
 import { Button } from '@/components/ui/button';
+import { checkPortalSso } from '@/lib/api';
 
 export function PortalLoginPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -40,11 +41,29 @@ export function PortalLoginPage() {
     }
   }, [isAuthenticated, slug, navigate]);
 
+  const [ssoAvailable, setSsoAvailable] = useState(false);
+  const [ssoRedirectUrl, setSsoRedirectUrl] = useState<string | null>(null);
+
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !slug) return;
     setLoading(true);
     setError('');
+    try {
+      // Check portal SSO first
+      const ssoResult = await checkPortalSso(slug, email.trim());
+      if (ssoResult.ssoRequired && ssoResult.redirectUrl) {
+        window.location.href = ssoResult.redirectUrl;
+        return;
+      }
+      if (ssoResult.ssoAvailable && ssoResult.redirectUrl) {
+        setSsoAvailable(true);
+        setSsoRedirectUrl(ssoResult.redirectUrl);
+      }
+    } catch {
+      // SSO check failed, proceed with OTP
+    }
+
     try {
       await login(slug, email.trim());
       setStep('code');
@@ -155,6 +174,26 @@ export function PortalLoginPage() {
                   </>
                 )}
               </Button>
+
+              {ssoAvailable && ssoRedirectUrl && (
+                <>
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-200" />
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="bg-white px-3 text-gray-400">or</span>
+                    </div>
+                  </div>
+                  <a
+                    href={ssoRedirectUrl}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    Sign in with SSO
+                  </a>
+                </>
+              )}
             </form>
           ) : (
             <form onSubmit={handleVerifyOTP}>

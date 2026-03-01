@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import { db, organizations, users, userOrganizations, flows, flowRuns, stepExecutions, portals } from '../db/index.js';
+import { db, organizations, users, userOrganizations, flows, flowRuns, stepExecutions, portals, ssoConfigs } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { claimSandboxFlow } from '../services/sandbox.js';
@@ -256,6 +256,28 @@ router.post(
       res.status(403).json({
         success: false,
         error: { code: 'FORBIDDEN', message: 'Not a member of this organization' },
+      });
+      return;
+    }
+
+    // Check if target org has SSO enforced and user didn't auth via SAML
+    const targetSsoConfig = await db.query.ssoConfigs.findFirst({
+      where: and(
+        eq(ssoConfigs.organizationId, organizationId),
+        eq(ssoConfigs.target, 'COORDINATOR'),
+        eq(ssoConfigs.enabled, true),
+        eq(ssoConfigs.enforced, true)
+      ),
+    });
+
+    if (targetSsoConfig && user.authMethod !== 'saml') {
+      res.status(403).json({
+        success: false,
+        error: {
+          code: 'SSO_REAUTH_REQUIRED',
+          message: 'SSO re-authentication required for this organization',
+          ssoLoginUrl: `/auth/sso/login?email=${encodeURIComponent(user.email)}`,
+        },
       });
       return;
     }

@@ -6,3 +6,5 @@ export { default as passport, configurePassport, type AuthUser } from './passpor
 export { default as authRoutes } from './routes.js';
 export { requireAuth, optionalAuth } from './requireAuth.js';
 export { isEmailAllowed, invalidateEmailWhitelistCache } from './email-whitelist.js';
+export * from './saml-service.js';
+export * from './domain-service.js';

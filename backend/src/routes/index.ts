@@ -31,6 +31,7 @@ import portalsRouter from './portals.js';
 import emailTemplatesRouter from './email-templates.js';
 import accountsRouter from './accounts.js';
 import contactGroupsRouter from './contact-groups.js';
+import ssoRouter from './sso.js';
 import aiTestRouter from './ai-test.js';
 import { orgScope } from '../middleware/org-scope.js';
 
@@ -116,6 +117,9 @@ router.use('/accounts', accountsRouter);
 
 // Contact Groups API (reusable assignment lists)
 router.use('/contact-groups', contactGroupsRouter);
+
+// SSO Admin API (domain management, SSO config CRUD)
+router.use('/sso', ssoRouter);
 
 // Flows API (workflow execution — active instances)
 // Note: POST /api/templates/:templateId/flows is handled by runsRouter

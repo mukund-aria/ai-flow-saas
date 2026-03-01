@@ -10,6 +10,7 @@ import { Strategy as GoogleStrategy, Profile } from 'passport-google-oauth20';
 import { db } from '../db/client.js';
 import { users, userOrganizations } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { isSsoEnforced } from './saml-service.js';
 
 // ============================================================================
 // Types
@@ -24,6 +25,7 @@ export interface AuthUser {
   organizationName?: string | null;
   role?: string | null;
   needsOnboarding?: boolean;
+  authMethod?: 'google' | 'otp' | 'saml';
 }
 
 // Extend Express Request to include our user type
@@ -76,6 +78,12 @@ export function configurePassport(): void {
         if (!(await isEmailAllowed(email))) {
           console.log(`Auth denied for email: ${email} (not in whitelist)`);
           return done(null, false, { message: 'Email not authorized' });
+        }
+
+        // Check if SSO is enforced for this email domain
+        if (await isSsoEnforced(email, 'COORDINATOR')) {
+          console.log(`Auth denied for email: ${email} (SSO enforced)`);
+          return done(null, false, { message: 'SSO login is required for this email domain' });
         }
 
         // Find or create user in DB
@@ -141,7 +149,13 @@ export function configurePassport(): void {
           organizationName,
           role,
           needsOnboarding,
+          authMethod: 'google',
         };
+
+        // Update authMethod in DB
+        await db.update(users)
+          .set({ authMethod: 'google' })
+          .where(eq(users.id, dbUser.id));
 
         console.log(`Auth success for: ${email} (org: ${organizationName || 'none'})`);
         return done(null, authUser);
@@ -152,13 +166,16 @@ export function configurePassport(): void {
     }
   ));
 
-  // Serialize only user ID to session
+  // Serialize user ID + authMethod to session
   passport.serializeUser((user: Express.User, done) => {
-    done(null, user.id);
+    done(null, { id: user.id, authMethod: user.authMethod || 'google' });
   });
 
   // Deserialize user from DB
-  passport.deserializeUser(async (id: string, done) => {
+  passport.deserializeUser(async (sessionData: string | { id: string; authMethod?: string }, done) => {
+    // Support old sessions that stored just the id string
+    const id = typeof sessionData === 'string' ? sessionData : sessionData.id;
+    const authMethod = typeof sessionData === 'object' ? sessionData.authMethod : undefined;
     try {
       const dbUser = await db.query.users.findFirst({
         where: eq(users.id, id),
@@ -209,6 +226,7 @@ export function configurePassport(): void {
         organizationName,
         role,
         needsOnboarding,
+        authMethod: (authMethod || dbUser.authMethod || 'google') as AuthUser['authMethod'],
       };
 
       done(null, authUser);

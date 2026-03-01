@@ -44,19 +44,29 @@ export function AssigneeAuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [isLoading, setIsLoading] = useState(true);
 
-  // Validate token on mount
+  // Validate token on mount (check URL for ssoToken first)
   useEffect(() => {
-    const storedToken = localStorage.getItem(TOKEN_KEY);
-    if (!storedToken) {
+    // Check for SSO token in URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const ssoToken = urlParams.get('ssoToken');
+    if (ssoToken) {
+      // Store SSO token and clean URL
+      localStorage.setItem(TOKEN_KEY, ssoToken);
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+
+    const activeToken = ssoToken || localStorage.getItem(TOKEN_KEY);
+    if (!activeToken) {
       setIsLoading(false);
       return;
     }
 
-    getPortalMe(storedToken)
+    getPortalMe(activeToken)
       .then((data) => {
         setContact(data.contact);
         setPortal(data.portal);
-        setToken(storedToken);
+        setToken(activeToken);
       })
       .catch(() => {
         // Token invalid or expired

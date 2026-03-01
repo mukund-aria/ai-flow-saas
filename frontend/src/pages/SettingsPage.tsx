@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { User, Building2, Bell, Shield, CheckCircle, Loader2, Palette, Users } from 'lucide-react';
+import { User, Building2, Bell, Shield, CheckCircle, Loader2, Palette, Users, KeyRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +16,7 @@ import {
 } from '@/lib/api';
 import { BrandingSettings } from '@/components/settings/BrandingSettings';
 import { AssigneeExperienceSettings } from '@/components/settings/AssigneeExperienceSettings';
+import { SsoSettings } from '@/components/settings/SsoSettings';
 
 export function SettingsPage() {
   const { user, logout, checkAuth } = useAuth();
@@ -275,6 +276,19 @@ export function SettingsPage() {
         </section>
       )}
 
+      {/* SSO Section (admin only) */}
+      {user?.role === 'ADMIN' && (
+        <section className="mb-8">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 flex items-center gap-2">
+            <KeyRound className="w-4 h-4" />
+            Single Sign-On (SSO)
+          </h2>
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <SsoSettings />
+          </div>
+        </section>
+      )}
+
       {/* Security Section */}
       <section>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4 flex items-center gap-2">
@@ -285,10 +299,22 @@ export function SettingsPage() {
           <div className="space-y-5">
             {/* Auth method */}
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 border border-green-200 px-3 py-1 text-xs font-medium text-green-700">
-                <CheckCircle className="w-3.5 h-3.5" />
-                Signed in via Google OAuth
-              </span>
+              {user?.authMethod === 'saml' ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 border border-violet-200 px-3 py-1 text-xs font-medium text-violet-700">
+                  <KeyRound className="w-3.5 h-3.5" />
+                  Signed in via SAML SSO
+                </span>
+              ) : user?.authMethod === 'otp' ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-medium text-blue-700">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  Signed in via Email OTP
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 border border-green-200 px-3 py-1 text-xs font-medium text-green-700">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  Signed in via Google OAuth
+                </span>
+              )}
             </div>
 
             {/* Session info */}

@@ -11,6 +11,7 @@ import { asyncHandler } from '../middleware/async-handler.js';
 import { assigneeAuth } from '../middleware/assignee-auth.js';
 import { sendOTP as sendOTPEmail } from '../services/email.js';
 import { getAssigneeDashboard, getAvailableFlows, startFlowAsAssignee } from '../services/assignee-portal.js';
+import { isSsoEnforced } from '../auth/saml-service.js';
 
 const router = Router();
 
@@ -142,6 +143,17 @@ router.post('/:slug/login', asyncHandler(async (req, res) => {
 
   if (!portal) {
     res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Portal not found' } });
+    return;
+  }
+
+  // Check if SSO is enforced for this portal
+  if (await isSsoEnforced(email, 'ASSIGNEE', portal.id)) {
+    res.status(403).json({
+      success: false,
+      ssoRequired: true,
+      ssoLoginUrl: `/auth/portal-sso/login?portalSlug=${encodeURIComponent(slug)}&email=${encodeURIComponent(email)}`,
+      error: 'SSO login is required for this email domain',
+    });
     return;
   }
 

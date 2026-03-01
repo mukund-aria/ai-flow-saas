@@ -1799,6 +1799,150 @@ export async function removeContactGroupMember(groupId: string, memberId: string
 }
 
 // ============================================================================
+// SSO / SAML
+// ============================================================================
+
+const AUTH_BASE = import.meta.env.VITE_API_URL || '';
+
+export async function checkSso(email: string): Promise<{ ssoRequired: boolean; ssoAvailable: boolean; redirectUrl?: string }> {
+  const res = await fetch(`${AUTH_BASE}/auth/sso/check`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  return res.json();
+}
+
+export async function checkPortalSso(portalSlug: string, email: string): Promise<{ ssoRequired: boolean; ssoAvailable: boolean; redirectUrl?: string }> {
+  const res = await fetch(`${AUTH_BASE}/auth/portal-sso/check`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, portalSlug }),
+  });
+  return res.json();
+}
+
+export interface SsoDomain {
+  id: string;
+  domain: string;
+  organizationId: string;
+  verificationStatus: string;
+  verificationMethod: string;
+  verificationToken: string;
+  verifiedAt: string | null;
+  createdAt: string;
+}
+
+export async function listSsoDomains(): Promise<SsoDomain[]> {
+  const res = await fetch(`${API_BASE}/sso/domains`, fetchOpts);
+  const data = await res.json();
+  return data.data;
+}
+
+export async function claimSsoDomain(domain: string): Promise<SsoDomain> {
+  const res = await fetch(`${API_BASE}/sso/domains`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ domain }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || 'Failed to claim domain');
+  }
+  const data = await res.json();
+  return data.data;
+}
+
+export async function verifySsoDomain(domainId: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`${API_BASE}/sso/domains/${domainId}/verify`, {
+    ...fetchOpts,
+    method: 'POST',
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    return { success: false, error: data.error?.message || 'Verification failed' };
+  }
+  return { success: true };
+}
+
+export async function removeSsoDomain(domainId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/sso/domains/${domainId}`, { ...fetchOpts, method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to remove domain');
+}
+
+export interface SsoConfig {
+  id: string;
+  organizationId: string;
+  portalId: string | null;
+  target: 'COORDINATOR' | 'ASSIGNEE';
+  idpEntityId: string;
+  idpSsoUrl: string;
+  idpCertificate: string;
+  idpSloUrl: string | null;
+  spEntityId: string;
+  spAcsUrl: string;
+  enabled: boolean;
+  enforced: boolean;
+  autoProvision: boolean;
+  sessionMaxAgeMinutes: number;
+  attributeMapping: Record<string, string> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function listSsoConfigs(): Promise<SsoConfig[]> {
+  const res = await fetch(`${API_BASE}/sso/configs`, fetchOpts);
+  const data = await res.json();
+  return data.data;
+}
+
+export async function createSsoConfig(config: {
+  target: 'COORDINATOR' | 'ASSIGNEE';
+  portalId?: string;
+  idpEntityId: string;
+  idpSsoUrl: string;
+  idpCertificate: string;
+  idpSloUrl?: string;
+  attributeMapping?: Record<string, string>;
+}): Promise<SsoConfig> {
+  const res = await fetch(`${API_BASE}/sso/configs`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || 'Failed to create SSO config');
+  }
+  const data = await res.json();
+  return data.data;
+}
+
+export async function updateSsoConfig(configId: string, updates: Partial<SsoConfig>): Promise<SsoConfig> {
+  const res = await fetch(`${API_BASE}/sso/configs/${configId}`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || 'Failed to update SSO config');
+  }
+  const data = await res.json();
+  return data.data;
+}
+
+export async function deleteSsoConfig(configId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/sso/configs/${configId}`, { ...fetchOpts, method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete SSO config');
+}
+
+// ============================================================================
 // Stream Event Types
 // ============================================================================
 

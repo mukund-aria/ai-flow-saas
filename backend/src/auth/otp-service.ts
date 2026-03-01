@@ -152,6 +152,11 @@ export async function verifyOTP(email: string, code: string): Promise<
     redirectTo = '/org-select';
   }
 
+  // Update authMethod in DB
+  await db.update(users)
+    .set({ authMethod: 'otp' })
+    .where(eq(users.id, dbUser.id));
+
   const authUser: AuthUser = {
     id: dbUser.id,
     email: dbUser.email,
@@ -161,6 +166,7 @@ export async function verifyOTP(email: string, code: string): Promise<
     organizationName,
     role,
     needsOnboarding: memberships.length === 0,
+    authMethod: 'otp',
   };
 
   console.log(`OTP auth success for: ${normalizedEmail} (org: ${organizationName || 'none'})`);

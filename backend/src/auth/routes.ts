@@ -8,9 +8,16 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 import { db } from '../db/client.js';
-import { organizationInvites, userOrganizations, users } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { organizationInvites, userOrganizations, users, ssoConfigs } from '../db/schema.js';
+import { eq, and } from 'drizzle-orm';
 import { generateOTP, verifyOTP } from './otp-service.js';
+import {
+  findSsoConfigByEmail, isSsoEnforced, buildSamlInstance,
+  extractUserAttributes, validateAndRecordAssertion,
+  provisionCoordinatorFromSaml, provisionAssigneeFromSaml,
+  generateSpMetadata,
+} from './saml-service.js';
+import type { AuthUser } from './passport.js';
 
 const router = Router();
 
@@ -127,6 +134,15 @@ router.post('/otp/send', async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, error: 'Valid email is required' });
   }
 
+  // Check if SSO is enforced for this email
+  if (await isSsoEnforced(email, 'COORDINATOR')) {
+    return res.status(403).json({
+      success: false,
+      ssoRequired: true,
+      error: 'SSO login is required for this email domain',
+    });
+  }
+
   const result = await generateOTP(email);
 
   if (!result.success) {
@@ -229,6 +245,7 @@ router.get('/me', (req: Request, res: Response) => {
         organizationName: req.user.organizationName,
         role: req.user.role,
         needsOnboarding: req.user.needsOnboarding,
+        authMethod: req.user.authMethod,
       },
     });
   } else {
@@ -263,6 +280,339 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
       });
     });
   });
+});
+
+// ============================================================================
+// SSO Check Routes
+// ============================================================================
+
+/**
+ * Check if SSO is available/required for an email
+ * POST /auth/sso/check
+ */
+router.post('/sso/check', async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ success: false, error: 'Valid email is required' });
+  }
+
+  const config = await findSsoConfigByEmail(email, 'COORDINATOR');
+  if (!config) {
+    return res.json({ ssoRequired: false, ssoAvailable: false });
+  }
+
+  res.json({
+    ssoRequired: config.enforced,
+    ssoAvailable: true,
+    redirectUrl: `/auth/sso/login?email=${encodeURIComponent(email)}`,
+  });
+});
+
+/**
+ * SP-initiated SAML login redirect
+ * GET /auth/sso/login?email=...&returnTo=...
+ */
+router.get('/sso/login', async (req: Request, res: Response) => {
+  const email = req.query.email as string;
+  const returnTo = req.query.returnTo as string | undefined;
+
+  if (!email) {
+    return res.redirect('/login?error=sso_email_required');
+  }
+
+  const config = await findSsoConfigByEmail(email, 'COORDINATOR');
+  if (!config) {
+    return res.redirect('/login?error=sso_not_configured');
+  }
+
+  // Store SSO state in session
+  (req.session as any).ssoConfigId = config.id;
+  (req.session as any).ssoReturnTo = returnTo;
+
+  const saml = buildSamlInstance(config);
+
+  try {
+    const loginUrl = await saml.getAuthorizeUrlAsync('', req.headers.host || '', {});
+    req.session.save((err) => {
+      if (err) console.error('Session save error before SAML redirect:', err);
+      res.redirect(loginUrl);
+    });
+  } catch (err) {
+    console.error('SAML redirect error:', err);
+    res.redirect('/login?error=sso_redirect_failed');
+  }
+});
+
+/**
+ * SAML ACS callback (coordinator)
+ * POST /auth/sso/callback
+ */
+router.post('/sso/callback', async (req: Request, res: Response) => {
+  const configId = (req.session as any).ssoConfigId;
+  const returnTo = (req.session as any).ssoReturnTo;
+
+  // Clean up session state
+  delete (req.session as any).ssoConfigId;
+  delete (req.session as any).ssoReturnTo;
+
+  if (!configId) {
+    return res.redirect('/login?error=sso_state_lost');
+  }
+
+  const config = await db.query.ssoConfigs.findFirst({
+    where: eq(ssoConfigs.id, configId),
+  });
+
+  if (!config) {
+    return res.redirect('/login?error=sso_config_not_found');
+  }
+
+  const saml = buildSamlInstance(config);
+
+  try {
+    const { profile } = await saml.validatePostResponseAsync(req.body);
+    if (!profile) {
+      return res.redirect('/login?error=sso_no_profile');
+    }
+
+    // Replay prevention
+    const assertionId = (profile as any).sessionIndex || (profile as any).ID;
+    const notOnOrAfter = (profile as any).conditions?.NotOnOrAfter
+      ? new Date((profile as any).conditions.NotOnOrAfter)
+      : new Date(Date.now() + 3600 * 1000);
+
+    if (assertionId) {
+      const replayCheck = await validateAndRecordAssertion(assertionId, config.id, notOnOrAfter);
+      if (!replayCheck.valid) {
+        return res.redirect('/login?error=sso_replay');
+      }
+    }
+
+    // Extract attributes and provision user
+    const attributes = extractUserAttributes(profile as Record<string, any>, config.attributeMapping);
+    if (!attributes.email) {
+      return res.redirect('/login?error=sso_no_email');
+    }
+
+    const { user: dbUser } = await provisionCoordinatorFromSaml(attributes, config.organizationId);
+
+    // Build auth user
+    const memberships = await db.query.userOrganizations.findMany({
+      where: eq(userOrganizations.userId, dbUser.id),
+      with: { organization: true },
+    });
+
+    const activeMembership = memberships.find(m => m.organizationId === config.organizationId);
+    const authUser: AuthUser = {
+      id: dbUser.id,
+      email: dbUser.email,
+      name: dbUser.name,
+      picture: dbUser.picture || undefined,
+      activeOrganizationId: config.organizationId,
+      organizationName: (activeMembership as any)?.organization?.name || null,
+      role: activeMembership?.role || null,
+      needsOnboarding: memberships.length === 0,
+      authMethod: 'saml',
+    };
+
+    // Establish session
+    req.login(authUser, (err) => {
+      if (err) {
+        console.error('SAML session login error:', err);
+        return res.redirect('/login?error=sso_session_failed');
+      }
+
+      // Apply SSO session TTL
+      if (config.sessionMaxAgeMinutes) {
+        req.session.cookie.maxAge = config.sessionMaxAgeMinutes * 60 * 1000;
+      }
+
+      req.session.save((saveErr) => {
+        if (saveErr) console.error('Session save error after SAML:', saveErr);
+        const redirectUrl = returnTo && isRelativePath(returnTo) ? returnTo : '/home';
+        res.redirect(redirectUrl);
+      });
+    });
+  } catch (err) {
+    console.error('SAML callback error:', err);
+    res.redirect('/login?error=sso_validation_failed');
+  }
+});
+
+/**
+ * SP metadata endpoint
+ * GET /auth/sso/metadata/:configId
+ */
+router.get('/sso/metadata/:configId', async (req: Request, res: Response) => {
+  const config = await db.query.ssoConfigs.findFirst({
+    where: eq(ssoConfigs.id, req.params.configId as string),
+  });
+
+  if (!config) {
+    return res.status(404).json({ error: 'Config not found' });
+  }
+
+  const xml = generateSpMetadata(config);
+  res.set('Content-Type', 'application/xml');
+  res.send(xml);
+});
+
+// ============================================================================
+// Portal SSO Routes (Assignee)
+// ============================================================================
+
+/**
+ * Check if portal SSO is available/required
+ * POST /auth/portal-sso/check
+ */
+router.post('/portal-sso/check', async (req: Request, res: Response) => {
+  const { email, portalSlug } = req.body;
+
+  if (!email || !portalSlug) {
+    return res.status(400).json({ success: false, error: 'email and portalSlug are required' });
+  }
+
+  // Find portal
+  const { portals } = await import('../db/schema.js');
+  const portal = await db.query.portals.findFirst({
+    where: eq(portals.slug, portalSlug),
+  });
+
+  if (!portal) {
+    return res.json({ ssoRequired: false, ssoAvailable: false });
+  }
+
+  const config = await findSsoConfigByEmail(email, 'ASSIGNEE', portal.id);
+  if (!config) {
+    return res.json({ ssoRequired: false, ssoAvailable: false });
+  }
+
+  res.json({
+    ssoRequired: config.enforced,
+    ssoAvailable: true,
+    redirectUrl: `/auth/portal-sso/login?portalSlug=${encodeURIComponent(portalSlug)}&email=${encodeURIComponent(email)}`,
+  });
+});
+
+/**
+ * Assignee SAML login redirect
+ * GET /auth/portal-sso/login?portalSlug=...&email=...
+ */
+router.get('/portal-sso/login', async (req: Request, res: Response) => {
+  const portalSlug = req.query.portalSlug as string;
+  const email = req.query.email as string;
+
+  if (!portalSlug) {
+    return res.redirect('/?error=sso_portal_required');
+  }
+
+  const { portals } = await import('../db/schema.js');
+  const portal = await db.query.portals.findFirst({
+    where: eq(portals.slug, portalSlug),
+  });
+
+  if (!portal) {
+    return res.redirect('/?error=sso_portal_not_found');
+  }
+
+  const config = email
+    ? await findSsoConfigByEmail(email, 'ASSIGNEE', portal.id)
+    : await db.query.ssoConfigs.findFirst({
+        where: and(
+          eq(ssoConfigs.organizationId, portal.organizationId),
+          eq(ssoConfigs.target, 'ASSIGNEE'),
+          eq(ssoConfigs.enabled, true)
+        ),
+      });
+
+  if (!config) {
+    return res.redirect(`/portal/${portalSlug}/login?error=sso_not_configured`);
+  }
+
+  // Store SSO state
+  (req.session as any).portalSsoConfigId = config.id;
+  (req.session as any).portalSsoSlug = portalSlug;
+  (req.session as any).portalSsoPortalId = portal.id;
+
+  const saml = buildSamlInstance(config);
+
+  try {
+    const loginUrl = await saml.getAuthorizeUrlAsync('', req.headers.host || '', {});
+    req.session.save((err) => {
+      if (err) console.error('Session save error before portal SAML redirect:', err);
+      res.redirect(loginUrl);
+    });
+  } catch (err) {
+    console.error('Portal SAML redirect error:', err);
+    res.redirect(`/portal/${portalSlug}/login?error=sso_redirect_failed`);
+  }
+});
+
+/**
+ * Assignee SAML ACS callback
+ * POST /auth/portal-sso/callback
+ */
+router.post('/portal-sso/callback', async (req: Request, res: Response) => {
+  const configId = (req.session as any).portalSsoConfigId;
+  const portalSlug = (req.session as any).portalSsoSlug;
+  const portalId = (req.session as any).portalSsoPortalId;
+
+  // Clean up
+  delete (req.session as any).portalSsoConfigId;
+  delete (req.session as any).portalSsoSlug;
+  delete (req.session as any).portalSsoPortalId;
+
+  if (!configId || !portalSlug || !portalId) {
+    return res.redirect('/?error=sso_state_lost');
+  }
+
+  const config = await db.query.ssoConfigs.findFirst({
+    where: eq(ssoConfigs.id, configId),
+  });
+
+  if (!config) {
+    return res.redirect(`/portal/${portalSlug}/login?error=sso_config_not_found`);
+  }
+
+  const saml = buildSamlInstance(config);
+
+  try {
+    const { profile } = await saml.validatePostResponseAsync(req.body);
+    if (!profile) {
+      return res.redirect(`/portal/${portalSlug}/login?error=sso_no_profile`);
+    }
+
+    // Replay prevention
+    const assertionId = (profile as any).sessionIndex || (profile as any).ID;
+    const notOnOrAfter = (profile as any).conditions?.NotOnOrAfter
+      ? new Date((profile as any).conditions.NotOnOrAfter)
+      : new Date(Date.now() + 3600 * 1000);
+
+    if (assertionId) {
+      const replayCheck = await validateAndRecordAssertion(assertionId, config.id, notOnOrAfter);
+      if (!replayCheck.valid) {
+        return res.redirect(`/portal/${portalSlug}/login?error=sso_replay`);
+      }
+    }
+
+    // Extract attributes and provision contact
+    const attributes = extractUserAttributes(profile as Record<string, any>, config.attributeMapping);
+    if (!attributes.email) {
+      return res.redirect(`/portal/${portalSlug}/login?error=sso_no_email`);
+    }
+
+    const { token } = await provisionAssigneeFromSaml(attributes, config.organizationId, portalId);
+
+    // Redirect to portal with token
+    req.session.save((err) => {
+      if (err) console.error('Session save error after portal SAML:', err);
+      res.redirect(`/portal/${portalSlug}?ssoToken=${token}`);
+    });
+  } catch (err) {
+    console.error('Portal SAML callback error:', err);
+    res.redirect(`/portal/${portalSlug}/login?error=sso_validation_failed`);
+  }
 });
 
 // ============================================================================
