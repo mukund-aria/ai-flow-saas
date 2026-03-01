@@ -68,4 +68,34 @@ export class CoordinatorAPI {
   async getFlowRun(runId: string) {
     return this.request('GET', `/flows/${runId}`);
   }
+
+  // ---- Accounts ----
+
+  async listAccounts() {
+    return this.request('GET', '/accounts');
+  }
+
+  async createAccount(name: string, domain?: string) {
+    return this.request('POST', '/accounts', { name, domain });
+  }
+
+  async getAccount(id: string) {
+    return this.request('GET', `/accounts/${id}`);
+  }
+
+  async updateAccount(id: string, body: { name?: string; domain?: string }) {
+    return this.request('PUT', `/accounts/${id}`, body);
+  }
+
+  async deleteAccount(id: string) {
+    return this.request('DELETE', `/accounts/${id}`);
+  }
+
+  async getAccountContacts(id: string) {
+    return this.request('GET', `/accounts/${id}/contacts`);
+  }
+
+  async getAccountFlows(id: string) {
+    return this.request('GET', `/accounts/${id}/flows`);
+  }
 }

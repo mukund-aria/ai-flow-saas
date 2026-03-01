@@ -24,24 +24,40 @@ router.get(
     const conditions = [isNull(accounts.deletedAt)];
     if (orgId) conditions.push(eq(accounts.organizationId, orgId));
 
+    // Fetch accounts first (simple query, no subqueries that depend on other tables)
     const allAccounts = await db
-      .select({
-        id: accounts.id,
-        name: accounts.name,
-        domain: accounts.domain,
-        organizationId: accounts.organizationId,
-        createdAt: accounts.createdAt,
-        updatedAt: accounts.updatedAt,
-        contactCount: sql<number>`(SELECT COUNT(*) FROM contacts WHERE contacts.account_id = ${accounts.id})`.as('contact_count'),
-        activeFlowCount: sql<number>`(SELECT COUNT(*) FROM flow_run_accounts fra INNER JOIN flow_runs fr ON fra.flow_run_id = fr.id WHERE fra.account_id = ${accounts.id} AND fr.status = 'IN_PROGRESS')`.as('active_flow_count'),
-      })
+      .select()
       .from(accounts)
       .where(and(...conditions))
       .orderBy(accounts.name);
 
+    // Then enrich with counts via separate queries (more resilient)
+    const enriched = await Promise.all(
+      allAccounts.map(async (account) => {
+        let contactCount = 0;
+        let activeFlowCount = 0;
+        try {
+          const [cc] = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(contacts)
+            .where(eq(contacts.accountId, account.id));
+          contactCount = Number(cc?.count || 0);
+        } catch { /* contacts table may not have accountId yet */ }
+        try {
+          const [fc] = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(flowRunAccounts)
+            .innerJoin(flowRuns, eq(flowRunAccounts.flowRunId, flowRuns.id))
+            .where(and(eq(flowRunAccounts.accountId, account.id), eq(flowRuns.status, 'IN_PROGRESS')));
+          activeFlowCount = Number(fc?.count || 0);
+        } catch { /* flowRunAccounts may not exist yet */ }
+        return { ...account, contactCount, activeFlowCount };
+      })
+    );
+
     res.json({
       success: true,
-      data: allAccounts,
+      data: enriched,
     });
   })
 );
