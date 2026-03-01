@@ -109,11 +109,13 @@ export const CLIENT_ONBOARDING_FLOW = {
       roleId: 'role-client',
       name: 'Client',
       roleType: 'assignee',
+      resolution: { type: 'CONTACT_TBD' },
     },
     {
       roleId: 'role-coordinator',
       name: 'Coordinator',
       roleType: 'coordinator',
+      resolution: { type: 'WORKSPACE_INITIALIZER' },
     },
   ],
 };

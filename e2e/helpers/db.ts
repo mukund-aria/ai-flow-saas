@@ -6,24 +6,13 @@
  */
 
 import pg from 'pg';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-// Load DATABASE_URL from backend/.env if not already set
-if (!process.env.DATABASE_URL) {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const envPath = path.resolve(__dirname, '../../backend/.env');
-  if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf-8');
-    const match = envContent.match(/^DATABASE_URL=(.+)$/m);
-    if (match) process.env.DATABASE_URL = match[1];
-  }
-}
-
+// Must match the database the backend's Drizzle ORM actually connects to.
+// The backend's db/client.ts defaults to 'serviceflow' when DATABASE_URL
+// is not available at ESM import time (before dotenv.config() runs).
 const pool = new pg.Pool({
   connectionString:
-    process.env.DATABASE_URL ||
+    process.env.E2E_DATABASE_URL ||
     'postgresql://postgres:postgres@localhost:5432/serviceflow',
 });
 

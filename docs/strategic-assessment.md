@@ -59,9 +59,9 @@ We touch all of these but don't dominate any. A billion-dollar company owns a ca
 
 The AI builder is our primary differentiator, but AI capabilities are commoditizing in months, not years. Every workflow tool will have "describe your process and we'll build it" within 12 months. That's a feature, not a moat.
 
-### Problem 3: No intelligence layer
+### Problem 3: Intelligence layer is intra-org only
 
-Reports are basic aggregations. We're sitting on workflow execution data — the real asset — and not mining it. No benchmarks, no bottleneck detection, no predictive SLAs, no optimization suggestions.
+We now have trend analysis, bottleneck detection, efficiency scoring, and auto-generated relationship signals — a proper analytics dashboard. But the *defensible* intelligence layer requires cross-organization insights: "Top 10% of firms do this in 6 days." "Firms like yours eliminated Step 5." That requires multi-tenant data aggregation and AI-powered recommendations — neither exists yet. What we have is good analytics; what we need is proprietary intelligence that gets better with more customers.
 
 ### Problem 4: No ecosystem / network effects
 
@@ -95,11 +95,19 @@ This approach lets the market pull us into verticals organically without betting
 **Priority: High**
 **Impact: Defensible moat from proprietary data**
 
-This is the real moat — proprietary insights from thousands of workflow executions:
-- **Benchmark analytics:** "Your client onboarding takes 14 days. Top 10% do it in 6."
-- **Bottleneck detection:** "Step 3 has a 72-hour average wait. The assignee opens the email but doesn't complete it."
-- **Predictive SLAs:** "This flow is likely to miss its deadline based on current velocity."
-- **AI-suggested optimizations:** "3 firms similar to yours eliminated Step 5 and saw 20% faster completion."
+**Already built (intra-org analytics):**
+- ~~Bottleneck detection~~ — step timing waterfall, completion funnel, bottleneck step identification per template
+- ~~Trend analysis~~ — period-over-period comparison, sparkline trends, engagement timelines
+- ~~Efficiency scoring~~ — composite performance score (0-100), assignee efficiency scores, load levels
+- ~~Relationship signals~~ — auto-generated natural-language insights about account and people trends
+- ~~Comparative context~~ — account vs org average, member vs team average
+
+**Still needed (the actual moat — cross-org intelligence):**
+- **Benchmark analytics:** "Your client onboarding takes 14 days. Top 10% do it in 6." — requires opt-in multi-tenant data aggregation
+- **Predictive SLAs:** "This flow is likely to miss its deadline based on current velocity." — requires statistical modeling on historical execution data
+- **AI-suggested optimizations:** "3 firms similar to yours eliminated Step 5 and saw 20% faster completion." — requires LLM analysis of anonymized cross-org patterns
+
+The intra-org analytics are table stakes. The cross-org intelligence is what makes us irreplaceable.
 
 ### Initiative 2: Build network effects
 

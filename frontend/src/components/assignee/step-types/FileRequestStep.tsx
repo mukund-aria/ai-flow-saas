@@ -221,7 +221,7 @@ export function FileRequestStep({
         }}
       />
       <div
-        className={`border-2 border-dashed rounded-xl p-8 mb-4 cursor-pointer transition-colors ${
+        className={`border-2 border-dashed rounded-xl p-6 sm:p-8 mb-4 cursor-pointer transition-colors ${
           isDragOver
             ? 'border-blue-400 bg-blue-50/50'
             : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/30'

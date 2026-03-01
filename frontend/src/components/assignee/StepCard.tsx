@@ -84,7 +84,7 @@ export function StepCard({
         mode === 'locked' ? 'opacity-75' : ''
       }`}>
         {/* Step Info Header */}
-        <div className="px-6 pt-6 pb-4">
+        <div className="px-4 sm:px-6 pt-6 pb-4">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
               {getStepTypeIcon(stepType)}
@@ -98,13 +98,13 @@ export function StepCard({
 
         {/* Description */}
         {task.stepDescription && mode !== 'locked' && (
-          <div className="px-6 pb-4">
+          <div className="px-4 sm:px-6 pb-4">
             <p className="text-sm text-gray-600 leading-relaxed">{task.stepDescription}</p>
           </div>
         )}
 
         {/* Content area based on mode */}
-        <div className="px-6 pb-6">
+        <div className="px-4 sm:px-6 pb-6">
           {mode === 'locked' ? (
             <div className="text-center py-8">
               <Lock className="w-8 h-8 text-gray-300 mx-auto mb-3" />
@@ -141,11 +141,11 @@ export function StepCard({
         {/* Progress Section - only in active mode */}
         {mode === 'active' && (
           <div className="border-t border-gray-100">
-            <div className="px-6 py-3 flex items-center justify-between">
+            <div className="px-4 sm:px-6 py-3 flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Progress</span>
               <span className="text-xs font-medium text-gray-500">{stepIndex}/{totalSteps}</span>
             </div>
-            <div className="px-6 pb-4">
+            <div className="px-4 sm:px-6 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-xs font-semibold text-gray-600">
                   {getInitials(task.contactName)}

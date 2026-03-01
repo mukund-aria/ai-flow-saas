@@ -167,7 +167,7 @@ export function FormChatAssistant({ token, stepName, formFieldLabels: _formField
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 bg-violet-600 text-white rounded-full shadow-lg hover:bg-violet-700 transition-all hover:shadow-xl"
+          className="fixed bottom-2 right-2 sm:bottom-6 sm:right-6 z-50 flex items-center gap-2 px-4 py-3 bg-violet-600 text-white rounded-full shadow-lg hover:bg-violet-700 transition-all hover:shadow-xl"
         >
           <Sparkles className="w-4 h-4" />
           <span className="text-sm font-medium">Ask AI</span>
@@ -176,7 +176,7 @@ export function FormChatAssistant({ token, stepName, formFieldLabels: _formField
 
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
+        <div className="fixed bottom-2 right-2 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-1rem)] sm:w-[380px] h-[70vh] sm:h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="px-4 py-3 bg-gradient-to-r from-violet-600 to-violet-500 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">

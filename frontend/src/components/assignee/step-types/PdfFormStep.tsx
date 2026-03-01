@@ -36,7 +36,7 @@ export function PdfFormStep({ pdfForm, formData, onChange, onSubmit, isSubmittin
           <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
             <iframe
               src={pdfForm.documentUrl}
-              className="w-full h-[400px]"
+              className="w-full h-[300px] sm:h-[400px]"
               title="PDF Document"
             />
           </div>

@@ -37,7 +37,7 @@ export function JourneyPanel({ isOpen, onClose, journeySteps, currentStepIndex, 
       />
 
       {/* Panel */}
-      <div className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-white shadow-xl flex flex-col animate-in slide-in-from-left duration-200">
+      <div className="fixed inset-y-0 left-0 z-50 w-full max-w-[85vw] sm:w-80 bg-white shadow-xl flex flex-col animate-in slide-in-from-left duration-200">
         {/* Header */}
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <div>

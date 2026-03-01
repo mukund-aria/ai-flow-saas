@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Smoke Tests', () => {
   test('Backend health check', async ({ request }) => {
-    const response = await request.get('http://localhost:3001/health');
+    const response = await request.get('http://localhost:3002/health');
     expect(response.ok()).toBeTruthy();
     const body = await response.json();
     expect(body.status).toBe('healthy');
@@ -32,13 +32,14 @@ test.describe('Smoke Tests', () => {
     // Wait a moment for the page to settle and check for error indicators
     await page.waitForTimeout(2000);
     const pageContent = await page.textContent('body');
-    // The page should indicate something is wrong (invalid/expired/not found)
+    // The page should indicate something is wrong
     expect(
-      pageContent?.toLowerCase().includes('invalid') ||
+      pageContent?.toLowerCase().includes('not available') ||
+        pageContent?.toLowerCase().includes('invalid') ||
         pageContent?.toLowerCase().includes('expired') ||
         pageContent?.toLowerCase().includes('not found') ||
-        pageContent?.toLowerCase().includes('error') ||
-        page.url().includes('error')
+        pageContent?.toLowerCase().includes('failed') ||
+        pageContent?.toLowerCase().includes('error')
     ).toBeTruthy();
   });
 });

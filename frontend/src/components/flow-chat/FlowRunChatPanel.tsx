@@ -72,7 +72,7 @@ export function FlowRunChatPanel(props: Props) {
   const activeConversation = conversations.find((c) => c.id === activeConversationId);
 
   return (
-    <div className="fixed right-0 top-0 bottom-0 w-96 bg-white border-l border-gray-200 shadow-xl z-50 flex flex-col">
+    <div className="fixed right-0 top-0 bottom-0 w-full sm:w-96 bg-white border-l border-gray-200 shadow-xl z-50 flex flex-col">
       {/* Panel Header */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 bg-gray-50">
         <MessageSquare className="w-4 h-4 text-violet-600" />

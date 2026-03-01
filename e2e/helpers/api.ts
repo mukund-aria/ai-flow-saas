@@ -5,7 +5,7 @@
  * Uses the session cookie from the test seed for authentication.
  */
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = 'http://localhost:3002/api';
 
 export class CoordinatorAPI {
   private cookie: string;

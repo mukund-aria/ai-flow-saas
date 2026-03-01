@@ -45,18 +45,18 @@ export function AssigneeHeader({ runName, flowName, contactName, onToggleChat, b
               <Layers className="w-4 h-4 text-white" />
             </div>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             {branding?.companyName ? (
               <>
-                <span className="text-sm font-semibold text-gray-900">{branding.companyName}</span>
-                <span className="text-gray-300">|</span>
-                <span className="text-sm text-gray-500">{runName}</span>
+                <span className="text-sm font-semibold text-gray-900 truncate">{branding.companyName}</span>
+                <span className="text-gray-300 shrink-0">|</span>
+                <span className="text-sm text-gray-500 truncate">{runName}</span>
               </>
             ) : (
               <>
-                <span className="text-sm font-semibold text-gray-900">{runName}</span>
-                <span className="text-gray-300">|</span>
-                <span className="text-sm text-gray-500">{flowName}</span>
+                <span className="text-sm font-semibold text-gray-900 truncate">{runName}</span>
+                <span className="text-gray-300 shrink-0">|</span>
+                <span className="text-sm text-gray-500 truncate">{flowName}</span>
               </>
             )}
           </div>

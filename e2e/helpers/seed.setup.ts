@@ -8,7 +8,7 @@
 
 import { test as setup, expect } from '@playwright/test';
 
-const BACKEND_URL = 'http://localhost:3001';
+const BACKEND_URL = 'http://localhost:3002';
 
 setup('seed test user and capture session', async ({ request }) => {
   const response = await request.post(`${BACKEND_URL}/api/test/seed`, {

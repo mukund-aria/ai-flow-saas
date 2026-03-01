@@ -302,11 +302,21 @@ export function EmbedStartPage() {
         </form>
 
         {/* Footer */}
-        {flowInfo.branding?.companyName && (
-          <p className="text-center text-xs text-gray-400 mt-4">
-            Powered by {flowInfo.branding.companyName}
-          </p>
-        )}
+        <p className="text-center text-xs text-gray-400 mt-4">
+          Powered by{' '}
+          {flowInfo.branding?.companyName ? (
+            flowInfo.branding.companyName
+          ) : (
+            <a
+              href="https://serviceflow.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-gray-500 hover:text-violet-600 transition-colors"
+            >
+              ServiceFlow
+            </a>
+          )}
+        </p>
       </div>
     </div>
   );
