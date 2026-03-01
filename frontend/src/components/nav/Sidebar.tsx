@@ -25,7 +25,7 @@ import {
   ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { FeatureTooltip } from '@/components/ui/FeatureTooltip';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingStore } from '@/stores/onboardingStore';
 import { OrgSwitcher } from './OrgSwitcher';
@@ -38,10 +38,9 @@ interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   isCollapsed?: boolean;
-  tooltip?: string;
 }
 
-function NavItem({ to, icon, label, isCollapsed, tooltip }: NavItemProps) {
+function NavItem({ to, icon, label, isCollapsed }: NavItemProps) {
   return (
     <NavLink
       to={to}
@@ -57,15 +56,7 @@ function NavItem({ to, icon, label, isCollapsed, tooltip }: NavItemProps) {
       }
     >
       <span className="w-5 h-5">{icon}</span>
-      {!isCollapsed && (
-        tooltip ? (
-          <FeatureTooltip content={tooltip} side="right">
-            <span className="flex-1">{label}</span>
-          </FeatureTooltip>
-        ) : (
-          <span className="flex-1">{label}</span>
-        )
-      )}
+      {!isCollapsed && <span className="flex-1">{label}</span>}
     </NavLink>
   );
 }
@@ -224,8 +215,8 @@ export function Sidebar() {
       {/* Navigation Links */}
       <nav className={cn('flex-1 py-2 space-y-1 overflow-y-auto', isCollapsed ? 'px-2' : 'px-3')}>
         <NavItem to="/home" icon={<Home className="w-5 h-5" />} label="Home" isCollapsed={isCollapsed} />
-        <NavItem to="/flows" icon={<PlayCircle className="w-5 h-5" />} label="Flows" isCollapsed={isCollapsed} tooltip="Active workflow instances. Each flow is a running copy of a template." />
-        <NavItem to="/templates" icon={<FileText className="w-5 h-5" />} label="Templates" isCollapsed={isCollapsed} tooltip="Reusable workflow blueprints. Build once, run many times." />
+        <NavItem to="/flows" icon={<PlayCircle className="w-5 h-5" />} label="Flows" isCollapsed={isCollapsed} />
+        <NavItem to="/templates" icon={<FileText className="w-5 h-5" />} label="Templates" isCollapsed={isCollapsed} />
         <NavItem to="/contacts" icon={<Users className="w-5 h-5" />} label="Contacts" isCollapsed={isCollapsed} />
         <NavItem to="/accounts" icon={<Building2 className="w-5 h-5" />} label="Accounts" isCollapsed={isCollapsed} />
         <NavItem to="/manage" icon={<BarChart3 className="w-5 h-5" />} label="Manage" isCollapsed={isCollapsed} />
