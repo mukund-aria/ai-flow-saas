@@ -6,15 +6,15 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Sparkles, Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
-import { getFlowRunSummary, type FlowRunSummary } from '@/lib/api';
+import { Sparkles, Loader2, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { getFlowSummary, type FlowSummary } from '@/lib/api';
 
 interface FlowCompletionSummaryProps {
-  runId: string;
+  flowId: string;
 }
 
-export function FlowCompletionSummary({ runId }: FlowCompletionSummaryProps) {
-  const [summary, setSummary] = useState<FlowRunSummary | null>(null);
+export function FlowCompletionSummary({ flowId }: FlowCompletionSummaryProps) {
+  const [summary, setSummary] = useState<FlowSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showTimeline, setShowTimeline] = useState(false);
@@ -24,7 +24,7 @@ export function FlowCompletionSummary({ runId }: FlowCompletionSummaryProps) {
 
     async function fetchSummary() {
       try {
-        const data = await getFlowRunSummary(runId);
+        const data = await getFlowSummary(flowId);
         if (!cancelled) {
           setSummary(data);
         }
@@ -41,7 +41,7 @@ export function FlowCompletionSummary({ runId }: FlowCompletionSummaryProps) {
 
     fetchSummary();
     return () => { cancelled = true; };
-  }, [runId]);
+  }, [flowId]);
 
   if (isLoading) {
     return (

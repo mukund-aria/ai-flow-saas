@@ -63,8 +63,8 @@ test.describe.serial('Client Onboarding Journey', () => {
     await db.closePool();
   });
 
-  test('Start flow run', async () => {
-    const res = await api.startFlowRun(templateId, {
+  test('Start flow', async () => {
+    const res = await api.startFlow(templateId, {
       roleAssignments: { Client: contactId },
       isTest: true,
     });
@@ -200,7 +200,7 @@ test.describe.serial('Client Onboarding Journey', () => {
   });
 
   test('Flow completes successfully', async () => {
-    await db.waitForFlowRunStatus(runId, 'COMPLETED', 20000);
+    await db.waitForFlowStatus(runId, 'COMPLETED', 20000);
 
     const steps = await db.getStepExecutions(runId);
     const allCompleted = steps.every(

@@ -5,10 +5,10 @@
  */
 
 import { HelpCircle } from 'lucide-react';
-import { useFlowRunChatStore } from '@/stores/flowRunChatStore';
+import { useFlowChatStore } from '@/stores/flowChatStore';
 
 export function NeedHelpButton() {
-  const { isOpen, toggle } = useFlowRunChatStore();
+  const { isOpen, toggle } = useFlowChatStore();
 
   if (isOpen) return null;
 

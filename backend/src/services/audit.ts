@@ -8,7 +8,7 @@ import { db } from '../db/client.js';
 import { auditLogs } from '../db/schema.js';
 
 export async function logAction(params: {
-  flowRunId: string;
+  flowId: string;
   action: string;
   actorId?: string;
   actorEmail?: string;
@@ -16,7 +16,7 @@ export async function logAction(params: {
 }) {
   try {
     await db.insert(auditLogs).values({
-      flowRunId: params.flowRunId,
+      flowId: params.flowId,
       action: params.action,
       actorId: params.actorId,
       actorEmail: params.actorEmail,

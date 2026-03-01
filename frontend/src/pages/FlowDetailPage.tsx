@@ -1,7 +1,7 @@
 /**
- * Flow Run Detail Page
+ * Flow Detail Page
  *
- * Displays the detailed progress and status of a single flow run,
+ * Displays the detailed progress and status of a single flow,
  * including milestones, step timeline, send reminder, and result data viewing.
  */
 
@@ -34,8 +34,8 @@ import { StepIcon } from '@/components/workflow/StepIcon';
 import { getFlow, cancelFlow, getStepActToken, approveAIDraft, type Flow } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useOnboardingStore } from '@/stores/onboardingStore';
-import { FlowRunChatPanel } from '@/components/flow-chat/FlowRunChatPanel';
-import { useFlowRunChatStore } from '@/stores/flowRunChatStore';
+import { FlowChatPanel } from '@/components/flow-chat/FlowChatPanel';
+import { useFlowChatStore } from '@/stores/flowChatStore';
 import { AuditTimeline } from '@/components/flows/AuditTimeline';
 import { FlowCompletionSummary } from '@/components/flows/FlowCompletionSummary';
 import { ReassignStepDialog } from '@/components/flows/ReassignStepDialog';
@@ -60,7 +60,7 @@ interface GroupAssigneeInfo {
   completedAt?: string | null;
 }
 
-interface FlowRunStep {
+interface FlowStep {
   id: string;
   stepId: string;
   name: string;
@@ -88,7 +88,7 @@ interface FlowRunStep {
 interface MilestoneGroup {
   id: string;
   name: string;
-  steps: FlowRunStep[];
+  steps: FlowStep[];
   isComplete: boolean;
   isActive: boolean;
 }
@@ -357,20 +357,20 @@ function AIReviewPanel({
 interface BranchGroup {
   type: 'parallel' | 'branch';
   parallelGroupId?: string;
-  paths: Map<string, FlowRunStep[]>;
+  paths: Map<string, FlowStep[]>;
 }
 
 /**
  * Separate steps into normal (non-branched) steps and branch groups.
  * Returns an ordered list of segments: either a single step or a branch group.
  */
-function segmentSteps(steps: FlowRunStep[]): Array<{ kind: 'step'; step: FlowRunStep } | { kind: 'branch'; group: BranchGroup }> {
-  const segments: Array<{ kind: 'step'; step: FlowRunStep } | { kind: 'branch'; group: BranchGroup }> = [];
+function segmentSteps(steps: FlowStep[]): Array<{ kind: 'step'; step: FlowStep } | { kind: 'branch'; group: BranchGroup }> {
+  const segments: Array<{ kind: 'step'; step: FlowStep } | { kind: 'branch'; group: BranchGroup }> = [];
   const branchSteps = new Set<string>();
 
   // Group branched steps by parallelGroupId or branchPath
-  const parallelGroups = new Map<string, Map<string, FlowRunStep[]>>();
-  const branchPathSteps = new Map<string, FlowRunStep[]>();
+  const parallelGroups = new Map<string, Map<string, FlowStep[]>>();
+  const branchPathSteps = new Map<string, FlowStep[]>();
 
   for (const step of steps) {
     if (step.parallelGroupId) {
@@ -412,7 +412,7 @@ function segmentSteps(steps: FlowRunStep[]): Array<{ kind: 'step'; step: FlowRun
         });
       } else if (step.branchPath && !step.parallelGroupId && !processedBranchPaths.has(step.branchPath)) {
         processedBranchPaths.add(step.branchPath);
-        const paths = new Map<string, FlowRunStep[]>();
+        const paths = new Map<string, FlowStep[]>();
         paths.set(step.branchPath, branchPathSteps.get(step.branchPath)!);
         segments.push({
           kind: 'branch',
@@ -434,11 +434,11 @@ function segmentSteps(steps: FlowRunStep[]): Array<{ kind: 'step'; step: FlowRun
 // Main Component
 // ============================================================================
 
-export function FlowRunDetailPage() {
+export function FlowDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [run, setRun] = useState<Flow | null>(null);
-  const [steps, setSteps] = useState<FlowRunStep[]>([]);
+  const [steps, setSteps] = useState<FlowStep[]>([]);
   const [milestoneGroups, setMilestoneGroups] = useState<MilestoneGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -492,7 +492,7 @@ export function FlowRunDetailPage() {
         const defSteps = definition?.steps || [];
         const defMilestones = definition?.milestones || [];
 
-        const mappedSteps: FlowRunStep[] = (data.stepExecutions || []).map((se) => {
+        const mappedSteps: FlowStep[] = (data.stepExecutions || []).map((se) => {
           const defStep = defSteps.find((d) => d.stepId === se.stepId);
           const assignee = se.assignedToUser
             ? { id: se.assignedToUser.id, name: se.assignedToUser.name, type: 'user' as const }
@@ -586,22 +586,22 @@ export function FlowRunDetailPage() {
   // Real-time updates via SSE — auto-refresh step statuses for current run
   useRealtimeUpdates({
     onStepCompleted: (data) => {
-      if (data.flowRunId === id) {
+      if (data.flowId === id) {
         setRefetchKey((k) => k + 1);
       }
     },
     onRunCompleted: (data) => {
-      if (data.flowRunId === id) {
+      if (data.flowId === id) {
         setRefetchKey((k) => k + 1);
       }
     },
     onStepAIReviewReady: (data) => {
-      if (data.flowRunId === id) {
+      if (data.flowId === id) {
         setRefetchKey((k) => k + 1);
       }
     },
     onRunStarted: (data) => {
-      if (data.flowRunId === id) {
+      if (data.flowId === id) {
         setRefetchKey((k) => k + 1);
       }
     },
@@ -636,7 +636,7 @@ export function FlowRunDetailPage() {
   };
 
   // Handle send reminder
-  const handleSendReminder = async (step: FlowRunStep) => {
+  const handleSendReminder = async (step: FlowStep) => {
     if (!run) return;
     setSendingReminder(step.id);
     try {
@@ -657,7 +657,7 @@ export function FlowRunDetailPage() {
   };
 
   // Handle coordinator acting on a step - opens task view in new tab
-  const handleActOnStep = async (step: FlowRunStep) => {
+  const handleActOnStep = async (step: FlowStep) => {
     if (!run) return;
     setActingOnStep(step.id);
     try {
@@ -746,7 +746,7 @@ export function FlowRunDetailPage() {
       return map;
     }, new Map());
 
-  const renderStepRow = (step: FlowRunStep, index: number, isLast: boolean) => (
+  const renderStepRow = (step: FlowStep, index: number, isLast: boolean) => (
     <div
       key={step.id}
       className={cn(
@@ -998,11 +998,11 @@ export function FlowRunDetailPage() {
       </div>
 
       {/* AI Review Panel — shown when step is IN_PROGRESS with AI draft awaiting review */}
-      {step.status === 'IN_PROGRESS' && step.resultData?._awaitingReview && step.resultData._aiDraft && run && (
+      {step.status === 'IN_PROGRESS' && Boolean(step.resultData?._awaitingReview) && Boolean(step.resultData?._aiDraft) && run && (
         <AIReviewPanel
           runId={run.id}
           stepId={step.stepId}
-          draft={step.resultData._aiDraft as Record<string, unknown>}
+          draft={step.resultData!._aiDraft as Record<string, unknown>}
           onApproved={() => setRefetchKey((k) => k + 1)}
         />
       )}
@@ -1078,7 +1078,7 @@ export function FlowRunDetailPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => useFlowRunChatStore.getState().toggle()}
+            onClick={() => useFlowChatStore.getState().toggle()}
             className="gap-2 text-gray-600"
           >
             <MessageSquare className="w-4 h-4" />
@@ -1109,7 +1109,7 @@ export function FlowRunDetailPage() {
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">{run.name}</h1>
                   <p className="text-sm text-gray-500 mt-0.5">
-                    {run.flow?.name || 'Unknown Template'} &middot; Started {formatTimeAgo(run.startedAt)}
+                    {run.template?.name || 'Unknown Template'} &middot; Started {formatTimeAgo(run.startedAt)}
                   </p>
                 </div>
               </div>
@@ -1360,7 +1360,7 @@ export function FlowRunDetailPage() {
 
           {/* AI Completion Summary */}
           {run.status === 'COMPLETED' && id && (
-            <FlowCompletionSummary runId={id} />
+            <FlowCompletionSummary flowId={id} />
           )}
 
           {/* Audit Timeline */}
@@ -1453,7 +1453,7 @@ export function FlowRunDetailPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">Template</p>
-                  <p className="text-gray-700">{run.flow?.name || 'Unknown'}</p>
+                  <p className="text-gray-700">{run.template?.name || 'Unknown'}</p>
                 </div>
                 {run.startedAt && (
                   <div>
@@ -1505,7 +1505,7 @@ export function FlowRunDetailPage() {
       )}
 
       {/* Chat Panel */}
-      {id && <FlowRunChatPanel mode="coordinator" flowRunId={id} />}
+      {id && <FlowChatPanel mode="coordinator" flowId={id} />}
     </div>
   );
 }

@@ -22,7 +22,7 @@ const mockUpdate = jest.fn().mockReturnValue({ set: mockUpdateSet });
 jest.unstable_mockModule('../../src/db/client.js', () => ({
   db: {
     query: {
-      flowRuns: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
+      flows: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
       stepExecutions: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
       organizations: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
     },
@@ -31,9 +31,9 @@ jest.unstable_mockModule('../../src/db/client.js', () => ({
 }));
 
 jest.unstable_mockModule('../../src/db/schema.js', () => ({
-  stepExecutions: { id: 'id', flowRunId: 'flow_run_id' },
-  flowRuns: { id: 'id' },
+  stepExecutions: { id: 'id', flowId: 'flow_id' },
   flows: { id: 'id' },
+  templates: { id: 'id' },
   organizations: { id: 'id' },
 }));
 
@@ -68,9 +68,9 @@ function makeAnthropicResponse(text: string) {
   };
 }
 
-const mockFlowRun = {
+const mockFlow = {
   id: 'run-1',
-  flowId: 'flow-1',
+  templateId: 'flow-1',
   name: 'Test Run',
   status: 'IN_PROGRESS',
   organizationId: 'org-1',
@@ -79,7 +79,7 @@ const mockFlowRun = {
   roleAssignments: { 'Client': 'contact-1' },
   startedAt: new Date('2025-01-01'),
   completedAt: null,
-  flow: {
+  template: {
     id: 'flow-1',
     name: 'Onboarding Flow',
     definition: {
@@ -153,8 +153,8 @@ describe('AI Assignee Service', () => {
 
   describe('buildDDRContext', () => {
     it('should build context from a flow run with completed steps', async () => {
-      // flowRuns.findFirst
-      mockFindFirst.mockResolvedValueOnce(mockFlowRun as never);
+      // flows.findFirst
+      mockFindFirst.mockResolvedValueOnce(mockFlow as never);
       // organizations.findFirst
       mockFindFirst.mockResolvedValueOnce({ id: 'org-1', name: 'Test Org' } as never);
 
@@ -196,7 +196,7 @@ describe('AI Assignee Service', () => {
   describe('runAIPrepare', () => {
     it('should call Claude and store prefilled fields', async () => {
       // buildDDRContext calls
-      mockFindFirst.mockResolvedValueOnce(mockFlowRun as never); // flowRuns
+      mockFindFirst.mockResolvedValueOnce(mockFlow as never); // flows
       mockFindFirst.mockResolvedValueOnce({ id: 'org-1', name: 'Test Org' } as never); // org
 
       // Claude response
@@ -214,7 +214,7 @@ describe('AI Assignee Service', () => {
         resultData: {},
       } as never);
 
-      const stepDef = mockFlowRun.flow.definition.steps[0];
+      const stepDef = mockFlow.template.definition.steps[0];
       const result = await runAIPrepare('se-2', stepDef as any, 'run-1');
 
       expect(result.status).toBe('COMPLETED');
@@ -228,14 +228,14 @@ describe('AI Assignee Service', () => {
     });
 
     it('should handle unparseable AI response gracefully', async () => {
-      mockFindFirst.mockResolvedValueOnce(mockFlowRun as never);
+      mockFindFirst.mockResolvedValueOnce(mockFlow as never);
       mockFindFirst.mockResolvedValueOnce({ id: 'org-1', name: 'Test Org' } as never);
       mockCreate.mockResolvedValueOnce(
         makeAnthropicResponse('I cannot generate JSON right now') as never
       );
       mockFindFirst.mockResolvedValueOnce({ id: 'se-2', resultData: {} } as never);
 
-      const stepDef = mockFlowRun.flow.definition.steps[0];
+      const stepDef = mockFlow.template.definition.steps[0];
       const result = await runAIPrepare('se-2', stepDef as any, 'run-1');
 
       expect(result.status).toBe('FAILED');
@@ -243,12 +243,12 @@ describe('AI Assignee Service', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      mockFindFirst.mockResolvedValueOnce(mockFlowRun as never);
+      mockFindFirst.mockResolvedValueOnce(mockFlow as never);
       mockFindFirst.mockResolvedValueOnce({ id: 'org-1', name: 'Test Org' } as never);
       mockCreate.mockRejectedValueOnce(new Error('API key invalid') as never);
       mockFindFirst.mockResolvedValueOnce({ id: 'se-2', resultData: {} } as never);
 
-      const stepDef = mockFlowRun.flow.definition.steps[0];
+      const stepDef = mockFlow.template.definition.steps[0];
       const result = await runAIPrepare('se-2', stepDef as any, 'run-1');
 
       expect(result.status).toBe('FAILED');
@@ -262,7 +262,7 @@ describe('AI Assignee Service', () => {
 
   describe('runAIAdvise', () => {
     it('should call Claude and store recommendation', async () => {
-      mockFindFirst.mockResolvedValueOnce(mockFlowRun as never);
+      mockFindFirst.mockResolvedValueOnce(mockFlow as never);
       mockFindFirst.mockResolvedValueOnce({ id: 'org-1', name: 'Test Org' } as never);
 
       mockCreate.mockResolvedValueOnce(
@@ -275,7 +275,7 @@ describe('AI Assignee Service', () => {
 
       mockFindFirst.mockResolvedValueOnce({ id: 'se-2', resultData: {} } as never);
 
-      const stepDef = mockFlowRun.flow.definition.steps[1];
+      const stepDef = mockFlow.template.definition.steps[1];
       const result = await runAIAdvise('se-2', stepDef as any, 'run-1');
 
       expect(result.status).toBe('COMPLETED');
@@ -285,12 +285,12 @@ describe('AI Assignee Service', () => {
     });
 
     it('should handle failure gracefully', async () => {
-      mockFindFirst.mockResolvedValueOnce(mockFlowRun as never);
+      mockFindFirst.mockResolvedValueOnce(mockFlow as never);
       mockFindFirst.mockResolvedValueOnce({ id: 'org-1', name: 'Test Org' } as never);
       mockCreate.mockRejectedValueOnce(new Error('Rate limited') as never);
       mockFindFirst.mockResolvedValueOnce({ id: 'se-2', resultData: {} } as never);
 
-      const stepDef = mockFlowRun.flow.definition.steps[1];
+      const stepDef = mockFlow.template.definition.steps[1];
       const result = await runAIAdvise('se-2', stepDef as any, 'run-1');
 
       expect(result.status).toBe('FAILED');
@@ -407,7 +407,7 @@ describe('AI Assignee Service', () => {
   describe('generateFlowSummary', () => {
     it('should generate a summary for a completed flow', async () => {
       const completedRun = {
-        ...mockFlowRun,
+        ...mockFlow,
         status: 'COMPLETED',
         completedAt: new Date('2025-01-03'),
         kickoffData: { clientName: 'Acme Corp' },

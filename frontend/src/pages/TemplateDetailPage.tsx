@@ -173,7 +173,7 @@ export function TemplateDetailPage() {
 
       // Filter runs that belong to this template
       const templateRuns = flowsData.filter(
-        (flow) => flow.flow?.id === id
+        (flow) => flow.template?.id === id
       );
       setRuns(templateRuns);
     } catch (err) {

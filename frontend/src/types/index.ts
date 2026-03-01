@@ -211,7 +211,7 @@ export interface SlackSharedConfig {
   channelName: string;
 }
 
-export interface SlackPerFlowRunConfig {
+export interface SlackPerFlowConfig {
   namingPattern: string;
   visibility: ChannelVisibility;
   inviteGroup: ChannelInviteGroup;
@@ -223,7 +223,7 @@ export interface SlackIntegrationSettings {
   enabled: boolean;
   channelMode: SlackChannelMode;
   shared: SlackSharedConfig;
-  perFlowRun: SlackPerFlowRunConfig;
+  perFlow: SlackPerFlowConfig;
   events: SlackEventConfig;
 }
 
@@ -1065,15 +1065,15 @@ export interface Portal {
   updatedAt: string;
 }
 
-export interface PortalFlow {
+export interface PortalTemplate {
   id: string;
   portalId: string;
-  flowId: string;
+  templateId: string;
   displayTitle?: string;
   displayDescription?: string;
   sortOrder: number;
   enabled: boolean;
-  flow?: {
+  template?: {
     id: string;
     name: string;
     description?: string;

@@ -9,9 +9,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useAssigneeAuth } from '@/contexts/AssigneeAuthContext';
 import { FlowCatalogCard } from '@/components/portal/FlowCatalogCard';
-import { getPortalAvailableFlows, startPortalFlow } from '@/lib/api';
+import { getPortalAvailableTemplates, startPortalFlow } from '@/lib/api';
 
-interface CatalogFlow {
+interface CatalogTemplate {
   id: string;
   name: string;
   description?: string;
@@ -22,25 +22,25 @@ export function PortalFlowCatalogPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { token } = useAssigneeAuth();
-  const [flows, setFlows] = useState<CatalogFlow[]>([]);
+  const [templates, setTemplates] = useState<CatalogTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingId, setStartingId] = useState<string | null>(null);
   const [startError, setStartError] = useState('');
 
   useEffect(() => {
     if (!token) return;
-    getPortalAvailableFlows(token)
-      .then(setFlows)
+    getPortalAvailableTemplates(token)
+      .then(setTemplates)
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [token]);
 
-  const handleStart = useCallback(async (flowId: string) => {
+  const handleStart = useCallback(async (templateId: string) => {
     if (!token) return;
-    setStartingId(flowId);
+    setStartingId(templateId);
     setStartError('');
     try {
-      const result = await startPortalFlow(token, flowId);
+      const result = await startPortalFlow(token, templateId);
       if (result.firstTaskToken) {
         navigate(`/task/${result.firstTaskToken}`);
       } else {
@@ -79,18 +79,18 @@ export function PortalFlowCatalogPage() {
         </div>
       )}
 
-      {flows.length === 0 ? (
+      {templates.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-sm text-gray-400">No flows available to start</p>
+          <p className="text-sm text-gray-400">No templates available to start</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {flows.map((flow) => (
+          {templates.map((tmpl) => (
             <FlowCatalogCard
-              key={flow.id}
-              flow={flow}
+              key={tmpl.id}
+              flow={tmpl}
               onStart={handleStart}
-              starting={startingId === flow.id}
+              starting={startingId === tmpl.id}
             />
           ))}
         </div>

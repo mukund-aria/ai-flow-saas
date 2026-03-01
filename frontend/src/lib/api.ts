@@ -371,7 +371,7 @@ export async function moveTemplateToFolder(templateId: string, folderId: string 
 
 export interface Flow {
   id: string;
-  flowId: string;
+  templateId: string;
   name: string;
   status: 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'PAUSED';
   isSample?: boolean;
@@ -379,7 +379,7 @@ export interface Flow {
   totalSteps: number;
   startedAt: string;
   completedAt?: string;
-  flow?: { id: string; name: string };
+  template?: { id: string; name: string };
   startedBy?: { id: string; name: string; email: string };
   portalName?: string;
   startedByContactName?: string;
@@ -475,8 +475,8 @@ export async function cancelFlow(id: string): Promise<Flow> {
 /**
  * Complete a step in a flow run
  */
-export async function completeStep(runId: string, stepId: string, resultData?: Record<string, unknown>): Promise<Flow> {
-  const res = await fetch(`${API_BASE}/flows/${runId}/steps/${stepId}/complete`, {
+export async function completeStep(flowId: string, stepId: string, resultData?: Record<string, unknown>): Promise<Flow> {
+  const res = await fetch(`${API_BASE}/flows/${flowId}/steps/${stepId}/complete`, {
     ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -491,11 +491,11 @@ export async function completeStep(runId: string, stepId: string, resultData?: R
  * Approve (or edit and approve) AI draft output for a step
  */
 export async function approveAIDraft(
-  runId: string,
+  flowId: string,
   stepId: string,
   editedOutput?: Record<string, unknown>
 ): Promise<Flow> {
-  const res = await fetch(`${API_BASE}/flows/${runId}/steps/${stepId}/approve-ai`, {
+  const res = await fetch(`${API_BASE}/flows/${flowId}/steps/${stepId}/approve-ai`, {
     ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -519,8 +519,8 @@ export async function duplicateTemplate(id: string): Promise<Template> {
 /**
  * Send reminder for a specific step in a flow run
  */
-export async function remindStep(runId: string, stepId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/flows/${runId}/steps/${stepId}/remind`, {
+export async function remindStep(flowId: string, stepId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/flows/${flowId}/steps/${stepId}/remind`, {
     ...fetchOpts,
     method: 'POST',
   });
@@ -531,12 +531,12 @@ export async function remindStep(runId: string, stepId: string): Promise<void> {
 /**
  * Send reminders for multiple overdue runs at once
  */
-export async function bulkRemind(runIds: string[]): Promise<{ remindedCount: number }> {
+export async function bulkRemind(flowIds: string[]): Promise<{ remindedCount: number }> {
   const res = await fetch(`${API_BASE}/flows/bulk-remind`, {
     ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ runIds }),
+    body: JSON.stringify({ flowIds }),
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to send reminders');
@@ -552,7 +552,7 @@ export interface AppNotification {
   type: string;
   title: string;
   body: string;
-  flowRunId?: string;
+  flowId?: string;
   stepExecutionId?: string;
   readAt?: string;
   dismissedAt?: string;
@@ -609,7 +609,7 @@ export interface AttentionReason {
 }
 
 export interface AttentionItem {
-  flowRun: {
+  flow: {
     id: string;
     name: string;
     status: string;
@@ -617,7 +617,7 @@ export interface AttentionItem {
     startedAt: string;
     currentStepIndex: number;
   };
-  flow: {
+  template: {
     id: string;
     name: string;
   };
@@ -657,8 +657,8 @@ export interface Contact {
 /**
  * Get an action token for a coordinator to act on a step
  */
-export async function getStepActToken(runId: string, stepId: string): Promise<string> {
-  const res = await fetch(`${API_BASE}/flows/${runId}/steps/${stepId}/act-token`, {
+export async function getStepActToken(flowId: string, stepId: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/flows/${flowId}/steps/${stepId}/act-token`, {
     ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1046,8 +1046,8 @@ export async function getPeopleAnalytics(range: string = 'week'): Promise<People
 
 export interface Schedule {
   id: string;
-  flowId: string;
-  flowName: string;
+  templateId: string;
+  templateName: string;
   scheduleName: string;
   cronPattern: string;
   timezone: string;
@@ -1065,7 +1065,7 @@ export async function listSchedules(): Promise<Schedule[]> {
 }
 
 export async function createSchedule(data: {
-  flowId: string;
+  templateId: string;
   scheduleName: string;
   cronPattern: string;
   timezone?: string;
@@ -1215,26 +1215,26 @@ export interface AuditLogEntry {
   createdAt: string;
 }
 
-export async function getFlowAuditLog(runId: string): Promise<AuditLogEntry[]> {
-  const res = await fetch(`${API_BASE}/flows/${runId}/audit-log`, fetchOpts);
+export async function getFlowAuditLog(flowId: string): Promise<AuditLogEntry[]> {
+  const res = await fetch(`${API_BASE}/flows/${flowId}/audit-log`, fetchOpts);
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to fetch audit log');
   return data.data;
 }
 
 // ============================================================================
-// Flow Run AI Summary
+// Flow AI Summary
 // ============================================================================
 
-export interface FlowRunSummary {
+export interface FlowSummary {
   summary: string;
   keyDecisions: string[];
   timeline: Array<{ step: string; completedAt: string; outcome: string }>;
   generatedAt: string;
 }
 
-export async function getFlowRunSummary(runId: string): Promise<FlowRunSummary | null> {
-  const res = await fetch(`${API_BASE}/flows/${runId}/summary`, fetchOpts);
+export async function getFlowSummary(flowId: string): Promise<FlowSummary | null> {
+  const res = await fetch(`${API_BASE}/flows/${flowId}/summary`, fetchOpts);
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to fetch summary');
   return data.data;
@@ -1244,8 +1244,8 @@ export async function getFlowRunSummary(runId: string): Promise<FlowRunSummary |
 // Step Reassignment API
 // ============================================================================
 
-export async function reassignStep(runId: string, stepId: string, assignment: { assignToContactId?: string; assignToUserId?: string }): Promise<void> {
-  const res = await fetch(`${API_BASE}/flows/${runId}/steps/${stepId}/reassign`, {
+export async function reassignStep(flowId: string, stepId: string, assignment: { assignToContactId?: string; assignToUserId?: string }): Promise<void> {
+  const res = await fetch(`${API_BASE}/flows/${flowId}/steps/${stepId}/reassign`, {
     ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1279,7 +1279,7 @@ export async function search(query: string): Promise<SearchResults> {
 export interface FileRecord {
   id: string;
   organizationId: string;
-  flowRunId?: string;
+  flowId?: string;
   stepExecutionId?: string;
   fileName: string;
   fileSize: number;
@@ -1294,10 +1294,10 @@ export interface FileRecord {
 /**
  * Upload a file for a flow run step (authenticated coordinator)
  */
-export async function uploadFlowFile(runId: string, stepId: string, file: File): Promise<FileRecord> {
+export async function uploadFlowFile(flowId: string, stepId: string, file: File): Promise<FileRecord> {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('flowRunId', runId);
+  formData.append('flowId', flowId);
   formData.append('stepExecutionId', stepId);
 
   const res = await fetch(`${API_BASE}/files/upload`, {
@@ -1329,8 +1329,8 @@ export async function uploadPublicFile(token: string, file: File): Promise<FileR
 /**
  * List files for a specific step in a flow run
  */
-export async function getStepFiles(runId: string, stepId: string): Promise<FileRecord[]> {
-  const res = await fetch(`${API_BASE}/files/runs/${runId}/steps/${stepId}/files`, fetchOpts);
+export async function getStepFiles(flowId: string, stepId: string): Promise<FileRecord[]> {
+  const res = await fetch(`${API_BASE}/files/flows/${flowId}/steps/${stepId}/files`, fetchOpts);
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to list files');
   return data.data;
@@ -1438,41 +1438,41 @@ export async function deletePortal(id: string): Promise<void> {
   if (!data.success) throw new Error(data.error?.message || 'Failed to delete portal');
 }
 
-export async function getPortalFlows(portalId: string): Promise<import('@/types').PortalFlow[]> {
-  const res = await fetch(`${API_BASE}/portals/${portalId}/flows`, fetchOpts);
+export async function getPortalTemplates(portalId: string): Promise<import('@/types').PortalTemplate[]> {
+  const res = await fetch(`${API_BASE}/portals/${portalId}/templates`, fetchOpts);
   const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Failed to list portal flows');
+  if (!data.success) throw new Error(data.error?.message || 'Failed to list portal templates');
   return data.data;
 }
 
-export async function addPortalFlow(portalId: string, flowId: string, opts?: { displayTitle?: string; displayDescription?: string }): Promise<import('@/types').PortalFlow> {
-  const res = await fetch(`${API_BASE}/portals/${portalId}/flows`, {
+export async function addPortalTemplate(portalId: string, templateId: string, opts?: { displayTitle?: string; displayDescription?: string }): Promise<import('@/types').PortalTemplate> {
+  const res = await fetch(`${API_BASE}/portals/${portalId}/templates`, {
     ...fetchOpts,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ flowId, ...opts }),
+    body: JSON.stringify({ templateId, ...opts }),
   });
   const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Failed to add flow to portal');
+  if (!data.success) throw new Error(data.error?.message || 'Failed to add template to portal');
   return data.data;
 }
 
-export async function updatePortalFlow(portalId: string, pfId: string, updates: Partial<{ displayTitle: string; displayDescription: string; sortOrder: number; enabled: boolean }>): Promise<import('@/types').PortalFlow> {
-  const res = await fetch(`${API_BASE}/portals/${portalId}/flows/${pfId}`, {
+export async function updatePortalTemplate(portalId: string, ptId: string, updates: Partial<{ displayTitle: string; displayDescription: string; sortOrder: number; enabled: boolean }>): Promise<import('@/types').PortalTemplate> {
+  const res = await fetch(`${API_BASE}/portals/${portalId}/templates/${ptId}`, {
     ...fetchOpts,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
   });
   const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Failed to update portal flow');
+  if (!data.success) throw new Error(data.error?.message || 'Failed to update portal template');
   return data.data;
 }
 
-export async function removePortalFlow(portalId: string, pfId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/portals/${portalId}/flows/${pfId}`, { ...fetchOpts, method: 'DELETE' });
+export async function removePortalTemplate(portalId: string, ptId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/portals/${portalId}/templates/${ptId}`, { ...fetchOpts, method: 'DELETE' });
   const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Failed to remove flow from portal');
+  if (!data.success) throw new Error(data.error?.message || 'Failed to remove template from portal');
 }
 
 // ============================================================================
@@ -1568,18 +1568,18 @@ export async function getPortalDashboard(token: string): Promise<import('@/types
   return data.data;
 }
 
-export async function getPortalAvailableFlows(token: string): Promise<Array<{ id: string; name: string; description?: string; stepCount: number }>> {
-  const res = await fetch(`${API_BASE}/public/portal/flows`, assigneeHeaders(token));
+export async function getPortalAvailableTemplates(token: string): Promise<Array<{ id: string; name: string; description?: string; stepCount: number }>> {
+  const res = await fetch(`${API_BASE}/public/portal/templates`, assigneeHeaders(token));
   const data = await res.json();
-  if (!data.success) throw new Error(data.error?.message || 'Failed to load flows');
+  if (!data.success) throw new Error(data.error?.message || 'Failed to load templates');
   return data.data;
 }
 
-export async function startPortalFlow(token: string, flowId: string, kickoffData?: Record<string, unknown>): Promise<{ runId: string; firstTaskToken?: string }> {
+export async function startPortalFlow(token: string, templateId: string, kickoffData?: Record<string, unknown>): Promise<{ flowId: string; firstTaskToken?: string }> {
   const res = await fetch(`${API_BASE}/public/portal/start-flow`, {
     ...assigneeHeaders(token),
     method: 'POST',
-    body: JSON.stringify({ flowId, kickoffData }),
+    body: JSON.stringify({ templateId, kickoffData }),
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to start flow');
@@ -1691,18 +1691,18 @@ export async function getAccountContacts(id: string): Promise<Contact[]> {
   return data.data;
 }
 
-export interface AccountFlowRun {
-  flowRunId: string;
+export interface AccountFlow {
+  flowId: string;
   source: string;
   associatedAt: string;
-  runName: string;
-  runStatus: string;
-  runStartedAt: string;
-  flowId: string;
   flowName: string;
+  flowStatus: string;
+  flowStartedAt: string;
+  templateId: string;
+  templateName: string;
 }
 
-export async function getAccountFlows(id: string): Promise<AccountFlowRun[]> {
+export async function getAccountFlows(id: string): Promise<AccountFlow[]> {
   const res = await fetch(`${API_BASE}/accounts/${id}/flows`, fetchOpts);
   const data = await res.json();
   if (!data.success) throw new Error(data.error?.message || 'Failed to fetch account flows');

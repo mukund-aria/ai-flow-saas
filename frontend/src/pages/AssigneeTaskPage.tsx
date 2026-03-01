@@ -9,8 +9,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { FlowRunChatPanel } from '@/components/flow-chat/FlowRunChatPanel';
-import { useFlowRunChatStore } from '@/stores/flowRunChatStore';
+import { FlowChatPanel } from '@/components/flow-chat/FlowChatPanel';
+import { useFlowChatStore } from '@/stores/flowChatStore';
 import { AssigneeHeader } from '@/components/assignee/AssigneeHeader';
 import { StepNavigator } from '@/components/assignee/StepNavigator';
 import { StepCard } from '@/components/assignee/StepCard';
@@ -66,7 +66,7 @@ interface TaskContext {
 export function AssigneeTaskPage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const chatStore = useFlowRunChatStore();
+  const chatStore = useFlowChatStore();
 
   // Core state
   const [task, setTask] = useState<TaskContext | null>(null);
@@ -378,7 +378,7 @@ export function AssigneeTaskPage() {
       )}
 
       {/* Chat Panel */}
-      {token && <FlowRunChatPanel mode="assignee" token={token} />}
+      {token && <FlowChatPanel mode="assignee" token={token} />}
     </div>
   );
 }

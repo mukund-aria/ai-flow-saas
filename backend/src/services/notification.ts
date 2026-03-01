@@ -6,7 +6,7 @@
  * (email / in-app), and logs everything.
  */
 
-import { db, notifications, notificationLog, userNotificationPrefs, stepExecutions, flowRuns, users, flows, contacts, magicLinks, integrations } from '../db/index.js';
+import { db, notifications, notificationLog, userNotificationPrefs, stepExecutions, flows, users, templates, contacts, magicLinks, integrations } from '../db/index.js';
 import { eq, and, gte, desc } from 'drizzle-orm';
 import * as email from './email.js';
 import { dispatchWebhooks } from './webhook.js';
@@ -24,7 +24,7 @@ export async function createInAppNotification(params: {
   type: string;
   title: string;
   body: string;
-  flowRunId?: string;
+  flowId?: string;
   stepExecutionId?: string;
   metadata?: Record<string, unknown>;
 }): Promise<void> {
@@ -46,7 +46,7 @@ export async function createInAppNotification(params: {
       type: params.type,
       title: params.title,
       body: params.body,
-      flowRunId: params.flowRunId,
+      flowId: params.flowId,
       stepExecutionId: params.stepExecutionId,
       metadata: params.metadata,
     });
@@ -85,7 +85,7 @@ async function logNotification(params: {
   recipientUserId?: string;
   channel: 'EMAIL' | 'IN_APP';
   eventType: string;
-  flowRunId?: string;
+  flowId?: string;
   stepExecutionId?: string;
   status: 'SENT' | 'FAILED' | 'SKIPPED';
   errorMessage?: string;
@@ -105,7 +105,7 @@ async function logNotification(params: {
  * Notify coordinator when a step is completed.
  */
 export async function notifyStepCompleted(
-  stepExec: { id: string; stepId: string; flowRunId: string },
+  stepExec: { id: string; stepId: string; flowId: string },
   run: { id: string; name: string; organizationId: string; startedById: string; flow?: { name: string } | null }
 ): Promise<void> {
   const stepName = stepExec.stepId;
@@ -116,7 +116,7 @@ export async function notifyStepCompleted(
     type: 'STEP_COMPLETED',
     title: 'Step completed',
     body: `"${stepName}" was completed in ${run.name}`,
-    flowRunId: run.id,
+    flowId: run.id,
     stepExecutionId: stepExec.id,
   });
 
@@ -125,7 +125,7 @@ export async function notifyStepCompleted(
     recipientUserId: run.startedById,
     channel: 'IN_APP',
     eventType: 'STEP_COMPLETED',
-    flowRunId: run.id,
+    flowId: run.id,
     stepExecutionId: stepExec.id,
     status: 'SENT',
   });
@@ -135,15 +135,15 @@ export async function notifyStepCompleted(
  * Notify coordinator (email + in-app) and assignee when a flow completes.
  */
 export async function notifyFlowCompleted(
-  run: { id: string; name: string; organizationId: string; startedById: string; flowId: string }
+  run: { id: string; name: string; organizationId: string; startedById: string; templateId: string }
 ): Promise<void> {
   // Get coordinator info
   const coordinator = await db.query.users.findFirst({
     where: eq(users.id, run.startedById),
   });
 
-  const flow = await db.query.flows.findFirst({
-    where: eq(flows.id, run.flowId),
+  const template = await db.query.templates.findFirst({
+    where: eq(templates.id, run.templateId),
   });
 
   if (coordinator) {
@@ -154,14 +154,14 @@ export async function notifyFlowCompleted(
       type: 'FLOW_COMPLETED',
       title: 'Flow completed',
       body: `${run.name} has been completed successfully`,
-      flowRunId: run.id,
+      flowId: run.id,
     });
 
     // Email notification
     await email.sendFlowCompleted({
       to: coordinator.email,
       userName: coordinator.name,
-      flowName: flow?.name || 'Unknown Flow',
+      flowName: template?.name || 'Unknown Flow',
       runName: run.name,
     });
 
@@ -171,7 +171,7 @@ export async function notifyFlowCompleted(
       recipientUserId: coordinator.id,
       channel: 'EMAIL',
       eventType: 'FLOW_COMPLETED',
-      flowRunId: run.id,
+      flowId: run.id,
       status: 'SENT',
     });
   }
@@ -181,16 +181,16 @@ export async function notifyFlowCompleted(
  * Notify all active assignees when a flow is cancelled.
  */
 export async function notifyFlowCancelled(
-  run: { id: string; name: string; organizationId: string; flowId: string }
+  run: { id: string; name: string; organizationId: string; templateId: string }
 ): Promise<void> {
-  const flow = await db.query.flows.findFirst({
-    where: eq(flows.id, run.flowId),
+  const template = await db.query.templates.findFirst({
+    where: eq(templates.id, run.templateId),
   });
 
   // Find all step executions that were in progress or waiting
   const activeSteps = await db.query.stepExecutions.findMany({
     where: and(
-      eq(stepExecutions.flowRunId, run.id)
+      eq(stepExecutions.flowId, run.id)
     ),
     with: {
       assignedToUser: true,
@@ -210,7 +210,7 @@ export async function notifyFlowCancelled(
       await email.sendFlowCancelled({
         to: assigneeEmail,
         contactName: assigneeName,
-        flowName: flow?.name || run.name,
+        flowName: template?.name || run.name,
       });
 
       await logNotification({
@@ -218,7 +218,7 @@ export async function notifyFlowCancelled(
         recipientEmail: assigneeEmail,
         channel: 'EMAIL',
         eventType: 'FLOW_CANCELLED',
-        flowRunId: run.id,
+        flowId: run.id,
         status: 'SENT',
       });
     }
@@ -229,11 +229,11 @@ export async function notifyFlowCancelled(
  * Send a reminder to the assignee of a step.
  */
 export async function notifyReminder(
-  stepExec: { id: string; stepId: string; flowRunId: string; assignedToUserId?: string | null; assignedToContactId?: string | null }
+  stepExec: { id: string; stepId: string; flowId: string; assignedToUserId?: string | null; assignedToContactId?: string | null }
 ): Promise<void> {
-  const run = await db.query.flowRuns.findFirst({
-    where: eq(flowRuns.id, stepExec.flowRunId),
-    with: { flow: true },
+  const run = await db.query.flows.findFirst({
+    where: eq(flows.id, stepExec.flowId),
+    with: { template: true },
   });
 
   if (!run) return;
@@ -257,7 +257,7 @@ export async function notifyReminder(
       await email.sendReminder({
         to: contact.email,
         contactName: contact.name,
-        flowName: run.flow?.name || run.name,
+        flowName: run.template?.name || run.name,
         stepName: stepExec.stepId,
         token: link?.token,
         dueAt: null, // Will be enriched by caller
@@ -268,7 +268,7 @@ export async function notifyReminder(
         recipientEmail: contact.email,
         channel: 'EMAIL',
         eventType: 'REMINDER',
-        flowRunId: run.id,
+        flowId: run.id,
         stepExecutionId: stepExec.id,
         status: 'SENT',
       });
@@ -283,7 +283,7 @@ export async function notifyReminder(
       type: 'REMINDER',
       title: 'Task reminder',
       body: `"${stepExec.stepId}" in ${run.name} is due soon`,
-      flowRunId: run.id,
+      flowId: run.id,
       stepExecutionId: stepExec.id,
     });
   }
@@ -303,11 +303,11 @@ export async function notifyReminder(
  * Notify when a step becomes overdue (assignee email + coordinator in-app).
  */
 export async function notifyStepOverdue(
-  stepExec: { id: string; stepId: string; flowRunId: string; assignedToUserId?: string | null; assignedToContactId?: string | null }
+  stepExec: { id: string; stepId: string; flowId: string; assignedToUserId?: string | null; assignedToContactId?: string | null }
 ): Promise<void> {
-  const run = await db.query.flowRuns.findFirst({
-    where: eq(flowRuns.id, stepExec.flowRunId),
-    with: { flow: true },
+  const run = await db.query.flows.findFirst({
+    where: eq(flows.id, stepExec.flowId),
+    with: { template: true },
   });
 
   if (!run) return;
@@ -328,7 +328,7 @@ export async function notifyStepOverdue(
         await email.sendOverdueNotice({
           to: contact.email,
           contactName: contact.name,
-          flowName: run.flow?.name || run.name,
+          flowName: run.template?.name || run.name,
           stepName: stepExec.stepId,
           token: link?.token,
         });
@@ -338,7 +338,7 @@ export async function notifyStepOverdue(
           recipientEmail: contact.email,
           channel: 'EMAIL',
           eventType: 'STEP_OVERDUE',
-          flowRunId: run.id,
+          flowId: run.id,
           stepExecutionId: stepExec.id,
           status: 'SENT',
         });
@@ -353,24 +353,24 @@ export async function notifyStepOverdue(
     type: 'STEP_OVERDUE',
     title: 'Step overdue',
     body: `"${stepExec.stepId}" in ${run.name} is overdue`,
-    flowRunId: run.id,
+    flowId: run.id,
     stepExecutionId: stepExec.id,
   });
 
   // Dispatch webhook
   dispatchWebhooks({
-    flowId: run.flowId,
+    templateId: run.templateId,
     event: 'step.overdue',
     payload: {
       event: 'step.overdue',
       timestamp: new Date().toISOString(),
-      flow: { id: run.flowId, name: run.flow?.name || run.name },
-      flowRun: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
+      template: { id: run.templateId, name: run.template?.name || run.name },
+      flow: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
       step: { id: stepExec.stepId, name: stepExec.stepId, index: 0 },
       metadata: {},
     },
     orgId: run.organizationId,
-    flowRunId: run.id,
+    flowId: run.id,
     stepExecId: stepExec.id,
   }).catch((err) => console.error('[Webhook] step.overdue dispatch error:', err));
 }
@@ -379,11 +379,11 @@ export async function notifyStepOverdue(
  * Notify escalation target when a step is overdue past the escalation threshold.
  */
 export async function notifyEscalation(
-  stepExec: { id: string; stepId: string; flowRunId: string }
+  stepExec: { id: string; stepId: string; flowId: string }
 ): Promise<void> {
-  const run = await db.query.flowRuns.findFirst({
-    where: eq(flowRuns.id, stepExec.flowRunId),
-    with: { flow: true },
+  const run = await db.query.flows.findFirst({
+    where: eq(flows.id, stepExec.flowId),
+    with: { template: true },
   });
 
   if (!run) return;
@@ -396,7 +396,7 @@ export async function notifyEscalation(
     await email.sendEscalation({
       to: coordinator.email,
       userName: coordinator.name,
-      flowName: run.flow?.name || run.name,
+      flowName: run.template?.name || run.name,
       stepName: stepExec.stepId,
       runName: run.name,
     });
@@ -407,7 +407,7 @@ export async function notifyEscalation(
       type: 'ESCALATION',
       title: 'Task escalated',
       body: `"${stepExec.stepId}" in ${run.name} has been escalated — overdue past threshold`,
-      flowRunId: run.id,
+      flowId: run.id,
       stepExecutionId: stepExec.id,
     });
 
@@ -422,7 +422,7 @@ export async function notifyEscalation(
       recipientUserId: coordinator.id,
       channel: 'EMAIL',
       eventType: 'ESCALATION',
-      flowRunId: run.id,
+      flowId: run.id,
       stepExecutionId: stepExec.id,
       status: 'SENT',
     });
@@ -430,18 +430,18 @@ export async function notifyEscalation(
 
   // Dispatch webhook
   dispatchWebhooks({
-    flowId: run.flowId,
+    templateId: run.templateId,
     event: 'step.escalated',
     payload: {
       event: 'step.escalated',
       timestamp: new Date().toISOString(),
-      flow: { id: run.flowId, name: run.flow?.name || run.name },
-      flowRun: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
+      template: { id: run.templateId, name: run.template?.name || run.name },
+      flow: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
       step: { id: stepExec.stepId, name: stepExec.stepId, index: 0 },
       metadata: {},
     },
     orgId: run.organizationId,
-    flowRunId: run.id,
+    flowId: run.id,
     stepExecId: stepExec.id,
   }).catch((err) => console.error('[Webhook] step.escalated dispatch error:', err));
 }
@@ -450,21 +450,21 @@ export async function notifyEscalation(
  * Notify coordinator when a flow has had no progress for 72 hours.
  */
 export async function notifyFlowStalled(
-  run: { id: string; name: string; organizationId: string; startedById: string; flowId: string }
+  run: { id: string; name: string; organizationId: string; startedById: string; templateId: string }
 ): Promise<void> {
   const coordinator = await db.query.users.findFirst({
     where: eq(users.id, run.startedById),
   });
 
-  const flow = await db.query.flows.findFirst({
-    where: eq(flows.id, run.flowId),
+  const template = await db.query.templates.findFirst({
+    where: eq(templates.id, run.templateId),
   });
 
   if (coordinator) {
     await email.sendFlowStalled({
       to: coordinator.email,
       userName: coordinator.name,
-      flowName: flow?.name || run.name,
+      flowName: template?.name || run.name,
       runName: run.name,
     });
 
@@ -474,7 +474,7 @@ export async function notifyFlowStalled(
       type: 'FLOW_STALLED',
       title: 'Flow stalled',
       body: `${run.name} has had no progress for 72 hours`,
-      flowRunId: run.id,
+      flowId: run.id,
     });
 
     await logNotification({
@@ -483,7 +483,7 @@ export async function notifyFlowStalled(
       recipientUserId: coordinator.id,
       channel: 'EMAIL',
       eventType: 'FLOW_STALLED',
-      flowRunId: run.id,
+      flowId: run.id,
       status: 'SENT',
     });
   }
@@ -497,7 +497,7 @@ export async function notifyFlowStalled(
  * Notify coordinator when an assignee sends a chat message.
  */
 export async function notifyChatMessage(
-  run: { id: string; name: string; organizationId: string; startedById: string; flowId: string },
+  run: { id: string; name: string; organizationId: string; startedById: string; templateId: string },
   senderName: string,
   messagePreview: string
 ): Promise<void> {
@@ -513,7 +513,7 @@ export async function notifyChatMessage(
       type: 'CHAT_MESSAGE',
       title: `New message from ${senderName}`,
       body: messagePreview.length > 100 ? messagePreview.slice(0, 100) + '...' : messagePreview,
-      flowRunId: run.id,
+      flowId: run.id,
       metadata: { senderName },
     });
 
@@ -534,7 +534,7 @@ export async function notifyChatMessage(
         recipientUserId: coordinator.id,
         channel: 'EMAIL',
         eventType: 'CHAT_MESSAGE',
-        flowRunId: run.id,
+        flowId: run.id,
         status: 'SENT',
       });
     }
@@ -544,13 +544,13 @@ export async function notifyChatMessage(
 /**
  * Chat email frequency cap — batch rapid-fire messages (5 minute window).
  */
-async function canSendChatEmail(flowRunId: string, recipientEmail: string): Promise<boolean> {
+async function canSendChatEmail(flowId: string, recipientEmail: string): Promise<boolean> {
   const chatCapMs = 5 * 60 * 1000; // 5 minutes
   const cutoff = new Date(Date.now() - chatCapMs);
 
   const recent = await db.query.notificationLog.findFirst({
     where: and(
-      eq(notificationLog.flowRunId, flowRunId),
+      eq(notificationLog.flowId, flowId),
       eq(notificationLog.eventType, 'CHAT_MESSAGE'),
       eq(notificationLog.recipientEmail, recipientEmail),
       eq(notificationLog.channel, 'EMAIL'),
@@ -618,9 +618,9 @@ export async function handleEscalationJob(stepExecutionId: string): Promise<void
 export async function handleStalledCheck(): Promise<void> {
   const cutoff = new Date(Date.now() - STALLED_THRESHOLD_MS);
 
-  const stalledRuns = await db.query.flowRuns.findMany({
+  const stalledRuns = await db.query.flows.findMany({
     where: and(
-      eq(flowRuns.status, 'IN_PROGRESS'),
+      eq(flows.status, 'IN_PROGRESS'),
       // lastActivityAt is null or before cutoff
     ),
   });
@@ -631,7 +631,7 @@ export async function handleStalledCheck(): Promise<void> {
       // Check if we already sent a stalled notification recently
       const recentNotif = await db.query.notificationLog.findFirst({
         where: and(
-          eq(notificationLog.flowRunId, run.id),
+          eq(notificationLog.flowId, run.id),
           eq(notificationLog.eventType, 'FLOW_STALLED'),
           gte(notificationLog.sentAt, cutoff)
         ),
@@ -699,10 +699,10 @@ export async function handleDailyDigest(): Promise<void> {
  */
 export async function dispatchIntegrationNotifications(orgId: string, event: {
   type: string;
-  flowRunName: string;
+  flowName: string;
   stepName?: string;
   completedBy?: string;
-  flowRunId: string;
+  flowId: string;
 }): Promise<void> {
   try {
     const orgIntegrations = await db.query.integrations.findMany({
@@ -728,7 +728,7 @@ export async function dispatchIntegrationNotifications(orgId: string, event: {
 
       switch (integration.type) {
         case 'SLACK_WEBHOOK': {
-          const lines = [`*${event.type}* in *${event.flowRunName}*`];
+          const lines = [`*${event.type}* in *${event.flowName}*`];
           if (event.stepName) lines.push(`Step: ${event.stepName}`);
           if (event.completedBy) lines.push(`By: ${event.completedBy}`);
           payload = {
@@ -745,9 +745,9 @@ export async function dispatchIntegrationNotifications(orgId: string, event: {
           if (event.completedBy) facts.push({ name: 'Completed By', value: event.completedBy });
           payload = {
             '@type': 'MessageCard',
-            summary: `${event.type}: ${event.flowRunName}`,
+            summary: `${event.type}: ${event.flowName}`,
             sections: [{
-              activityTitle: `${event.type}: ${event.flowRunName}`,
+              activityTitle: `${event.type}: ${event.flowName}`,
               facts,
             }],
           };
@@ -757,8 +757,8 @@ export async function dispatchIntegrationNotifications(orgId: string, event: {
         default: {
           payload = {
             event: event.type,
-            flowRunName: event.flowRunName,
-            flowRunId: event.flowRunId,
+            flowName: event.flowName,
+            flowId: event.flowId,
             stepName: event.stepName,
             completedBy: event.completedBy,
             timestamp: new Date().toISOString(),
@@ -794,7 +794,7 @@ export async function dispatchIntegrationNotifications(orgId: string, event: {
           organizationId: orgId,
           channel: 'WEBHOOK',
           eventType: event.type,
-          flowRunId: event.flowRunId,
+          flowId: event.flowId,
           recipientEmail: config.webhookUrl,
           status: success ? 'SENT' : 'FAILED',
           errorMessage: success ? null : `HTTP ${response.status}`,

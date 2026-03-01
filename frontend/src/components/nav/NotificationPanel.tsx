@@ -107,8 +107,8 @@ export function NotificationPanel() {
               }`}
               onClick={() => {
                 if (!notification.readAt) markRead(notification.id);
-                if (notification.flowRunId) {
-                  navigate(`/flows/${notification.flowRunId}`);
+                if (notification.flowId) {
+                  navigate(`/flows/${notification.flowId}`);
                   setOpen(false);
                 }
               }}

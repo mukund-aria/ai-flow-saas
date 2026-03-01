@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import { db, templateFolders, flows } from '../db/index.js';
+import { db, templateFolders, templates } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -27,9 +27,9 @@ router.get(
 
     // Get template counts per folder
     const allTemplates = await db
-      .select({ id: flows.id, folderId: flows.folderId })
-      .from(flows)
-      .where(eq(flows.organizationId, orgId));
+      .select({ id: templates.id, folderId: templates.folderId })
+      .from(templates)
+      .where(eq(templates.organizationId, orgId));
 
     const foldersWithCounts = folders.map((f) => ({
       ...f,
@@ -121,9 +121,9 @@ router.delete(
 
     // Move all templates in this folder to root (null folderId)
     await db
-      .update(flows)
+      .update(templates)
       .set({ folderId: null })
-      .where(eq(flows.folderId, id));
+      .where(eq(templates.folderId, id));
 
     // Delete the folder
     await db

@@ -45,7 +45,7 @@ export function PlanSummaryCard({
   const [changesText, setChangesText] = useState('');
   const [showAssumptions, setShowAssumptions] = useState(false);
 
-  const { workflow } = plan;
+  const workflow = plan.workflow ?? { name: 'Untitled', steps: [], milestones: [], roles: [], flowId: '' };
   const isEdit = plan.mode === 'edit';
   const operations = plan.operations || [];
   const small = isSmallEdit(plan);

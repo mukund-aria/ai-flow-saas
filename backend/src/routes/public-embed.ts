@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, flows, flowRuns, stepExecutions, contacts, users, organizations } from '../db/index.js';
+import { db, templates, flows, stepExecutions, contacts, users, organizations } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
@@ -15,11 +15,11 @@ import { onStepActivated, onFlowStarted, updateFlowActivity, computeFlowDueAt } 
 const router = Router();
 
 /**
- * Helper: look up a flow by its embedId stored in definition.embedId.
+ * Helper: look up a template by its embedId stored in definition.embedId.
  */
-async function findFlowByEmbedId(embedId: string) {
-  const allFlows = await db.query.flows.findMany();
-  return allFlows.find(f => {
+async function findTemplateByEmbedId(embedId: string) {
+  const allTemplates = await db.query.templates.findMany();
+  return allTemplates.find(f => {
     const def = f.definition as Record<string, unknown> | null;
     return def?.embedId === embedId;
   }) || null;
@@ -34,9 +34,9 @@ router.get(
   asyncHandler(async (req, res) => {
     const embedId = req.params.embedId as string;
 
-    const flow = await findFlowByEmbedId(embedId);
+    const template = await findTemplateByEmbedId(embedId);
 
-    if (!flow) {
+    if (!template) {
       res.status(404).json({
         success: false,
         error: { code: 'NOT_FOUND', message: 'Embedded flow not found' },
@@ -44,7 +44,7 @@ router.get(
       return;
     }
 
-    if (flow.status !== 'ACTIVE') {
+    if (template.status !== 'ACTIVE') {
       res.status(404).json({
         success: false,
         error: { code: 'NOT_FOUND', message: 'This flow is not currently active' },
@@ -53,14 +53,14 @@ router.get(
     }
 
     // Extract info from definition
-    const definition = flow.definition as Record<string, unknown> | null;
+    const definition = template.definition as Record<string, unknown> | null;
     const kickoff = (definition as any)?.kickoff || null;
     const roles = (definition as any)?.roles || (definition as any)?.assigneePlaceholders || [];
 
     // Get organization branding if available
     let branding = null;
     const org = await db.query.organizations.findFirst({
-      where: eq(organizations.id, flow.organizationId),
+      where: eq(organizations.id, template.organizationId),
     });
     if (org?.brandingConfig) {
       branding = org.brandingConfig;
@@ -69,9 +69,9 @@ router.get(
     res.json({
       success: true,
       data: {
-        id: flow.id,
-        name: flow.name,
-        description: flow.description,
+        id: template.id,
+        name: template.name,
+        description: template.description,
         kickoff,
         roles,
         branding,
@@ -93,9 +93,9 @@ router.post(
       assigneeInfo?: { name?: string; email?: string };
     };
 
-    const flow = await findFlowByEmbedId(embedId);
+    const template = await findTemplateByEmbedId(embedId);
 
-    if (!flow) {
+    if (!template) {
       res.status(404).json({
         success: false,
         error: { code: 'NOT_FOUND', message: 'Embedded flow not found' },
@@ -103,7 +103,7 @@ router.post(
       return;
     }
 
-    if (flow.status !== 'ACTIVE') {
+    if (template.status !== 'ACTIVE') {
       res.status(400).json({
         success: false,
         error: { code: 'VALIDATION_ERROR', message: 'This flow is not currently active' },
@@ -111,8 +111,8 @@ router.post(
       return;
     }
 
-    // Get flow definition and steps
-    const definition = flow.definition as { steps?: Array<Record<string, unknown>> } | null;
+    // Get template definition and steps
+    const definition = template.definition as { steps?: Array<Record<string, unknown>> } | null;
     const steps = definition?.steps || [];
 
     if (steps.length === 0) {
@@ -154,7 +154,7 @@ router.post(
       }
     }
 
-    const orgId = flow.organizationId;
+    const orgId = template.organizationId;
 
     // Find any existing user in the organization to use as startedById
     const orgUser = await db.query.users.findFirst({
@@ -194,17 +194,17 @@ router.post(
       firstStepContactId = contact.id;
     }
 
-    // Create the flow run
-    const runName = `${flow.name} - Embedded - ${new Date().toISOString().split('T')[0]}`;
+    // Create the flow
+    const runName = `${template.name} - Embedded - ${new Date().toISOString().split('T')[0]}`;
 
     const flowStartedAt = new Date();
     const flowDueDates = (definition as any)?.dueDates;
     const flowDueAt = computeFlowDueAt(flowDueDates?.flowDue, flowStartedAt);
 
-    const [newRun] = await db
-      .insert(flowRuns)
+    const [newFlow] = await db
+      .insert(flows)
       .values({
-        flowId: flow.id,
+        templateId: template.id,
         name: runName,
         status: 'IN_PROGRESS',
         isSample: false,
@@ -222,7 +222,7 @@ router.post(
       const resolvedStepId = stepDef.stepId || stepDef.id || `step-${index}`;
 
       return {
-        flowRunId: newRun.id,
+        flowId: newFlow.id,
         stepId: resolvedStepId,
         stepIndex: index,
         status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
@@ -238,7 +238,7 @@ router.post(
     if (firstStepContactId) {
       const firstStepExec = await db.query.stepExecutions.findFirst({
         where: and(
-          eq(stepExecutions.flowRunId, newRun.id),
+          eq(stepExecutions.flowId, newFlow.id),
           eq(stepExecutions.stepIndex, 0)
         ),
       });
@@ -254,24 +254,24 @@ router.post(
     const firstStep = steps[0] as any;
     const firstStepExec = await db.query.stepExecutions.findFirst({
       where: and(
-        eq(stepExecutions.flowRunId, newRun.id),
+        eq(stepExecutions.flowId, newFlow.id),
         eq(stepExecutions.stepIndex, 0)
       ),
     });
     if (firstStepExec) {
-      await onStepActivated(firstStepExec.id, firstStep.due || firstStep.config?.due, flow.definition as Record<string, unknown>, flowDueAt);
+      await onStepActivated(firstStepExec.id, firstStep.due || firstStep.config?.due, template.definition as Record<string, unknown>, flowDueAt);
     }
 
-    await updateFlowActivity(newRun.id);
+    await updateFlowActivity(newFlow.id);
 
-    await onFlowStarted({ id: newRun.id, name: runName, organizationId: orgId, flowId: flow.id, flow: { name: flow.name } });
+    await onFlowStarted({ id: newFlow.id, name: runName, organizationId: orgId, templateId: template.id, template: { name: template.name } });
 
     logAction({
-      flowRunId: newRun.id,
+      flowId: newFlow.id,
       action: 'EMBED_FLOW_STARTED',
       details: {
-        flowId: flow.id,
-        flowName: flow.name,
+        templateId: template.id,
+        templateName: template.name,
         embedId,
         submitterName: assigneeInfo?.name || null,
         submitterEmail: assigneeInfo?.email || null,
@@ -281,7 +281,7 @@ router.post(
     res.status(201).json({
       success: true,
       data: {
-        runId: newRun.id,
+        flowId: newFlow.id,
         firstTaskUrl,
       },
     });

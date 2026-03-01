@@ -16,7 +16,7 @@ import { Queue, Worker, type Job } from 'bullmq';
 
 export interface FlowScheduleJobData {
   type: 'scheduled-flow-start';
-  flowId: string;
+  templateId: string;
   organizationId: string;
   scheduleName: string;
   roleAssignments?: Record<string, string>;
@@ -40,14 +40,14 @@ let isInitialized = false;
  * Returns a schedule ID that can be used for cancellation.
  */
 export async function scheduleFlowStart(config: {
-  flowId: string;
+  templateId: string;
   organizationId: string;
   scheduleName: string;
   cronPattern: string;
   roleAssignments?: Record<string, string>;
   kickoffData?: Record<string, unknown>;
 }): Promise<string> {
-  const scheduleId = `schedule:${config.flowId}:${Date.now()}`;
+  const scheduleId = `schedule:${config.templateId}:${Date.now()}`;
 
   if (!scheduleQueue) {
     console.warn('[FlowScheduler] Redis not available — returning dummy schedule ID');
@@ -58,7 +58,7 @@ export async function scheduleFlowStart(config: {
     'scheduled-flow-start',
     {
       type: 'scheduled-flow-start',
-      flowId: config.flowId,
+      templateId: config.templateId,
       organizationId: config.organizationId,
       scheduleName: config.scheduleName,
       roleAssignments: config.roleAssignments,
@@ -133,35 +133,35 @@ export async function listFlowSchedules(
  * activates the first step, and writes an audit log.
  */
 export async function processScheduledFlowStart(data: FlowScheduleJobData): Promise<void> {
-  const { flowId, organizationId, scheduleName, roleAssignments, kickoffData } = data;
+  const { templateId, organizationId, scheduleName, roleAssignments, kickoffData } = data;
 
   // Lazy imports to avoid circular dependencies
-  const { db, flows, flowRuns, stepExecutions, users } = await import('../db/index.js');
+  const { db, templates, flows, stepExecutions, users } = await import('../db/index.js');
   const { eq } = await import('drizzle-orm');
   const { onStepActivated, updateFlowActivity } = await import('./execution.js');
   const { logAction } = await import('./audit.js');
 
   // Look up the flow template
-  const flow = await db.query.flows.findFirst({
-    where: eq(flows.id, flowId),
+  const template = await db.query.templates.findFirst({
+    where: eq(templates.id, templateId),
   });
 
-  if (!flow) {
-    console.error(`[FlowScheduler] Flow ${flowId} not found — skipping scheduled run`);
+  if (!template) {
+    console.error(`[FlowScheduler] Template ${templateId} not found — skipping scheduled run`);
     return;
   }
 
-  if (flow.status === 'DRAFT') {
-    console.warn(`[FlowScheduler] Flow ${flowId} is DRAFT — skipping scheduled run`);
+  if (template.status === 'DRAFT') {
+    console.warn(`[FlowScheduler] Template ${templateId} is DRAFT — skipping scheduled run`);
     return;
   }
 
   // Extract steps from flow definition
-  const definition = flow.definition as { steps?: Array<{ id: string; name?: string; type?: string; due?: { value: number; unit: string } }> } | null;
+  const definition = template.definition as { steps?: Array<{ id: string; name?: string; type?: string; due?: { value: number; unit: string } }> } | null;
   const steps = definition?.steps || [];
 
   if (steps.length === 0) {
-    console.warn(`[FlowScheduler] Flow ${flowId} has no steps — skipping scheduled run`);
+    console.warn(`[FlowScheduler] Template ${templateId} has no steps — skipping scheduled run`);
     return;
   }
 
@@ -176,12 +176,12 @@ export async function processScheduledFlowStart(data: FlowScheduleJobData): Prom
   }
 
   // Create the flow run
-  const runName = `${flow.name} - Scheduled (${scheduleName}) ${new Date().toISOString().split('T')[0]}`;
+  const runName = `${template.name} - Scheduled (${scheduleName}) ${new Date().toISOString().split('T')[0]}`;
 
   const [newRun] = await db
-    .insert(flowRuns)
+    .insert(flows)
     .values({
-      flowId: flow.id,
+      templateId: template.id,
       name: runName,
       status: 'IN_PROGRESS',
       isSample: false,
@@ -195,7 +195,7 @@ export async function processScheduledFlowStart(data: FlowScheduleJobData): Prom
 
   // Create step executions for each step in the flow
   const stepExecutionValues = steps.map((step, index) => ({
-    flowRunId: newRun.id,
+    flowId: newRun.id,
     stepId: step.id,
     stepIndex: index,
     status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
@@ -206,12 +206,12 @@ export async function processScheduledFlowStart(data: FlowScheduleJobData): Prom
 
   // Activate the first step (schedule reminders, overdue checks, etc.)
   const firstStepExec = await db.query.stepExecutions.findFirst({
-    where: eq(stepExecutions.flowRunId, newRun.id),
+    where: eq(stepExecutions.flowId, newRun.id),
   });
 
   if (firstStepExec) {
     const firstStepDef = steps[0];
-    await onStepActivated(firstStepExec.id, firstStepDef?.due, flow.definition);
+    await onStepActivated(firstStepExec.id, firstStepDef?.due, template.definition);
   }
 
   // Set initial activity timestamp
@@ -219,18 +219,18 @@ export async function processScheduledFlowStart(data: FlowScheduleJobData): Prom
 
   // Audit log
   await logAction({
-    flowRunId: newRun.id,
+    flowId: newRun.id,
     action: 'SCHEDULED_FLOW_STARTED',
     actorId: orgUser.id,
     details: {
-      flowId: flow.id,
-      flowName: flow.name,
+      templateId: template.id,
+      flowName: template.name,
       scheduleName,
       runName,
     },
   });
 
-  console.log(`[FlowScheduler] Started scheduled run "${runName}" (${newRun.id}) for flow ${flowId}`);
+  console.log(`[FlowScheduler] Started scheduled run "${runName}" (${newRun.id}) for template ${templateId}`);
 }
 
 // ============================================================================

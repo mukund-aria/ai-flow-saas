@@ -43,7 +43,7 @@ interface StepCardProps {
   onStepClick?: (stepId: string) => void;
 }
 
-export function StepCard({ step, index, assigneeIndex = 0, editMode, roles = [], stepNumber, changeStatus, onStepClick }: StepCardProps) {
+export function StepCard({ step, index, assigneeIndex = 0, editMode, roles: _roles = [], stepNumber, changeStatus, onStepClick }: StepCardProps) {
   const { removeStep, duplicateStep } = useWorkflowStore();
 
   const {

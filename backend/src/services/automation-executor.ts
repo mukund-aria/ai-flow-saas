@@ -9,7 +9,7 @@
  * with a cap of 50 consecutive auto-executions to prevent misconfigured infinite loops.
  */
 
-import { db, flowRuns, stepExecutions } from '../db/index.js';
+import { db, flows, stepExecutions } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import { stepRegistry } from '../config/step-registry.js';
 import { resolveDDR, type DDRContext } from './ddr-resolver.js';
@@ -27,7 +27,7 @@ export interface RunContext {
   name: string;
   organizationId: string;
   startedById: string;
-  flowId: string;
+  templateId: string;
   dueAt?: Date | string | null;
   flow?: {
     id: string;
@@ -39,7 +39,7 @@ export interface RunContext {
     stepId: string;
     stepIndex: number;
     status: string;
-    flowRunId: string;
+    flowId: string;
     assignedToContactId?: string | null;
     resultData?: Record<string, unknown> | null;
     parallelGroupId?: string | null;
@@ -205,7 +205,7 @@ export async function maybeAutoExecute(
         sseManager.emit(run.organizationId, {
           type: 'step.ai_review_ready',
           data: {
-            flowRunId: run.id,
+            flowId: run.id,
             stepExecId: currentStepExecId,
             stepType: currentType,
             timestamp: new Date().toISOString(),
@@ -217,10 +217,10 @@ export async function maybeAutoExecute(
       }
 
       // Re-fetch the run to get fresh state
-      const freshRun = await db.query.flowRuns.findFirst({
-        where: eq(flowRuns.id, run.id),
+      const freshRun = await db.query.flows.findFirst({
+        where: eq(flows.id, run.id),
         with: {
-          flow: true,
+          template: true,
           stepExecutions: {
             orderBy: (se: any, { asc }: any) => [asc(se.stepIndex)],
           },
@@ -231,7 +231,7 @@ export async function maybeAutoExecute(
 
       // Complete step and advance using the shared helper
       const { completeStepAndAdvance } = await import('./step-completion.js');
-      const definition = freshRun.flow?.definition as any;
+      const definition = freshRun.template?.definition as any;
       const stepDefs = (definition?.steps || []) as any[];
 
       const advanceResult = await completeStepAndAdvance({
@@ -287,7 +287,7 @@ export async function maybeAutoExecute(
       sseManager.emit(run.organizationId, {
         type: 'step.failed',
         data: {
-          flowRunId: run.id,
+          flowId: run.id,
           stepExecId: currentStepExecId,
           stepType: currentType,
           error: err instanceof Error ? err.message : String(err),

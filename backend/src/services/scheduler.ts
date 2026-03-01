@@ -25,7 +25,7 @@ export type NotificationJobType =
 export interface NotificationJobData {
   type: NotificationJobType;
   stepExecutionId?: string;
-  flowRunId?: string;
+  flowId?: string;
   userId?: string;
   organizationId?: string;
   webhookData?: import('./webhook.js').WebhookJobData;
@@ -275,7 +275,7 @@ export async function initSchedules(): Promise<void> {
  */
 export async function registerSchedule(schedule: {
   id: string;
-  flowId: string;
+  templateId: string;
   organizationId: string;
   scheduleName: string;
   cronPattern: string;
@@ -324,7 +324,7 @@ export async function cancelSchedule(scheduleId: string): Promise<void> {
 // ============================================================================
 
 async function processNotificationJob(job: Job<NotificationJobData>): Promise<void> {
-  const { type, stepExecutionId, flowRunId } = job.data;
+  const { type, stepExecutionId, flowId } = job.data;
 
   // Lazy import to avoid circular dependencies
   const {
@@ -369,7 +369,7 @@ async function processNotificationJob(job: Job<NotificationJobData>): Promise<vo
           const { processScheduledFlowStart } = await import('./flow-scheduler.js');
           await processScheduledFlowStart({
             type: 'scheduled-flow-start',
-            flowId: schedule.flowId,
+            templateId: schedule.templateId,
             organizationId: schedule.organizationId,
             scheduleName: schedule.scheduleName,
             roleAssignments: schedule.roleAssignments as Record<string, string> | undefined,

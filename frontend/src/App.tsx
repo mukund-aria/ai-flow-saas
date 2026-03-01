@@ -34,10 +34,10 @@ import { AdminSettings } from '@/pages/admin/AdminSettings';
 // import { PublicLayout } from '@/layouts/PublicLayout';
 import {
   HomePage,
+  TemplatesPage,
+  TemplateBuilderPage,
   FlowsPage,
-  FlowBuilderPage,
-  FlowRunsPage,
-  FlowRunDetailPage,
+  FlowDetailPage,
   ManagePage,
   ContactsPage,
   SchedulesPage,
@@ -45,7 +45,7 @@ import {
   SettingsPage,
   LoginPage,
   LandingPage,
-  FlowPreviewPage,
+  TemplatePreviewPage,
   OnboardingPage,
   OrgSelectPage,
   OrgSetupPage,
@@ -160,7 +160,7 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
-      <Route path="/preview" element={<FlowPreviewPage />} />
+      <Route path="/preview" element={<TemplatePreviewPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route
@@ -212,13 +212,13 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route path="templates" element={<FlowsPage />} />
-        <Route path="templates/new" element={<FlowBuilderPage />} />
-        <Route path="templates/:id" element={<FlowBuilderPage />} />
+        <Route path="templates" element={<TemplatesPage />} />
+        <Route path="templates/new" element={<TemplateBuilderPage />} />
+        <Route path="templates/:id" element={<TemplateBuilderPage />} />
         <Route path="templates/:id/form/:stepId" element={<FormBuilderPage />} />
         <Route path="templates/:id/detail" element={<TemplateDetailPage />} />
-        <Route path="flows" element={<FlowRunsPage />} />
-        <Route path="flows/:id" element={<FlowRunDetailPage />} />
+        <Route path="flows" element={<FlowsPage />} />
+        <Route path="flows/:id" element={<FlowDetailPage />} />
         <Route path="manage" element={<ManagePage />} />
         <Route path="reports" element={<Navigate to="/manage" replace />} />
         <Route path="contacts" element={<ContactsPage />} />

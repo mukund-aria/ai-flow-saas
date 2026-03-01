@@ -1,7 +1,7 @@
 /**
- * Flow Builder Page
+ * Template Builder Page
  *
- * The AI-powered flow builder with chat interface and workflow preview.
+ * The AI-powered template builder with chat interface and workflow preview.
  * Supports AI mode (chat-based) and Manual mode (visual editor with step palette sidebar).
  * Supports loading a preview workflow after auth redirect (fromPreview flow).
  */
@@ -40,7 +40,7 @@ import { StepIcon } from '@/components/workflow/StepIcon';
 
 type BuilderMode = 'ai' | 'manual';
 
-export function FlowBuilderPage() {
+export function TemplateBuilderPage() {
   const { id: templateId } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();

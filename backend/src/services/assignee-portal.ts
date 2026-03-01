@@ -4,7 +4,7 @@
  * Business logic for the assignee portal dashboard and flow management.
  */
 
-import { db, flowRuns, stepExecutions, contacts, flows, magicLinks, portalFlows, portals } from '../db/index.js';
+import { db, flows, stepExecutions, contacts, templates, magicLinks, portalTemplates, portals } from '../db/index.js';
 import { eq, and, inArray } from 'drizzle-orm';
 
 export async function getAssigneeDashboard(contactId: string, orgId: string) {
@@ -12,8 +12,8 @@ export async function getAssigneeDashboard(contactId: string, orgId: string) {
   const contactSteps = await db.query.stepExecutions.findMany({
     where: eq(stepExecutions.assignedToContactId, contactId),
     with: {
-      flowRun: {
-        with: { flow: true },
+      flow: {
+        with: { template: true },
       },
     },
   });
@@ -27,20 +27,20 @@ export async function getAssigneeDashboard(contactId: string, orgId: string) {
     : [];
   const magicLinkByStepId = new Map(stepMagicLinks.map(ml => [ml.stepExecutionId, ml]));
 
-  // Group by flow run
-  const runMap = new Map<string, {
-    run: any;
+  // Group by flow
+  const flowMap = new Map<string, {
+    flow: any;
     steps: any[];
   }>();
 
   for (const step of contactSteps) {
-    const run = (step as any).flowRun;
-    if (!run || run.organizationId !== orgId) continue;
+    const flow = (step as any).flow;
+    if (!flow || flow.organizationId !== orgId) continue;
 
-    if (!runMap.has(run.id)) {
-      runMap.set(run.id, { run, steps: [] });
+    if (!flowMap.has(flow.id)) {
+      flowMap.set(flow.id, { flow, steps: [] });
     }
-    runMap.get(run.id)!.steps.push({ ...step, magicLink: magicLinkByStepId.get(step.id) });
+    flowMap.get(flow.id)!.steps.push({ ...step, magicLink: magicLinkByStepId.get(step.id) });
   }
 
   // Calculate summary
@@ -51,10 +51,10 @@ export async function getAssigneeDashboard(contactId: string, orgId: string) {
 
   const workspaces = [];
 
-  for (const [, { run, steps }] of runMap) {
-    // Get all steps for this run to calculate progress
+  for (const [, { flow, steps }] of flowMap) {
+    // Get all steps for this flow to calculate progress
     const allSteps = await db.query.stepExecutions.findMany({
-      where: eq(stepExecutions.flowRunId, run.id),
+      where: eq(stepExecutions.flowId, flow.id),
     });
 
     const completedSteps = allSteps.filter(s => s.status === 'COMPLETED').length;
@@ -64,7 +64,7 @@ export async function getAssigneeDashboard(contactId: string, orgId: string) {
     const activeStep = steps.find(s => s.status === 'IN_PROGRESS' || s.status === 'WAITING_FOR_ASSIGNEE');
     const nextTaskToken = activeStep?.magicLink?.token;
 
-    if (run.status === 'COMPLETED') {
+    if (flow.status === 'COMPLETED') {
       completedCount++;
     } else if (activeStep) {
       if (activeStep.dueAt && new Date(activeStep.dueAt) < new Date()) {
@@ -77,12 +77,12 @@ export async function getAssigneeDashboard(contactId: string, orgId: string) {
     }
 
     workspaces.push({
-      id: run.id,
-      name: run.name,
-      templateName: run.flow?.name || 'Unknown',
-      status: run.status,
+      id: flow.id,
+      name: flow.name,
+      templateName: flow.template?.name || 'Unknown',
+      status: flow.status,
       progress: { completed: completedSteps, total: totalSteps },
-      dueAt: activeStep?.dueAt || run.dueAt || undefined,
+      dueAt: activeStep?.dueAt || flow.dueAt || undefined,
       nextTaskToken,
     });
   }
@@ -94,53 +94,53 @@ export async function getAssigneeDashboard(contactId: string, orgId: string) {
 }
 
 export async function getAvailableFlows(portalId: string) {
-  const catalog = await db.query.portalFlows.findMany({
+  const catalog = await db.query.portalTemplates.findMany({
     where: and(
-      eq(portalFlows.portalId, portalId),
-      eq(portalFlows.enabled, true)
+      eq(portalTemplates.portalId, portalId),
+      eq(portalTemplates.enabled, true)
     ),
-    with: { flow: true },
+    with: { template: true },
     orderBy: (pf, { asc }) => [asc(pf.sortOrder)],
   });
 
   return catalog
-    .filter(pf => (pf.flow as any)?.status === 'ACTIVE')
+    .filter(pf => (pf.template as any)?.status === 'ACTIVE')
     .map(pf => {
-      const flow = pf.flow as any;
-      const definition = flow.definition as any;
+      const template = pf.template as any;
+      const definition = template.definition as any;
       return {
-        id: flow.id,
-        name: pf.displayTitle || flow.name,
-        description: pf.displayDescription || flow.description,
+        id: template.id,
+        name: pf.displayTitle || template.name,
+        description: pf.displayDescription || template.description,
         stepCount: definition?.steps?.length || 0,
       };
     });
 }
 
 export async function startFlowAsAssignee(
-  flowId: string,
+  templateId: string,
   contactId: string,
   orgId: string,
   portalId: string,
   startedById: string,
   kickoffData?: Record<string, unknown>
 ) {
-  // Verify flow exists and is ACTIVE
-  const flow = await db.query.flows.findFirst({
-    where: and(eq(flows.id, flowId), eq(flows.organizationId, orgId)),
+  // Verify template exists and is ACTIVE
+  const template = await db.query.templates.findFirst({
+    where: and(eq(templates.id, templateId), eq(templates.organizationId, orgId)),
   });
 
-  if (!flow || flow.status !== 'ACTIVE') {
-    throw new Error('Flow not found or not active');
+  if (!template || template.status !== 'ACTIVE') {
+    throw new Error('Flow template not found or not active');
   }
 
-  const definition = flow.definition as any;
+  const definition = template.definition as any;
   const steps = definition?.steps || [];
 
-  // Create flow run
-  const [run] = await db.insert(flowRuns).values({
-    flowId: flow.id,
-    name: `${flow.name} - ${new Date().toLocaleDateString()}`,
+  // Create flow
+  const [flow] = await db.insert(flows).values({
+    templateId: template.id,
+    name: `${template.name} - ${new Date().toLocaleDateString()}`,
     status: 'IN_PROGRESS',
     currentStepIndex: 0,
     startedById,
@@ -158,7 +158,7 @@ export async function startFlowAsAssignee(
     const isFirst = i === 0;
 
     const [stepExec] = await db.insert(stepExecutions).values({
-      flowRunId: run.id,
+      flowId: flow.id,
       stepId: step.id || step.stepId,
       stepIndex: i,
       status: isFirst ? 'WAITING_FOR_ASSIGNEE' : 'PENDING',
@@ -176,5 +176,5 @@ export async function startFlowAsAssignee(
     }
   }
 
-  return { runId: run.id, firstTaskToken };
+  return { flowId: flow.id, firstTaskToken };
 }

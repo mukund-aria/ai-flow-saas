@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, flows } from '../db/index.js';
+import { db, templates } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -23,13 +23,13 @@ router.post(
     const orgId = req.organizationId;
 
     // Get the flow template (scoped to org)
-    const flow = await db.query.flows.findFirst({
+    const template = await db.query.templates.findFirst({
       where: orgId
-        ? and(eq(flows.id, flowId), eq(flows.organizationId, orgId))
-        : eq(flows.id, flowId),
+        ? and(eq(templates.id, flowId), eq(templates.organizationId, orgId))
+        : eq(templates.id, flowId),
     });
 
-    if (!flow) {
+    if (!template) {
       res.status(404).json({
         success: false,
         error: { code: 'NOT_FOUND', message: 'Template not found' },
@@ -38,7 +38,7 @@ router.post(
     }
 
     // Check if an embedId already exists in the definition
-    const definition = (flow.definition || {}) as Record<string, unknown>;
+    const definition = (template.definition || {}) as Record<string, unknown>;
     let embedId = definition.embedId as string | undefined;
 
     if (!embedId) {
@@ -46,9 +46,9 @@ router.post(
       embedId = crypto.randomUUID();
       const updatedDefinition = { ...definition, embedId };
 
-      await db.update(flows)
+      await db.update(templates)
         .set({ definition: updatedDefinition, updatedAt: new Date() })
-        .where(eq(flows.id, flowId));
+        .where(eq(templates.id, flowId));
     }
 
     // Build URLs

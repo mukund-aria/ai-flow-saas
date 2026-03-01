@@ -114,7 +114,7 @@ export async function advanceStepAsync(
   completedStep: StepExecution,
   allStepExecutions: StepExecution[],
   stepDefs: StepDef[],
-  flowRunId: string,
+  flowId: string,
   resultData?: Record<string, unknown>,
   evaluationContext?: EvaluationContext
 ): Promise<BranchResult> {
@@ -129,19 +129,19 @@ export async function advanceStepAsync(
 
   if (stepType === 'SINGLE_CHOICE_BRANCH') {
     return handleSingleChoiceBranchAsync(
-      currentIndex, allStepExecutions, currentStepDef, flowRunId, resultData
+      currentIndex, allStepExecutions, currentStepDef, flowId, resultData
     );
   }
 
   if (stepType === 'MULTI_CHOICE_BRANCH') {
     return handleMultiChoiceBranchAsync(
-      currentIndex, allStepExecutions, currentStepDef, flowRunId, resultData, evaluationContext
+      currentIndex, allStepExecutions, currentStepDef, flowId, resultData, evaluationContext
     );
   }
 
   if (stepType === 'PARALLEL_BRANCH') {
     return handleParallelBranchAsync(
-      currentIndex, allStepExecutions, currentStepDef, flowRunId
+      currentIndex, allStepExecutions, currentStepDef, flowId
     );
   }
 
@@ -212,7 +212,7 @@ async function handleSingleChoiceBranchAsync(
   currentIndex: number,
   allStepExecutions: StepExecution[],
   stepDef: StepDef,
-  flowRunId: string,
+  flowId: string,
   resultData?: Record<string, unknown>
 ): Promise<BranchResult> {
   const paths = stepDef.config?.paths || stepDef.paths || [];
@@ -240,7 +240,7 @@ async function handleSingleChoiceBranchAsync(
 
   // Create step executions for the selected path's steps
   const createdIds = await createBranchStepExecutions(
-    flowRunId,
+    flowId,
     currentIndex,
     selectedPath.pathId,
     nestedSteps,
@@ -260,7 +260,7 @@ async function handleMultiChoiceBranchAsync(
   currentIndex: number,
   allStepExecutions: StepExecution[],
   stepDef: StepDef,
-  flowRunId: string,
+  flowId: string,
   resultData?: Record<string, unknown>,
   evaluationContext?: EvaluationContext
 ): Promise<BranchResult> {
@@ -291,7 +291,7 @@ async function handleMultiChoiceBranchAsync(
   }
 
   const createdIds = await createBranchStepExecutions(
-    flowRunId,
+    flowId,
     currentIndex,
     matchedPath.pathId,
     nestedSteps,
@@ -309,7 +309,7 @@ async function handleParallelBranchAsync(
   currentIndex: number,
   allStepExecutions: StepExecution[],
   stepDef: StepDef,
-  flowRunId: string
+  flowId: string
 ): Promise<BranchResult> {
   const paths = stepDef.config?.paths || stepDef.paths || [];
   if (paths.length === 0) {
@@ -327,7 +327,7 @@ async function handleParallelBranchAsync(
     if (nestedSteps.length === 0) continue;
 
     const createdIds = await createBranchStepExecutions(
-      flowRunId,
+      flowId,
       currentIndex,
       path.pathId,
       nestedSteps,
@@ -474,7 +474,7 @@ export function evaluateSkipChain(
  * Returns the IDs of all created step executions in order.
  */
 async function createBranchStepExecutions(
-  flowRunId: string,
+  flowId: string,
   branchStepIndex: number,
   pathId: string,
   nestedSteps: StepDef[],
@@ -488,7 +488,7 @@ async function createBranchStepExecutions(
 
     const [inserted] = await db.insert(stepExecutions)
       .values({
-        flowRunId,
+        flowId,
         stepId,
         stepIndex: branchStepIndex,
         status: 'PENDING',

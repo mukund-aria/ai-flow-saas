@@ -11,7 +11,7 @@
  * - Sending notifications on step/flow transitions
  */
 
-import { db, stepExecutions, flowRuns, flows, contacts } from '../db/index.js';
+import { db, stepExecutions, flows, templates, contacts } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { scheduleReminder, scheduleOverdueCheck, scheduleEscalation, cancelStepJobs } from './scheduler.js';
 import { notifyStepCompleted, notifyFlowCompleted, notifyFlowCancelled, dispatchIntegrationNotifications } from './notification.js';
@@ -59,7 +59,7 @@ function computeStepDueAt(
 }
 
 /**
- * Compute the flow-level dueAt from a FlowDue config and the run's start time.
+ * Compute the flow-level dueAt from a FlowDue config and the flow's start time.
  */
 export function computeFlowDueAt(
   flowDueConfig: FlowDue | undefined,
@@ -140,7 +140,7 @@ export async function onStepActivated(
           const { runAIPrepare, runAIAdvise } = await import('./ai-assignee.js');
           // AI Prepare for FORM steps
           if (stepDef.config?.aiPrepare?.enabled && stepDef.type === 'FORM') {
-            runAIPrepare(stepExecutionId, stepDef, stepExec.flowRunId).catch(err =>
+            runAIPrepare(stepExecutionId, stepDef, stepExec.flowId).catch(err =>
               console.error('[AI Prepare] Error:', err)
             );
           }
@@ -148,7 +148,7 @@ export async function onStepActivated(
           if (stepDef.config?.aiAdvise?.enabled) {
             const adviseTypes = ['DECISION', 'APPROVAL', 'FORM', 'FILE_REQUEST'];
             if (adviseTypes.includes(stepDef.type)) {
-              runAIAdvise(stepExecutionId, stepDef, stepExec.flowRunId).catch(err =>
+              runAIAdvise(stepExecutionId, stepDef, stepExec.flowId).catch(err =>
                 console.error('[AI Advise] Error:', err)
               );
             }
@@ -170,8 +170,8 @@ export async function onStepActivated(
  * Cancels pending jobs, calculates SLA metrics, and sends notifications.
  */
 export async function onStepCompleted(
-  stepExec: { id: string; stepId: string; flowRunId: string },
-  run: { id: string; name: string; organizationId: string; startedById: string; flowId: string; flow?: { name: string } | null }
+  stepExec: { id: string; stepId: string; flowId: string },
+  run: { id: string; name: string; organizationId: string; startedById: string; templateId: string; template?: { name: string } | null }
 ): Promise<void> {
   // Cancel all pending notification jobs for this step
   await cancelStepJobs(stepExec.id);
@@ -194,8 +194,8 @@ export async function onStepCompleted(
   sseManager.emit(run.organizationId, {
     type: 'step.completed',
     data: {
-      flowRunId: run.id,
-      flowId: run.flowId,
+      flowId: run.id,
+      templateId: run.templateId,
       stepId: stepExec.stepId,
       stepExecId: stepExec.id,
       runName: run.name,
@@ -205,27 +205,27 @@ export async function onStepCompleted(
 
   // Dispatch webhook
   dispatchWebhooks({
-    flowId: run.flowId,
+    templateId: run.templateId,
     event: 'step.completed',
     payload: {
       event: 'step.completed',
       timestamp: new Date().toISOString(),
-      flow: { id: run.flowId, name: run.flow?.name || run.name },
-      flowRun: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
+      template: { id: run.templateId, name: run.template?.name || run.name },
+      flow: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
       step: { id: stepExec.stepId, name: stepExec.stepId, index: 0 },
       metadata: {},
     },
     orgId: run.organizationId,
-    flowRunId: run.id,
+    flowId: run.id,
     stepExecId: stepExec.id,
   }).catch((err) => console.error('[Webhook] step.completed dispatch error:', err));
 
   // Dispatch to org-level integrations (Slack/Teams/Custom)
   dispatchIntegrationNotifications(run.organizationId, {
     type: 'step.completed',
-    flowRunName: run.name,
+    flowName: run.name,
     stepName: stepExec.stepId,
-    flowRunId: run.id,
+    flowId: run.id,
   }).catch((err) => console.error('[Integration] step.completed dispatch error:', err));
 }
 
@@ -234,10 +234,10 @@ export async function onStepCompleted(
 // ============================================================================
 
 /**
- * Called when a flow run is completed (all steps done).
+ * Called when a flow is completed (all steps done).
  */
 export async function onFlowCompleted(
-  run: { id: string; name: string; organizationId: string; startedById: string; flowId: string; flow?: { name: string } | null }
+  run: { id: string; name: string; organizationId: string; startedById: string; templateId: string; template?: { name: string } | null }
 ): Promise<void> {
   await notifyFlowCompleted(run);
 
@@ -245,8 +245,8 @@ export async function onFlowCompleted(
   sseManager.emit(run.organizationId, {
     type: 'run.completed',
     data: {
-      flowRunId: run.id,
-      flowId: run.flowId,
+      flowId: run.id,
+      templateId: run.templateId,
       runName: run.name,
       status: 'COMPLETED',
       timestamp: new Date().toISOString(),
@@ -254,40 +254,40 @@ export async function onFlowCompleted(
   });
 
   dispatchWebhooks({
-    flowId: run.flowId,
+    templateId: run.templateId,
     event: 'flow.completed',
     payload: {
       event: 'flow.completed',
       timestamp: new Date().toISOString(),
-      flow: { id: run.flowId, name: run.flow?.name || run.name },
-      flowRun: { id: run.id, name: run.name, status: 'COMPLETED' },
+      template: { id: run.templateId, name: run.template?.name || run.name },
+      flow: { id: run.id, name: run.name, status: 'COMPLETED' },
       metadata: {},
     },
     orgId: run.organizationId,
-    flowRunId: run.id,
+    flowId: run.id,
   }).catch((err) => console.error('[Webhook] flow.completed dispatch error:', err));
 
   // Dispatch to org-level integrations (Slack/Teams/Custom)
   dispatchIntegrationNotifications(run.organizationId, {
     type: 'flow.completed',
-    flowRunName: run.name,
-    flowRunId: run.id,
+    flowName: run.name,
+    flowId: run.id,
   }).catch((err) => console.error('[Integration] flow.completed dispatch error:', err));
 
-  // Invoke callback URL if one was stored at run creation (e.g., from webhook trigger)
+  // Invoke callback URL if one was stored at flow creation (e.g., from webhook trigger)
   try {
-    const fullRun = await db.query.flowRuns.findFirst({ where: eq(flowRuns.id, run.id) });
-    const callbackUrl = (fullRun?.kickoffData as any)?._callbackUrl;
+    const fullFlow = await db.query.flows.findFirst({ where: eq(flows.id, run.id) });
+    const callbackUrl = (fullFlow?.kickoffData as any)?._callbackUrl;
     if (callbackUrl && typeof callbackUrl === 'string') {
       fetch(callbackUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event: 'flow.completed', flowRunId: run.id, flowId: run.flowId, name: run.name, status: 'COMPLETED', completedAt: new Date().toISOString() }),
+        body: JSON.stringify({ event: 'flow.completed', flowId: run.id, templateId: run.templateId, name: run.name, status: 'COMPLETED', completedAt: new Date().toISOString() }),
       }).catch((err) => console.error('[Callback] Failed to invoke callbackUrl:', err));
     }
 
     // If this is a sub-flow, propagate completion to parent
-    if (fullRun?.parentRunId) {
+    if (fullFlow?.parentFlowId) {
       propagateSubFlowCompletion(run.id).catch((err) =>
         console.error('[SubFlow] Failed to propagate completion:', err)
       );
@@ -308,11 +308,11 @@ export async function onFlowCompleted(
 // ============================================================================
 
 /**
- * Called when a flow run is cancelled.
+ * Called when a flow is cancelled.
  * Cancels all pending jobs and notifies assignees.
  */
 export async function onFlowCancelled(
-  run: { id: string; name: string; organizationId: string; flowId: string; flow?: { name: string } | null },
+  run: { id: string; name: string; organizationId: string; templateId: string; template?: { name: string } | null },
   stepExecIds: string[]
 ): Promise<void> {
   // Cancel all pending jobs for all steps
@@ -324,17 +324,17 @@ export async function onFlowCancelled(
   await notifyFlowCancelled(run);
 
   dispatchWebhooks({
-    flowId: run.flowId,
+    templateId: run.templateId,
     event: 'flow.cancelled',
     payload: {
       event: 'flow.cancelled',
       timestamp: new Date().toISOString(),
-      flow: { id: run.flowId, name: run.flow?.name || run.name },
-      flowRun: { id: run.id, name: run.name, status: 'CANCELLED' },
+      template: { id: run.templateId, name: run.template?.name || run.name },
+      flow: { id: run.id, name: run.name, status: 'CANCELLED' },
       metadata: {},
     },
     orgId: run.organizationId,
-    flowRunId: run.id,
+    flowId: run.id,
   }).catch((err) => console.error('[Webhook] flow.cancelled dispatch error:', err));
 }
 
@@ -343,18 +343,18 @@ export async function onFlowCancelled(
 // ============================================================================
 
 /**
- * Called when a flow run is started.
+ * Called when a flow is started.
  * Dispatches the flow.started webhook event.
  */
 export async function onFlowStarted(
-  run: { id: string; name: string; organizationId: string; flowId: string; flow?: { name: string } | null }
+  run: { id: string; name: string; organizationId: string; templateId: string; template?: { name: string } | null }
 ): Promise<void> {
   // Emit SSE event
   sseManager.emit(run.organizationId, {
     type: 'run.started',
     data: {
-      flowRunId: run.id,
-      flowId: run.flowId,
+      flowId: run.id,
+      templateId: run.templateId,
       runName: run.name,
       status: 'IN_PROGRESS',
       timestamp: new Date().toISOString(),
@@ -362,24 +362,24 @@ export async function onFlowStarted(
   });
 
   dispatchWebhooks({
-    flowId: run.flowId,
+    templateId: run.templateId,
     event: 'flow.started',
     payload: {
       event: 'flow.started',
       timestamp: new Date().toISOString(),
-      flow: { id: run.flowId, name: run.flow?.name || run.name },
-      flowRun: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
+      template: { id: run.templateId, name: run.template?.name || run.name },
+      flow: { id: run.id, name: run.name, status: 'IN_PROGRESS' },
       metadata: {},
     },
     orgId: run.organizationId,
-    flowRunId: run.id,
+    flowId: run.id,
   }).catch((err) => console.error('[Webhook] flow.started dispatch error:', err));
 
   // Dispatch to org-level integrations (Slack/Teams/Custom)
   dispatchIntegrationNotifications(run.organizationId, {
     type: 'flow.started',
-    flowRunName: run.name,
-    flowRunId: run.id,
+    flowName: run.name,
+    flowId: run.id,
   }).catch((err) => console.error('[Integration] flow.started dispatch error:', err));
 }
 
@@ -388,12 +388,12 @@ export async function onFlowStarted(
 // ============================================================================
 
 /**
- * Update lastActivityAt on a flow run.
+ * Update lastActivityAt on a flow.
  */
-export async function updateFlowActivity(flowRunId: string): Promise<void> {
-  await db.update(flowRuns)
+export async function updateFlowActivity(flowId: string): Promise<void> {
+  await db.update(flows)
     .set({ lastActivityAt: new Date() })
-    .where(eq(flowRuns.id, flowRunId));
+    .where(eq(flows.id, flowId));
 }
 
 // ============================================================================
@@ -423,19 +423,19 @@ function resolveParentDDR(token: string, kickoffData: Record<string, unknown>, s
 
 /**
  * Called when a SUB_FLOW step is activated.
- * Starts a child flow run and links it to the parent step execution.
+ * Starts a child flow and links it to the parent step execution.
  */
 export async function handleSubFlowStep(
   stepExecutionId: string,
   stepDef: Record<string, unknown>,
-  parentRun: { id: string; organizationId: string; startedById: string; flowId: string; name: string }
+  parentFlow: { id: string; organizationId: string; startedById: string; templateId: string; name: string }
 ): Promise<void> {
   const config = (stepDef.config || stepDef) as Record<string, unknown>;
   const subFlowObj = config.subFlow as Record<string, unknown> | undefined;
-  const subFlowId = (subFlowObj?.flowTemplateId || config.subFlowId || config.flowRef) as string | undefined;
+  const subFlowTemplateId = (subFlowObj?.flowTemplateId || config.subFlowId || config.flowRef) as string | undefined;
 
-  if (!subFlowId) {
-    console.error('[SubFlow] No subFlowId configured for step execution:', stepExecutionId);
+  if (!subFlowTemplateId) {
+    console.error('[SubFlow] No subFlowTemplateId configured for step execution:', stepExecutionId);
     // Mark step as completed with error
     await db.update(stepExecutions)
       .set({
@@ -448,12 +448,12 @@ export async function handleSubFlowStep(
   }
 
   // Look up the child flow template
-  const childFlow = await db.query.flows.findFirst({
-    where: eq(flows.id, subFlowId),
+  const childTemplate = await db.query.templates.findFirst({
+    where: eq(templates.id, subFlowTemplateId),
   });
 
-  if (!childFlow) {
-    console.error('[SubFlow] Child flow template not found:', subFlowId);
+  if (!childTemplate) {
+    console.error('[SubFlow] Child flow template not found:', subFlowTemplateId);
     await db.update(stepExecutions)
       .set({
         status: 'COMPLETED',
@@ -468,19 +468,19 @@ export async function handleSubFlowStep(
   const inputMappings = (subFlowObj?.inputMappings || config.inputMappings || config.inputMapping || []) as Array<{ parentRef: string; subFlowField: string }>;
 
   // Get parent context for DDR resolution
-  const fullParentRun = await db.query.flowRuns.findFirst({
-    where: eq(flowRuns.id, parentRun.id),
+  const fullParentFlow = await db.query.flows.findFirst({
+    where: eq(flows.id, parentFlow.id),
     with: { stepExecutions: true },
   });
 
-  const parentKickoff = (fullParentRun?.kickoffData as Record<string, unknown>) || {};
+  const parentKickoff = (fullParentFlow?.kickoffData as Record<string, unknown>) || {};
 
   // Build step outputs from parent's completed steps
-  const parentFlow = await db.query.flows.findFirst({ where: eq(flows.id, parentRun.flowId) });
-  const parentDef = (parentFlow?.definition as any) || {};
+  const parentTemplate = await db.query.templates.findFirst({ where: eq(templates.id, parentFlow.templateId) });
+  const parentDef = (parentTemplate?.definition as any) || {};
   const parentStepDefs = parentDef.steps || [];
   const parentStepOutputs: Record<string, Record<string, unknown>> = {};
-  for (const se of fullParentRun?.stepExecutions || []) {
+  for (const se of fullParentFlow?.stepExecutions || []) {
     if (se.status === 'COMPLETED' && se.resultData) {
       const defStep = parentStepDefs.find((s: any) => (s.stepId || s.id) === se.stepId);
       const name = defStep?.config?.name;
@@ -497,7 +497,7 @@ export async function handleSubFlowStep(
   }
 
   // Get child flow definition
-  const childDefinition = childFlow.definition as { steps?: Array<Record<string, unknown>> } | null;
+  const childDefinition = childTemplate.definition as { steps?: Array<Record<string, unknown>> } | null;
   const childSteps = childDefinition?.steps || [];
 
   if (childSteps.length === 0) {
@@ -511,20 +511,20 @@ export async function handleSubFlowStep(
     return;
   }
 
-  // Create child flow run
-  const runName = `${childFlow.name} (sub-flow of ${parentRun.name})`;
-  const [childRun] = await db
-    .insert(flowRuns)
+  // Create child flow
+  const flowName = `${childTemplate.name} (sub-flow of ${parentFlow.name})`;
+  const [childFlow] = await db
+    .insert(flows)
     .values({
-      flowId: childFlow.id,
-      name: runName,
+      templateId: childTemplate.id,
+      name: flowName,
       status: 'IN_PROGRESS',
       isSample: false,
       currentStepIndex: 0,
-      startedById: parentRun.startedById,
-      organizationId: parentRun.organizationId,
+      startedById: parentFlow.startedById,
+      organizationId: parentFlow.organizationId,
       kickoffData: Object.keys(childKickoffData).length > 0 ? childKickoffData : null,
-      parentRunId: parentRun.id,
+      parentFlowId: parentFlow.id,
       parentStepExecutionId: stepExecutionId,
     })
     .returning();
@@ -533,7 +533,7 @@ export async function handleSubFlowStep(
   const childStepExecValues = childSteps.map((step, index) => {
     const s = step as any;
     return {
-      flowRunId: childRun.id,
+      flowId: childFlow.id,
       stepId: s.stepId || s.id || `step-${index}`,
       stepIndex: index,
       status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
@@ -547,77 +547,77 @@ export async function handleSubFlowStep(
   const firstChildStep = childSteps[0] as any;
   const firstChildStepExec = await db.query.stepExecutions.findFirst({
     where: and(
-      eq(stepExecutions.flowRunId, childRun.id),
+      eq(stepExecutions.flowId, childFlow.id),
       eq(stepExecutions.stepIndex, 0)
     ),
   });
   if (firstChildStepExec) {
-    await onStepActivated(firstChildStepExec.id, firstChildStep.due || firstChildStep.config?.due, childFlow.definition as Record<string, unknown>);
+    await onStepActivated(firstChildStepExec.id, firstChildStep.due || firstChildStep.config?.due, childTemplate.definition as Record<string, unknown>);
   }
 
-  await updateFlowActivity(childRun.id);
+  await updateFlowActivity(childFlow.id);
 
-  // Store childRunId in parent step's resultData for tracking
+  // Store childFlowId in parent step's resultData for tracking
   await db.update(stepExecutions)
     .set({
-      resultData: { 'subFlow.runId': childRun.id, 'subFlow.status': 'IN_PROGRESS' },
+      resultData: { 'subFlow.flowId': childFlow.id, 'subFlow.status': 'IN_PROGRESS' },
     })
     .where(eq(stepExecutions.id, stepExecutionId));
 
   // Dispatch flow.started for child
   await onFlowStarted({
-    id: childRun.id,
-    name: runName,
-    organizationId: parentRun.organizationId,
-    flowId: childFlow.id,
-    flow: { name: childFlow.name },
+    id: childFlow.id,
+    name: flowName,
+    organizationId: parentFlow.organizationId,
+    templateId: childTemplate.id,
+    template: { name: childTemplate.name },
   });
 
-  console.log(`[SubFlow] Started child run ${childRun.id} for parent step ${stepExecutionId}`);
+  console.log(`[SubFlow] Started child flow ${childFlow.id} for parent step ${stepExecutionId}`);
 }
 
 /**
  * Called when a child flow completes to propagate completion back to the parent.
  * Applies output mapping and advances the parent flow.
  */
-export async function propagateSubFlowCompletion(childRunId: string): Promise<void> {
-  // Get the child run with parent info
-  const childRun = await db.query.flowRuns.findFirst({
-    where: eq(flowRuns.id, childRunId),
+export async function propagateSubFlowCompletion(childFlowId: string): Promise<void> {
+  // Get the child flow with parent info
+  const childFlow = await db.query.flows.findFirst({
+    where: eq(flows.id, childFlowId),
     with: {
-      flow: true,
+      template: true,
       stepExecutions: true,
     },
   });
 
-  if (!childRun?.parentRunId || !childRun?.parentStepExecutionId) {
+  if (!childFlow?.parentFlowId || !childFlow?.parentStepExecutionId) {
     return; // Not a sub-flow, nothing to propagate
   }
 
   // Get the parent step execution
   const parentStepExec = await db.query.stepExecutions.findFirst({
-    where: eq(stepExecutions.id, childRun.parentStepExecutionId),
+    where: eq(stepExecutions.id, childFlow.parentStepExecutionId),
   });
 
   if (!parentStepExec || parentStepExec.status === 'COMPLETED') {
     return; // Already completed or not found
   }
 
-  // Get the parent run with its flow for step defs
-  const parentRun = await db.query.flowRuns.findFirst({
-    where: eq(flowRuns.id, childRun.parentRunId),
+  // Get the parent flow with its template for step defs
+  const parentFlow = await db.query.flows.findFirst({
+    where: eq(flows.id, childFlow.parentFlowId),
     with: {
-      flow: true,
+      template: true,
       stepExecutions: {
         orderBy: (se, { asc }) => [asc(se.stepIndex)],
       },
     },
   });
 
-  if (!parentRun) return;
+  if (!parentFlow) return;
 
   // Get the parent step definition to find output mappings
-  const parentDef = (parentRun.flow?.definition as any) || {};
+  const parentDef = (parentFlow.template?.definition as any) || {};
   const parentStepDefs = parentDef.steps || [];
   const parentStepDef = parentStepDefs.find((s: any) => (s.stepId || s.id) === parentStepExec.stepId);
   const subFlowCfg = parentStepDef?.config?.subFlow as Record<string, unknown> | undefined;
@@ -627,10 +627,10 @@ export async function propagateSubFlowCompletion(childRunId: string): Promise<vo
   }>;
 
   // Build child flow's step outputs
-  const childDef = (childRun.flow?.definition as any) || {};
+  const childDef = (childFlow.template?.definition as any) || {};
   const childStepDefs = childDef.steps || [];
   const childStepOutputs: Record<string, Record<string, unknown>> = {};
-  for (const se of childRun.stepExecutions) {
+  for (const se of childFlow.stepExecutions) {
     if (se.status === 'COMPLETED' && se.resultData) {
       const defStep = childStepDefs.find((s: any) => (s.stepId || s.id) === se.stepId);
       const name = defStep?.config?.name;
@@ -644,7 +644,7 @@ export async function propagateSubFlowCompletion(childRunId: string): Promise<vo
   const resultData: Record<string, unknown> = {
     ...(parentStepExec.resultData as Record<string, unknown> || {}),
     'subFlow.status': 'COMPLETED',
-    'subFlow.runId': childRunId,
+    'subFlow.flowId': childFlowId,
   };
 
   for (const mapping of outputMappings) {
@@ -658,10 +658,10 @@ export async function propagateSubFlowCompletion(childRunId: string): Promise<vo
   await completeStepAndAdvance({
     stepExecutionId: parentStepExec.id,
     resultData,
-    run: parentRun as any,
+    run: parentFlow as any,
     stepDefs: parentStepDefs,
     skipAIReview: true,
   });
 
-  console.log(`[SubFlow] Propagated completion of child run ${childRunId} to parent step ${parentStepExec.id}`);
+  console.log(`[SubFlow] Propagated completion of child flow ${childFlowId} to parent step ${parentStepExec.id}`);
 }

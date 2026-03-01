@@ -1,7 +1,7 @@
 /**
  * FilterDropdown — Reusable pill-button dropdown with optional search.
  *
- * Used in the FlowRunsPage filter bar for "All Flows", "All Templates",
+ * Used in the FlowsPage filter bar for "All Flows", "All Templates",
  * "All Statuses", and "All Contacts" dropdowns.
  */
 

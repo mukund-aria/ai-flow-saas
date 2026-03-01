@@ -5,7 +5,7 @@
  */
 
 import { db } from '../db/client.js';
-import { magicLinks, stepExecutions, stepExecutionAssignees, flowRuns, flows, contacts, users, organizations, portals } from '../db/schema.js';
+import { magicLinks, stepExecutions, stepExecutionAssignees, templates, flows, contacts, users, organizations, portals } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { resolveDDR, type DDRContext } from './ddr-resolver.js';
 
@@ -89,9 +89,9 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
   if (!stepExec) return null;
 
   // Get flow run and flow details
-  const run = await db.query.flowRuns.findFirst({
-    where: eq(flowRuns.id, stepExec.flowRunId),
-    with: { flow: true },
+  const run = await db.query.flows.findFirst({
+    where: eq(flows.id, stepExec.flowId),
+    with: { template: true },
   });
 
   if (!run) return null;
@@ -141,12 +141,12 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
 
   // Get all step executions for this run to build journey
   const allStepExecs = await db.query.stepExecutions.findMany({
-    where: eq(stepExecutions.flowRunId, stepExec.flowRunId),
+    where: eq(stepExecutions.flowId, stepExec.flowId),
     orderBy: (se, { asc }) => [asc(se.stepIndex)],
   });
 
   // Get step details from flow definition
-  const definition = run.flow?.definition as any;
+  const definition = run.template?.definition as any;
   const steps = definition?.steps || [];
   const milestones = definition?.milestones || [];
   const step = steps.find((s: any) => s.stepId === stepExec.stepId);
@@ -321,7 +321,7 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
 
   return {
     token,
-    flowName: run.flow?.name || 'Unknown Flow',
+    flowName: run.template?.name || 'Unknown Flow',
     runName: run.name,
     stepName: resolve(step?.config?.name) || 'Task',
     stepDescription: resolve(step?.config?.description),

@@ -26,30 +26,30 @@ export async function getMagicLinkToken(
   return result.rows[0]?.token ?? null;
 }
 
-export async function getStepExecutions(flowRunId: string) {
+export async function getStepExecutions(flowId: string) {
   const result = await pool.query(
     `SELECT id, step_id, step_index, status, assigned_to_contact_id, assigned_to_user_id
      FROM step_executions
-     WHERE flow_run_id = $1
+     WHERE flow_id = $1
      ORDER BY step_index`,
-    [flowRunId]
+    [flowId]
   );
   return result.rows;
 }
 
 export async function getStepExecutionByStepId(
-  flowRunId: string,
+  flowId: string,
   stepId: string
 ) {
   const result = await pool.query(
-    'SELECT id, step_id, step_index, status, result_data FROM step_executions WHERE flow_run_id = $1 AND step_id = $2',
-    [flowRunId, stepId]
+    'SELECT id, step_id, step_index, status, result_data FROM step_executions WHERE flow_id = $1 AND step_id = $2',
+    [flowId, stepId]
   );
   return result.rows[0] ?? null;
 }
 
 export async function waitForStepStatus(
-  flowRunId: string,
+  flowId: string,
   stepId: string,
   targetStatus: string,
   timeoutMs = 15000
@@ -57,8 +57,8 @@ export async function waitForStepStatus(
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     const result = await pool.query(
-      'SELECT status FROM step_executions WHERE flow_run_id = $1 AND step_id = $2',
-      [flowRunId, stepId]
+      'SELECT status FROM step_executions WHERE flow_id = $1 AND step_id = $2',
+      [flowId, stepId]
     );
     if (result.rows[0]?.status === targetStatus) return;
     await new Promise((r) => setTimeout(r, 500));
@@ -68,27 +68,27 @@ export async function waitForStepStatus(
   );
 }
 
-export async function getFlowRunStatus(flowRunId: string): Promise<string> {
+export async function getFlowStatus(flowId: string): Promise<string> {
   const result = await pool.query(
-    'SELECT status FROM flow_runs WHERE id = $1',
-    [flowRunId]
+    'SELECT status FROM flows WHERE id = $1',
+    [flowId]
   );
   return result.rows[0]?.status ?? 'UNKNOWN';
 }
 
-export async function waitForFlowRunStatus(
-  flowRunId: string,
+export async function waitForFlowStatus(
+  flowId: string,
   targetStatus: string,
   timeoutMs = 15000
 ): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    const status = await getFlowRunStatus(flowRunId);
+    const status = await getFlowStatus(flowId);
     if (status === targetStatus) return;
     await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error(
-    `Flow run did not reach status ${targetStatus} within ${timeoutMs}ms`
+    `Flow did not reach status ${targetStatus} within ${timeoutMs}ms`
   );
 }
 

@@ -8,21 +8,21 @@ import { useState, useEffect, useCallback } from 'react';
 import { Loader2, Plus, Trash2, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  getPortalFlows,
-  addPortalFlow,
-  updatePortalFlow,
-  removePortalFlow,
+  getPortalTemplates,
+  addPortalTemplate,
+  updatePortalTemplate,
+  removePortalTemplate,
   listTemplates,
   type Template,
 } from '@/lib/api';
-import type { PortalFlow } from '@/types';
+import type { PortalTemplate } from '@/types';
 
 interface PortalFlowCatalogProps {
   portalId: string;
 }
 
 export function PortalFlowCatalog({ portalId }: PortalFlowCatalogProps) {
-  const [catalogFlows, setCatalogFlows] = useState<PortalFlow[]>([]);
+  const [catalogItems, setCatalogItems] = useState<PortalTemplate[]>([]);
   const [availableTemplates, setAvailableTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -30,15 +30,15 @@ export function PortalFlowCatalog({ portalId }: PortalFlowCatalogProps) {
 
   const loadData = useCallback(async () => {
     try {
-      const [flows, templates] = await Promise.all([
-        getPortalFlows(portalId),
+      const [portalTemplates, templates] = await Promise.all([
+        getPortalTemplates(portalId),
         listTemplates(),
       ]);
-      setCatalogFlows(flows);
+      setCatalogItems(portalTemplates);
       // Only show ACTIVE templates not already in catalog
-      const catalogFlowIds = new Set(flows.map((f) => f.flowId));
+      const catalogTemplateIds = new Set(portalTemplates.map((pt) => pt.templateId));
       setAvailableTemplates(
-        templates.filter((t) => t.status === 'ACTIVE' && !catalogFlowIds.has(t.id))
+        templates.filter((t) => t.status === 'ACTIVE' && !catalogTemplateIds.has(t.id))
       );
     } catch (err) {
       console.error('Failed to load catalog:', err);
@@ -54,7 +54,7 @@ export function PortalFlowCatalog({ portalId }: PortalFlowCatalogProps) {
   const handleAdd = useCallback(async () => {
     if (!selectedTemplateId) return;
     try {
-      await addPortalFlow(portalId, selectedTemplateId);
+      await addPortalTemplate(portalId, selectedTemplateId);
       setSelectedTemplateId('');
       setShowAdd(false);
       await loadData();
@@ -65,16 +65,16 @@ export function PortalFlowCatalog({ portalId }: PortalFlowCatalogProps) {
 
   const handleRemove = useCallback(async (pfId: string) => {
     try {
-      await removePortalFlow(portalId, pfId);
+      await removePortalTemplate(portalId, pfId);
       await loadData();
     } catch (err) {
       console.error('Failed to remove flow:', err);
     }
   }, [portalId, loadData]);
 
-  const handleToggle = useCallback(async (pf: PortalFlow) => {
+  const handleToggle = useCallback(async (pf: PortalTemplate) => {
     try {
-      await updatePortalFlow(portalId, pf.id, { enabled: !pf.enabled });
+      await updatePortalTemplate(portalId, pf.id, { enabled: !pf.enabled });
       await loadData();
     } catch (err) {
       console.error('Failed to toggle flow:', err);
@@ -93,13 +93,13 @@ export function PortalFlowCatalog({ portalId }: PortalFlowCatalogProps) {
   return (
     <div className="space-y-3">
       {/* Catalog list */}
-      {catalogFlows.length === 0 ? (
+      {catalogItems.length === 0 ? (
         <p className="text-sm text-gray-400 py-4 text-center">
           No flows in this portal's catalog yet
         </p>
       ) : (
         <div className="space-y-2">
-          {catalogFlows.map((pf) => (
+          {catalogItems.map((pf) => (
             <div
               key={pf.id}
               className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
@@ -112,10 +112,10 @@ export function PortalFlowCatalog({ portalId }: PortalFlowCatalogProps) {
                 <GripVertical className="w-4 h-4 text-gray-300" />
                 <div>
                   <p className="text-sm font-medium text-gray-900">
-                    {pf.displayTitle || pf.flow?.name || 'Unknown Flow'}
+                    {pf.displayTitle || pf.template?.name || 'Unknown Flow'}
                   </p>
-                  {pf.flow?.description && (
-                    <p className="text-xs text-gray-500 line-clamp-1">{pf.flow.description}</p>
+                  {pf.template?.description && (
+                    <p className="text-xs text-gray-500 line-clamp-1">{pf.template.description}</p>
                   )}
                 </div>
               </div>

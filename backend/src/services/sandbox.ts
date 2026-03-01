@@ -5,9 +5,9 @@
  * on the public landing page. Handles:
  * - Bootstrap: ensures a system-owned sandbox org + user exist
  * - Save: persists AI-generated flow definitions for 72 hours
- * - Materialize: creates real DB records (flow, run, steps, contact, magic link)
+ * - Materialize: creates real DB records (template, flow, steps, contact, magic link)
  *   so the visitor can experience the full assignee portal
- * - Claim: copies a sandbox flow into a real user's org on sign-up
+ * - Claim: copies a sandbox template into a real user's org on sign-up
  * - Cleanup: deletes expired + unclaimed sandbox data
  */
 
@@ -17,8 +17,8 @@ import {
   organizations,
   users,
   userOrganizations,
+  templates,
   flows,
-  flowRuns,
   stepExecutions,
   contacts,
   magicLinks,
@@ -161,7 +161,7 @@ export async function materializeSandboxFlowForTest(
   sandboxFlowId: string,
   contactName: string,
   contactEmail: string,
-): Promise<{ token: string; runId: string; flowId: string }> {
+): Promise<{ token: string; flowId: string; templateId: string }> {
   const { orgId, userId } = await ensureSandboxInfrastructure();
 
   // 1. Read sandbox flow
@@ -179,8 +179,8 @@ export async function materializeSandboxFlowForTest(
   const definition = sandbox.definition as Record<string, unknown>;
   const stepsArray = (definition?.steps as any[]) || [];
 
-  // 2. Create flow in sandbox org (mark with isSandbox flag)
-  const [flow] = await db.insert(flows).values({
+  // 2. Create template in sandbox org (mark with isSandbox flag)
+  const [template] = await db.insert(templates).values({
     name: sandbox.name,
     description: sandbox.description,
     status: 'ACTIVE',
@@ -196,9 +196,9 @@ export async function materializeSandboxFlowForTest(
     organizationId: orgId,
   }).returning();
 
-  // 4. Create flow run
-  const [run] = await db.insert(flowRuns).values({
-    flowId: flow.id,
+  // 4. Create flow
+  const [flow] = await db.insert(flows).values({
+    templateId: template.id,
     name: sandbox.name,
     status: 'IN_PROGRESS',
     currentStepIndex: 0,
@@ -206,9 +206,9 @@ export async function materializeSandboxFlowForTest(
     organizationId: orgId,
   }).returning();
 
-  // 5. Create step executions — first step IN_PROGRESS assigned to contact
+  // 5. Create step executions -- first step IN_PROGRESS assigned to contact
   const stepValues = stepsArray.map((step: any, idx: number) => ({
-    flowRunId: run.id,
+    flowId: flow.id,
     stepId: step.stepId || step.id || `step-${idx}`,
     stepIndex: idx,
     status: idx === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
@@ -236,11 +236,11 @@ export async function materializeSandboxFlowForTest(
     });
   } catch (err) {
     console.error('[Sandbox] Failed to send magic link email:', err);
-    // Non-fatal — the user navigates to the task page directly
+    // Non-fatal -- the user navigates to the task page directly
   }
 
-  console.log('[Sandbox] Materialized flow=%s, run=%s, token=%s', flow.id, run.id, token);
-  return { token, runId: run.id, flowId: flow.id };
+  console.log('[Sandbox] Materialized template=%s, flow=%s, token=%s', template.id, flow.id, token);
+  return { token, flowId: flow.id, templateId: template.id };
 }
 
 // ============================================================================
@@ -251,8 +251,8 @@ export async function claimSandboxFlow(
   sandboxFlowId: string,
   userId: string,
   organizationId: string,
-): Promise<{ flowId: string }> {
-  // Atomically claim — only succeeds if not already claimed
+): Promise<{ templateId: string }> {
+  // Atomically claim -- only succeeds if not already claimed
   const [claimed] = await db
     .update(sandboxFlows)
     .set({
@@ -271,8 +271,8 @@ export async function claimSandboxFlow(
     throw new Error('Sandbox flow not found or already claimed');
   }
 
-  // Deep-copy flow definition into user's org as DRAFT
-  const [newFlow] = await db.insert(flows).values({
+  // Deep-copy flow definition into user's org as DRAFT template
+  const [newTemplate] = await db.insert(templates).values({
     name: claimed.name,
     description: claimed.description,
     status: 'DRAFT',
@@ -281,8 +281,8 @@ export async function claimSandboxFlow(
     organizationId,
   }).returning();
 
-  console.log('[Sandbox] Claimed sandbox flow %s → new flow %s (org=%s)', sandboxFlowId, newFlow.id, organizationId);
-  return { flowId: newFlow.id };
+  console.log('[Sandbox] Claimed sandbox flow %s -> new template %s (org=%s)', sandboxFlowId, newTemplate.id, organizationId);
+  return { templateId: newTemplate.id };
 }
 
 // ============================================================================
@@ -323,46 +323,46 @@ export async function cleanupExpiredSandboxData(): Promise<{ deleted: number }> 
   }
 
   // Clean up materialized sandbox data in the sandbox org
-  // (flows with definition.isSandbox = true that are older than TTL)
+  // (templates with definition.isSandbox = true that are older than TTL)
   if (cachedOrgId) {
     try {
-      const sandboxOrgFlows = await db.query.flows.findMany({
-        where: eq(flows.organizationId, cachedOrgId),
+      const sandboxOrgTemplates = await db.query.templates.findMany({
+        where: eq(templates.organizationId, cachedOrgId),
       });
 
       const cutoff = new Date(Date.now() - SANDBOX_FLOW_TTL_HOURS * 60 * 60 * 1000);
-      const expiredFlows = sandboxOrgFlows.filter((f) => {
+      const expiredTemplates = sandboxOrgTemplates.filter((f) => {
         const def = f.definition as any;
         return def?.isSandbox && f.createdAt < cutoff;
       });
 
-      for (const flow of expiredFlows) {
-        // Delete in dependency order: magic_links → step_executions → flow_runs → contacts → flows
-        const runs = await db.query.flowRuns.findMany({
-          where: eq(flowRuns.flowId, flow.id),
+      for (const template of expiredTemplates) {
+        // Delete in dependency order: magic_links -> step_executions -> flows -> templates
+        const templateFlows = await db.query.flows.findMany({
+          where: eq(flows.templateId, template.id),
         });
 
-        for (const run of runs) {
+        for (const flow of templateFlows) {
           const steps = await db.query.stepExecutions.findMany({
-            where: eq(stepExecutions.flowRunId, run.id),
+            where: eq(stepExecutions.flowId, flow.id),
           });
 
           for (const step of steps) {
             await db.delete(magicLinks).where(eq(magicLinks.stepExecutionId, step.id));
           }
 
-          await db.delete(stepExecutions).where(eq(stepExecutions.flowRunId, run.id));
+          await db.delete(stepExecutions).where(eq(stepExecutions.flowId, flow.id));
         }
 
-        for (const run of runs) {
-          await db.delete(flowRuns).where(eq(flowRuns.id, run.id));
+        for (const flow of templateFlows) {
+          await db.delete(flows).where(eq(flows.id, flow.id));
         }
 
-        await db.delete(flows).where(eq(flows.id, flow.id));
+        await db.delete(templates).where(eq(templates.id, template.id));
       }
 
-      if (expiredFlows.length > 0) {
-        console.log('[Sandbox] Cleaned up %d materialized sandbox flows', expiredFlows.length);
+      if (expiredTemplates.length > 0) {
+        console.log('[Sandbox] Cleaned up %d materialized sandbox templates', expiredTemplates.length);
       }
     } catch (err) {
       console.error('[Sandbox] Failed to clean up materialized data:', err);

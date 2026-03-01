@@ -7,7 +7,7 @@
  */
 
 import { Router } from 'express';
-import { db, flows, users, organizations } from '../db/index.js';
+import { db, templates, users, organizations } from '../db/index.js';
 import { asyncHandler } from '../middleware/async-handler.js';
 import {
   GALLERY_TEMPLATES,
@@ -303,8 +303,8 @@ router.post(
     const definition = galleryTemplateToDefinition(template);
 
     // Create the flow as DRAFT
-    const [newFlow] = await db
-      .insert(flows)
+    const [newTemplate] = await db
+      .insert(templates)
       .values({
         name: template.name,
         description: template.description,
@@ -317,7 +317,7 @@ router.post(
 
     res.status(201).json({
       success: true,
-      data: newFlow,
+      data: newTemplate,
     });
   })
 );

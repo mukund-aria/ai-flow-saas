@@ -19,7 +19,7 @@ interface UploadMetadata {
   fileName: string;
   mimeType: string;
   orgId: string;
-  flowRunId?: string;
+  flowId?: string;
   stepId?: string;
 }
 
@@ -31,7 +31,7 @@ interface FileStorageService {
 
 function buildStorageKey(metadata: UploadMetadata): string {
   const parts = [metadata.orgId];
-  if (metadata.flowRunId) parts.push(metadata.flowRunId);
+  if (metadata.flowId) parts.push(metadata.flowId);
   if (metadata.stepId) parts.push(metadata.stepId);
   parts.push(`${randomUUID()}-${metadata.fileName}`);
   return parts.join('/');

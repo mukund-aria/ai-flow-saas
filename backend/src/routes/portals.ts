@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, portals, portalFlows, flows, userOrganizations } from '../db/index.js';
+import { db, portals, portalTemplates, templates, userOrganizations } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -289,20 +289,20 @@ router.get(
 
     const result = await db
       .select({
-        id: portalFlows.id,
-        portalId: portalFlows.portalId,
-        flowId: portalFlows.flowId,
-        displayTitle: portalFlows.displayTitle,
-        displayDescription: portalFlows.displayDescription,
-        sortOrder: portalFlows.sortOrder,
-        enabled: portalFlows.enabled,
-        flowName: flows.name,
-        flowDescription: flows.description,
-        flowStatus: flows.status,
+        id: portalTemplates.id,
+        portalId: portalTemplates.portalId,
+        templateId: portalTemplates.templateId,
+        displayTitle: portalTemplates.displayTitle,
+        displayDescription: portalTemplates.displayDescription,
+        sortOrder: portalTemplates.sortOrder,
+        enabled: portalTemplates.enabled,
+        templateName: templates.name,
+        templateDescription: templates.description,
+        templateStatus: templates.status,
       })
-      .from(portalFlows)
-      .innerJoin(flows, eq(portalFlows.flowId, flows.id))
-      .where(eq(portalFlows.portalId, portalId));
+      .from(portalTemplates)
+      .innerJoin(templates, eq(portalTemplates.templateId, templates.id))
+      .where(eq(portalTemplates.portalId, portalId));
 
     res.json({ success: true, data: result });
   })
@@ -345,38 +345,38 @@ router.post(
       return;
     }
 
-    const { flowId, displayTitle, displayDescription, sortOrder } = req.body;
+    const { templateId, displayTitle, displayDescription, sortOrder } = req.body;
 
-    if (!flowId) {
+    if (!templateId) {
       res.status(400).json({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'flowId is required' },
+        error: { code: 'VALIDATION_ERROR', message: 'templateId is required' },
       });
       return;
     }
 
     // Verify flow belongs to the same org
-    const flow = await db.query.flows.findFirst({
-      where: and(eq(flows.id, flowId), eq(flows.organizationId, orgId)),
+    const template = await db.query.templates.findFirst({
+      where: and(eq(templates.id, templateId), eq(templates.organizationId, orgId)),
     });
 
-    if (!flow) {
+    if (!template) {
       res.status(404).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'Flow not found in this organization' },
+        error: { code: 'NOT_FOUND', message: 'Template not found in this organization' },
       });
       return;
     }
 
-    const [portalFlow] = await db.insert(portalFlows).values({
+    const [portalTemplate] = await db.insert(portalTemplates).values({
       portalId,
-      flowId,
+      templateId,
       displayTitle: displayTitle || null,
       displayDescription: displayDescription || null,
       sortOrder: sortOrder ?? 0,
     }).returning();
 
-    res.status(201).json({ success: true, data: portalFlow });
+    res.status(201).json({ success: true, data: portalTemplate });
   })
 );
 
@@ -418,14 +418,14 @@ router.put(
       return;
     }
 
-    const existing = await db.query.portalFlows.findFirst({
-      where: and(eq(portalFlows.id, pfId), eq(portalFlows.portalId, portalId)),
+    const existing = await db.query.portalTemplates.findFirst({
+      where: and(eq(portalTemplates.id, pfId), eq(portalTemplates.portalId, portalId)),
     });
 
     if (!existing) {
       res.status(404).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'Portal flow entry not found' },
+        error: { code: 'NOT_FOUND', message: 'Portal template entry not found' },
       });
       return;
     }
@@ -439,9 +439,9 @@ router.put(
     if (enabled !== undefined) updates.enabled = enabled;
 
     const [updated] = await db
-      .update(portalFlows)
+      .update(portalTemplates)
       .set(updates)
-      .where(eq(portalFlows.id, pfId))
+      .where(eq(portalTemplates.id, pfId))
       .returning();
 
     res.json({ success: true, data: updated });
@@ -486,19 +486,19 @@ router.delete(
       return;
     }
 
-    const existing = await db.query.portalFlows.findFirst({
-      where: and(eq(portalFlows.id, pfId), eq(portalFlows.portalId, portalId)),
+    const existing = await db.query.portalTemplates.findFirst({
+      where: and(eq(portalTemplates.id, pfId), eq(portalTemplates.portalId, portalId)),
     });
 
     if (!existing) {
       res.status(404).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'Portal flow entry not found' },
+        error: { code: 'NOT_FOUND', message: 'Portal template entry not found' },
       });
       return;
     }
 
-    await db.delete(portalFlows).where(eq(portalFlows.id, pfId));
+    await db.delete(portalTemplates).where(eq(portalTemplates.id, pfId));
 
     res.json({ success: true, data: { id: pfId } });
   })

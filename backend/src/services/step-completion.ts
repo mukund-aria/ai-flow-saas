@@ -6,7 +6,7 @@
  * sub-flow propagation (execution.ts), and the automation executor.
  */
 
-import { db, flowRuns, stepExecutions, stepExecutionAssignees, contacts } from '../db/index.js';
+import { db, flows, stepExecutions, stepExecutionAssignees, contacts } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import type { CompletionMode } from '../db/schema.js';
 import {
@@ -27,15 +27,15 @@ export interface CompleteStepOpts {
   stepExecutionId: string;
   /** Result data to store on the step */
   resultData: Record<string, unknown>;
-  /** The run with flow and stepExecutions loaded */
+  /** The run with template and stepExecutions loaded */
   run: {
     id: string;
     name: string;
     organizationId: string;
     startedById: string;
-    flowId: string;
+    templateId: string;
     dueAt?: Date | string | null;
-    flow?: {
+    template?: {
       id: string;
       name: string;
       definition?: Record<string, unknown> | null;
@@ -45,7 +45,7 @@ export interface CompleteStepOpts {
       stepId: string;
       stepIndex: number;
       status: string;
-      flowRunId: string;
+      flowId: string;
       assignedToContactId?: string | null;
       resultData?: Record<string, unknown> | null;
       parallelGroupId?: string | null;
@@ -146,7 +146,7 @@ export async function completeStepAndAdvance(
     await onStepActivated(
       nextStep.id,
       nextStepDue,
-      run.flow?.definition as Record<string, unknown>,
+      run.template?.definition as Record<string, unknown>,
       runDueAt
     );
 
@@ -159,7 +159,7 @@ export async function completeStepAndAdvance(
           id: run.id,
           organizationId: run.organizationId,
           startedById: run.startedById,
-          flowId: run.flowId,
+          templateId: run.templateId,
           name: run.name,
         }
       );
@@ -184,7 +184,7 @@ export async function completeStepAndAdvance(
                 to: contact.email,
                 contactName: contact.name,
                 stepName: `Step ${nextStep.stepIndex + 1}`,
-                flowName: run.flow?.name || 'Flow',
+                flowName: run.template?.name || 'Flow',
                 token,
               });
             }
@@ -207,7 +207,7 @@ export async function completeStepAndAdvance(
             to: contact.email,
             contactName: contact.name,
             stepName: `Step ${nextStep.stepIndex + 1}`,
-            flowName: run.flow?.name || 'Flow',
+            flowName: run.template?.name || 'Flow',
             token,
           });
         }
@@ -218,9 +218,9 @@ export async function completeStepAndAdvance(
 
     // Update current step index on the run
     await db
-      .update(flowRuns)
+      .update(flows)
       .set({ currentStepIndex: nextStep.stepIndex })
-      .where(eq(flowRuns.id, run.id));
+      .where(eq(flows.id, run.id));
 
     // Trigger auto-execution if the next step auto-completes
     // Skip if called from within the automation executor's own loop
@@ -237,12 +237,12 @@ export async function completeStepAndAdvance(
   } else {
     // No more steps - mark run as completed
     await db
-      .update(flowRuns)
+      .update(flows)
       .set({
         status: 'COMPLETED',
         completedAt: new Date(),
       })
-      .where(eq(flowRuns.id, run.id));
+      .where(eq(flows.id, run.id));
 
     // Notify: flow completed
     await onFlowCompleted(run);

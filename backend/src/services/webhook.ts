@@ -9,7 +9,7 @@
  */
 
 import crypto from 'node:crypto';
-import { db, flows, notificationLog } from '../db/index.js';
+import { db, templates, notificationLog } from '../db/index.js';
 import { eq } from 'drizzle-orm';
 import type {
   WebhookEndpointConfig,
@@ -26,8 +26,8 @@ import { defaultFlowNotificationSettings, migrateNotificationSettings } from '..
 export interface WebhookPayload {
   event: WebhookEventType;
   timestamp: string;
-  flow: { id: string; name: string };
-  flowRun?: { id: string; name: string; status: string };
+  template: { id: string; name: string };
+  flow?: { id: string; name: string; status: string };
   step?: { id: string; name: string; index: number };
   metadata: Record<string, unknown>;
 }
@@ -36,7 +36,7 @@ export interface WebhookJobData {
   endpoint: WebhookEndpointConfig;
   payload: WebhookPayload;
   organizationId: string;
-  flowRunId?: string;
+  flowId?: string;
   stepExecutionId?: string;
 }
 
@@ -101,23 +101,23 @@ const EVENT_CONFIG_MAP: Record<WebhookEventType, keyof WebhookEventConfig> = {
 // ============================================================================
 
 export async function dispatchWebhooks(params: {
-  flowId: string;
+  templateId: string;
   event: WebhookEventType;
   payload: WebhookPayload;
   orgId: string;
-  flowRunId?: string;
+  flowId?: string;
   stepExecId?: string;
 }): Promise<void> {
-  const { flowId, event, payload, orgId, flowRunId, stepExecId } = params;
+  const { templateId, event, payload, orgId, flowId, stepExecId } = params;
 
   // Load the flow template to get webhook settings
-  const flow = await db.query.flows.findFirst({
-    where: eq(flows.id, flowId),
+  const template = await db.query.templates.findFirst({
+    where: eq(templates.id, templateId),
   });
 
-  if (!flow) return;
+  if (!template) return;
 
-  const definition = flow.definition as { settings?: { notifications?: Record<string, unknown> } } | null;
+  const definition = template.definition as { settings?: { notifications?: Record<string, unknown> } } | null;
   const rawSettings = definition?.settings?.notifications;
   const settings: FlowNotificationSettings = rawSettings
     ? migrateNotificationSettings(rawSettings)
@@ -143,7 +143,7 @@ export async function dispatchWebhooks(params: {
         endpoint,
         payload,
         organizationId: orgId,
-        flowRunId,
+        flowId,
         stepExecutionId: stepExecId,
       });
     } catch {
@@ -153,7 +153,7 @@ export async function dispatchWebhooks(params: {
           endpoint,
           payload,
           organizationId: orgId,
-          flowRunId,
+          flowId,
           stepExecutionId: stepExecId,
         });
       } catch (err) {
@@ -168,7 +168,7 @@ export async function dispatchWebhooks(params: {
 // ============================================================================
 
 export async function handleWebhookJob(data: WebhookJobData): Promise<void> {
-  const { endpoint, payload, organizationId, flowRunId, stepExecutionId } = data;
+  const { endpoint, payload, organizationId, flowId, stepExecutionId } = data;
 
   try {
     const result = await sendWebhook(endpoint, payload);
@@ -178,7 +178,7 @@ export async function handleWebhookJob(data: WebhookJobData): Promise<void> {
       organizationId,
       channel: 'WEBHOOK',
       eventType: payload.event,
-      flowRunId: flowRunId || null,
+      flowId: flowId || null,
       stepExecutionId: stepExecutionId || null,
       recipientEmail: endpoint.url,
       status: success ? 'SENT' : 'FAILED',
@@ -195,7 +195,7 @@ export async function handleWebhookJob(data: WebhookJobData): Promise<void> {
         organizationId,
         channel: 'WEBHOOK',
         eventType: payload.event,
-        flowRunId: flowRunId || null,
+        flowId: flowId || null,
         stepExecutionId: stepExecutionId || null,
         recipientEmail: endpoint.url,
         status: 'FAILED',

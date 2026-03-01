@@ -26,8 +26,8 @@ ServiceFlow is a complete workflow automation platform that enables organization
 │  │   (Authenticated)        │     │        (Magic Link Access)          │   │
 │  ├─────────────────────────┤     ├─────────────────────────────────────┤   │
 │  │ • Home (AI Builder)      │     │ • Task completion UI                │   │
-│  │ • Flows (Templates)      │     │ • Form submission                   │   │
-│  │ • Flow Runs (Instances)  │     │ • File upload                       │   │
+│  │ • Templates (Blueprints)  │     │ • Form submission                   │   │
+│  │ • Flows (Instances)      │     │ • File upload                       │   │
 │  │ • Reports (Analytics)    │     │ • Approvals                         │   │
 │  │ • Contacts (Assignees)   │     │ • E-Sign                            │   │
 │  │ • Schedules              │     │ • Acknowledgement                   │   │
@@ -40,7 +40,7 @@ ServiceFlow is a complete workflow automation platform that enables organization
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                              Data Layer                                      │
 │  PostgreSQL via Drizzle ORM                                                 │
-│  Users • Organizations • Flows • FlowRuns • Steps • Contacts • Audit        │
+│  Users • Organizations • Templates • Flows • Steps • Contacts • Audit       │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -51,8 +51,8 @@ ServiceFlow is a complete workflow automation platform that enables organization
 Core tables (see `backend/src/db/schema.ts`):
 - **organizations** - Multi-tenant org support
 - **users** - Authenticated team members
-- **flows** - Workflow templates (the blueprints)
-- **flow_runs** - Active workflow instances
+- **templates** - Workflow blueprints
+- **flows** - Active workflow instances
 - **step_executions** - Individual step progress
 - **contacts** - External assignees (no account needed)
 - **magic_links** - Token-based access for assignees
@@ -62,9 +62,9 @@ Core tables (see `backend/src/db/schema.ts`):
 
 ## Key Concepts
 
-### Flow vs Flow Run
-- **Flow**: A reusable workflow template (the blueprint)
-- **Flow Run**: An active instance of a flow (the execution)
+### Template vs Flow
+- **Template**: A reusable workflow blueprint
+- **Flow**: An active instance of a template (the execution)
 
 ### Step Types
 **Human Actions:** FORM, APPROVAL, FILE_REQUEST, TODO, ACKNOWLEDGEMENT, DECISION
@@ -113,12 +113,12 @@ npm run build      # Production build
 ```
 frontend/src/
 ├── layouts/              # Page layouts (Coordinator, Public)
-├── pages/                # Route pages (Home, Flows, Runs, etc.)
+├── pages/                # Route pages (Home, Templates, Flows, etc.)
 ├── components/
 │   ├── nav/              # Sidebar, navigation
 │   ├── chat/             # AI chat UI
-│   ├── flows/            # Flow cards, grid
-│   ├── runs/             # Run items, progress
+│   ├── flows/            # Flow detail components
+│   ├── flow-chat/        # In-flow chat UI
 │   ├── workflow/         # Visual workflow editor
 │   └── ui/               # Shared UI components
 ├── hooks/                # Custom React hooks
@@ -142,11 +142,11 @@ backend/src/
 ## API Endpoints
 
 ### Coordinator Portal
-- `GET/POST /api/flows` - List/create flows
-- `GET/PUT/DELETE /api/flows/:id` - Flow CRUD
-- `POST /api/flows/:id/runs` - Start a flow run
-- `GET /api/runs` - List flow runs
-- `GET /api/runs/:id` - Run details
+- `GET/POST /api/templates` - List/create templates
+- `GET/PUT/DELETE /api/templates/:id` - Template CRUD
+- `POST /api/templates/:id/flows` - Start a flow from a template
+- `GET /api/flows` - List active flows
+- `GET /api/flows/:id` - Flow details
 - `GET /api/contacts` - Contact management
 - `GET /api/reports/summary` - Dashboard metrics
 
@@ -165,9 +165,9 @@ backend/src/
 |-------|--------|-------------|
 | A | ✅ Done | Database setup (Drizzle + SQLite) |
 | B | 🔄 In Progress | Coordinator Portal shell |
-| C | Pending | Flow Management (save/list/edit) |
+| C | Pending | Template Management (save/list/edit) |
 | D | Pending | Execution Engine |
-| E | Pending | Flow Runs Dashboard |
+| E | Pending | Flows Dashboard |
 | F | Pending | Assignee Portal (magic links) |
 | G | Pending | Step Type UIs |
 | H | Pending | Reports & Analytics |
@@ -178,7 +178,7 @@ backend/src/
 
 ## AI Builder
 
-The AI builder is integrated into the Home page and Flow Builder. It creates workflows through natural conversation.
+The AI builder is integrated into the Home page and Template Builder. It creates workflows through natural conversation.
 
 ### AI Output Modes
 - `create`: Full workflow JSON

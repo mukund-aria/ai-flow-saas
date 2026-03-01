@@ -3,7 +3,7 @@
  */
 
 import { Paperclip } from 'lucide-react';
-import type { ChatMessage as ChatMessageType } from '@/stores/flowRunChatStore';
+import type { ChatMessage as ChatMessageType } from '@/stores/flowChatStore';
 
 function formatTime(dateString: string): string {
   const date = new Date(dateString);

@@ -1,65 +1,292 @@
 /**
- * Templates API Routes
+ * Flows API Routes (Active Instances)
  *
- * CRUD operations for workflow templates.
+ * Endpoints for executing workflow instances (flows).
+ * Handles creating flows from templates and tracking step progress.
  */
 
 import { Router } from 'express';
-import crypto from 'crypto';
-import { db, flows, users, organizations, templateFolders, webhookEndpoints } from '../db/index.js';
+import { db, templates, flows, stepExecutions, stepExecutionAssignees, users, organizations, contacts, magicLinks, auditLogs, userOrganizations, flowAccounts, accounts, FlowStatus, type CompletionMode } from '../db/index.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
+import { logAction } from '../services/audit.js';
+import { onStepActivated, onStepCompleted, onFlowCompleted, onFlowCancelled, onFlowStarted, updateFlowActivity, computeFlowDueAt, handleSubFlowStep } from '../services/execution.js';
+import { getNextStepExecutions } from '../services/step-advancement.js';
+import { completeStepAndAdvance } from '../services/step-completion.js';
+import { isGroupAssignment as isGroupAssignmentCheck } from '../services/assignee-resolution.js';
 
 const router = Router();
 
 // ============================================================================
-// GET /api/templates - List all templates
+// GET /api/flows - List all flows (active instances)
 // ============================================================================
 
 router.get(
   '/',
   asyncHandler(async (req, res) => {
-    // Filter by organization if available (production with orgScope middleware)
+    const { status, templateId } = req.query;
     const orgId = req.organizationId;
+    const userId = req.user?.id;
+
+    // Build query conditions with org scoping
+    const conditions = [];
+    if (orgId) conditions.push(eq(flows.organizationId, orgId));
+    if (status) conditions.push(eq(flows.status, status as FlowStatus));
+    if (templateId) conditions.push(eq(flows.templateId, templateId as string));
+
     const allFlows = await db.query.flows.findMany({
-      ...(orgId ? { where: eq(flows.organizationId, orgId) } : {}),
-      orderBy: [desc(flows.updatedAt)],
+      ...(conditions.length > 0 ? { where: and(...conditions) } : {}),
+      orderBy: [desc(flows.startedAt)],
       with: {
-        createdBy: {
+        template: {
+          columns: {
+            id: true,
+            name: true,
+            templateCoordinatorIds: true,
+            definition: true,
+          },
+        },
+        startedBy: {
           columns: {
             id: true,
             name: true,
             email: true,
           },
         },
+        portal: {
+          columns: { id: true, name: true },
+        },
+        startedByContact: {
+          columns: { id: true, name: true },
+        },
+        stepExecutions: {
+          columns: {
+            id: true,
+            stepIndex: true,
+            status: true,
+            assignedToUserId: true,
+            assignedToContactId: true,
+          },
+          with: {
+            assignedToUser: { columns: { id: true, name: true } },
+            assignedToContact: { columns: { id: true, name: true } },
+          },
+        },
       },
     });
 
-    // Transform to API response format
-    const response = allFlows.map((flow) => ({
-      id: flow.id,
-      name: flow.name,
-      description: flow.description,
-      version: flow.version,
-      status: flow.status,
-      isDefault: flow.isDefault,
-      folderId: flow.folderId,
-      templateCoordinatorIds: flow.templateCoordinatorIds || [],
-      stepCount: (flow.definition as any)?.steps?.length || 0,
-      createdBy: flow.createdBy,
-      createdAt: flow.createdAt,
-      updatedAt: flow.updatedAt,
-    }));
+    // Determine user's org role for access filtering
+    let isAdmin = false;
+    if (userId && orgId) {
+      const membership = await db.query.userOrganizations.findFirst({
+        where: and(
+          eq(userOrganizations.userId, userId),
+          eq(userOrganizations.organizationId, orgId)
+        ),
+      });
+      isAdmin = membership?.role === 'ADMIN';
+    }
+
+    // Filter runs based on coordinator/assignee role model:
+    // - Admins: see all runs (no filtering)
+    // - Template Coordinators: see all runs of templates where they're listed
+    // - Flow Coordinators: see runs where they're assigned to a coordinator role
+    // - Started by: see runs they started
+    // - Not assigned: don't see the run
+    const filteredRuns = (userId && !isAdmin)
+      ? allFlows.filter(run => {
+          const flow = run.template as any;
+
+          // (a) User started this run
+          if (run.startedById === userId) return true;
+
+          // (b) User is a template coordinator for this template
+          const templateCoordinatorIds: string[] = flow?.templateCoordinatorIds || [];
+          if (templateCoordinatorIds.includes(userId)) return true;
+
+          // (c) User is assigned to a coordinator role on this run
+          const definition = flow?.definition as any;
+          const roles: Array<{ roleName: string; roleType?: string; roleOptions?: { coordinatorToggle?: boolean } }> =
+            definition?.roles || definition?.assigneePlaceholders || [];
+          const roleAssignments: Record<string, string> = (run.roleAssignments as Record<string, string>) || {};
+
+          // Find coordinator role names (explicit roleType='coordinator' OR legacy coordinatorToggle)
+          const coordinatorRoleNames = new Set(
+            roles
+              .filter(p =>
+                p.roleType === 'coordinator' || p.roleOptions?.coordinatorToggle
+              )
+              .map(p => p.roleName)
+          );
+
+          // Check if user is assigned to any coordinator role via step executions
+          const stepExecs = (run as any).stepExecutions || [];
+          const isCoordinatorOnRun = stepExecs.some((se: any) =>
+            se.assignedToUserId === userId
+          ) && (() => {
+            // Check if any of the user's assigned steps belong to a coordinator role
+            const defSteps = definition?.steps || [];
+            for (const se of stepExecs) {
+              if (se.assignedToUserId !== userId) continue;
+              const defStep = defSteps.find((s: any) => (s.stepId || s.id) === se.stepId);
+              const stepRole = defStep?.config?.assignee;
+              if (stepRole && coordinatorRoleNames.has(stepRole)) return true;
+            }
+            return false;
+          })();
+
+          if (isCoordinatorOnRun) return true;
+
+          // (d) Check roleAssignments map for coordinator roles assigned to this user
+          // roleAssignments maps roleName -> userId/contactId
+          for (const [roleName, assignedId] of Object.entries(roleAssignments)) {
+            if (assignedId === userId && coordinatorRoleNames.has(roleName)) {
+              return true;
+            }
+          }
+
+          return false;
+        })
+      : allFlows;
+
+    const runsWithTotalSteps = filteredRuns.map(run => {
+      const stepExecs = (run as any).stepExecutions || [];
+      const totalSteps = stepExecs.length;
+
+      // Compute currentStepAssignee from first active step
+      const activeStep = stepExecs.find(
+        (se: any) => se.status === 'IN_PROGRESS' || se.status === 'WAITING_FOR_ASSIGNEE'
+      );
+      let currentStepAssignee = null;
+      if (activeStep?.assignedToContact) {
+        currentStepAssignee = { id: activeStep.assignedToContact.id, name: activeStep.assignedToContact.name, type: 'contact' as const };
+      } else if (activeStep?.assignedToUser) {
+        currentStepAssignee = { id: activeStep.assignedToUser.id, name: activeStep.assignedToUser.name, type: 'user' as const };
+      }
+
+      // Compute currentStep info from active step
+      const currentStep = activeStep
+        ? {
+            stepId: activeStep.id,
+            stepIndex: activeStep.stepIndex,
+            hasAssignee: !!(activeStep.assignedToContactId || activeStep.assignedToUserId),
+          }
+        : null;
+
+      // Strip stepExecutions and large flow fields from response to keep payload small
+      const { stepExecutions: _se, portal: _p, startedByContact: _sbc, ...rest } = run as any;
+      const { definition: _def, templateCoordinatorIds: _tc, ...templateSlim } = rest.template || {};
+      return {
+        ...rest,
+        template: templateSlim,
+        totalSteps,
+        currentStepAssignee,
+        currentStep,
+        portalName: (run as any).portal?.name || undefined,
+        startedByContactName: (run as any).startedByContact?.name || undefined,
+      };
+    });
 
     res.json({
       success: true,
-      data: response,
+      data: runsWithTotalSteps,
     });
   })
 );
 
 // ============================================================================
-// GET /api/templates/:id - Get single template
+// POST /api/flows/bulk-remind - Send reminders for multiple overdue runs
+// ============================================================================
+
+router.post(
+  '/bulk-remind',
+  asyncHandler(async (req, res) => {
+    const { runIds } = req.body;
+    if (!Array.isArray(runIds) || runIds.length === 0 || runIds.length > 50) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_INPUT', message: 'runIds must be an array of 1-50 IDs' },
+      });
+      return;
+    }
+
+    const orgId = req.organizationId;
+    let remindedCount = 0;
+
+    for (const runId of runIds) {
+      // Get run with flow context
+      const run = await db.query.flows.findFirst({
+        where: orgId
+          ? and(eq(flows.id, runId), eq(flows.organizationId, orgId))
+          : eq(flows.id, runId),
+        with: { template: true },
+      });
+
+      if (!run || run.status !== 'IN_PROGRESS') continue;
+
+      // Find active step executions with contact assignees
+      const activeSteps = await db.query.stepExecutions.findMany({
+        where: and(
+          eq(stepExecutions.flowId, runId),
+        ),
+      });
+
+      for (const stepExec of activeSteps) {
+        if (stepExec.status !== 'IN_PROGRESS' && stepExec.status !== 'WAITING_FOR_ASSIGNEE') continue;
+        if (!stepExec.assignedToContactId) continue;
+
+        const contact = await db.query.contacts.findFirst({
+          where: eq(contacts.id, stepExec.assignedToContactId),
+        });
+
+        if (!contact) continue;
+
+        // Find existing magic link for this step
+        const existingLink = await db.query.magicLinks.findFirst({
+          where: eq(magicLinks.stepExecutionId, stepExec.id),
+        });
+
+        if (existingLink && !existingLink.usedAt) {
+          // Get step name from definition
+          const definition = run.template?.definition as any;
+          const defSteps = definition?.steps || [];
+          const defStep = defSteps.find((s: any) => s.stepId === stepExec.stepId);
+          const stepName = defStep?.config?.name || `Step ${stepExec.stepIndex + 1}`;
+
+          const { sendMagicLink } = await import('../services/email.js');
+          await sendMagicLink({
+            to: contact.email,
+            contactName: contact.name,
+            stepName,
+            flowName: run.template?.name || 'Flow',
+            token: existingLink.token,
+          });
+        }
+
+        // Update reminder tracking
+        await db.update(stepExecutions)
+          .set({
+            lastReminderSentAt: new Date(),
+            reminderCount: (stepExec.reminderCount || 0) + 1,
+          })
+          .where(eq(stepExecutions.id, stepExec.id));
+
+        logAction({
+          flowId: runId,
+          action: 'REMINDER_SENT',
+          details: { stepId: stepExec.stepId, stepIndex: stepExec.stepIndex, bulk: true },
+        });
+
+        remindedCount++;
+      }
+    }
+
+    res.json({ success: true, data: { remindedCount } });
+  })
+);
+
+// ============================================================================
+// GET /api/flows/:id - Get single flow with step executions
 // ============================================================================
 
 router.get(
@@ -68,19 +295,93 @@ router.get(
     const id = req.params.id as string;
     const orgId = req.organizationId;
 
-    const flow = await db.query.flows.findFirst({
+    const run = await db.query.flows.findFirst({
       where: orgId
         ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
         : eq(flows.id, id),
       with: {
-        createdBy: {
+        template: true,
+        startedBy: {
           columns: {
             id: true,
             name: true,
             email: true,
           },
         },
+        stepExecutions: {
+          orderBy: [stepExecutions.stepIndex],
+          with: {
+            assignedToUser: {
+              columns: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            assignedToContact: {
+              columns: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+            assignees: {
+              with: {
+                contact: { columns: { id: true, name: true, email: true } },
+                user: { columns: { id: true, name: true, email: true } },
+              },
+            },
+          },
+        },
       },
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+      });
+      return;
+    }
+
+    // Fetch associated accounts via flowAccounts junction table
+    const runAccountRows = await db
+      .select({
+        id: accounts.id,
+        name: accounts.name,
+        domain: accounts.domain,
+        source: flowAccounts.source,
+      })
+      .from(flowAccounts)
+      .innerJoin(accounts, eq(flowAccounts.accountId, accounts.id))
+      .where(eq(flowAccounts.flowId, id));
+
+    res.json({
+      success: true,
+      data: {
+        ...run,
+        accounts: runAccountRows,
+      },
+    });
+  })
+);
+
+// ============================================================================
+// POST /api/templates/:templateId/flows - Start a new flow from a template
+// ============================================================================
+
+router.post(
+  '/templates/:templateId/flows',
+  asyncHandler(async (req, res) => {
+    const templateId = req.params.templateId as string;
+    const { name, isTest, roleAssignments, kickoffData } = req.body;
+
+    // Get the flow template (scoped to org)
+    const orgId = req.organizationId;
+    const flow = await db.query.templates.findFirst({
+      where: orgId
+        ? and(eq(templates.id, templateId), eq(templates.organizationId, orgId))
+        : eq(templates.id, templateId),
     });
 
     if (!flow) {
@@ -91,36 +392,69 @@ router.get(
       return;
     }
 
-    res.json({
-      success: true,
-      data: flow,
-    });
-  })
-);
-
-// ============================================================================
-// POST /api/templates - Create new template
-// ============================================================================
-
-router.post(
-  '/',
-  asyncHandler(async (req, res) => {
-    const { name, description, definition, status = 'DRAFT', templateCoordinatorIds } = req.body;
-
-    if (!name) {
+    // Allow DRAFT templates only for test runs
+    if (flow.status === 'DRAFT' && !isTest) {
       res.status(400).json({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Name is required' },
+        error: { code: 'VALIDATION_ERROR', message: 'Cannot start a real run from a DRAFT template. Publish first or use test mode.' },
       });
       return;
     }
 
+    // Get flow definition and steps
+    // Note: steps may use `stepId` (gallery templates) or `id` (other sources)
+    const definition = flow.definition as { steps?: Array<Record<string, unknown>> } | null;
+    const steps = definition?.steps || [];
+
+    if (steps.length === 0) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Flow has no steps defined' },
+      });
+      return;
+    }
+
+    // Validate kickoff form data if required
+    const kickoffConfig = (definition as any)?.kickoff;
+    if (kickoffConfig?.kickoffFormEnabled && kickoffConfig?.kickoffFormFields) {
+      const fields = kickoffConfig.kickoffFormFields as Array<{
+        fieldId: string;
+        label: string;
+        type: string;
+        required?: boolean;
+      }>;
+      const data = (kickoffData || {}) as Record<string, unknown>;
+      const errors: string[] = [];
+
+      for (const field of fields) {
+        // Skip display-only fields
+        if (field.type === 'HEADING' || field.type === 'PARAGRAPH') continue;
+
+        if (field.required) {
+          const val = data[field.fieldId];
+          if (val === undefined || val === null || val === '') {
+            errors.push(`"${field.label}" is required`);
+          } else if (Array.isArray(val) && val.length === 0) {
+            errors.push(`"${field.label}" is required`);
+          }
+        }
+      }
+
+      if (errors.length > 0) {
+        res.status(400).json({
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: `Kickoff form validation failed: ${errors.join(', ')}` },
+        });
+        return;
+      }
+    }
+
     // Use authenticated user context (set by requireAuth + orgScope middleware in production)
     let userId = req.user?.id;
-    let orgId = req.organizationId;
+    let resolvedOrgId = orgId;
 
     // Dev fallback: create default user/org if not authenticated
-    if (!userId || !orgId) {
+    if (!userId || !resolvedOrgId) {
       let defaultOrg = await db.query.organizations.findFirst();
       if (!defaultOrg) {
         const [newOrg] = await db
@@ -138,73 +472,426 @@ router.post(
         defaultUser = newUser;
       }
       userId = defaultUser.id;
-      orgId = defaultOrg.id;
+      resolvedOrgId = defaultOrg.id;
     }
 
-    // Create the flow
+    // Create the flow run
+    const runName = name || `${flow.name} - ${isTest ? 'Test' : 'Run'} ${new Date().toISOString().split('T')[0]}`;
+
+    // Compute flow-level dueAt from the template's dueDates config
+    const flowStartedAt = new Date();
+    const flowDueDates = (definition as any)?.dueDates;
+    const flowDueAt = computeFlowDueAt(flowDueDates?.flowDue, flowStartedAt);
+
     const [newFlow] = await db
       .insert(flows)
       .values({
-        name,
-        description,
-        definition: definition || {},
-        status,
-        templateCoordinatorIds: templateCoordinatorIds || [],
-        createdById: userId,
-        organizationId: orgId,
+        templateId: flow.id,
+        name: runName,
+        status: 'IN_PROGRESS',
+        isSample: !!isTest,
+        currentStepIndex: 0,
+        startedById: userId,
+        organizationId: resolvedOrgId,
+        roleAssignments: roleAssignments || null,
+        kickoffData: kickoffData || null,
+        dueAt: flowDueAt,
       })
       .returning();
 
+    // Resolve roles using the resolution service
+    const flowRoles = (definition as any)?.roles || (definition as any)?.assigneePlaceholders || [];
+    const { resolveAssignees } = await import('../services/assignee-resolution.js');
+
+    // Flow variables convention: flow variables are stored as a nested object
+    // inside kickoffData under the key "flowVariables". This allows them to be
+    // persisted alongside kickoff form data and accessed for DDR resolution and
+    // assignee resolution. The frontend does not currently send flowVariables in
+    // kickoffData -- this is a TODO for when flow variables UI is implemented.
+    const resolvedAssignees = await resolveAssignees(flowRoles, {
+      organizationId: resolvedOrgId,
+      startedByUserId: userId,
+      roleAssignments: roleAssignments as Record<string, string> | undefined,
+      kickoffData: kickoffData as Record<string, unknown> | undefined,
+      flowVariables: (kickoffData as any)?.flowVariables as Record<string, unknown> | undefined,
+      templateId: flow.id,
+    });
+
+    // Also support legacy direct roleAssignments for backward compat
+    const legacyRoles: Record<string, string> = {};
+    if (roleAssignments && typeof roleAssignments === 'object') {
+      for (const [roleName, contactId] of Object.entries(roleAssignments as Record<string, string>)) {
+        if (contactId && typeof contactId === 'string') {
+          legacyRoles[roleName] = contactId;
+        }
+      }
+    }
+
+    // Create step executions for each step in the flow
+    // Track which steps are group assignments for post-insert processing
+    const groupAssignmentSteps: Array<{
+      stepIndex: number;
+      assignees: Array<{ contactId?: string; userId?: string }>;
+      completionMode: string;
+    }> = [];
+
+    const stepExecutionValues = steps.map((step, index) => {
+      const stepDef = step as any;
+      const assigneeRole = stepDef.config?.assignee || stepDef.assignee;
+      const resolvedStepId = stepDef.stepId || stepDef.id || `step-${index}`;
+
+      let assignedToContactId: string | null = null;
+      let assignedToUserId: string | null = null;
+      let isGroupAssignmentFlag = false;
+      let completionMode: CompletionMode | null = null;
+
+      if (assigneeRole) {
+        const resolved = resolvedAssignees[assigneeRole];
+        if (resolved && isGroupAssignmentCheck(resolved)) {
+          // Group assignment — don't assign to a single person
+          isGroupAssignmentFlag = true;
+          // Get completion mode from role resolution config or default
+          const roleDef = (definition as any)?.roles?.find((r: any) => r.name === assigneeRole);
+          const roleResolution = roleDef?.resolution;
+          completionMode = (roleResolution?.completionMode || stepDef.config?.completionMode || 'ANY_ONE') as CompletionMode;
+          groupAssignmentSteps.push({
+            stepIndex: index,
+            assignees: resolved,
+            completionMode: completionMode!,
+          });
+        } else if (resolved && !isGroupAssignmentCheck(resolved)) {
+          if (resolved.contactId) {
+            assignedToContactId = resolved.contactId;
+          } else if (resolved.userId) {
+            assignedToUserId = resolved.userId;
+          }
+        } else if (legacyRoles[assigneeRole]) {
+          assignedToContactId = legacyRoles[assigneeRole];
+        } else if (assigneeRole === '__coordinator__') {
+          assignedToUserId = userId;
+        }
+      }
+
+      return {
+        flowId: newFlow.id,
+        stepId: resolvedStepId,
+        stepIndex: index,
+        status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
+        startedAt: index === 0 ? new Date() : null,
+        assignedToContactId,
+        assignedToUserId,
+        isGroupAssignment: isGroupAssignmentFlag,
+        completionMode,
+      };
+    });
+
+    await db.insert(stepExecutions).values(stepExecutionValues);
+
+    // For group assignment steps, create step_execution_assignees rows and magic links
+    for (const groupStep of groupAssignmentSteps) {
+      const stepExec = await db.query.stepExecutions.findFirst({
+        where: and(
+          eq(stepExecutions.flowId, newFlow.id),
+          eq(stepExecutions.stepIndex, groupStep.stepIndex)
+        ),
+      });
+      if (!stepExec) continue;
+
+      for (const assignee of groupStep.assignees) {
+        const [assigneeRow] = await db.insert(stepExecutionAssignees).values({
+          stepExecutionId: stepExec.id,
+          contactId: assignee.contactId || null,
+          userId: assignee.userId || null,
+        }).returning();
+
+        // For first step, send magic links to all group members
+        if (groupStep.stepIndex === 0 && assignee.contactId) {
+          const { createMagicLink } = await import('../services/magic-link.js');
+          const { sendMagicLink } = await import('../services/email.js');
+          const token = await createMagicLink(stepExec.id, 168, assigneeRow.id);
+          const contact = await db.query.contacts.findFirst({
+            where: eq(contacts.id, assignee.contactId),
+          });
+          if (contact) {
+            await sendMagicLink({
+              to: contact.email,
+              contactName: contact.name,
+              stepName: (steps[0] as any).config?.name || (steps[0] as any).name || 'Task',
+              flowName: flow.name,
+              token,
+            });
+          }
+        }
+      }
+    }
+
+    // Create magic links for single-assignee contact-assigned steps
+    for (let i = 0; i < stepExecutionValues.length; i++) {
+      const stepVal = stepExecutionValues[i];
+      if (stepVal.assignedToContactId && i === 0 && !stepVal.isGroupAssignment) {
+        const stepExec = await db.query.stepExecutions.findFirst({
+          where: and(
+            eq(stepExecutions.flowId, newFlow.id),
+            eq(stepExecutions.stepIndex, 0)
+          ),
+        });
+        if (stepExec) {
+          const { createMagicLink } = await import('../services/magic-link.js');
+          const { sendMagicLink } = await import('../services/email.js');
+          const token = await createMagicLink(stepExec.id);
+          const contact = await db.query.contacts.findFirst({
+            where: eq(contacts.id, stepVal.assignedToContactId),
+          });
+          if (contact) {
+            await sendMagicLink({
+              to: contact.email,
+              contactName: contact.name,
+              stepName: (steps[0] as any).config?.name || (steps[0] as any).name || 'Task',
+              flowName: flow.name,
+              token,
+            });
+          }
+        }
+      }
+    }
+
+    // Auto-associate accounts: collect unique accountIds from resolved contacts
+    const contactIds = stepExecutionValues
+      .map(sv => sv.assignedToContactId)
+      .filter(Boolean) as string[];
+    if (contactIds.length > 0) {
+      const uniqueContactIds = [...new Set(contactIds)];
+      const assignedContacts = await Promise.all(
+        uniqueContactIds.map(cId =>
+          db.query.contacts.findFirst({
+            where: eq(contacts.id, cId),
+            columns: { accountId: true },
+          })
+        )
+      );
+      const uniqueAccountIds = [...new Set(
+        assignedContacts.map(c => c?.accountId).filter(Boolean) as string[]
+      )];
+      if (uniqueAccountIds.length > 0) {
+        await db.insert(flowAccounts).values(
+          uniqueAccountIds.map(accountId => ({
+            flowId: newFlow.id,
+            accountId,
+            source: 'AUTO' as const,
+          }))
+        );
+      }
+    }
+
+    // Schedule notification jobs for the first step if it has a due date
+    const firstStep = steps[0] as { id?: string; stepId?: string; due?: { value: number; unit: string }; config?: { due?: { value: number; unit: string } } };
+    const firstStepExec = await db.query.stepExecutions.findFirst({
+      where: and(
+        eq(stepExecutions.flowId, newFlow.id),
+        eq(stepExecutions.stepIndex, 0)
+      ),
+    });
+    if (firstStepExec) {
+      await onStepActivated(firstStepExec.id, firstStep.due || firstStep.config?.due, flow.definition as Record<string, unknown>, flowDueAt);
+
+      // If first step is a SUB_FLOW, start the child flow automatically
+      if ((steps[0] as any).type === 'SUB_FLOW') {
+        await handleSubFlowStep(firstStepExec.id, steps[0] as Record<string, unknown>, {
+          id: newFlow.id,
+          organizationId: resolvedOrgId,
+          startedById: userId,
+          templateId: flow.id,
+          name: runName,
+        });
+      }
+
+      // If first step auto-completes (automation step), execute it
+      try {
+        const { maybeAutoExecute } = await import('../services/automation-executor.js');
+        const freshRun = await db.query.flows.findFirst({
+          where: eq(flows.id, newFlow.id),
+          with: { template: true, stepExecutions: { orderBy: [stepExecutions.stepIndex] } },
+        });
+        if (freshRun) {
+          await maybeAutoExecute(firstStepExec.id, steps[0] as Record<string, unknown>, freshRun as any);
+        }
+      } catch (err) {
+        console.error('[RunStart] Auto-execute check failed:', err);
+      }
+    }
+
+    // Set initial activity timestamp
+    await updateFlowActivity(newFlow.id);
+
+    // Dispatch flow.started webhook
+    await onFlowStarted({ id: newFlow.id, name: runName, organizationId: resolvedOrgId, templateId: flow.id, template: { name: flow.name } });
+
+    // Fetch the complete run with step executions
+    const completedFlow = await db.query.flows.findFirst({
+      where: eq(flows.id, newFlow.id),
+      with: {
+        template: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+        startedBy: {
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        stepExecutions: {
+          orderBy: [stepExecutions.stepIndex],
+        },
+      },
+    });
+
+    // Audit: run started
+    logAction({
+      flowId: newFlow.id,
+      action: 'RUN_STARTED',
+      actorId: userId,
+      details: { templateId: flow.id, flowName: flow.name, runName },
+    });
+
     res.status(201).json({
       success: true,
-      data: newFlow,
+      data: completedFlow,
     });
   })
 );
 
 // ============================================================================
-// PUT /api/templates/:id - Update template
+// POST /api/flows/:id/steps/:stepId/complete - Mark a step as completed
 // ============================================================================
 
-router.put(
-  '/:id',
+router.post(
+  '/:id/steps/:stepId/complete',
   asyncHandler(async (req, res) => {
-    const id = req.params.id as string;
+    const runId = req.params.id as string;
+    const stepId = req.params.stepId as string;
+    const { resultData } = req.body;
     const orgId = req.organizationId;
-    const { name, description, definition, status, version, templateCoordinatorIds } = req.body;
 
-    // Check if flow exists (scoped to org)
-    const existing = await db.query.flows.findFirst({
+    // Get the flow run (scoped to org)
+    const run = await db.query.flows.findFirst({
       where: orgId
-        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
-        : eq(flows.id, id),
+        ? and(eq(flows.id, runId), eq(flows.organizationId, orgId))
+        : eq(flows.id, runId),
+      with: {
+        template: true,
+        stepExecutions: {
+          orderBy: [stepExecutions.stepIndex],
+        },
+      },
     });
 
-    if (!existing) {
+    if (!run) {
       res.status(404).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'Flow not found' },
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
       });
       return;
     }
 
-    // Build update object with only provided fields
-    const updates: Record<string, unknown> = {
-      updatedAt: new Date(),
-    };
-    if (name !== undefined) updates.name = name;
-    if (description !== undefined) updates.description = description;
-    if (definition !== undefined) updates.definition = definition;
-    if (status !== undefined) updates.status = status;
-    if (version !== undefined) updates.version = version;
-    if (templateCoordinatorIds !== undefined) updates.templateCoordinatorIds = templateCoordinatorIds;
+    if (run.status !== 'IN_PROGRESS') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: `Cannot complete step on a run with status: ${run.status}` },
+      });
+      return;
+    }
 
-    // Update the flow
-    const [updatedFlow] = await db
-      .update(flows)
-      .set(updates)
-      .where(eq(flows.id, id))
-      .returning();
+    // Find the step execution
+    const stepExecution = run.stepExecutions.find((se) => se.stepId === stepId);
+
+    if (!stepExecution) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Step execution not found' },
+      });
+      return;
+    }
+
+    if (stepExecution.status === 'COMPLETED') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Step is already completed' },
+      });
+      return;
+    }
+
+    if (stepExecution.status === 'PENDING') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Step has not been started yet' },
+      });
+      return;
+    }
+
+    // AI Review interception: check before marking step as completed
+    const definition = run.template?.definition as { steps?: Array<Record<string, unknown>> } | null;
+    const stepDefs = (definition?.steps || []) as any[];
+    const currentStepDef = stepDefs.find((s: any) => (s.stepId || s.id) === stepExecution.stepId);
+    if (currentStepDef?.config?.aiReview?.enabled) {
+      const { runAIReview } = await import('../services/ai-assignee.js');
+      const reviewResult = await runAIReview(stepExecution.id, currentStepDef, resultData || {});
+      if (reviewResult.status === 'REVISION_NEEDED') {
+        // Revert step to IN_PROGRESS with feedback
+        await db.update(stepExecutions)
+          .set({
+            status: 'IN_PROGRESS',
+            completedAt: null,
+          })
+          .where(eq(stepExecutions.id, stepExecution.id));
+        res.json({
+          success: true,
+          data: { revisionNeeded: true, feedback: reviewResult.feedback, issues: reviewResult.issues },
+        });
+        return;
+      }
+    }
+
+    // Complete step and advance flow using shared helper
+    const result = await completeStepAndAdvance({
+      stepExecutionId: stepExecution.id,
+      resultData: resultData || {},
+      run: run as any,
+      stepDefs,
+    });
+
+    // Audit: step completed
+    logAction({
+      flowId: runId,
+      action: 'STEP_COMPLETED',
+      details: { stepId, stepIndex: stepExecution.stepIndex, hasNextStep: !!result.flowCompleted },
+    });
+
+    // Fetch the updated run
+    const updatedFlow = await db.query.flows.findFirst({
+      where: eq(flows.id, runId),
+      with: {
+        template: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+        startedBy: {
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        stepExecutions: {
+          orderBy: [stepExecutions.stepIndex],
+        },
+      },
+    });
 
     res.json({
       success: true,
@@ -214,393 +901,699 @@ router.put(
 );
 
 // ============================================================================
-// DELETE /api/templates/:id - Delete (archive) template
-// ============================================================================
-
-router.delete(
-  '/:id',
-  asyncHandler(async (req, res) => {
-    const id = req.params.id as string;
-    const orgId = req.organizationId;
-
-    // Check if flow exists (scoped to org)
-    const existing = await db.query.flows.findFirst({
-      where: orgId
-        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
-        : eq(flows.id, id),
-    });
-
-    if (!existing) {
-      res.status(404).json({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Flow not found' },
-      });
-      return;
-    }
-
-    // Soft delete by setting status to ARCHIVED
-    const [archivedFlow] = await db
-      .update(flows)
-      .set({ status: 'ARCHIVED', updatedAt: new Date() })
-      .where(eq(flows.id, id))
-      .returning();
-
-    res.json({
-      success: true,
-      data: archivedFlow,
-    });
-  })
-);
-
-// ============================================================================
-// POST /api/templates/:id/publish - Publish a draft template
+// POST /api/flows/:id/cancel - Cancel a flow
 // ============================================================================
 
 router.post(
-  '/:id/publish',
+  '/:id/cancel',
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
     const orgId = req.organizationId;
 
-    // Check if flow exists (scoped to org)
-    const existing = await db.query.flows.findFirst({
+    // Get the flow run (scoped to org)
+    const run = await db.query.flows.findFirst({
       where: orgId
         ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
         : eq(flows.id, id),
     });
 
-    if (!existing) {
+    if (!run) {
       res.status(404).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'Flow not found' },
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
       });
       return;
     }
 
-    // Update status to ACTIVE
-    const [publishedFlow] = await db
+    if (run.status === 'COMPLETED') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Cannot cancel a completed run' },
+      });
+      return;
+    }
+
+    if (run.status === 'CANCELLED') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Run is already cancelled' },
+      });
+      return;
+    }
+
+    // Cancel the run
+    const [cancelledFlow] = await db
       .update(flows)
-      .set({ status: 'ACTIVE', updatedAt: new Date() })
-      .where(eq(flows.id, id))
-      .returning();
-
-    res.json({
-      success: true,
-      data: publishedFlow,
-    });
-  })
-);
-
-// ============================================================================
-// POST /api/templates/:id/duplicate - Duplicate a template
-// ============================================================================
-
-router.post(
-  '/:id/duplicate',
-  asyncHandler(async (req, res) => {
-    const id = req.params.id as string;
-    const orgId = req.organizationId;
-
-    const existing = await db.query.flows.findFirst({
-      where: orgId
-        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
-        : eq(flows.id, id),
-    });
-
-    if (!existing) {
-      res.status(404).json({
-        success: false,
-        error: { code: 'NOT_FOUND', message: 'Flow not found' },
-      });
-      return;
-    }
-
-    // Create a copy with DRAFT status
-    const [duplicate] = await db
-      .insert(flows)
-      .values({
-        name: `${existing.name} (Copy)`,
-        description: existing.description,
-        definition: existing.definition,
-        status: 'DRAFT',
-        createdById: existing.createdById,
-        organizationId: existing.organizationId,
+      .set({
+        status: 'CANCELLED',
+        completedAt: new Date(),
       })
+      .where(eq(flows.id, id))
       .returning();
 
-    res.status(201).json({
+    // Mark any pending or in-progress steps as skipped
+    await db
+      .update(stepExecutions)
+      .set({
+        status: 'SKIPPED',
+      })
+      .where(
+        and(
+          eq(stepExecutions.flowId, id),
+          eq(stepExecutions.status, 'PENDING')
+        )
+      );
+
+    await db
+      .update(stepExecutions)
+      .set({
+        status: 'SKIPPED',
+      })
+      .where(
+        and(
+          eq(stepExecutions.flowId, id),
+          eq(stepExecutions.status, 'IN_PROGRESS')
+        )
+      );
+
+    // Notify: flow cancelled (cancel all jobs, notify assignees)
+    const allStepExecs = await db.query.stepExecutions.findMany({
+      where: eq(stepExecutions.flowId, id),
+    });
+    await onFlowCancelled(run, allStepExecs.map(se => se.id));
+
+    // Audit: run cancelled
+    logAction({
+      flowId: id,
+      action: 'RUN_CANCELLED',
+    });
+
+    // Fetch the updated run with step executions
+    const updatedFlow = await db.query.flows.findFirst({
+      where: eq(flows.id, id),
+      with: {
+        template: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+        startedBy: {
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        stepExecutions: {
+          orderBy: [stepExecutions.stepIndex],
+        },
+      },
+    });
+
+    res.json({
       success: true,
-      data: duplicate,
+      data: updatedFlow,
     });
   })
 );
 
 // ============================================================================
-// PUT /api/templates/:id/folder - Move template to folder
+// POST /api/flows/:id/steps/:stepId/act-token - Get action token for coordinator
 // ============================================================================
 
-router.put(
-  '/:id/folder',
+router.post(
+  '/:id/steps/:stepId/act-token',
   asyncHandler(async (req, res) => {
-    const id = req.params.id as string;
+    const runId = req.params.id as string;
+    const stepId = req.params.stepId as string;
     const orgId = req.organizationId;
-    const { folderId } = req.body; // string | null
 
-    // Verify the template exists and belongs to this org
-    const existing = await db.query.flows.findFirst({
+    // Verify the flow run belongs to this org
+    const run = await db.query.flows.findFirst({
       where: orgId
-        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
-        : eq(flows.id, id),
+        ? and(eq(flows.id, runId), eq(flows.organizationId, orgId))
+        : eq(flows.id, runId),
     });
 
-    if (!existing) {
+    if (!run) {
       res.status(404).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'Template not found' },
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
       });
       return;
     }
 
-    // If folderId is provided, verify the folder exists and belongs to this org
-    if (folderId) {
-      const folder = await db.query.templateFolders.findFirst({
-        where: orgId
-          ? and(eq(templateFolders.id, folderId), eq(templateFolders.organizationId, orgId))
-          : eq(templateFolders.id, folderId),
+    // Get step execution
+    const stepExec = await db.query.stepExecutions.findFirst({
+      where: and(
+        eq(stepExecutions.flowId, runId),
+        eq(stepExecutions.stepId, stepId)
+      ),
+    });
+
+    if (!stepExec) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Step execution not found' },
       });
-      if (!folder) {
-        res.status(404).json({
-          success: false,
-          error: { code: 'NOT_FOUND', message: 'Folder not found' },
+      return;
+    }
+
+    if (stepExec.status !== 'IN_PROGRESS' && stepExec.status !== 'WAITING_FOR_ASSIGNEE') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Can only act on active steps' },
+      });
+      return;
+    }
+
+    // Check if there's already a magic link for this step
+    const existingLink = await db.query.magicLinks.findFirst({
+      where: eq(magicLinks.stepExecutionId, stepExec.id),
+    });
+
+    if (existingLink && !existingLink.usedAt && new Date() < existingLink.expiresAt) {
+      // Existing valid link - return it
+      res.json({
+        success: true,
+        data: { token: existingLink.token },
+      });
+      return;
+    }
+
+    if (existingLink) {
+      // Existing link is used or expired - refresh it
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 168); // 7 days
+      const newToken = crypto.randomUUID();
+      await db.update(magicLinks)
+        .set({ token: newToken, expiresAt, usedAt: null })
+        .where(eq(magicLinks.id, existingLink.id));
+
+      res.json({
+        success: true,
+        data: { token: newToken },
+      });
+      return;
+    }
+
+    // Create a new magic link for the coordinator to act on this step
+    const { createMagicLink } = await import('../services/magic-link.js');
+    const token = await createMagicLink(stepExec.id);
+
+    res.json({
+      success: true,
+      data: { token },
+    });
+  })
+);
+
+// ============================================================================
+// POST /api/flows/:id/steps/:stepId/remind - Send reminder for a step
+// ============================================================================
+
+router.post(
+  '/:id/steps/:stepId/remind',
+  asyncHandler(async (req, res) => {
+    const id = req.params.id as string;
+    const stepId = req.params.stepId as string;
+    const orgId = req.organizationId;
+
+    // Get run for context (scoped to org)
+    const run = await db.query.flows.findFirst({
+      where: orgId
+        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
+        : eq(flows.id, id),
+      with: { template: true },
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+      });
+      return;
+    }
+
+    // Get step execution
+    const stepExec = await db.query.stepExecutions.findFirst({
+      where: and(
+        eq(stepExecutions.flowId, id),
+        eq(stepExecutions.stepId, stepId)
+      ),
+    });
+
+    if (!stepExec) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Step execution not found' },
+      });
+      return;
+    }
+
+    if (stepExec.status !== 'IN_PROGRESS' && stepExec.status !== 'WAITING_FOR_ASSIGNEE') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Can only send reminders for active steps' },
+      });
+      return;
+    }
+
+    // Get step name from definition
+    const definition = run.template?.definition as any;
+    const defSteps = definition?.steps || [];
+    const defStep = defSteps.find((s: any) => s.stepId === stepId);
+    const stepName = defStep?.config?.name || `Step ${stepExec.stepIndex + 1}`;
+
+    // Send reminder email to the assigned contact
+    if (stepExec.assignedToContactId) {
+      const contact = await db.query.contacts.findFirst({
+        where: eq(contacts.id, stepExec.assignedToContactId),
+      });
+
+      if (contact) {
+        // Find existing magic link for this step
+        const existingLink = await db.query.magicLinks.findFirst({
+          where: eq(magicLinks.stepExecutionId, stepExec.id),
         });
-        return;
+
+        if (existingLink && !existingLink.usedAt) {
+          const { sendMagicLink } = await import('../services/email.js');
+          await sendMagicLink({
+            to: contact.email,
+            contactName: contact.name,
+            stepName,
+            flowName: run.template?.name || 'Flow',
+            token: existingLink.token,
+          });
+        }
       }
     }
 
-    const [updated] = await db
-      .update(flows)
-      .set({ folderId: folderId || null, updatedAt: new Date() })
-      .where(eq(flows.id, id))
-      .returning();
+    // Update reminder tracking
+    await db.update(stepExecutions)
+      .set({
+        lastReminderSentAt: new Date(),
+        reminderCount: (stepExec.reminderCount || 0) + 1,
+      })
+      .where(eq(stepExecutions.id, stepExec.id));
 
-    res.json({ success: true, data: updated });
+    logAction({
+      flowId: id,
+      action: 'REMINDER_SENT',
+      details: { stepId, stepIndex: stepExec.stepIndex },
+    });
+
+    res.json({
+      success: true,
+      data: { message: 'Reminder sent successfully' },
+    });
   })
 );
 
 // ============================================================================
-// GET /api/templates/:id/webhook-config - Get or create webhook endpoint config
+// GET /api/flows/:id/audit-log - Get audit log for a flow run
 // ============================================================================
 
 router.get(
-  '/:id/webhook-config',
+  '/:id/audit-log',
   asyncHandler(async (req, res) => {
-    const templateId = req.params.id as string;
+    const id = req.params.id as string;
     const orgId = req.organizationId;
 
-    // Verify the template exists and belongs to this org
-    const flow = await db.query.flows.findFirst({
+    // Verify the flow run belongs to this org
+    const run = await db.query.flows.findFirst({
       where: orgId
-        ? and(eq(flows.id, templateId), eq(flows.organizationId, orgId))
-        : eq(flows.id, templateId),
+        ? and(eq(flows.id, id), eq(flows.organizationId, orgId))
+        : eq(flows.id, id),
     });
 
-    if (!flow) {
+    if (!run) {
       res.status(404).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'Flow not found' },
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
       });
       return;
     }
 
-    // Look for existing webhook endpoint
-    let endpoint = await db.query.webhookEndpoints.findFirst({
-      where: and(
-        eq(webhookEndpoints.flowId, templateId),
-        eq(webhookEndpoints.type, 'INCOMING')
-      ),
-    });
+    // Query audit logs with actor info
+    const logs = await db
+      .select({
+        id: auditLogs.id,
+        action: auditLogs.action,
+        actorId: auditLogs.actorId,
+        actorEmail: auditLogs.actorEmail,
+        details: auditLogs.details,
+        createdAt: auditLogs.createdAt,
+        actorName: users.name,
+      })
+      .from(auditLogs)
+      .leftJoin(users, eq(auditLogs.actorId, users.id))
+      .where(eq(auditLogs.flowId, id))
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(100);
 
-    // Create one if it doesn't exist
-    if (!endpoint) {
-      const [newEndpoint] = await db
-        .insert(webhookEndpoints)
-        .values({
-          flowId: templateId,
-          organizationId: flow.organizationId,
-          type: 'INCOMING',
-          secret: crypto.randomUUID(),
-          enabled: true,
-        })
-        .returning();
-      endpoint = newEndpoint;
-    }
-
-    // Build the webhook URL
-    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3001}`;
-    const webhookUrl = `${baseUrl}/api/webhooks/flows/incoming/${templateId}`;
+    const data = logs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      actorName: log.actorName || null,
+      actorEmail: log.actorEmail || null,
+      details: log.details || null,
+      createdAt: log.createdAt.toISOString(),
+    }));
 
     res.json({
       success: true,
-      data: {
-        webhookUrl,
-        secret: endpoint.secret,
-        enabled: endpoint.enabled,
-      },
+      data,
     });
   })
 );
 
 // ============================================================================
-// POST /api/templates/:id/webhook-config/regenerate - Regenerate webhook secret
+// POST /api/flows/:id/steps/:stepId/reassign - Reassign a step to a different person
 // ============================================================================
 
 router.post(
-  '/:id/webhook-config/regenerate',
+  '/:id/steps/:stepId/reassign',
   asyncHandler(async (req, res) => {
-    const templateId = req.params.id as string;
+    const runId = req.params.id as string;
+    const stepId = req.params.stepId as string;
+    const { assignToContactId, assignToUserId } = req.body;
     const orgId = req.organizationId;
 
-    // Verify the template exists and belongs to this org
-    const flow = await db.query.flows.findFirst({
-      where: orgId
-        ? and(eq(flows.id, templateId), eq(flows.organizationId, orgId))
-        : eq(flows.id, templateId),
-    });
-
-    if (!flow) {
-      res.status(404).json({
+    // Validate exactly one assignment target
+    if ((!assignToContactId && !assignToUserId) || (assignToContactId && assignToUserId)) {
+      res.status(400).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'Flow not found' },
+        error: { code: 'VALIDATION_ERROR', message: 'Provide exactly one of assignToContactId or assignToUserId' },
       });
       return;
     }
 
-    // Find existing endpoint
-    let endpoint = await db.query.webhookEndpoints.findFirst({
+    // Get the flow run (scoped to org)
+    const run = await db.query.flows.findFirst({
+      where: orgId
+        ? and(eq(flows.id, runId), eq(flows.organizationId, orgId))
+        : eq(flows.id, runId),
+      with: { template: true },
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+      });
+      return;
+    }
+
+    if (run.status !== 'IN_PROGRESS') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Can only reassign steps on an in-progress run' },
+      });
+      return;
+    }
+
+    // Find the step execution
+    const stepExec = await db.query.stepExecutions.findFirst({
       where: and(
-        eq(webhookEndpoints.flowId, templateId),
-        eq(webhookEndpoints.type, 'INCOMING')
+        eq(stepExecutions.flowId, runId),
+        eq(stepExecutions.stepId, stepId)
       ),
     });
 
-    const newSecret = crypto.randomUUID();
-
-    if (endpoint) {
-      // Update existing
-      [endpoint] = await db
-        .update(webhookEndpoints)
-        .set({ secret: newSecret })
-        .where(eq(webhookEndpoints.id, endpoint.id))
-        .returning();
-    } else {
-      // Create new
-      [endpoint] = await db
-        .insert(webhookEndpoints)
-        .values({
-          flowId: templateId,
-          organizationId: flow.organizationId,
-          type: 'INCOMING',
-          secret: newSecret,
-          enabled: true,
-        })
-        .returning();
-    }
-
-    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3001}`;
-    const webhookUrl = `${baseUrl}/api/webhooks/flows/incoming/${templateId}`;
-
-    res.json({
-      success: true,
-      data: {
-        webhookUrl,
-        secret: endpoint.secret,
-        enabled: endpoint.enabled,
-      },
-    });
-  })
-);
-
-// ============================================================================
-// POST /api/templates/:id/test-webhook - Send a test webhook payload
-// ============================================================================
-
-router.post(
-  '/:id/test-webhook',
-  asyncHandler(async (req, res) => {
-    const templateId = req.params.id as string;
-    const { url, secret } = req.body as { url?: string; secret?: string };
-
-    if (!url || !secret) {
-      res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'url and secret are required' },
-      });
-      return;
-    }
-
-    // Basic URL validation
-    try {
-      new URL(url);
-    } catch {
-      res.status(400).json({
-        success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Invalid URL format' },
-      });
-      return;
-    }
-
-    // Get the flow template for context
-    const orgId = req.organizationId;
-    const flow = await db.query.flows.findFirst({
-      where: orgId
-        ? and(eq(flows.id, templateId), eq(flows.organizationId, orgId))
-        : eq(flows.id, templateId),
-    });
-
-    if (!flow) {
+    if (!stepExec) {
       res.status(404).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'Flow not found' },
+        error: { code: 'NOT_FOUND', message: 'Step execution not found' },
       });
       return;
     }
 
-    // Build a test payload
-    const { sendWebhook } = await import('../services/webhook.js');
-    const payload = {
-      event: 'flow.started' as const,
-      timestamp: new Date().toISOString(),
-      flow: { id: flow.id, name: flow.name },
-      flowRun: { id: 'test-run-id', name: `${flow.name} - Test`, status: 'IN_PROGRESS' },
-      metadata: { test: true },
+    if (stepExec.status === 'COMPLETED' || stepExec.status === 'SKIPPED') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Cannot reassign a completed or skipped step' },
+      });
+      return;
+    }
+
+    // Record old assignee info for audit
+    const oldAssignee = {
+      contactId: stepExec.assignedToContactId,
+      userId: stepExec.assignedToUserId,
     };
 
-    try {
-      const result = await sendWebhook(
-        { id: 'test', label: 'Test', url, secret, enabled: true, events: {} as any, createdAt: new Date().toISOString() },
-        payload
-      );
+    // Update the step execution
+    await db
+      .update(stepExecutions)
+      .set({
+        assignedToContactId: assignToContactId || null,
+        assignedToUserId: assignToUserId || null,
+      })
+      .where(eq(stepExecutions.id, stepExec.id));
 
-      const success = result.status >= 200 && result.status < 300;
+    // If step is active and reassigned to a new contact, handle magic link
+    const isActive = stepExec.status === 'IN_PROGRESS' || stepExec.status === 'WAITING_FOR_ASSIGNEE';
+    if (isActive && assignToContactId) {
+      // Invalidate old magic link
+      const existingLink = await db.query.magicLinks.findFirst({
+        where: eq(magicLinks.stepExecutionId, stepExec.id),
+      });
+      if (existingLink) {
+        await db.update(magicLinks)
+          .set({ usedAt: new Date() })
+          .where(eq(magicLinks.id, existingLink.id));
+      }
 
-      res.json({
-        success,
-        data: {
-          status: result.status,
-          body: result.body.slice(0, 500),
-          payload,
-        },
+      // Create new magic link and send notification
+      const { createMagicLink } = await import('../services/magic-link.js');
+      const { sendMagicLink } = await import('../services/email.js');
+      const token = await createMagicLink(stepExec.id);
+      const contact = await db.query.contacts.findFirst({
+        where: eq(contacts.id, assignToContactId),
       });
-    } catch (err) {
-      res.json({
-        success: false,
-        data: {
-          status: 0,
-          body: (err as Error).message,
-          payload,
-        },
-      });
+
+      // Get step name from definition
+      const definition = run.template?.definition as any;
+      const defSteps = definition?.steps || [];
+      const defStep = defSteps.find((s: any) => (s.stepId || s.id) === stepId);
+      const stepName = defStep?.config?.name || `Step ${stepExec.stepIndex + 1}`;
+
+      if (contact) {
+        await sendMagicLink({
+          to: contact.email,
+          contactName: contact.name,
+          stepName,
+          flowName: run.template?.name || 'Flow',
+          token,
+        });
+      }
     }
+
+    // Audit log
+    logAction({
+      flowId: runId,
+      action: 'STEP_REASSIGNED',
+      actorId: req.user?.id,
+      details: {
+        stepId,
+        stepIndex: stepExec.stepIndex,
+        oldAssignee,
+        newAssignee: {
+          contactId: assignToContactId || null,
+          userId: assignToUserId || null,
+        },
+      },
+    });
+
+    res.json({
+      success: true,
+      data: { message: 'Step reassigned successfully' },
+    });
+  })
+);
+
+// ============================================================================
+// GET /api/flows/:id/summary - Get AI-generated flow run summary
+// ============================================================================
+
+router.get(
+  '/:id/summary',
+  asyncHandler(async (req, res) => {
+    const runId = req.params.id as string;
+    const orgId = req.organizationId;
+
+    const run = await db.query.flows.findFirst({
+      where: orgId
+        ? and(eq(flows.id, runId), eq(flows.organizationId, orgId))
+        : eq(flows.id, runId),
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Run not found' },
+      });
+      return;
+    }
+
+    const existingData = (run.kickoffData as Record<string, unknown>) || {};
+    if (existingData._aiSummary) {
+      res.json({ success: true, data: existingData._aiSummary });
+      return;
+    }
+
+    // Generate on first request if flow is completed
+    if (run.status === 'COMPLETED') {
+      const { generateFlowSummary } = await import('../services/ai-assignee.js');
+      const summary = await generateFlowSummary(run.id);
+      res.json({ success: true, data: summary });
+      return;
+    }
+
+    res.json({ success: true, data: null });
+  })
+);
+
+// ============================================================================
+// POST /api/flows/:id/ai-chat - AI chat for flow run (SSE)
+// ============================================================================
+
+router.post(
+  '/:id/ai-chat',
+  asyncHandler(async (req, res) => {
+    const runId = req.params.id as string;
+    const { message, history } = req.body;
+    const orgId = req.organizationId;
+
+    const run = await db.query.flows.findFirst({
+      where: orgId
+        ? and(eq(flows.id, runId), eq(flows.organizationId, orgId))
+        : eq(flows.id, runId),
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Run not found' },
+      });
+      return;
+    }
+
+    if (!message || typeof message !== 'string') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'Message is required' },
+      });
+      return;
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+
+    const { handleAIChat } = await import('../services/ai-assignee.js');
+    await handleAIChat(run.id, message, history || [], res);
+  })
+);
+
+// ============================================================================
+// POST /api/flows/:id/steps/:stepId/approve-ai - Approve AI draft output
+// ============================================================================
+
+router.post(
+  '/:id/steps/:stepId/approve-ai',
+  asyncHandler(async (req, res) => {
+    const runId = req.params.id as string;
+    const stepId = req.params.stepId as string;
+    const { editedOutput } = req.body;
+    const orgId = req.organizationId;
+
+    const run = await db.query.flows.findFirst({
+      where: orgId
+        ? and(eq(flows.id, runId), eq(flows.organizationId, orgId))
+        : eq(flows.id, runId),
+      with: {
+        template: true,
+        stepExecutions: {
+          orderBy: [stepExecutions.stepIndex],
+        },
+      },
+    });
+
+    if (!run) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+      });
+      return;
+    }
+
+    if (run.status !== 'IN_PROGRESS') {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Run is not in progress' },
+      });
+      return;
+    }
+
+    const stepExecution = run.stepExecutions.find((se) => se.stepId === stepId);
+
+    if (!stepExecution) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Step execution not found' },
+      });
+      return;
+    }
+
+    const currentResult = (stepExecution.resultData || {}) as Record<string, unknown>;
+    if (!currentResult._awaitingReview) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_STATE', message: 'Step is not awaiting AI review' },
+      });
+      return;
+    }
+
+    // Use the edited output if provided, otherwise use the original AI draft
+    const aiDraft = currentResult._aiDraft as Record<string, unknown>;
+    const finalOutput = editedOutput || aiDraft;
+
+    const definition = run.template?.definition as { steps?: Array<Record<string, unknown>> } | null;
+    const stepDefs = (definition?.steps || []) as any[];
+
+    const result = await completeStepAndAdvance({
+      stepExecutionId: stepExecution.id,
+      resultData: {
+        ...finalOutput,
+        _reviewedAt: new Date().toISOString(),
+        _wasEdited: !!editedOutput,
+      },
+      run: run as any,
+      stepDefs,
+    });
+
+    logAction({
+      flowId: runId,
+      action: 'AI_OUTPUT_APPROVED',
+      details: { stepId, wasEdited: !!editedOutput },
+    });
+
+    const updatedFlow = await db.query.flows.findFirst({
+      where: eq(flows.id, runId),
+      with: {
+        template: { columns: { id: true, name: true } },
+        startedBy: { columns: { id: true, name: true, email: true } },
+        stepExecutions: { orderBy: [stepExecutions.stepIndex] },
+      },
+    });
+
+    res.json({ success: true, data: updatedFlow });
   })
 );
 

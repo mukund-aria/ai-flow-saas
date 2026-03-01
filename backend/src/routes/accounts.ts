@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, accounts, contacts, flowRunAccounts, flowRuns, flows } from '../db/index.js';
+import { db, accounts, contacts, flowAccounts, flows, templates } from '../db/index.js';
 import { eq, and, isNull, sql } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -46,11 +46,11 @@ router.get(
         try {
           const [fc] = await db
             .select({ count: sql<number>`count(*)` })
-            .from(flowRunAccounts)
-            .innerJoin(flowRuns, eq(flowRunAccounts.flowRunId, flowRuns.id))
-            .where(and(eq(flowRunAccounts.accountId, account.id), eq(flowRuns.status, 'IN_PROGRESS')));
+            .from(flowAccounts)
+            .innerJoin(flows, eq(flowAccounts.flowId, flows.id))
+            .where(and(eq(flowAccounts.accountId, account.id), eq(flows.status, 'IN_PROGRESS')));
           activeFlowCount = Number(fc?.count || 0);
-        } catch { /* flowRunAccounts may not exist yet */ }
+        } catch { /* flowAccounts may not exist yet */ }
         return { ...account, contactCount, activeFlowCount };
       })
     );
@@ -287,22 +287,22 @@ router.get(
       return;
     }
 
-    // Get flow run associations via flowRunAccounts junction table
+    // Get flow run associations via flowAccounts junction table
     const associations = await db
       .select({
-        flowRunId: flowRunAccounts.flowRunId,
-        source: flowRunAccounts.source,
-        associatedAt: flowRunAccounts.createdAt,
-        runName: flowRuns.name,
-        runStatus: flowRuns.status,
-        runStartedAt: flowRuns.startedAt,
-        flowId: flowRuns.flowId,
-        flowName: flows.name,
+        flowId: flowAccounts.flowId,
+        source: flowAccounts.source,
+        associatedAt: flowAccounts.createdAt,
+        runName: flows.name,
+        runStatus: flows.status,
+        runStartedAt: flows.startedAt,
+        templateId: flows.templateId,
+        templateName: templates.name,
       })
-      .from(flowRunAccounts)
-      .innerJoin(flowRuns, eq(flowRunAccounts.flowRunId, flowRuns.id))
-      .innerJoin(flows, eq(flowRuns.flowId, flows.id))
-      .where(eq(flowRunAccounts.accountId, id));
+      .from(flowAccounts)
+      .innerJoin(flows, eq(flowAccounts.flowId, flows.id))
+      .innerJoin(templates, eq(flows.templateId, templates.id))
+      .where(eq(flowAccounts.accountId, id));
 
     res.json({
       success: true,

@@ -193,7 +193,7 @@ export function SchedulesPage() {
     try {
       setCreating(true);
       await createSchedule({
-        flowId: formFlowId,
+        templateId: formFlowId,
         scheduleName: formName.trim(),
         cronPattern,
         timezone: formTimezone,
@@ -351,7 +351,7 @@ export function SchedulesPage() {
                   key={schedule.id}
                   className={`border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors ${!schedule.enabled ? 'opacity-60' : ''}`}
                 >
-                  <td className="px-4 py-3 text-gray-900 font-medium">{schedule.flowName}</td>
+                  <td className="px-4 py-3 text-gray-900 font-medium">{schedule.templateName}</td>
                   <td className="px-4 py-3 text-gray-700">{schedule.scheduleName}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">

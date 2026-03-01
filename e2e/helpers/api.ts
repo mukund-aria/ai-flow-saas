@@ -44,7 +44,7 @@ export class CoordinatorAPI {
     return this.request('POST', '/contacts', { name, email });
   }
 
-  async startFlowRun(
+  async startFlow(
     templateId: string,
     options: {
       roleAssignments?: Record<string, string>;
@@ -65,8 +65,8 @@ export class CoordinatorAPI {
     });
   }
 
-  async getFlowRun(runId: string) {
-    return this.request('GET', `/flows/${runId}`);
+  async getFlow(flowId: string) {
+    return this.request('GET', `/flows/${flowId}`);
   }
 
   // ---- Accounts ----

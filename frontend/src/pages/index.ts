@@ -3,10 +3,10 @@
  */
 
 export { HomePage } from './HomePage';
+export { TemplatesPage } from './TemplatesPage';
+export { TemplateBuilderPage } from './TemplateBuilderPage';
 export { FlowsPage } from './FlowsPage';
-export { FlowBuilderPage } from './FlowBuilderPage';
-export { FlowRunsPage } from './FlowRunsPage';
-export { FlowRunDetailPage } from './FlowRunDetailPage';
+export { FlowDetailPage } from './FlowDetailPage';
 export { ReportsPage } from './ReportsPage';
 export { ManagePage } from './ManagePage';
 export { ContactsPage } from './ContactsPage';
@@ -15,7 +15,7 @@ export { IntegrationsPage } from './IntegrationsPage';
 export { SettingsPage } from './SettingsPage';
 export { LoginPage } from './LoginPage';
 export { LandingPage } from './LandingPage';
-export { FlowPreviewPage } from './FlowPreviewPage';
+export { TemplatePreviewPage } from './TemplatePreviewPage';
 export { OnboardingPage } from './OnboardingPage';
 export { OrgSelectPage } from './OrgSelectPage';
 export { OrgSetupPage } from './OrgSetupPage';

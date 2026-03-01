@@ -4,7 +4,7 @@
  */
 
 import { Loader2, CheckCircle2, MessageCircle } from 'lucide-react';
-import type { Conversation } from '@/stores/flowRunChatStore';
+import type { Conversation } from '@/stores/flowChatStore';
 
 function getInitials(name: string): string {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);

@@ -7,7 +7,7 @@
  */
 
 import { Router } from 'express';
-import { db, flows, schedules } from '../db/index.js';
+import { db, templates, schedules } from '../db/index.js';
 import { eq, and, desc } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { scheduleFlowStart, cancelFlowSchedule } from '../services/flow-scheduler.js';
@@ -40,15 +40,15 @@ router.get(
     const results = await db.query.schedules.findMany({
       where: orgId ? eq(schedules.organizationId, orgId) : undefined,
       with: {
-        flow: { columns: { id: true, name: true } },
+        template: { columns: { id: true, name: true } },
       },
       orderBy: [desc(schedules.createdAt)],
     });
 
     const data = results.map((s) => ({
       id: s.id,
-      flowId: s.flowId,
-      flowName: s.flow?.name || 'Unknown',
+      flowId: s.templateId,
+      flowName: s.template?.name || 'Unknown',
       scheduleName: s.scheduleName,
       cronPattern: s.cronPattern,
       timezone: s.timezone,
@@ -69,13 +69,13 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req, res) => {
-    const { flowId, scheduleName, cronPattern, timezone, roleAssignments, kickoffData } = req.body;
+    const { templateId, scheduleName, cronPattern, timezone, roleAssignments, kickoffData } = req.body;
 
     // Validate required fields
-    if (!flowId) {
+    if (!templateId) {
       res.status(400).json({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'flowId is required' },
+        error: { code: 'VALIDATION_ERROR', message: 'templateId is required' },
       });
       return;
     }
@@ -109,10 +109,10 @@ router.post(
 
     // Validate the flow exists
     const orgId = req.organizationId;
-    const flow = await db.query.flows.findFirst({
+    const flow = await db.query.templates.findFirst({
       where: orgId
-        ? and(eq(flows.id, flowId), eq(flows.organizationId, orgId))
-        : eq(flows.id, flowId),
+        ? and(eq(templates.id, templateId), eq(templates.organizationId, orgId))
+        : eq(templates.id, templateId),
     });
 
     if (!flow) {
@@ -132,7 +132,7 @@ router.post(
       .insert(schedules)
       .values({
         organizationId: orgId || flow.organizationId,
-        flowId,
+        templateId,
         scheduleName,
         cronPattern,
         timezone: tz,
@@ -147,7 +147,7 @@ router.post(
     // Register with BullMQ (no-op without Redis)
     try {
       await scheduleFlowStart({
-        flowId,
+        templateId,
         organizationId: orgId || flow.organizationId,
         scheduleName,
         cronPattern,
@@ -162,7 +162,7 @@ router.post(
       success: true,
       data: {
         id: record.id,
-        flowId: record.flowId,
+        flowId: record.templateId,
         flowName: flow.name,
         scheduleName: record.scheduleName,
         cronPattern: record.cronPattern,
@@ -190,7 +190,7 @@ router.put(
       where: orgId
         ? and(eq(schedules.id, id), eq(schedules.organizationId, orgId))
         : eq(schedules.id, id),
-      with: { flow: { columns: { id: true, name: true } } },
+      with: { template: { columns: { id: true, name: true } } },
     });
 
     if (!existing) {
@@ -240,7 +240,7 @@ router.put(
       await cancelFlowSchedule(id);
       if (updated.enabled) {
         await scheduleFlowStart({
-          flowId: updated.flowId,
+          templateId: updated.templateId,
           organizationId: updated.organizationId,
           scheduleName: updated.scheduleName,
           cronPattern: updated.cronPattern,
@@ -256,8 +256,8 @@ router.put(
       success: true,
       data: {
         id: updated.id,
-        flowId: updated.flowId,
-        flowName: existing.flow?.name || 'Unknown',
+        flowId: updated.templateId,
+        flowName: existing.template?.name || 'Unknown',
         scheduleName: updated.scheduleName,
         cronPattern: updated.cronPattern,
         timezone: updated.timezone,
@@ -325,7 +325,7 @@ router.post(
       where: orgId
         ? and(eq(schedules.id, id), eq(schedules.organizationId, orgId))
         : eq(schedules.id, id),
-      with: { flow: { columns: { id: true, name: true } } },
+      with: { template: { columns: { id: true, name: true } } },
     });
 
     if (!schedule) {
@@ -339,7 +339,7 @@ router.post(
     // Use the same logic as the scheduled flow start
     await processScheduledFlowStart({
       type: 'scheduled-flow-start',
-      flowId: schedule.flowId,
+      templateId: schedule.templateId,
       organizationId: schedule.organizationId,
       scheduleName: schedule.scheduleName,
       roleAssignments: schedule.roleAssignments as Record<string, string> | undefined,

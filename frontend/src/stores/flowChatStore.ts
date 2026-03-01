@@ -1,5 +1,5 @@
 /**
- * Flow Run Chat Store
+ * Flow Chat Store
  *
  * Zustand store for in-flow chat conversations between coordinators and assignees.
  * Supports both coordinator (multi-conversation) and assignee (single-conversation) modes.
@@ -50,7 +50,7 @@ export interface Conversation {
   createdAt: string;
 }
 
-interface FlowRunChatStore {
+interface FlowChatStore {
   // State
   isOpen: boolean;
   conversations: Conversation[];
@@ -67,11 +67,11 @@ interface FlowRunChatStore {
   toggle: () => void;
 
   // Coordinator actions
-  fetchConversations: (flowRunId: string) => Promise<void>;
-  selectConversation: (conversationId: string, flowRunId: string) => Promise<void>;
+  fetchConversations: (flowId: string) => Promise<void>;
+  selectConversation: (conversationId: string, flowId: string) => Promise<void>;
   backToList: () => void;
-  sendMessage: (flowRunId: string, conversationId: string, content: string) => Promise<void>;
-  toggleResolved: (flowRunId: string, conversationId: string, resolved: boolean) => Promise<void>;
+  sendMessage: (flowId: string, conversationId: string, content: string) => Promise<void>;
+  toggleResolved: (flowId: string, conversationId: string, resolved: boolean) => Promise<void>;
 
   // Assignee actions
   fetchAssigneeMessages: (token: string) => Promise<void>;
@@ -89,7 +89,7 @@ interface FlowRunChatStore {
 // Store
 // ============================================================================
 
-export const useFlowRunChatStore = create<FlowRunChatStore>((set, get) => ({
+export const useFlowChatStore = create<FlowChatStore>((set, get) => ({
   isOpen: false,
   conversations: [],
   activeConversationId: null,
@@ -103,10 +103,10 @@ export const useFlowRunChatStore = create<FlowRunChatStore>((set, get) => ({
   setOpen: (open) => set({ isOpen: open }),
   toggle: () => set((s) => ({ isOpen: !s.isOpen })),
 
-  fetchConversations: async (flowRunId) => {
+  fetchConversations: async (flowId) => {
     set({ isLoadingConversations: true, error: null });
     try {
-      const res = await fetch(`${API_BASE}/flows/${flowRunId}/conversations`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/flows/${flowId}/conversations`, { credentials: 'include' });
       const data = await res.json();
       if (data.success) {
         set({ conversations: data.data });
@@ -118,10 +118,10 @@ export const useFlowRunChatStore = create<FlowRunChatStore>((set, get) => ({
     }
   },
 
-  selectConversation: async (conversationId, flowRunId) => {
+  selectConversation: async (conversationId, flowId) => {
     set({ activeConversationId: conversationId, isLoadingMessages: true, error: null });
     try {
-      const res = await fetch(`${API_BASE}/flows/${flowRunId}/conversations/${conversationId}/messages`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/flows/${flowId}/conversations/${conversationId}/messages`, { credentials: 'include' });
       const data = await res.json();
       if (data.success) {
         set({ messages: data.data });
@@ -137,10 +137,10 @@ export const useFlowRunChatStore = create<FlowRunChatStore>((set, get) => ({
     set({ activeConversationId: null, messages: [] });
   },
 
-  sendMessage: async (flowRunId, conversationId, content) => {
+  sendMessage: async (flowId, conversationId, content) => {
     set({ isSending: true, error: null });
     try {
-      const res = await fetch(`${API_BASE}/flows/${flowRunId}/conversations/${conversationId}/messages`, {
+      const res = await fetch(`${API_BASE}/flows/${flowId}/conversations/${conversationId}/messages`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -157,9 +157,9 @@ export const useFlowRunChatStore = create<FlowRunChatStore>((set, get) => ({
     }
   },
 
-  toggleResolved: async (flowRunId, conversationId, resolved) => {
+  toggleResolved: async (flowId, conversationId, resolved) => {
     try {
-      await fetch(`${API_BASE}/flows/${flowRunId}/conversations/${conversationId}/resolve`, {
+      await fetch(`${API_BASE}/flows/${flowId}/conversations/${conversationId}/resolve`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

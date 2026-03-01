@@ -21,6 +21,8 @@ export const RESOLUTION_ICONS: Record<ResolutionType, typeof UserCheck> = {
   FLOW_VARIABLE: Variable,
   RULES: GitBranch,
   ROUND_ROBIN: RefreshCw,
+  CONTACT_GROUP: Shield,
+  ACCOUNT_CONTACTS: ScanEye,
 };
 
 export const RESOLUTION_LABELS: Record<ResolutionType, string> = {
@@ -31,6 +33,8 @@ export const RESOLUTION_LABELS: Record<ResolutionType, string> = {
   FLOW_VARIABLE: 'Flow variable',
   RULES: 'Rules',
   ROUND_ROBIN: 'Round Robin',
+  CONTACT_GROUP: 'Contact Group',
+  ACCOUNT_CONTACTS: 'Account Contacts',
 };
 
 /** Short label for the chip (includes detail where applicable) */

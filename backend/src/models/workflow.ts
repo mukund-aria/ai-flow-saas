@@ -173,7 +173,7 @@ export interface SlackSharedConfig {
   channelName: string;
 }
 
-export interface SlackPerFlowRunConfig {
+export interface SlackPerFlowConfig {
   namingPattern: string;
   visibility: ChannelVisibility;
   inviteGroup: ChannelInviteGroup;
@@ -185,7 +185,7 @@ export interface SlackIntegrationSettings {
   enabled: boolean;
   channelMode: SlackChannelMode;
   shared: SlackSharedConfig;
-  perFlowRun: SlackPerFlowRunConfig;
+  perFlow: SlackPerFlowConfig;
   events: SlackEventConfig;
 }
 
@@ -280,7 +280,7 @@ export function defaultFlowNotificationSettings(): FlowNotificationSettings {
         enabled: false,
         channelMode: 'SHARED',
         shared: { channelName: '' },
-        perFlowRun: {
+        perFlow: {
           namingPattern: '{flowName}-{runId}',
           visibility: 'PRIVATE',
           inviteGroup: 'ALL_COORDINATORS',

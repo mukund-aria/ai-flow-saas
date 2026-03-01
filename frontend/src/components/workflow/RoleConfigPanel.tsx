@@ -13,7 +13,7 @@ import {
   X, ChevronUp, ChevronDown, Search, Plus, Trash2,
   UserPlus, UserCheck, PlayCircle, FileText,
   Variable, GitBranch, RefreshCw, Database,
-  Shield, UserCircle, Eye, Users, Building2,
+  Shield, UserCircle, Users, Building2,
 } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { getRoleColor, getRoleInitials } from '@/types';

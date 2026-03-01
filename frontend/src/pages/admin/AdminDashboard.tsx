@@ -125,7 +125,7 @@ export function AdminDashboard() {
   const cards = [
     { label: 'Total Orgs', value: stats?.totalOrgs ?? 0, icon: Building2, color: 'violet' },
     { label: 'Users', value: stats?.totalUsers ?? 0, icon: Users, color: 'blue' },
-    { label: 'Flow Runs', value: stats?.totalRuns ?? 0, icon: Play, color: 'green' },
+    { label: 'Flows', value: stats?.totalRuns ?? 0, icon: Play, color: 'green' },
     { label: 'Active Orgs (30d)', value: stats?.activeOrgs30d ?? 0, icon: Activity, color: 'amber' },
     { label: 'Contacts', value: stats?.totalContacts ?? 0, icon: UserCheck, color: 'rose' },
   ];

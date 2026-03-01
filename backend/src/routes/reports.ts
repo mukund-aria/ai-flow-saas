@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, flows, flowRuns, stepExecutions, contacts, users, accounts, flowRunAccounts } from '../db/index.js';
+import { db, templates, flows, stepExecutions, contacts, users, accounts, flowAccounts } from '../db/index.js';
 import { eq, and, gte, lte, sql, count, desc, isNotNull } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -67,10 +67,10 @@ router.get(
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
     // Build org filter
-    const orgFilter = orgId ? eq(flowRuns.organizationId, orgId) : undefined;
+    const orgFilter = orgId ? eq(flows.organizationId, orgId) : undefined;
 
-    // Fetch all flow runs in org
-    const allRuns = await db.query.flowRuns.findMany({
+    // Fetch all flows in org
+    const allRuns = await db.query.flows.findMany({
       ...(orgFilter ? { where: orgFilter } : {}),
     });
 
@@ -89,7 +89,7 @@ router.get(
     // Fetch step executions for action metrics
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
+        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
         : undefined,
     });
 
@@ -152,11 +152,11 @@ router.get(
     // Active templates count
     const activeTemplatesResult = await db
       .select({ count: count() })
-      .from(flows)
+      .from(templates)
       .where(
         orgId
-          ? and(eq(flows.status, 'ACTIVE'), eq(flows.organizationId, orgId))
-          : eq(flows.status, 'ACTIVE')
+          ? and(eq(templates.status, 'ACTIVE'), eq(templates.organizationId, orgId))
+          : eq(templates.status, 'ACTIVE')
       );
     const activeTemplates = activeTemplatesResult[0]?.count ?? 0;
 
@@ -215,20 +215,20 @@ router.get(
   asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
 
-    // Get all flow runs with their template info
-    const allRuns = await db.query.flowRuns.findMany({
-      ...(orgId ? { where: eq(flowRuns.organizationId, orgId) } : {}),
+    // Get all flows with their template info
+    const allRuns = await db.query.flows.findMany({
+      ...(orgId ? { where: eq(flows.organizationId, orgId) } : {}),
       with: {
-        flow: true,
+        template: true,
       },
     });
 
-    // Group by flowId
+    // Group by templateId
     const byTemplate = new Map<string, { name: string; templateId: string; runs: number; completed: number; totalDays: number; completedWithTime: number }>();
 
     for (const run of allRuns) {
-      const templateId = run.flowId;
-      const templateName = run.flow?.name || 'Unknown Template';
+      const templateId = run.templateId;
+      const templateName = run.template?.name || 'Unknown Template';
 
       if (!byTemplate.has(templateId)) {
         byTemplate.set(templateId, {
@@ -289,7 +289,7 @@ router.get(
     // Get step executions that are assigned to contacts
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId}) AND ${stepExecutions.assignedToContactId} IS NOT NULL`
+        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId}) AND ${stepExecutions.assignedToContactId} IS NOT NULL`
         : sql`${stepExecutions.assignedToContactId} IS NOT NULL`,
       with: {
         assignedToContact: true,
@@ -342,9 +342,9 @@ router.get(
   asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
 
-    // Get all flow runs with their starter info
-    const allRuns = await db.query.flowRuns.findMany({
-      ...(orgId ? { where: eq(flowRuns.organizationId, orgId) } : {}),
+    // Get all flows with their starter info
+    const allRuns = await db.query.flows.findMany({
+      ...(orgId ? { where: eq(flows.organizationId, orgId) } : {}),
       with: {
         startedBy: true,
       },
@@ -395,13 +395,13 @@ router.get(
     const range = (req.query.range as string) || 'week';
     const cutoff = getDateRangeCutoff(range);
 
-    // Fetch completed step executions within the time range, with their flow run + flow info
+    // Fetch completed step executions within the time range, with their flow + template info
     const completedSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
+        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
         : sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.completedAt} >= ${cutoff}`,
       with: {
-        flowRun: { with: { flow: true } },
+        flow: { with: { template: true } },
       },
     });
 
@@ -426,8 +426,8 @@ router.get(
     }>();
 
     for (const step of completedSteps) {
-      const templateId = step.flowRun?.flowId || 'unknown';
-      const templateName = step.flowRun?.flow?.name || 'Unknown Template';
+      const templateId = step.flow?.templateId || 'unknown';
+      const templateName = step.flow?.template?.name || 'Unknown Template';
 
       if (!byTemplate.has(templateId)) {
         byTemplate.set(templateId, {
@@ -458,7 +458,7 @@ router.get(
       // Track per-step metrics for bottleneck detection
       const stepKey = step.stepId;
       // Get step name from flow definition
-      const definition = step.flowRun?.flow?.definition as any;
+      const definition = step.flow?.template?.definition as any;
       const stepDef = definition?.steps?.find((s: any) => (s.stepId || s.id) === step.stepId);
       const stepName = stepDef?.config?.name || `Step ${step.stepIndex + 1}`;
 
@@ -533,10 +533,10 @@ router.get(
     // Fetch completed steps with time data
     const completedSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.timeToComplete} IS NOT NULL AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
+        ? sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.timeToComplete} IS NOT NULL AND ${stepExecutions.completedAt} >= ${cutoff} AND ${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
         : sql`${stepExecutions.status} = 'COMPLETED' AND ${stepExecutions.timeToComplete} IS NOT NULL AND ${stepExecutions.completedAt} >= ${cutoff}`,
       with: {
-        flowRun: { with: { flow: true } },
+        flow: { with: { template: true } },
         assignedToContact: true,
         assignedToUser: true,
       },
@@ -554,12 +554,12 @@ router.get(
     }>();
 
     for (const step of completedSteps) {
-      const templateId = step.flowRun?.flowId || 'unknown';
-      const templateName = step.flowRun?.flow?.name || 'Unknown Template';
+      const templateId = step.flow?.templateId || 'unknown';
+      const templateName = step.flow?.template?.name || 'Unknown Template';
       const key = `${templateId}:${step.stepId}`;
 
       // Get step name from flow definition
-      const definition = step.flowRun?.flow?.definition as any;
+      const definition = step.flow?.template?.definition as any;
       const stepDef = definition?.steps?.find((s: any) => (s.stepId || s.id) === step.stepId);
       const stepName = stepDef?.config?.name || `Step ${step.stepIndex + 1}`;
 
@@ -695,15 +695,15 @@ router.get(
     const previousCutoff = computePreviousCutoff(cutoff);
     const now = new Date();
 
-    const orgFilter = orgId ? eq(flowRuns.organizationId, orgId) : undefined;
+    const orgFilter = orgId ? eq(flows.organizationId, orgId) : undefined;
 
-    const allRuns = await db.query.flowRuns.findMany({
+    const allRuns = await db.query.flows.findMany({
       ...(orgFilter ? { where: orgFilter } : {}),
     });
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
+        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
         : undefined,
     });
 
@@ -1021,19 +1021,19 @@ router.get(
     const previousCutoff = computePreviousCutoff(cutoff);
     const now = new Date();
 
-    const orgFilter = orgId ? eq(flowRuns.organizationId, orgId) : undefined;
+    const orgFilter = orgId ? eq(flows.organizationId, orgId) : undefined;
 
-    const allRuns = await db.query.flowRuns.findMany({
+    const allRuns = await db.query.flows.findMany({
       ...(orgFilter ? { where: orgFilter } : {}),
-      with: { flow: true },
+      with: { template: true },
     });
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
+        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
         : undefined,
       with: {
-        flowRun: { with: { flow: true } },
+        flow: { with: { template: true } },
       },
     });
 
@@ -1047,8 +1047,8 @@ router.get(
     }>();
 
     for (const run of allRuns) {
-      const tid = run.flowId;
-      const tName = run.flow?.name || 'Unknown Template';
+      const tid = run.templateId;
+      const tName = run.template?.name || 'Unknown Template';
       if (!byTemplate.has(tid)) {
         byTemplate.set(tid, {
           templateId: tid,
@@ -1068,7 +1068,7 @@ router.get(
     }
 
     for (const step of allSteps) {
-      const tid = step.flowRun?.flowId;
+      const tid = step.flow?.templateId;
       if (!tid || !byTemplate.has(tid)) continue;
       const entry = byTemplate.get(tid)!;
       if (step.completedAt && new Date(step.completedAt) >= cutoff) {
@@ -1115,7 +1115,7 @@ router.get(
       const stepDurations = new Map<string, { name: string; totalMs: number; count: number }>();
       for (const s of entry.currentSteps) {
         if (s.timeToComplete && s.timeToComplete > 0) {
-          const def = s.flowRun?.flow?.definition as any;
+          const def = s.flow?.template?.definition as any;
           const sName = getStepNameFromDefinition(def, s.stepId, s.stepIndex);
           if (!stepDurations.has(s.stepId)) {
             stepDurations.set(s.stepId, { name: sName, totalMs: 0, count: 0 });
@@ -1163,8 +1163,8 @@ router.get(
     let drillDown: any = undefined;
 
     if (templateId) {
-      const templateRuns = allRuns.filter((r) => r.flowId === templateId);
-      const templateSteps = allSteps.filter((s) => s.flowRun?.flowId === templateId);
+      const templateRuns = allRuns.filter((r) => r.templateId === templateId);
+      const templateSteps = allSteps.filter((s) => s.flow?.templateId === templateId);
       const currentTemplateSteps = templateSteps.filter(
         (s) => s.completedAt && new Date(s.completedAt) >= cutoff
       );
@@ -1180,7 +1180,7 @@ router.get(
 
       for (const s of currentTemplateSteps) {
         if (!stepTimingsMap.has(s.stepId)) {
-          const def = s.flowRun?.flow?.definition as any;
+          const def = s.flow?.template?.definition as any;
           stepTimingsMap.set(s.stepId, {
             stepIndex: s.stepIndex,
             stepName: getStepNameFromDefinition(def, s.stepId, s.stepIndex),
@@ -1220,7 +1220,7 @@ router.get(
       const funnelMap = new Map<string, { stepIndex: number; stepName: string; reached: number; completed: number }>();
       for (const s of allStepsForTemplate) {
         if (!funnelMap.has(s.stepId)) {
-          const def = s.flowRun?.flow?.definition as any;
+          const def = s.flow?.template?.definition as any;
           funnelMap.set(s.stepId, {
             stepIndex: s.stepIndex,
             stepName: getStepNameFromDefinition(def, s.stepId, s.stepIndex),
@@ -1279,13 +1279,13 @@ router.get(
     const previousCutoff = computePreviousCutoff(cutoff);
     const now = new Date();
 
-    const orgFilter = orgId ? eq(flowRuns.organizationId, orgId) : undefined;
+    const orgFilter = orgId ? eq(flows.organizationId, orgId) : undefined;
 
-    const allRuns = await db.query.flowRuns.findMany({
+    const allRuns = await db.query.flows.findMany({
       ...(orgFilter ? { where: orgFilter } : {}),
     });
 
-    const allRunAccounts = await db.query.flowRunAccounts.findMany({
+    const allRunAccounts = await db.query.flowAccounts.findMany({
       with: { account: true },
     });
 
@@ -1295,7 +1295,7 @@ router.get(
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
+        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
         : undefined,
       with: {
         assignedToContact: true,
@@ -1307,14 +1307,14 @@ router.get(
     const accountInfoMap = new Map<string, { name: string; domain: string | null }>();
 
     for (const ra of allRunAccounts) {
-      const run = runMap.get(ra.flowRunId);
+      const run = runMap.get(ra.flowId);
       if (!run) continue;
       if (orgId && run.organizationId !== orgId) continue;
 
       if (!runIdsByAccount.has(ra.accountId)) {
         runIdsByAccount.set(ra.accountId, new Set());
       }
-      runIdsByAccount.get(ra.accountId)!.add(ra.flowRunId);
+      runIdsByAccount.get(ra.accountId)!.add(ra.flowId);
 
       if (!accountInfoMap.has(ra.accountId) && ra.account) {
         accountInfoMap.set(ra.accountId, { name: ra.account.name, domain: ra.account.domain });
@@ -1364,7 +1364,7 @@ router.get(
         ? Math.round(cycleTimes.reduce((a, b) => a + b, 0) / cycleTimes.length)
         : 0;
 
-      const accountSteps = allSteps.filter((s) => runIds.has(s.flowRunId));
+      const accountSteps = allSteps.filter((s) => runIds.has(s.flowId));
       const accountStepsWithDue = accountSteps.filter(
         (s) => s.dueAt && s.completedAt && new Date(s.completedAt) >= cutoff
       );
@@ -1412,7 +1412,7 @@ router.get(
     if (accountId) {
       const accRunIds = runIdsByAccount.get(accountId) || new Set<string>();
       const accRuns = allRuns.filter((r) => accRunIds.has(r.id));
-      const accSteps = allSteps.filter((s) => accRunIds.has(s.flowRunId));
+      const accSteps = allSteps.filter((s) => accRunIds.has(s.flowId));
 
       const weekBuckets = generateTrendBuckets(cutoff, range);
       const engagementTimeline = weekBuckets.starts.map((start, i) => {
@@ -1614,16 +1614,16 @@ router.get(
     const cutoff = getDateRangeCutoff(range);
     const now = new Date();
 
-    const orgFilter = orgId ? eq(flowRuns.organizationId, orgId) : undefined;
+    const orgFilter = orgId ? eq(flows.organizationId, orgId) : undefined;
 
-    const allRuns = await db.query.flowRuns.findMany({
+    const allRuns = await db.query.flows.findMany({
       ...(orgFilter ? { where: orgFilter } : {}),
       with: { startedBy: true },
     });
 
     const allSteps = await db.query.stepExecutions.findMany({
       where: orgId
-        ? sql`${stepExecutions.flowRunId} IN (SELECT "id" FROM "flow_runs" WHERE "organization_id" = ${orgId})`
+        ? sql`${stepExecutions.flowId} IN (SELECT "id" FROM "flows" WHERE "organization_id" = ${orgId})`
         : undefined,
       with: {
         assignedToContact: { with: { account: true } },

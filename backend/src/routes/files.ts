@@ -9,7 +9,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { db, files, flowRuns, stepExecutions } from '../db/index.js';
+import { db, files, flows, stepExecutions } from '../db/index.js';
 import { eq, and, isNull } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { fileStorage, UPLOADS_DIR } from '../services/file-storage.js';
@@ -54,18 +54,18 @@ router.post(
       return;
     }
 
-    const { flowRunId, stepExecutionId } = req.body;
+    const { flowId, stepExecutionId } = req.body;
     const user = req.user as any;
 
     // Verify the flow run belongs to this org (if provided)
-    if (flowRunId) {
-      const run = await db.query.flowRuns.findFirst({
-        where: and(eq(flowRuns.id, flowRunId), eq(flowRuns.organizationId, orgId)),
+    if (flowId) {
+      const run = await db.query.flows.findFirst({
+        where: and(eq(flows.id, flowId), eq(flows.organizationId, orgId)),
       });
       if (!run) {
         res.status(404).json({
           success: false,
-          error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+          error: { code: 'NOT_FOUND', message: 'Flow not found' },
         });
         return;
       }
@@ -76,14 +76,14 @@ router.post(
       fileName: file.originalname,
       mimeType: file.mimetype,
       orgId,
-      flowRunId,
+      flowId,
       stepId: stepExecutionId,
     });
 
     // Save metadata to database
     const [fileRecord] = await db.insert(files).values({
       organizationId: orgId,
-      flowRunId: flowRunId || null,
+      flowId: flowId || null,
       stepExecutionId: stepExecutionId || null,
       fileName: file.originalname,
       fileSize: file.size,
@@ -194,13 +194,13 @@ router.get(
 
     // Verify the run belongs to this org
     if (orgId) {
-      const run = await db.query.flowRuns.findFirst({
-        where: and(eq(flowRuns.id, runId as string), eq(flowRuns.organizationId, orgId)),
+      const run = await db.query.flows.findFirst({
+        where: and(eq(flows.id, runId as string), eq(flows.organizationId, orgId)),
       });
       if (!run) {
         res.status(404).json({
           success: false,
-          error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+          error: { code: 'NOT_FOUND', message: 'Flow not found' },
         });
         return;
       }
@@ -208,7 +208,7 @@ router.get(
 
     const stepFiles = await db.query.files.findMany({
       where: and(
-        eq(files.flowRunId, runId as string),
+        eq(files.flowId, runId as string),
         eq(files.stepExecutionId, stepId as string),
         isNull(files.deletedAt),
       ),

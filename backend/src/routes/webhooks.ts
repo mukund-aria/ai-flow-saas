@@ -10,7 +10,7 @@
 
 import { Router } from 'express';
 import crypto from 'crypto';
-import { db, flows, flowRuns, stepExecutions, organizations, users, contacts, webhookEndpoints } from '../db/index.js';
+import { db, templates, flows, stepExecutions, organizations, users, contacts, webhookEndpoints } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
@@ -34,8 +34,8 @@ router.post(
     };
 
     // Get the flow template
-    const flow = await db.query.flows.findFirst({
-      where: eq(flows.id, flowId),
+    const flow = await db.query.templates.findFirst({
+      where: eq(templates.id, flowId),
     });
 
     if (!flow) {
@@ -89,9 +89,9 @@ router.post(
     const runName = name || `${flow.name} - Webhook ${new Date().toISOString().split('T')[0]}`;
 
     const [newRun] = await db
-      .insert(flowRuns)
+      .insert(flows)
       .values({
-        flowId: flow.id,
+        templateId: flow.id,
         name: runName,
         status: 'IN_PROGRESS',
         isSample: false,
@@ -120,7 +120,7 @@ router.post(
       const contactId = assigneeRole ? resolvedRoles[assigneeRole] : undefined;
 
       return {
-        flowRunId: newRun.id,
+        flowId: newRun.id,
         stepId: step.id,
         stepIndex: index,
         status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
@@ -138,7 +138,7 @@ router.post(
       if (stepVal.assignedToContactId && i === 0) {
         const stepExec = await db.query.stepExecutions.findFirst({
           where: and(
-            eq(stepExecutions.flowRunId, newRun.id),
+            eq(stepExecutions.flowId, newRun.id),
             eq(stepExecutions.stepIndex, 0)
           ),
         });
@@ -166,7 +166,7 @@ router.post(
     const firstStep = steps[0] as { id: string; due?: { value: number; unit: string } };
     const firstStepExec = await db.query.stepExecutions.findFirst({
       where: and(
-        eq(stepExecutions.flowRunId, newRun.id),
+        eq(stepExecutions.flowId, newRun.id),
         eq(stepExecutions.stepIndex, 0)
       ),
     });
@@ -178,13 +178,13 @@ router.post(
     await updateFlowActivity(newRun.id);
 
     // Dispatch flow.started webhook
-    await onFlowStarted({ id: newRun.id, name: runName, organizationId: orgId, flowId: flow.id, flow: { name: flow.name } });
+    await onFlowStarted({ id: newRun.id, name: runName, organizationId: orgId, templateId: flow.id, template: { name: flow.name } });
 
     // Fetch the complete run with step executions
-    const completeRun = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, newRun.id),
+    const completeRun = await db.query.flows.findFirst({
+      where: eq(flows.id, newRun.id),
       with: {
-        flow: {
+        template: {
           columns: {
             id: true,
             name: true,
@@ -205,7 +205,7 @@ router.post(
 
     // Audit: webhook flow started
     logAction({
-      flowRunId: newRun.id,
+      flowId: newRun.id,
       action: 'WEBHOOK_FLOW_STARTED',
       details: { flowId: flow.id, flowName: flow.name, runName, callbackUrl: callbackUrl || null },
     });
@@ -227,8 +227,8 @@ router.get(
     const flowId = req.params.flowId as string;
 
     // Get the flow template
-    const flow = await db.query.flows.findFirst({
-      where: eq(flows.id, flowId),
+    const flow = await db.query.templates.findFirst({
+      where: eq(templates.id, flowId),
     });
 
     if (!flow) {
@@ -275,7 +275,7 @@ router.post(
     // Look up the webhook endpoint record for this flow
     const endpoint = await db.query.webhookEndpoints.findFirst({
       where: and(
-        eq(webhookEndpoints.flowId, flowId),
+        eq(webhookEndpoints.templateId, flowId),
         eq(webhookEndpoints.type, 'INCOMING')
       ),
     });
@@ -313,8 +313,8 @@ router.post(
     }
 
     // Get the flow template
-    const flow = await db.query.flows.findFirst({
-      where: eq(flows.id, flowId),
+    const flow = await db.query.templates.findFirst({
+      where: eq(templates.id, flowId),
     });
 
     if (!flow) {
@@ -352,9 +352,9 @@ router.post(
     const runName = name || `${flow.name} - Webhook ${new Date().toISOString().split('T')[0]}`;
 
     const [newRun] = await db
-      .insert(flowRuns)
+      .insert(flows)
       .values({
-        flowId: flow.id,
+        templateId: flow.id,
         name: runName,
         status: 'IN_PROGRESS',
         isSample: false,
@@ -384,7 +384,7 @@ router.post(
       const contactId = assigneeRole ? resolvedRoles[assigneeRole] : undefined;
 
       return {
-        flowRunId: newRun.id,
+        flowId: newRun.id,
         stepId: resolvedStepId,
         stepIndex: index,
         status: index === 0 ? ('IN_PROGRESS' as const) : ('PENDING' as const),
@@ -401,7 +401,7 @@ router.post(
     if (firstStepVal.assignedToContactId) {
       const stepExec = await db.query.stepExecutions.findFirst({
         where: and(
-          eq(stepExecutions.flowRunId, newRun.id),
+          eq(stepExecutions.flowId, newRun.id),
           eq(stepExecutions.stepIndex, 0)
         ),
       });
@@ -428,7 +428,7 @@ router.post(
     const firstStep = steps[0] as { id?: string; stepId?: string; due?: { value: number; unit: string }; config?: { due?: { value: number; unit: string } } };
     const firstStepExec = await db.query.stepExecutions.findFirst({
       where: and(
-        eq(stepExecutions.flowRunId, newRun.id),
+        eq(stepExecutions.flowId, newRun.id),
         eq(stepExecutions.stepIndex, 0)
       ),
     });
@@ -440,11 +440,11 @@ router.post(
     await updateFlowActivity(newRun.id);
 
     // Dispatch flow.started event
-    await onFlowStarted({ id: newRun.id, name: runName, organizationId: orgId, flowId: flow.id, flow: { name: flow.name } });
+    await onFlowStarted({ id: newRun.id, name: runName, organizationId: orgId, templateId: flow.id, template: { name: flow.name } });
 
     // Audit log
     logAction({
-      flowRunId: newRun.id,
+      flowId: newRun.id,
       action: 'WEBHOOK_FLOW_STARTED',
       details: { flowId: flow.id, flowName: flow.name, runName, source: 'hmac_webhook' },
     });

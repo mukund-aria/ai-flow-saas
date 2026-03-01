@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Building2,
@@ -26,7 +26,7 @@ import {
   getAccountFlows,
   type Account,
   type Contact,
-  type AccountFlowRun,
+  type AccountFlow,
 } from '@/lib/api';
 
 // Edit Account Dialog
@@ -156,7 +156,7 @@ export function AccountDetailPage() {
   const navigate = useNavigate();
   const [account, setAccount] = useState<Account | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [flowRuns, setFlowRuns] = useState<AccountFlowRun[]>([]);
+  const [accountFlows, setAccountFlows] = useState<AccountFlow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'contacts' | 'flows'>('contacts');
@@ -175,7 +175,7 @@ export function AccountDetailPage() {
         ]);
         setAccount(accountData);
         setContacts(contactsData);
-        setFlowRuns(flowsData);
+        setAccountFlows(flowsData);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load account');
@@ -307,7 +307,7 @@ export function AccountDetailPage() {
             <PlayCircle className="w-4 h-4" />
             Flows
             <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
-              {flowRuns.length}
+              {accountFlows.length}
             </span>
           </button>
         </nav>
@@ -381,7 +381,7 @@ export function AccountDetailPage() {
 
       {activeTab === 'flows' && (
         <div>
-          {flowRuns.length > 0 ? (
+          {accountFlows.length > 0 ? (
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               <table className="w-full">
                 <thead>
@@ -398,42 +398,42 @@ export function AccountDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {flowRuns.map((run) => (
+                  {accountFlows.map((run) => (
                     <tr
-                      key={run.flowRunId}
+                      key={run.flowId}
                       className="hover:bg-gray-50/50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/flows/${run.flowRunId}`)}
+                      onClick={() => navigate(`/flows/${run.flowId}`)}
                     >
                       <td className="px-6 py-4">
                         <div>
-                          <span className="font-medium text-gray-900">{run.runName}</span>
-                          <p className="text-xs text-gray-500 mt-0.5">{run.flowName}</p>
+                          <span className="font-medium text-gray-900">{run.flowName}</span>
+                          <p className="text-xs text-gray-500 mt-0.5">{run.templateName}</p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${
-                            run.runStatus === 'IN_PROGRESS'
+                            run.flowStatus === 'IN_PROGRESS'
                               ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20'
-                              : run.runStatus === 'COMPLETED'
+                              : run.flowStatus === 'COMPLETED'
                               ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20'
-                              : run.runStatus === 'CANCELLED'
+                              : run.flowStatus === 'CANCELLED'
                               ? 'bg-red-50 text-red-700 ring-1 ring-red-600/20'
                               : 'bg-gray-100 text-gray-600 ring-1 ring-gray-500/20'
                           }`}
                         >
-                          {run.runStatus === 'IN_PROGRESS'
+                          {run.flowStatus === 'IN_PROGRESS'
                             ? 'In Progress'
-                            : run.runStatus === 'COMPLETED'
+                            : run.flowStatus === 'COMPLETED'
                             ? 'Completed'
-                            : run.runStatus === 'CANCELLED'
+                            : run.flowStatus === 'CANCELLED'
                             ? 'Cancelled'
-                            : run.runStatus}
+                            : run.flowStatus}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {run.runStartedAt
-                          ? new Date(run.runStartedAt).toLocaleDateString()
+                        {run.flowStartedAt
+                          ? new Date(run.flowStartedAt).toLocaleDateString()
                           : '\u2014'}
                       </td>
                     </tr>

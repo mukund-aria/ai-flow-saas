@@ -1,5 +1,5 @@
 /**
- * Flow Preview Page
+ * Template Preview Page
  *
  * Full-page animated preview of AI-generated workflow.
  * Split-panel UX: thinking/reasoning on the left, workflow building on the right.
@@ -15,7 +15,7 @@ import { PostGenerationPanel } from '@/components/preview/PostGenerationPanel';
 import { usePreviewChat } from '@/hooks/usePreviewChat';
 import { saveSandboxFlow } from '@/lib/api';
 
-export function FlowPreviewPage() {
+export function TemplatePreviewPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const prompt = searchParams.get('prompt');

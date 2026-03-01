@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { StepIcon } from './StepIcon';
 import { getRoleColor, getRoleInitials, STEP_TYPE_META } from '@/types';
-import type { Step, Role, StepType } from '@/types';
+import type { Step, Role } from '@/types';
 import {
   ThumbsUp,
   ThumbsDown,
@@ -34,20 +34,7 @@ interface RolePreviewDialogProps {
   roleIndex: number;
 }
 
-/** Human step types that an assignee would interact with */
-const ASSIGNEE_STEP_TYPES = new Set<StepType>([
-  'FORM',
-  'APPROVAL',
-  'FILE_REQUEST',
-  'TODO',
-  'ACKNOWLEDGEMENT',
-  'DECISION',
-  'QUESTIONNAIRE',
-  'ESIGN',
-  'CUSTOM_ACTION',
-  'PDF_FORM',
-  'WEB_APP',
-]);
+
 
 export function RolePreviewDialog({
   open,

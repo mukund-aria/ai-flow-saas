@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, contacts, organizations, accounts, stepExecutions, flowRuns } from '../db/index.js';
+import { db, contacts, organizations, accounts, stepExecutions, flows } from '../db/index.js';
 import { eq, desc, and, isNotNull } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -29,11 +29,11 @@ router.get(
         dueAt: stepExecutions.dueAt,
       })
       .from(stepExecutions)
-      .innerJoin(flowRuns, eq(stepExecutions.flowRunId, flowRuns.id))
+      .innerJoin(flows, eq(stepExecutions.flowId, flows.id))
       .where(
         and(
           isNotNull(stepExecutions.assignedToContactId),
-          ...(orgId ? [eq(flowRuns.organizationId, orgId)] : [])
+          ...(orgId ? [eq(flows.organizationId, orgId)] : [])
         )
       );
 

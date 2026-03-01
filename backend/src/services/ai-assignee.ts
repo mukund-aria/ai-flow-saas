@@ -11,7 +11,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '../db/client.js';
-import { stepExecutions, flowRuns, flows, organizations } from '../db/schema.js';
+import { stepExecutions, flows, templates, organizations } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import type { Response } from 'express';
 
@@ -43,11 +43,11 @@ export interface DDRContext {
  * Gathers kickoff data, completed step outputs, role assignments,
  * and workspace info for use in AI prompts.
  */
-export async function buildDDRContext(flowRunId: string): Promise<DDRContext> {
-  const run = await db.query.flowRuns.findFirst({
-    where: eq(flowRuns.id, flowRunId),
+export async function buildDDRContext(flowId: string): Promise<DDRContext> {
+  const run = await db.query.flows.findFirst({
+    where: eq(flows.id, flowId),
     with: {
-      flow: true,
+      template: true,
       stepExecutions: {
         orderBy: (se: any, { asc }: any) => [asc(se.stepIndex)],
       },
@@ -75,7 +75,7 @@ export async function buildDDRContext(flowRunId: string): Promise<DDRContext> {
   }
 
   // Build step outputs from completed steps
-  const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
+  const definition = run.template?.definition as { steps?: Array<Record<string, unknown>> } | null;
   const stepDefs = (definition?.steps || []) as any[];
   const stepOutputs: Record<string, Record<string, unknown>> = {};
 
@@ -99,7 +99,7 @@ export async function buildDDRContext(flowRunId: string): Promise<DDRContext> {
     stepOutputs,
     roleAssignments: (run.roleAssignments as Record<string, string>) || {},
     workspace,
-    flowName: run.flow?.name || '',
+    flowName: run.template?.name || '',
     currentStep: activeStep
       ? {
           id: activeStep.id,
@@ -190,10 +190,10 @@ function parseAIPrepareResponse(text: string): AIPrepareResult {
 export async function runAIPrepare(
   stepExecId: string,
   stepDef: Record<string, unknown>,
-  flowRunId: string
+  flowId: string
 ): Promise<AIPrepareResult> {
   try {
-    const context = await buildDDRContext(flowRunId);
+    const context = await buildDDRContext(flowId);
     const prompt = buildAIPreparePrompt(stepDef, context);
 
     const response = await anthropic.messages.create({
@@ -340,10 +340,10 @@ function parseAIAdviseResponse(text: string): AIAdviseResult {
 export async function runAIAdvise(
   stepExecId: string,
   stepDef: Record<string, unknown>,
-  flowRunId: string
+  flowId: string
 ): Promise<AIAdviseResult> {
   try {
-    const context = await buildDDRContext(flowRunId);
+    const context = await buildDDRContext(flowId);
     const prompt = buildAIAdvisePrompt(stepDef, context);
 
     const response = await anthropic.messages.create({
@@ -540,12 +540,12 @@ export interface FlowSummaryResult {
 /**
  * Generate an executive summary of a completed flow run.
  */
-export async function generateFlowSummary(flowRunId: string): Promise<FlowSummaryResult> {
+export async function generateFlowSummary(flowId: string): Promise<FlowSummaryResult> {
   try {
-    const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, flowRunId),
+    const run = await db.query.flows.findFirst({
+      where: eq(flows.id, flowId),
       with: {
-        flow: true,
+        template: true,
         stepExecutions: {
           orderBy: (se: any, { asc }: any) => [asc(se.stepIndex)],
         },
@@ -556,7 +556,7 @@ export async function generateFlowSummary(flowRunId: string): Promise<FlowSummar
       throw new Error('Flow run not found');
     }
 
-    const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
+    const definition = run.template?.definition as { steps?: Array<Record<string, unknown>> } | null;
     const stepDefs = (definition?.steps || []) as any[];
 
     // Build step timeline
@@ -574,7 +574,7 @@ export async function generateFlowSummary(flowRunId: string): Promise<FlowSummar
     const prompt = `You are generating an executive summary of a completed business workflow.
 
 ## Flow Details
-- Name: ${run.flow?.name || 'Unknown'}
+- Name: ${run.template?.name || 'Unknown'}
 - Started: ${run.startedAt?.toISOString() || 'Unknown'}
 - Completed: ${run.completedAt?.toISOString() || 'Unknown'}
 - Kickoff Data: ${JSON.stringify(run.kickoffData || {}, null, 2)}
@@ -622,12 +622,12 @@ Respond in JSON format:
       };
     }
 
-    // Store in flowRun's kickoffData under _aiSummary key
+    // Store in flow's kickoffData under _aiSummary key
     const existingKickoff = (run.kickoffData as Record<string, unknown>) || {};
     await db
-      .update(flowRuns)
+      .update(flows)
       .set({ kickoffData: { ...existingKickoff, _aiSummary: result } })
-      .where(eq(flowRuns.id, flowRunId));
+      .where(eq(flows.id, flowId));
 
     return result;
   } catch (error) {
@@ -653,19 +653,19 @@ export async function handleFormChat(
   stepExecId: string,
   message: string,
   history: Array<{ role: string; content: string }>,
-  flowRunId: string,
+  flowId: string,
   res: Response
 ): Promise<void> {
   try {
-    const context = await buildDDRContext(flowRunId);
+    const context = await buildDDRContext(flowId);
 
     // Get step definition for form field context
-    const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, flowRunId),
-      with: { flow: true },
+    const run = await db.query.flows.findFirst({
+      where: eq(flows.id, flowId),
+      with: { template: true },
     });
 
-    const definition = run?.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
+    const definition = run?.template?.definition as { steps?: Array<Record<string, unknown>> } | null;
     const stepDefs = (definition?.steps || []) as any[];
     const stepExec = await db.query.stepExecutions.findFirst({
       where: eq(stepExecutions.id, stepExecId),
@@ -727,26 +727,26 @@ Keep responses concise and actionable.`;
  * Handle AI chat for flow-level questions. Streams response via SSE.
  */
 export async function handleAIChat(
-  flowRunId: string,
+  flowId: string,
   message: string,
   history: Array<{ role: string; content: string }>,
   res: Response
 ): Promise<void> {
   try {
-    const context = await buildDDRContext(flowRunId);
+    const context = await buildDDRContext(flowId);
 
     // Get full flow run status
-    const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, flowRunId),
+    const run = await db.query.flows.findFirst({
+      where: eq(flows.id, flowId),
       with: {
-        flow: true,
+        template: true,
         stepExecutions: {
           orderBy: (se: any, { asc }: any) => [asc(se.stepIndex)],
         },
       },
     });
 
-    const definition = run?.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
+    const definition = run?.template?.definition as { steps?: Array<Record<string, unknown>> } | null;
     const stepDefs = (definition?.steps || []) as any[];
 
     const stepStatuses = (run?.stepExecutions || []).map((se) => {

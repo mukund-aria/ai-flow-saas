@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import { db, organizations, users, userOrganizations, flows, flowRuns, stepExecutions, portals, ssoConfigs } from '../db/index.js';
+import { db, organizations, users, userOrganizations, templates, flows, stepExecutions, portals, ssoConfigs } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { claimSandboxFlow } from '../services/sandbox.js';
@@ -66,7 +66,7 @@ router.post(
     });
 
     // Seed default "Onboarding (Sample)" flow template
-    const [defaultFlow] = await db.insert(flows).values({
+    const [defaultTemplate] = await db.insert(templates).values({
       name: 'Onboarding (Sample)',
       description: 'A standard client onboarding workflow with intake, document collection, review, agreement, and completion steps.',
       version: '1.0',
@@ -139,8 +139,8 @@ router.post(
     }).returning();
 
     // Seed a sample flow run with first step assigned to the creating user
-    const [sampleRun] = await db.insert(flowRuns).values({
-      flowId: defaultFlow.id,
+    const [sampleRun] = await db.insert(flows).values({
+      templateId: defaultTemplate.id,
       name: 'Onboarding (Sample)',
       status: 'IN_PROGRESS',
       isSample: true,
@@ -160,7 +160,7 @@ router.post(
 
     await db.insert(stepExecutions).values(
       sampleSteps.map((step) => ({
-        flowRunId: sampleRun.id,
+        flowId: sampleRun.id,
         stepId: step.stepId,
         stepIndex: step.stepIndex,
         status: step.status,
@@ -175,11 +175,11 @@ router.post(
       .where(eq(users.id, user.id));
 
     // Claim sandbox flow if provided (non-fatal on failure)
-    let claimedFlowId: string | null = null;
+    let claimedTemplateId: string | null = null;
     if (claimSandboxFlowId) {
       try {
         const result = await claimSandboxFlow(claimSandboxFlowId, user.id, org.id);
-        claimedFlowId = result.flowId;
+        claimedTemplateId = result.templateId;
       } catch (err) {
         console.warn('[OrgCreate] Failed to claim sandbox flow:', err);
       }
@@ -192,7 +192,7 @@ router.post(
         name: org.name,
         slug: org.slug,
         role: 'ADMIN',
-        claimedFlowId,
+        claimedTemplateId,
       },
     });
   })

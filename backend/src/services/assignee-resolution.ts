@@ -7,7 +7,7 @@
  * Supports both single-assignee and multi-assignee (group) resolution.
  */
 
-import { db, contacts, contactGroupMembers, flowRuns, stepExecutions } from '../db/index.js';
+import { db, contacts, contactGroupMembers, flows, stepExecutions } from '../db/index.js';
 import { eq, and, sql } from 'drizzle-orm';
 import type { Resolution, Role } from '../models/assignees.js';
 
@@ -25,7 +25,7 @@ export interface AssigneeResolutionContext {
   roleAssignments?: Record<string, string>;  // Manual assignments from coordinator (for CONTACT_TBD)
   kickoffData?: Record<string, unknown>;     // Kickoff form data
   flowVariables?: Record<string, unknown>;   // Flow variables passed at start
-  flowId: string;                            // Template ID for round-robin tracking
+  templateId: string;                         // Template ID for round-robin tracking
 }
 
 /**
@@ -198,10 +198,10 @@ async function resolveRoundRobin(
     const result = await db
       .select({ count: sql<number>`count(*)` })
       .from(stepExecutions)
-      .innerJoin(flowRuns, eq(stepExecutions.flowRunId, flowRuns.id))
+      .innerJoin(flows, eq(stepExecutions.flowId, flows.id))
       .where(
         and(
-          eq(flowRuns.flowId, ctx.flowId),
+          eq(flows.templateId, ctx.templateId),
           eq(stepExecutions.assignedToContactId, c.id)
         )
       );

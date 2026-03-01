@@ -403,8 +403,8 @@ export function HomePage() {
 
                 return (
                   <button
-                    key={item.flowRun.id}
-                    onClick={() => navigate(`/flows/${item.flowRun.id}`)}
+                    key={item.flow.id}
+                    onClick={() => navigate(`/flows/${item.flow.id}`)}
                     className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-gray-50 transition-colors text-left"
                   >
                     {/* Tracking status dot */}
@@ -418,10 +418,10 @@ export function HomePage() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-gray-900 text-sm truncate">
-                        {item.flowRun.name}
+                        {item.flow.name}
                       </div>
                       <div className="text-xs text-gray-500 mt-0.5">
-                        {item.flow.name}
+                        {item.template.name}
                         {/* Show "Waiting for" when not the user's turn */}
                         {!item.reasons.some((r) => r.type === 'YOUR_TURN') &&
                           item.currentStepAssignee && (
@@ -452,7 +452,7 @@ export function HomePage() {
 
                     {/* Time */}
                     <span className="text-xs text-gray-400 flex-shrink-0 w-16 text-right">
-                      {formatTimeAgo(item.flowRun.startedAt)}
+                      {formatTimeAgo(item.flow.startedAt)}
                     </span>
                   </button>
                 );

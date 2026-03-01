@@ -11,8 +11,8 @@ import {
   organizations,
   users,
   userOrganizations,
+  templates,
   flows,
-  flowRuns,
   contacts,
   portals,
   systemConfig,
@@ -57,14 +57,14 @@ router.get(
 
     const [userCount] = await db.select({ value: count() }).from(users);
 
-    const [runCount] = await db.select({ value: count() }).from(flowRuns);
+    const [runCount] = await db.select({ value: count() }).from(flows);
 
     const [contactCount] = await db.select({ value: count() }).from(contacts);
 
     const [activeOrgCount] = await db
-      .select({ value: sql<number>`count(distinct ${flowRuns.organizationId})` })
-      .from(flowRuns)
-      .where(sql`${flowRuns.startedAt} > ${thirtyDaysAgo}`);
+      .select({ value: sql<number>`count(distinct ${flows.organizationId})` })
+      .from(flows)
+      .where(sql`${flows.startedAt} > ${thirtyDaysAgo}`);
 
     res.json({
       success: true,
@@ -110,15 +110,15 @@ router.get(
           .from(userOrganizations)
           .where(eq(userOrganizations.organizationId, org.id));
 
-        const [templates] = await db
+        const [templateCount] = await db
           .select({ value: count() })
-          .from(flows)
-          .where(eq(flows.organizationId, org.id));
+          .from(templates)
+          .where(eq(templates.organizationId, org.id));
 
         const [runs] = await db
           .select({ value: count() })
-          .from(flowRuns)
-          .where(eq(flowRuns.organizationId, org.id));
+          .from(flows)
+          .where(eq(flows.organizationId, org.id));
 
         const [orgContacts] = await db
           .select({ value: count() })
@@ -128,7 +128,7 @@ router.get(
         return {
           ...org,
           memberCount: members.value,
-          templateCount: templates.value,
+          templateCount: templateCount.value,
           runCount: runs.value,
           contactCount: orgContacts.value,
         };
@@ -168,13 +168,13 @@ router.get(
 
     const [templateCount] = await db
       .select({ value: count() })
-      .from(flows)
-      .where(eq(flows.organizationId, orgId));
+      .from(templates)
+      .where(eq(templates.organizationId, orgId));
 
     const [runCount] = await db
       .select({ value: count() })
-      .from(flowRuns)
-      .where(eq(flowRuns.organizationId, orgId));
+      .from(flows)
+      .where(eq(flows.organizationId, orgId));
 
     const [contactCount] = await db
       .select({ value: count() })
@@ -184,12 +184,12 @@ router.get(
     // Run stats by status
     const runsByStatus = await db
       .select({
-        status: flowRuns.status,
+        status: flows.status,
         count: count(),
       })
-      .from(flowRuns)
-      .where(eq(flowRuns.organizationId, orgId))
-      .groupBy(flowRuns.status);
+      .from(flows)
+      .where(eq(flows.organizationId, orgId))
+      .groupBy(flows.status);
 
     // Members
     const members = await db
@@ -207,22 +207,22 @@ router.get(
     // Recent 10 runs
     const recentRuns = await db
       .select({
-        id: flowRuns.id,
-        name: flowRuns.name,
-        status: flowRuns.status,
-        startedAt: flowRuns.startedAt,
-        flowId: flowRuns.flowId,
+        id: flows.id,
+        name: flows.name,
+        status: flows.status,
+        startedAt: flows.startedAt,
+        templateId: flows.templateId,
       })
-      .from(flowRuns)
-      .where(eq(flowRuns.organizationId, orgId))
-      .orderBy(desc(flowRuns.startedAt))
+      .from(flows)
+      .where(eq(flows.organizationId, orgId))
+      .orderBy(desc(flows.startedAt))
       .limit(10);
 
     // Enrich recent runs with template name
     const enrichedRuns = await Promise.all(
       recentRuns.map(async run => {
-        const flow = await db.query.flows.findFirst({
-          where: eq(flows.id, run.flowId),
+        const flow = await db.query.templates.findFirst({
+          where: eq(templates.id, run.templateId),
           columns: { name: true },
         });
         return { ...run, templateName: flow?.name || 'Unknown' };

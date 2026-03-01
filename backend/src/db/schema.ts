@@ -13,8 +13,8 @@ import { relations } from 'drizzle-orm';
 // ============================================================================
 
 export type UserRole = 'ADMIN' | 'MEMBER';
-export type FlowStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
-export type FlowRunStatus = 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'PAUSED';
+export type TemplateStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+export type FlowStatus = 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'PAUSED';
 export type StepExecutionStatus = 'PENDING' | 'WAITING_FOR_ASSIGNEE' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED';
 export type ContactType = 'ADMIN' | 'MEMBER' | 'ASSIGNEE';
 export type ContactStatus = 'ACTIVE' | 'INACTIVE';
@@ -24,7 +24,7 @@ export type DigestFrequency = 'NONE' | 'DAILY' | 'WEEKLY';
 export type WebhookEndpointType = 'INCOMING' | 'OUTGOING';
 export type IntegrationType = 'SLACK_WEBHOOK' | 'TEAMS_WEBHOOK' | 'CUSTOM_WEBHOOK';
 export type EmailTemplateType = 'TASK_ASSIGNED' | 'TASK_REMINDER' | 'FLOW_COMPLETED';
-export type FlowRunAccountSource = 'AUTO' | 'MANUAL';
+export type FlowAccountSource = 'AUTO' | 'MANUAL';
 export type SsoTarget = 'COORDINATOR' | 'ASSIGNEE';
 export type DomainVerificationStatus = 'PENDING' | 'VERIFIED' | 'FAILED';
 export type DomainVerificationMethod = 'DNS_TXT' | 'ADMIN_EMAIL';
@@ -98,19 +98,19 @@ export const portals = pgTable('portals', {
 ]);
 
 // ============================================================================
-// Portal Flows (Junction: which flows are in a portal's self-service catalog)
+// Portal Templates (Junction: which templates are in a portal's self-service catalog)
 // ============================================================================
 
-export const portalFlows = pgTable('portal_flows', {
+export const portalTemplates = pgTable('portal_templates', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   portalId: text('portal_id').notNull().references(() => portals.id),
-  flowId: text('flow_id').notNull().references(() => flows.id),
+  templateId: text('template_id').notNull().references(() => templates.id),
   displayTitle: text('display_title'),
   displayDescription: text('display_description'),
   sortOrder: integer('sort_order').default(0).notNull(),
   enabled: boolean('enabled').default(true).notNull(),
 }, (table) => [
-  uniqueIndex('portal_flow_unique').on(table.portalId, table.flowId),
+  uniqueIndex('portal_template_unique').on(table.portalId, table.templateId),
 ]);
 
 // ============================================================================
@@ -206,15 +206,15 @@ export const templateFolders = pgTable('template_folders', {
 });
 
 // ============================================================================
-// Flows (Workflow Templates)
+// Templates (Workflow Blueprints)
 // ============================================================================
 
-export const flows = pgTable('flows', {
+export const templates = pgTable('templates', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text('name').notNull(),
   description: text('description'),
   version: text('version').default('1.0').notNull(),
-  status: text('status').$type<FlowStatus>().default('DRAFT').notNull(),
+  status: text('status').$type<TemplateStatus>().default('DRAFT').notNull(),
   isDefault: boolean('is_default').default(false).notNull(),
   definition: jsonb('definition').$type<Record<string, unknown>>(),
   folderId: text('folder_id').references(() => templateFolders.id),
@@ -226,14 +226,14 @@ export const flows = pgTable('flows', {
 });
 
 // ============================================================================
-// Flow Runs (Workflow Instances)
+// Flows (Active Workflow Instances)
 // ============================================================================
 
-export const flowRuns = pgTable('flow_runs', {
+export const flows = pgTable('flows', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  flowId: text('flow_id').notNull().references(() => flows.id),
+  templateId: text('template_id').notNull().references(() => templates.id),
   name: text('name').notNull(),
-  status: text('status').$type<FlowRunStatus>().default('IN_PROGRESS').notNull(),
+  status: text('status').$type<FlowStatus>().default('IN_PROGRESS').notNull(),
   isSample: boolean('is_sample').default(false).notNull(),
   currentStepIndex: integer('current_step_index').default(0).notNull(),
   startedById: text('started_by_id').notNull().references(() => users.id),
@@ -244,7 +244,7 @@ export const flowRuns = pgTable('flow_runs', {
   completedAt: timestamp('completed_at'),
   dueAt: timestamp('due_at'),
   lastActivityAt: timestamp('last_activity_at'),
-  parentRunId: text('parent_run_id'),
+  parentFlowId: text('parent_flow_id'),
   parentStepExecutionId: text('parent_step_execution_id'),
   portalId: text('portal_id').references(() => portals.id),
   startedByContactId: text('started_by_contact_id').references(() => contacts.id),
@@ -273,7 +273,7 @@ export const contacts = pgTable('contacts', {
 
 export const stepExecutions = pgTable('step_executions', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  flowRunId: text('flow_run_id').notNull().references(() => flowRuns.id),
+  flowId: text('flow_id').notNull().references(() => flows.id),
   stepId: text('step_id').notNull(),
   stepIndex: integer('step_index').notNull(),
   status: text('status').$type<StepExecutionStatus>().default('PENDING').notNull(),
@@ -312,14 +312,14 @@ export const magicLinks = pgTable('magic_links', {
 });
 
 // ============================================================================
-// Flow Run Accounts (Many-to-many: Flow Runs ↔ Accounts)
+// Flow Accounts (Many-to-many: Flows ↔ Accounts)
 // ============================================================================
 
-export const flowRunAccounts = pgTable('flow_run_accounts', {
+export const flowAccounts = pgTable('flow_accounts', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  flowRunId: text('flow_run_id').notNull().references(() => flowRuns.id),
+  flowId: text('flow_id').notNull().references(() => flows.id),
   accountId: text('account_id').notNull().references(() => accounts.id),
-  source: text('source').$type<FlowRunAccountSource>().default('MANUAL').notNull(),
+  source: text('source').$type<FlowAccountSource>().default('MANUAL').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -443,7 +443,7 @@ export const loginOtps = pgTable('login_otps', {
 
 export const auditLogs = pgTable('audit_logs', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  flowRunId: text('flow_run_id').notNull().references(() => flowRuns.id),
+  flowId: text('flow_id').notNull().references(() => flows.id),
   action: text('action').notNull(),
   actorId: text('actor_id'),
   actorEmail: text('actor_email'),
@@ -462,7 +462,7 @@ export const notifications = pgTable('notifications', {
   type: text('type').notNull(),
   title: text('title').notNull(),
   body: text('body').notNull(),
-  flowRunId: text('flow_run_id').references(() => flowRuns.id),
+  flowId: text('flow_id').references(() => flows.id),
   stepExecutionId: text('step_execution_id').references(() => stepExecutions.id),
   readAt: timestamp('read_at'),
   dismissedAt: timestamp('dismissed_at'),
@@ -481,7 +481,7 @@ export const notificationLog = pgTable('notification_log', {
   recipientUserId: text('recipient_user_id').references(() => users.id),
   channel: text('channel').$type<NotificationChannel>().notNull(),
   eventType: text('event_type').notNull(),
-  flowRunId: text('flow_run_id').references(() => flowRuns.id),
+  flowId: text('flow_id').references(() => flows.id),
   stepExecutionId: text('step_execution_id').references(() => stepExecutions.id),
   status: text('status').$type<NotificationStatus>().notNull(),
   errorMessage: text('error_message'),
@@ -489,12 +489,12 @@ export const notificationLog = pgTable('notification_log', {
 });
 
 // ============================================================================
-// Flow Run Conversations (In-Flow Chat)
+// Flow Conversations (In-Flow Chat)
 // ============================================================================
 
-export const flowRunConversations = pgTable('flow_run_conversations', {
+export const flowConversations = pgTable('flow_conversations', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  flowRunId: text('flow_run_id').notNull().references(() => flowRuns.id),
+  flowId: text('flow_id').notNull().references(() => flows.id),
   contactId: text('contact_id').notNull().references(() => contacts.id),
   resolvedAt: timestamp('resolved_at'),
   resolvedByUserId: text('resolved_by_user_id').references(() => users.id),
@@ -503,15 +503,15 @@ export const flowRunConversations = pgTable('flow_run_conversations', {
 });
 
 // ============================================================================
-// Flow Run Messages (In-Flow Chat)
+// Flow Messages (In-Flow Chat)
 // ============================================================================
 
 export type MessageSenderType = 'user' | 'contact';
 
-export const flowRunMessages = pgTable('flow_run_messages', {
+export const flowMessages = pgTable('flow_messages', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  conversationId: text('conversation_id').notNull().references(() => flowRunConversations.id),
-  flowRunId: text('flow_run_id').notNull().references(() => flowRuns.id),
+  conversationId: text('conversation_id').notNull().references(() => flowConversations.id),
+  flowId: text('flow_id').notNull().references(() => flows.id),
   senderUserId: text('sender_user_id').references(() => users.id),
   senderContactId: text('sender_contact_id').references(() => contacts.id),
   senderType: text('sender_type').$type<MessageSenderType>().notNull(),
@@ -521,12 +521,12 @@ export const flowRunMessages = pgTable('flow_run_messages', {
 });
 
 // ============================================================================
-// Flow Run Message Attachments
+// Flow Message Attachments
 // ============================================================================
 
-export const flowRunMessageAttachments = pgTable('flow_run_message_attachments', {
+export const flowMessageAttachments = pgTable('flow_message_attachments', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  messageId: text('message_id').notNull().references(() => flowRunMessages.id),
+  messageId: text('message_id').notNull().references(() => flowMessages.id),
   fileName: text('file_name').notNull(),
   fileUrl: text('file_url').notNull(),
   fileType: text('file_type'),
@@ -557,7 +557,7 @@ export const userNotificationPrefs = pgTable('user_notification_prefs', {
 export const files = pgTable('files', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   organizationId: text('organization_id').notNull().references(() => organizations.id),
-  flowRunId: text('flow_run_id').references(() => flowRuns.id),
+  flowId: text('flow_id').references(() => flows.id),
   stepExecutionId: text('step_execution_id').references(() => stepExecutions.id),
   fileName: text('file_name').notNull(),
   fileSize: integer('file_size').notNull(),
@@ -576,7 +576,7 @@ export const files = pgTable('files', {
 export const schedules = pgTable('schedules', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   organizationId: text('organization_id').notNull().references(() => organizations.id),
-  flowId: text('flow_id').notNull().references(() => flows.id),
+  templateId: text('template_id').notNull().references(() => templates.id),
   scheduleName: text('schedule_name').notNull(),
   cronPattern: text('cron_pattern').notNull(),
   timezone: text('timezone').default('UTC').notNull(),
@@ -596,7 +596,7 @@ export const schedules = pgTable('schedules', {
 
 export const webhookEndpoints = pgTable('webhook_endpoints', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
-  flowId: text('flow_id').notNull().references(() => flows.id),
+  templateId: text('template_id').notNull().references(() => templates.id),
   organizationId: text('organization_id').notNull().references(() => organizations.id),
   type: text('type').$type<WebhookEndpointType>().notNull(),
   url: text('url'),
@@ -663,9 +663,9 @@ export const systemConfig = pgTable('system_config', {
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   userOrganizations: many(userOrganizations),
-  flows: many(flows),
+  templates: many(templates),
   contacts: many(contacts),
-  flowRuns: many(flowRuns),
+  flows: many(flows),
   invites: many(organizationInvites),
   templateFolders: many(templateFolders),
   portals: many(portals),
@@ -683,8 +683,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [organizations.id],
   }),
   userOrganizations: many(userOrganizations),
-  flowsCreated: many(flows),
-  flowRunsStarted: many(flowRuns),
+  templatesCreated: many(templates),
+  flowsStarted: many(flows),
   stepExecutions: many(stepExecutions),
   notifications: many(notifications),
   notificationPrefs: many(userNotificationPrefs),
@@ -717,49 +717,49 @@ export const templateFoldersRelations = relations(templateFolders, ({ one, many 
     fields: [templateFolders.organizationId],
     references: [organizations.id],
   }),
-  templates: many(flows),
+  templates: many(templates),
+}));
+
+export const templatesRelations = relations(templates, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [templates.createdById],
+    references: [users.id],
+  }),
+  organization: one(organizations, {
+    fields: [templates.organizationId],
+    references: [organizations.id],
+  }),
+  folder: one(templateFolders, {
+    fields: [templates.folderId],
+    references: [templateFolders.id],
+  }),
+  flows: many(flows),
 }));
 
 export const flowsRelations = relations(flows, ({ one, many }) => ({
-  createdBy: one(users, {
-    fields: [flows.createdById],
+  template: one(templates, {
+    fields: [flows.templateId],
+    references: [templates.id],
+  }),
+  startedBy: one(users, {
+    fields: [flows.startedById],
     references: [users.id],
   }),
   organization: one(organizations, {
     fields: [flows.organizationId],
     references: [organizations.id],
   }),
-  folder: one(templateFolders, {
-    fields: [flows.folderId],
-    references: [templateFolders.id],
-  }),
-  runs: many(flowRuns),
-}));
-
-export const flowRunsRelations = relations(flowRuns, ({ one, many }) => ({
-  flow: one(flows, {
-    fields: [flowRuns.flowId],
-    references: [flows.id],
-  }),
-  startedBy: one(users, {
-    fields: [flowRuns.startedById],
-    references: [users.id],
-  }),
-  organization: one(organizations, {
-    fields: [flowRuns.organizationId],
-    references: [organizations.id],
-  }),
   portal: one(portals, {
-    fields: [flowRuns.portalId],
+    fields: [flows.portalId],
     references: [portals.id],
   }),
   startedByContact: one(contacts, {
-    fields: [flowRuns.startedByContactId],
+    fields: [flows.startedByContactId],
     references: [contacts.id],
   }),
   stepExecutions: many(stepExecutions),
   auditLogs: many(auditLogs),
-  flowRunAccounts: many(flowRunAccounts),
+  flowAccounts: many(flowAccounts),
 }));
 
 export const contactsRelations = relations(contacts, ({ one, many }) => ({
@@ -780,9 +780,9 @@ export const contactsRelations = relations(contacts, ({ one, many }) => ({
 }));
 
 export const stepExecutionsRelations = relations(stepExecutions, ({ one, many }) => ({
-  flowRun: one(flowRuns, {
-    fields: [stepExecutions.flowRunId],
-    references: [flowRuns.id],
+  flow: one(flows, {
+    fields: [stepExecutions.flowId],
+    references: [flows.id],
   }),
   assignedToUser: one(users, {
     fields: [stepExecutions.assignedToUserId],
@@ -796,9 +796,9 @@ export const stepExecutionsRelations = relations(stepExecutions, ({ one, many })
 }));
 
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
-  flowRun: one(flowRuns, {
-    fields: [auditLogs.flowRunId],
-    references: [flowRuns.id],
+  flow: one(flows, {
+    fields: [auditLogs.flowId],
+    references: [flows.id],
   }),
 }));
 
@@ -811,9 +811,9 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
     fields: [notifications.userId],
     references: [users.id],
   }),
-  flowRun: one(flowRuns, {
-    fields: [notifications.flowRunId],
-    references: [flowRuns.id],
+  flow: one(flows, {
+    fields: [notifications.flowId],
+    references: [flows.id],
   }),
   stepExecution: one(stepExecutions, {
     fields: [notifications.stepExecutionId],
@@ -830,9 +830,9 @@ export const notificationLogRelations = relations(notificationLog, ({ one }) => 
     fields: [notificationLog.recipientUserId],
     references: [users.id],
   }),
-  flowRun: one(flowRuns, {
-    fields: [notificationLog.flowRunId],
-    references: [flowRuns.id],
+  flow: one(flows, {
+    fields: [notificationLog.flowId],
+    references: [flows.id],
   }),
   stepExecution: one(stepExecutions, {
     fields: [notificationLog.stepExecutionId],
@@ -855,46 +855,46 @@ export const userNotificationPrefsRelations = relations(userNotificationPrefs, (
 // Chat Relations
 // ============================================================================
 
-export const flowRunConversationsRelations = relations(flowRunConversations, ({ one, many }) => ({
-  flowRun: one(flowRuns, {
-    fields: [flowRunConversations.flowRunId],
-    references: [flowRuns.id],
+export const flowConversationsRelations = relations(flowConversations, ({ one, many }) => ({
+  flow: one(flows, {
+    fields: [flowConversations.flowId],
+    references: [flows.id],
   }),
   contact: one(contacts, {
-    fields: [flowRunConversations.contactId],
+    fields: [flowConversations.contactId],
     references: [contacts.id],
   }),
   resolvedBy: one(users, {
-    fields: [flowRunConversations.resolvedByUserId],
+    fields: [flowConversations.resolvedByUserId],
     references: [users.id],
   }),
-  messages: many(flowRunMessages),
+  messages: many(flowMessages),
 }));
 
-export const flowRunMessagesRelations = relations(flowRunMessages, ({ one, many }) => ({
-  conversation: one(flowRunConversations, {
-    fields: [flowRunMessages.conversationId],
-    references: [flowRunConversations.id],
+export const flowMessagesRelations = relations(flowMessages, ({ one, many }) => ({
+  conversation: one(flowConversations, {
+    fields: [flowMessages.conversationId],
+    references: [flowConversations.id],
   }),
-  flowRun: one(flowRuns, {
-    fields: [flowRunMessages.flowRunId],
-    references: [flowRuns.id],
+  flow: one(flows, {
+    fields: [flowMessages.flowId],
+    references: [flows.id],
   }),
   senderUser: one(users, {
-    fields: [flowRunMessages.senderUserId],
+    fields: [flowMessages.senderUserId],
     references: [users.id],
   }),
   senderContact: one(contacts, {
-    fields: [flowRunMessages.senderContactId],
+    fields: [flowMessages.senderContactId],
     references: [contacts.id],
   }),
-  attachments: many(flowRunMessageAttachments),
+  attachments: many(flowMessageAttachments),
 }));
 
-export const flowRunMessageAttachmentsRelations = relations(flowRunMessageAttachments, ({ one }) => ({
-  message: one(flowRunMessages, {
-    fields: [flowRunMessageAttachments.messageId],
-    references: [flowRunMessages.id],
+export const flowMessageAttachmentsRelations = relations(flowMessageAttachments, ({ one }) => ({
+  message: one(flowMessages, {
+    fields: [flowMessageAttachments.messageId],
+    references: [flowMessages.id],
   }),
 }));
 
@@ -907,9 +907,9 @@ export const filesRelations = relations(files, ({ one }) => ({
     fields: [files.organizationId],
     references: [organizations.id],
   }),
-  flowRun: one(flowRuns, {
-    fields: [files.flowRunId],
-    references: [flowRuns.id],
+  flow: one(flows, {
+    fields: [files.flowId],
+    references: [flows.id],
   }),
   stepExecution: one(stepExecutions, {
     fields: [files.stepExecutionId],
@@ -930,9 +930,9 @@ export const schedulesRelations = relations(schedules, ({ one }) => ({
     fields: [schedules.organizationId],
     references: [organizations.id],
   }),
-  flow: one(flows, {
-    fields: [schedules.flowId],
-    references: [flows.id],
+  template: one(templates, {
+    fields: [schedules.templateId],
+    references: [templates.id],
   }),
   createdBy: one(users, {
     fields: [schedules.createdByUserId],
@@ -941,9 +941,9 @@ export const schedulesRelations = relations(schedules, ({ one }) => ({
 }));
 
 export const webhookEndpointsRelations = relations(webhookEndpoints, ({ one }) => ({
-  flow: one(flows, {
-    fields: [webhookEndpoints.flowId],
-    references: [flows.id],
+  template: one(templates, {
+    fields: [webhookEndpoints.templateId],
+    references: [templates.id],
   }),
   organization: one(organizations, {
     fields: [webhookEndpoints.organizationId],
@@ -967,21 +967,21 @@ export const portalsRelations = relations(portals, ({ one, many }) => ({
     fields: [portals.organizationId],
     references: [organizations.id],
   }),
-  portalFlows: many(portalFlows),
+  portalTemplates: many(portalTemplates),
   contacts: many(contacts),
   emailTemplates: many(emailTemplates),
   assigneeSessions: many(assigneeSessions),
   ssoConfigs: many(ssoConfigs),
 }));
 
-export const portalFlowsRelations = relations(portalFlows, ({ one }) => ({
+export const portalTemplatesRelations = relations(portalTemplates, ({ one }) => ({
   portal: one(portals, {
-    fields: [portalFlows.portalId],
+    fields: [portalTemplates.portalId],
     references: [portals.id],
   }),
-  flow: one(flows, {
-    fields: [portalFlows.flowId],
-    references: [flows.id],
+  template: one(templates, {
+    fields: [portalTemplates.templateId],
+    references: [templates.id],
   }),
 }));
 
@@ -1021,16 +1021,16 @@ export const accountsRelations = relations(accounts, ({ one, many }) => ({
     references: [organizations.id],
   }),
   contacts: many(contacts),
-  flowRunAccounts: many(flowRunAccounts),
+  flowAccounts: many(flowAccounts),
 }));
 
-export const flowRunAccountsRelations = relations(flowRunAccounts, ({ one }) => ({
-  flowRun: one(flowRuns, {
-    fields: [flowRunAccounts.flowRunId],
-    references: [flowRuns.id],
+export const flowAccountsRelations = relations(flowAccounts, ({ one }) => ({
+  flow: one(flows, {
+    fields: [flowAccounts.flowId],
+    references: [flows.id],
   }),
   account: one(accounts, {
-    fields: [flowRunAccounts.accountId],
+    fields: [flowAccounts.accountId],
     references: [accounts.id],
   }),
 }));

@@ -656,7 +656,7 @@ export function ExecuteFlowDialog({
       }
 
       const run = await startFlow(template.id, runName, options);
-      onFlowStarted({ id: run.id ?? run.flowId });
+      onFlowStarted({ id: run.id });
       onOpenChange(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start flow');

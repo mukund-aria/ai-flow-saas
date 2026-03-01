@@ -1,5 +1,5 @@
 /**
- * Flow Run Chat Panel
+ * Flow Chat Panel
  *
  * Right-side slide panel for in-flow messaging.
  * Two modes:
@@ -9,13 +9,13 @@
 
 import { useEffect } from 'react';
 import { X, MessageSquare } from 'lucide-react';
-import { useFlowRunChatStore } from '@/stores/flowRunChatStore';
+import { useFlowChatStore } from '@/stores/flowChatStore';
 import { ConversationList } from './ConversationList';
 import { ConversationThread } from './ConversationThread';
 
 interface CoordinatorProps {
   mode: 'coordinator';
-  flowRunId: string;
+  flowId: string;
 }
 
 interface AssigneeProps {
@@ -25,7 +25,7 @@ interface AssigneeProps {
 
 type Props = CoordinatorProps | AssigneeProps;
 
-export function FlowRunChatPanel(props: Props) {
+export function FlowChatPanel(props: Props) {
   const {
     isOpen,
     setOpen,
@@ -45,22 +45,22 @@ export function FlowRunChatPanel(props: Props) {
     startPolling,
     stopPolling,
     reset,
-  } = useFlowRunChatStore();
+  } = useFlowChatStore();
 
   // Fetch initial data and set up polling
   useEffect(() => {
     if (!isOpen) return;
 
     if (props.mode === 'coordinator') {
-      fetchConversations(props.flowRunId);
-      startPolling(() => fetchConversations(props.flowRunId));
+      fetchConversations(props.flowId);
+      startPolling(() => fetchConversations(props.flowId));
     } else {
       fetchAssigneeMessages(props.token);
       startPolling(() => fetchAssigneeMessages(props.token));
     }
 
     return () => stopPolling();
-  }, [isOpen, props.mode, props.mode === 'coordinator' ? props.flowRunId : (props as AssigneeProps).token]);
+  }, [isOpen, props.mode, props.mode === 'coordinator' ? props.flowId : (props as AssigneeProps).token]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -93,11 +93,11 @@ export function FlowRunChatPanel(props: Props) {
             messages={messages}
             isLoading={isLoadingMessages}
             isSending={isSending}
-            onSend={(content) => sendMessage(props.flowRunId, activeConversationId, content)}
+            onSend={(content) => sendMessage(props.flowId, activeConversationId, content)}
             contactName={activeConversation.contact.name}
             onBack={backToList}
             isResolved={!!activeConversation.resolvedAt}
-            onToggleResolved={(resolved) => toggleResolved(props.flowRunId, activeConversationId, resolved)}
+            onToggleResolved={(resolved) => toggleResolved(props.flowId, activeConversationId, resolved)}
             onClose={() => setOpen(false)}
             ownSenderType="user"
           />
@@ -105,7 +105,7 @@ export function FlowRunChatPanel(props: Props) {
           <ConversationList
             conversations={conversations}
             isLoading={isLoadingConversations}
-            onSelect={(id) => selectConversation(id, props.flowRunId)}
+            onSelect={(id) => selectConversation(id, props.flowId)}
           />
         )
       ) : (

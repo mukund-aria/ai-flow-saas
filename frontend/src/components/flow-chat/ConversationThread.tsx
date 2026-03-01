@@ -7,7 +7,7 @@ import { useRef, useEffect } from 'react';
 import { ArrowLeft, CheckCircle2, Circle, Loader2, X } from 'lucide-react';
 import { ChatMessageBubble, formatDate } from './ChatMessage';
 import { ChatInput } from './ChatInput';
-import type { ChatMessage } from '@/stores/flowRunChatStore';
+import type { ChatMessage } from '@/stores/flowChatStore';
 
 interface Props {
   messages: ChatMessage[];

@@ -160,7 +160,7 @@ export function AdminOrgDetail() {
         {[
           { label: 'Members', value: org.stats.members, icon: Users, color: 'bg-blue-50 text-blue-600' },
           { label: 'Templates', value: org.stats.templates, icon: FileText, color: 'bg-violet-50 text-violet-600' },
-          { label: 'Flow Runs', value: org.stats.runs, icon: Play, color: 'bg-green-50 text-green-600' },
+          { label: 'Flows', value: org.stats.runs, icon: Play, color: 'bg-green-50 text-green-600' },
           { label: 'Contacts', value: org.stats.contacts, icon: UserCheck, color: 'bg-rose-50 text-rose-600' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">

@@ -7,7 +7,7 @@ const defaultSlackSettings: SlackIntegrationSettings = {
   enabled: false,
   channelMode: 'SHARED',
   shared: { channelName: '' },
-  perFlowRun: {
+  perFlow: {
     namingPattern: '{flowName}-{runId}',
     visibility: 'PRIVATE',
     inviteGroup: 'ALL_COORDINATORS',
@@ -269,9 +269,9 @@ function ChannelIntegrationsSection({
                   <label className="text-xs font-medium text-gray-600">Naming pattern</label>
                   <input
                     type="text"
-                    value={slack.perFlowRun.namingPattern}
+                    value={slack.perFlow.namingPattern}
                     onChange={(e) => updateSlack({
-                      perFlowRun: { ...slack.perFlowRun, namingPattern: e.target.value },
+                      perFlow: { ...slack.perFlow, namingPattern: e.target.value },
                     })}
                     placeholder="{flowName}-{clientName}"
                     className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
@@ -284,9 +284,9 @@ function ChannelIntegrationsSection({
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-gray-600">Channel visibility</label>
                   <SegmentedControl<ChannelVisibility>
-                    value={slack.perFlowRun.visibility}
+                    value={slack.perFlow.visibility}
                     onChange={(v) => updateSlack({
-                      perFlowRun: { ...slack.perFlowRun, visibility: v },
+                      perFlow: { ...slack.perFlow, visibility: v },
                     })}
                     options={[
                       { value: 'PRIVATE', label: 'Private' },
@@ -298,9 +298,9 @@ function ChannelIntegrationsSection({
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-gray-600">Invite to channel</label>
                   <select
-                    value={slack.perFlowRun.inviteGroup}
+                    value={slack.perFlow.inviteGroup}
                     onChange={(e) => updateSlack({
-                      perFlowRun: { ...slack.perFlowRun, inviteGroup: e.target.value as ChannelInviteGroup },
+                      perFlow: { ...slack.perFlow, inviteGroup: e.target.value as ChannelInviteGroup },
                     })}
                     className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-white text-gray-700"
                   >
@@ -314,9 +314,9 @@ function ChannelIntegrationsSection({
                   <label className="text-xs font-medium text-gray-600">Additional members (optional)</label>
                   <input
                     type="text"
-                    value={slack.perFlowRun.additionalMembers}
+                    value={slack.perFlow.additionalMembers}
                     onChange={(e) => updateSlack({
-                      perFlowRun: { ...slack.perFlowRun, additionalMembers: e.target.value },
+                      perFlow: { ...slack.perFlow, additionalMembers: e.target.value },
                     })}
                     placeholder="user@example.com, user2@example.com"
                     className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
@@ -324,9 +324,9 @@ function ChannelIntegrationsSection({
                 </div>
 
                 <Checkbox
-                  checked={slack.perFlowRun.autoArchiveOnComplete}
+                  checked={slack.perFlow.autoArchiveOnComplete}
                   onChange={(v) => updateSlack({
-                    perFlowRun: { ...slack.perFlowRun, autoArchiveOnComplete: v },
+                    perFlow: { ...slack.perFlow, autoArchiveOnComplete: v },
                   })}
                   label="Auto-archive channel when flow completes"
                 />
@@ -421,7 +421,7 @@ function OutgoingWebhooksSection({
   onChange: (s: FlowNotificationSettings) => void;
 }) {
   const savedFlowId = useWorkflowStore((s) => s.savedFlowId);
-  const ci = settings.channelIntegrations ?? { slack: { enabled: false, channelMode: 'SHARED' as const, shared: { channelName: '' }, perFlowRun: { namingPattern: '', visibility: 'PRIVATE' as const, inviteGroup: 'ALL_COORDINATORS' as const, additionalMembers: '', autoArchiveOnComplete: true }, events: { actionCompleted: true, flowStarted: true, flowCompleted: true, chatMessages: false } } };
+  const ci = settings.channelIntegrations ?? { slack: { enabled: false, channelMode: 'SHARED' as const, shared: { channelName: '' }, perFlow: { namingPattern: '', visibility: 'PRIVATE' as const, inviteGroup: 'ALL_COORDINATORS' as const, additionalMembers: '', autoArchiveOnComplete: true }, events: { actionCompleted: true, flowStarted: true, flowCompleted: true, chatMessages: false } } };
   const webhooks: WebhookIntegrationSettings = ci.webhooks ?? { endpoints: [] };
   const endpoints = webhooks.endpoints;
 

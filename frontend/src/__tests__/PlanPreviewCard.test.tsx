@@ -58,7 +58,7 @@ describe('PlanPreviewCard', () => {
       expect(screen.getByText(/2 roles/)).toBeInTheDocument();
     });
 
-    it('renders all steps', () => {
+    it('renders step and role stats', () => {
       render(
         <PlanPreviewCard
           plan={VALID_PENDING_PLAN}
@@ -67,11 +67,12 @@ describe('PlanPreviewCard', () => {
         />
       );
 
-      expect(screen.getByText('Client Information')).toBeInTheDocument();
-      expect(screen.getByText('Manager Approval')).toBeInTheDocument();
+      // Component shows counts, not individual step/role names
+      expect(screen.getByText(/2 steps/)).toBeInTheDocument();
+      expect(screen.getByText(/2 roles/)).toBeInTheDocument();
     });
 
-    it('renders assignee roles', () => {
+    it('renders assumptions toggle when present', () => {
       render(
         <PlanPreviewCard
           plan={VALID_PENDING_PLAN}
@@ -80,21 +81,12 @@ describe('PlanPreviewCard', () => {
         />
       );
 
-      // 'Client' and 'Manager' appear in both role badges and step assignees
-      expect(screen.getAllByText('Client').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Manager').length).toBeGreaterThan(0);
-    });
+      // Assumptions are behind a collapsible toggle
+      const toggle = screen.getByText(/Assumptions \(2\)/);
+      expect(toggle).toBeInTheDocument();
 
-    it('renders assumptions when present', () => {
-      render(
-        <PlanPreviewCard
-          plan={VALID_PENDING_PLAN}
-          onApprove={mockOnApprove}
-          onRequestChanges={mockOnRequestChanges}
-        />
-      );
-
-      expect(screen.getByText('I made these assumptions:')).toBeInTheDocument();
+      // Click to expand
+      fireEvent.click(toggle);
       expect(screen.getByText(/Client is external/)).toBeInTheDocument();
     });
 
@@ -107,7 +99,7 @@ describe('PlanPreviewCard', () => {
         />
       );
 
-      fireEvent.click(screen.getByText(/Proceed & Create/));
+      fireEvent.click(screen.getByText(/Approve & Create/));
       expect(mockOnApprove).toHaveBeenCalledTimes(1);
     });
 
@@ -142,7 +134,7 @@ describe('PlanPreviewCard', () => {
         />
       );
 
-      expect(screen.queryByText('I made these assumptions:')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Assumptions/)).not.toBeInTheDocument();
     });
 
     it('handles plan with empty assumptions array', () => {
@@ -154,7 +146,7 @@ describe('PlanPreviewCard', () => {
         />
       );
 
-      expect(screen.queryByText('I made these assumptions:')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Assumptions/)).not.toBeInTheDocument();
     });
 
     // Test all edge cases don't crash
@@ -173,7 +165,7 @@ describe('PlanPreviewCard', () => {
       });
     });
 
-    it('shows "No steps defined" when steps array is empty', () => {
+    it('shows 0 steps when steps array is empty', () => {
       const planWithNoSteps: PendingPlan = {
         planId: 'plan-empty-steps',
         workflow: {
@@ -194,7 +186,7 @@ describe('PlanPreviewCard', () => {
         />
       );
 
-      expect(screen.getByText('No steps defined')).toBeInTheDocument();
+      expect(screen.getByText(/0 steps/)).toBeInTheDocument();
     });
 
     it('handles workflow with null roles', () => {

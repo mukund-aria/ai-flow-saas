@@ -7,7 +7,7 @@
 
 import { Router } from 'express';
 import multer from 'multer';
-import { db, magicLinks, stepExecutions, flowRuns, contacts, flowRunConversations, flowRunMessages, auditLogs, files } from '../db/index.js';
+import { db, magicLinks, stepExecutions, flows, contacts, flowConversations, flowMessages, auditLogs, files } from '../db/index.js';
 import { eq, and, isNull } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { validateMagicLink } from '../services/magic-link.js';
@@ -125,12 +125,12 @@ router.post(
 
     // Check for AI Review before completing step
     let aiReviewPending = false;
-    const run0 = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, stepExec.flowRunId),
-      with: { flow: true },
+    const flow0 = await db.query.flows.findFirst({
+      where: eq(flows.id, stepExec.flowId),
+      with: { template: true },
     });
-    if (run0) {
-      const def = run0.flow?.definition as any;
+    if (flow0) {
+      const def = flow0.template?.definition as any;
       const stepDef = def?.steps?.find((s: any) => s.stepId === stepExec.stepId);
 
       // New AI Review system (synchronous, works on FORM/FILE_REQUEST/QUESTIONNAIRE)
@@ -164,11 +164,11 @@ router.post(
       .set({ usedAt: new Date() })
       .where(eq(magicLinks.id, link.id));
 
-    // Advance the flow run to the next step
-    const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, stepExec.flowRunId),
+    // Advance the flow to the next step
+    const flow = await db.query.flows.findFirst({
+      where: eq(flows.id, stepExec.flowId),
       with: {
-        flow: true,
+        template: true,
         stepExecutions: {
           orderBy: (se, { asc }) => [asc(se.stepIndex)],
         },
@@ -179,8 +179,8 @@ router.post(
     let resolvedNextStep: { id: string; assignedToContactId: string | null; stepIndex: number } | undefined;
     let groupResult: { advanced: boolean; completedCount: number; totalCount: number } | undefined;
 
-    if (run) {
-      const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
+    if (flow) {
+      const definition = flow.template?.definition as { steps?: Array<Record<string, unknown>> } | null;
       const stepDefs = (definition?.steps || []) as any[];
 
       // Check if this is a group assignment
@@ -190,7 +190,7 @@ router.post(
           stepExec.id,
           link.stepExecutionAssigneeId,
           resultData || {},
-          run as any,
+          flow as any,
           stepDefs
         );
       } else {
@@ -198,19 +198,19 @@ router.post(
         const result = await completeStepAndAdvance({
           stepExecutionId: stepExec.id,
           resultData: resultData || {},
-          run: run as any,
+          run: flow as any,
           stepDefs,
         });
 
         if (result.nextStepId) {
-          resolvedNextStep = run.stepExecutions.find(se => se.id === result.nextStepId) as any;
+          resolvedNextStep = flow.stepExecutions.find(se => se.id === result.nextStepId) as any;
         }
       }
     }
 
     // Audit: assignee completed task via magic link
     logAction({
-      flowRunId: stepExec.flowRunId,
+      flowId: stepExec.flowId,
       action: 'ASSIGNEE_TASK_COMPLETED',
       details: { stepId: stepExec.stepId, stepIndex: stepExec.stepIndex },
     });
@@ -295,7 +295,7 @@ router.get(
 );
 
 // ============================================================================
-// GET /api/public/task/:token/activity - Get activity events for this flow run
+// GET /api/public/task/:token/activity - Get activity events for this flow
 // ============================================================================
 
 router.get(
@@ -322,9 +322,9 @@ router.get(
       return;
     }
 
-    // Query audit logs for this flow run
+    // Query audit logs for this flow
     const logs = await db.query.auditLogs.findMany({
-      where: eq(auditLogs.flowRunId, stepExec.flowRunId),
+      where: eq(auditLogs.flowId, stepExec.flowId),
       orderBy: (log, { desc }) => [desc(log.createdAt)],
       limit: 50,
     });
@@ -401,11 +401,11 @@ router.get(
       return;
     }
 
-    // Find or create conversation for this contact + flow run
-    let conversation = await db.query.flowRunConversations.findFirst({
+    // Find or create conversation for this contact + flow
+    let conversation = await db.query.flowConversations.findFirst({
       where: and(
-        eq(flowRunConversations.flowRunId, stepExec.flowRunId),
-        eq(flowRunConversations.contactId, stepExec.assignedToContactId)
+        eq(flowConversations.flowId, stepExec.flowId),
+        eq(flowConversations.contactId, stepExec.assignedToContactId)
       ),
     });
 
@@ -415,8 +415,8 @@ router.get(
       return;
     }
 
-    const messages = await db.query.flowRunMessages.findMany({
-      where: eq(flowRunMessages.conversationId, conversation.id),
+    const messages = await db.query.flowMessages.findMany({
+      where: eq(flowMessages.conversationId, conversation.id),
       with: { attachments: true },
       orderBy: (m, { asc }) => [asc(m.createdAt)],
     });
@@ -484,16 +484,16 @@ router.post(
     }
 
     // Find or create conversation
-    let conversation = await db.query.flowRunConversations.findFirst({
+    let conversation = await db.query.flowConversations.findFirst({
       where: and(
-        eq(flowRunConversations.flowRunId, stepExec.flowRunId),
-        eq(flowRunConversations.contactId, contact.id)
+        eq(flowConversations.flowId, stepExec.flowId),
+        eq(flowConversations.contactId, contact.id)
       ),
     });
 
     if (!conversation) {
-      const [newConv] = await db.insert(flowRunConversations).values({
-        flowRunId: stepExec.flowRunId,
+      const [newConv] = await db.insert(flowConversations).values({
+        flowId: stepExec.flowId,
         contactId: contact.id,
         lastMessageAt: new Date(),
       }).returning();
@@ -501,9 +501,9 @@ router.post(
     }
 
     // Create the message
-    const [message] = await db.insert(flowRunMessages).values({
+    const [message] = await db.insert(flowMessages).values({
       conversationId: conversation.id,
-      flowRunId: stepExec.flowRunId,
+      flowId: stepExec.flowId,
       senderContactId: contact.id,
       senderType: 'contact',
       senderName: contact.name,
@@ -511,9 +511,9 @@ router.post(
     }).returning();
 
     // Update conversation lastMessageAt
-    await db.update(flowRunConversations)
+    await db.update(flowConversations)
       .set({ lastMessageAt: new Date() })
-      .where(eq(flowRunConversations.id, conversation.id));
+      .where(eq(flowConversations.id, conversation.id));
 
     res.json({
       success: true,
@@ -577,15 +577,15 @@ router.post(
       return;
     }
 
-    // Get the flow run to find the org ID
-    const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, stepExec.flowRunId),
+    // Get the flow to find the org ID
+    const flowInstance = await db.query.flows.findFirst({
+      where: eq(flows.id, stepExec.flowId),
     });
 
-    if (!run) {
+    if (!flowInstance) {
       res.status(404).json({
         success: false,
-        error: { code: 'NOT_FOUND', message: 'Flow run not found' },
+        error: { code: 'NOT_FOUND', message: 'Flow not found' },
       });
       return;
     }
@@ -594,15 +594,15 @@ router.post(
     const { storageKey } = await fileStorage.upload(file.buffer, {
       fileName: file.originalname,
       mimeType: file.mimetype,
-      orgId: run.organizationId,
-      flowRunId: run.id,
+      orgId: flowInstance.organizationId,
+      flowId: flowInstance.id,
       stepId: stepExec.id,
     });
 
     // Save metadata to database
     const [fileRecord] = await db.insert(files).values({
-      organizationId: run.organizationId,
-      flowRunId: run.id,
+      organizationId: flowInstance.organizationId,
+      flowId: flowInstance.id,
       stepExecutionId: stepExec.id,
       fileName: file.originalname,
       fileSize: file.size,
@@ -719,7 +719,7 @@ router.post(
     });
 
     const { handleFormChat } = await import('../services/ai-assignee.js');
-    await handleFormChat(stepExec.id, message, history || [], stepExec.flowRunId, res);
+    await handleFormChat(stepExec.id, message, history || [], stepExec.flowId, res);
   })
 );
 

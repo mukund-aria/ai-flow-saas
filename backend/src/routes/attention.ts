@@ -9,7 +9,7 @@
  */
 
 import { Router } from 'express';
-import { db, flowRuns, stepExecutions, flows } from '../db/index.js';
+import { db, flows, stepExecutions, templates } from '../db/index.js';
 import { eq, and, or, inArray } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -37,7 +37,7 @@ export interface AttentionReason {
 }
 
 export interface AttentionItem {
-  flowRun: {
+  flow: {
     id: string;
     name: string;
     status: string;
@@ -45,7 +45,7 @@ export interface AttentionItem {
     startedAt: string;
     currentStepIndex: number;
   };
-  flow: {
+  template: {
     id: string;
     name: string;
   };
@@ -85,13 +85,13 @@ router.get(
     }
 
     // Step 1: Find all IN_PROGRESS runs in this org
-    const conditions = [eq(flowRuns.status, 'IN_PROGRESS')];
-    if (orgId) conditions.push(eq(flowRuns.organizationId, orgId));
+    const conditions = [eq(flows.status, 'IN_PROGRESS')];
+    if (orgId) conditions.push(eq(flows.organizationId, orgId));
 
-    const allInProgressRuns = await db.query.flowRuns.findMany({
+    const allInProgressRuns = await db.query.flows.findMany({
       where: and(...conditions),
       with: {
-        flow: {
+        template: {
           columns: { id: true, name: true },
         },
         stepExecutions: {
@@ -215,7 +215,7 @@ router.get(
       }
 
       attentionItems.push({
-        flowRun: {
+        flow: {
           id: run.id,
           name: run.name,
           status: run.status,
@@ -223,9 +223,9 @@ router.get(
           startedAt: new Date(run.startedAt).toISOString(),
           currentStepIndex: run.currentStepIndex,
         },
-        flow: {
-          id: run.flow?.id || '',
-          name: run.flow?.name || 'Unknown',
+        template: {
+          id: run.template?.id || '',
+          name: run.template?.name || 'Unknown',
         },
         reasons,
         trackingStatus,

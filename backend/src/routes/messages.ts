@@ -6,33 +6,33 @@
  */
 
 import { Router } from 'express';
-import { db, flowRunConversations, flowRunMessages, flowRuns, users } from '../db/index.js';
+import { db, flowConversations, flowMessages, flows, users } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
 const router = Router();
 
 // ============================================================================
-// GET /api/flows/:flowRunId/conversations — List conversations
+// GET /api/flows/:flowId/conversations — List conversations
 // ============================================================================
 
 router.get(
-  '/:flowRunId/conversations',
+  '/:flowId/conversations',
   asyncHandler(async (req, res) => {
-    const flowRunId = req.params.flowRunId as string;
+    const flowId = req.params.flowId as string;
 
     // Verify the flow run belongs to the user's org
-    const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, flowRunId),
+    const flow = await db.query.flows.findFirst({
+      where: eq(flows.id, flowId),
     });
 
-    if (!run || run.organizationId !== (req as any).organizationId) {
-      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Flow run not found' } });
+    if (!flow || flow.organizationId !== (req as any).organizationId) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Flow not found' } });
       return;
     }
 
-    const conversations = await db.query.flowRunConversations.findMany({
-      where: eq(flowRunConversations.flowRunId, flowRunId),
+    const conversations = await db.query.flowConversations.findMany({
+      where: eq(flowConversations.flowId, flowId),
       with: {
         contact: true,
         messages: {
@@ -69,29 +69,29 @@ router.get(
 );
 
 // ============================================================================
-// GET /api/flows/:flowRunId/conversations/:conversationId/messages
+// GET /api/flows/:flowId/conversations/:conversationId/messages
 // ============================================================================
 
 router.get(
-  '/:flowRunId/conversations/:conversationId/messages',
+  '/:flowId/conversations/:conversationId/messages',
   asyncHandler(async (req, res) => {
-    const flowRunId = req.params.flowRunId as string;
+    const flowId = req.params.flowId as string;
     const conversationId = req.params.conversationId as string;
 
     // Verify access
-    const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, flowRunId),
+    const flow = await db.query.flows.findFirst({
+      where: eq(flows.id, flowId),
     });
 
-    if (!run || run.organizationId !== (req as any).organizationId) {
-      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Flow run not found' } });
+    if (!flow || flow.organizationId !== (req as any).organizationId) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Flow not found' } });
       return;
     }
 
-    const messages = await db.query.flowRunMessages.findMany({
+    const messages = await db.query.flowMessages.findMany({
       where: and(
-        eq(flowRunMessages.conversationId, conversationId),
-        eq(flowRunMessages.flowRunId, flowRunId)
+        eq(flowMessages.conversationId, conversationId),
+        eq(flowMessages.flowId, flowId)
       ),
       with: {
         attachments: true,
@@ -122,13 +122,13 @@ router.get(
 );
 
 // ============================================================================
-// POST /api/flows/:flowRunId/conversations/:conversationId/messages
+// POST /api/flows/:flowId/conversations/:conversationId/messages
 // ============================================================================
 
 router.post(
-  '/:flowRunId/conversations/:conversationId/messages',
+  '/:flowId/conversations/:conversationId/messages',
   asyncHandler(async (req, res) => {
-    const flowRunId = req.params.flowRunId as string;
+    const flowId = req.params.flowId as string;
     const conversationId = req.params.conversationId as string;
     const { content } = req.body;
     const userId = (req as any).userId as string;
@@ -139,12 +139,12 @@ router.post(
     }
 
     // Verify access
-    const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, flowRunId),
+    const flow = await db.query.flows.findFirst({
+      where: eq(flows.id, flowId),
     });
 
-    if (!run || run.organizationId !== (req as any).organizationId) {
-      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Flow run not found' } });
+    if (!flow || flow.organizationId !== (req as any).organizationId) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Flow not found' } });
       return;
     }
 
@@ -159,9 +159,9 @@ router.post(
     }
 
     // Create message
-    const [message] = await db.insert(flowRunMessages).values({
+    const [message] = await db.insert(flowMessages).values({
       conversationId,
-      flowRunId,
+      flowId,
       senderUserId: userId,
       senderType: 'user',
       senderName: user.name,
@@ -169,9 +169,9 @@ router.post(
     }).returning();
 
     // Update conversation lastMessageAt
-    await db.update(flowRunConversations)
+    await db.update(flowConversations)
       .set({ lastMessageAt: new Date() })
-      .where(eq(flowRunConversations.id, conversationId));
+      .where(eq(flowConversations.id, conversationId));
 
     res.json({
       success: true,
@@ -189,33 +189,33 @@ router.post(
 );
 
 // ============================================================================
-// PATCH /api/flows/:flowRunId/conversations/:conversationId/resolve
+// PATCH /api/flows/:flowId/conversations/:conversationId/resolve
 // ============================================================================
 
 router.patch(
-  '/:flowRunId/conversations/:conversationId/resolve',
+  '/:flowId/conversations/:conversationId/resolve',
   asyncHandler(async (req, res) => {
-    const flowRunId = req.params.flowRunId as string;
+    const flowId = req.params.flowId as string;
     const conversationId = req.params.conversationId as string;
     const { resolved } = req.body;
     const userId = (req as any).userId as string;
 
     // Verify access
-    const run = await db.query.flowRuns.findFirst({
-      where: eq(flowRuns.id, flowRunId),
+    const flow = await db.query.flows.findFirst({
+      where: eq(flows.id, flowId),
     });
 
-    if (!run || run.organizationId !== (req as any).organizationId) {
-      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Flow run not found' } });
+    if (!flow || flow.organizationId !== (req as any).organizationId) {
+      res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Flow not found' } });
       return;
     }
 
-    await db.update(flowRunConversations)
+    await db.update(flowConversations)
       .set({
         resolvedAt: resolved ? new Date() : null,
         resolvedByUserId: resolved ? userId : null,
       })
-      .where(eq(flowRunConversations.id, conversationId));
+      .where(eq(flowConversations.id, conversationId));
 
     res.json({ success: true });
   })

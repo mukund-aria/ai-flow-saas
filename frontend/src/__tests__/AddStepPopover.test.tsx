@@ -21,14 +21,15 @@ describe('AddStepPopover', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('renders step groups (Human Actions, Control Flow, Automations) when open', () => {
+  it('renders step groups (Actions, AI, Automations, Controls) when open', () => {
     render(
       <AddStepPopover open={true} onOpenChange={mockOnOpenChange} onSelect={mockOnSelect} />
     );
 
-    expect(screen.getByText('Human Actions')).toBeInTheDocument();
-    expect(screen.getByText('Control Flow')).toBeInTheDocument();
+    expect(screen.getByText('Actions')).toBeInTheDocument();
+    expect(screen.getByText('AI')).toBeInTheDocument();
     expect(screen.getByText('Automations')).toBeInTheDocument();
+    expect(screen.getByText('Controls')).toBeInTheDocument();
   });
 
   it('renders the "Add Step" header when open', () => {
@@ -44,21 +45,27 @@ describe('AddStepPopover', () => {
       <AddStepPopover open={true} onOpenChange={mockOnOpenChange} onSelect={mockOnSelect} />
     );
 
-    // Human Actions group types
-    const humanTypes: StepType[] = ['FORM', 'APPROVAL', 'FILE_REQUEST', 'TODO', 'ACKNOWLEDGEMENT', 'DECISION', 'ESIGN'];
-    for (const type of humanTypes) {
+    // Actions group types
+    const actionTypes: StepType[] = ['FORM', 'QUESTIONNAIRE', 'APPROVAL', 'FILE_REQUEST', 'TODO', 'ACKNOWLEDGEMENT', 'DECISION', 'ESIGN', 'PDF_FORM'];
+    for (const type of actionTypes) {
       expect(screen.getByText(STEP_TYPE_META[type].label)).toBeInTheDocument();
     }
 
-    // Control Flow group types
-    const controlTypes: StepType[] = ['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT'];
-    for (const type of controlTypes) {
+    // AI group types
+    const aiTypes: StepType[] = ['AI_CUSTOM_PROMPT', 'AI_EXTRACT', 'AI_SUMMARIZE', 'AI_TRANSCRIBE', 'AI_TRANSLATE', 'AI_WRITE'];
+    for (const type of aiTypes) {
       expect(screen.getByText(STEP_TYPE_META[type].label)).toBeInTheDocument();
     }
 
     // Automations group types
-    const automationTypes: StepType[] = ['SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'AI_CUSTOM_PROMPT'];
+    const automationTypes: StepType[] = ['SYSTEM_EMAIL', 'SYSTEM_WEBHOOK', 'SYSTEM_CHAT_MESSAGE', 'SYSTEM_UPDATE_WORKSPACE', 'BUSINESS_RULE', 'REST_API', 'MCP_SERVER'];
     for (const type of automationTypes) {
+      expect(screen.getByText(STEP_TYPE_META[type].label)).toBeInTheDocument();
+    }
+
+    // Controls group types
+    const controlTypes: StepType[] = ['SINGLE_CHOICE_BRANCH', 'MULTI_CHOICE_BRANCH', 'PARALLEL_BRANCH', 'WAIT', 'GOTO_DESTINATION', 'GOTO', 'TERMINATE', 'SUB_FLOW'];
+    for (const type of controlTypes) {
       expect(screen.getByText(STEP_TYPE_META[type].label)).toBeInTheDocument();
     }
   });

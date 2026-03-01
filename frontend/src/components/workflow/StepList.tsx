@@ -376,7 +376,7 @@ export function StepList({ workflow, editMode = false, proposalChangeMap, onStep
     </div>
   );
 
-  // Wrap in SortableContext for reorder support (parent DndContext lives in FlowBuilderPage)
+  // Wrap in SortableContext for reorder support (parent DndContext lives in TemplateBuilderPage)
   if (editMode) {
     return (
       <SortableContext items={stepIds} strategy={verticalListSortingStrategy}>

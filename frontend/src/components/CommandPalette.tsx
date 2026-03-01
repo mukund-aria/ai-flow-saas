@@ -88,7 +88,7 @@ function getItemIcon(type: string) {
 
 function getSectionLabel(type: string): string {
   switch (type) {
-    case 'run': return 'Flow Runs';
+    case 'run': return 'Flows';
     case 'template': return 'Templates';
     case 'contact': return 'Contacts';
     case 'action': return 'Quick Actions';

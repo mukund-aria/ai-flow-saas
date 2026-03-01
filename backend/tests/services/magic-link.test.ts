@@ -12,14 +12,20 @@ const mockValues = jest.fn().mockReturnValue({ returning: mockReturning });
 const mockInsert = jest.fn().mockReturnValue({ values: mockValues });
 
 const mockFindFirst = jest.fn();
+const mockFindMany = jest.fn();
 
 jest.unstable_mockModule('../../src/db/client.js', () => ({
   db: {
     insert: mockInsert,
     query: {
       magicLinks: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
-      flowRuns: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
+      flows: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
       contacts: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
+      stepExecutions: { findMany: (...args: unknown[]) => mockFindMany(...args) },
+      stepExecutionAssignees: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
+      users: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
+      organizations: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
+      portals: { findFirst: (...args: unknown[]) => mockFindFirst(...args) },
     },
   },
 }));
@@ -27,13 +33,18 @@ jest.unstable_mockModule('../../src/db/client.js', () => ({
 jest.unstable_mockModule('../../src/db/schema.js', () => ({
   magicLinks: { stepExecutionId: 'step_execution_id', token: 'token' },
   stepExecutions: { id: 'id' },
-  flowRuns: { id: 'id' },
+  stepExecutionAssignees: { id: 'id' },
   flows: { id: 'id' },
+  templates: { id: 'id' },
   contacts: { id: 'id' },
+  users: { id: 'id' },
+  organizations: { id: 'id' },
+  portals: { id: 'id' },
 }));
 
 jest.unstable_mockModule('drizzle-orm', () => ({
   eq: jest.fn((field: string, value: string) => ({ field, value })),
+  and: jest.fn((...conditions: unknown[]) => ({ conditions })),
 }));
 
 // Dynamic import after mocks are registered
@@ -45,10 +56,13 @@ describe('Magic Link Service', () => {
     mockValues.mockClear();
     mockReturning.mockClear();
     mockFindFirst.mockClear();
+    mockFindMany.mockClear();
 
     // Reset default implementations
     mockValues.mockReturnValue({ returning: mockReturning });
     mockInsert.mockReturnValue({ values: mockValues });
+    // Default findMany returns empty array
+    mockFindMany.mockResolvedValue([] as never);
   });
 
   describe('createMagicLink', () => {
@@ -114,17 +128,17 @@ describe('Magic Link Service', () => {
         expiresAt: futureDate,
         usedAt: null,
         stepExecution: {
-          flowRunId: 'run-1',
+          flowId: 'run-1',
           stepId: 'step-1',
           status: 'PENDING',
           assignedToContactId: 'contact-1',
         },
       } as never);
 
-      // Second call: flowRuns.findFirst - returns the flow run
+      // Second call: flows.findFirst - returns the flow
       mockFindFirst.mockResolvedValueOnce({
         name: 'Test Run',
-        flow: {
+        template: {
           name: 'Test Flow',
           definition: {
             steps: [
@@ -171,7 +185,7 @@ describe('Magic Link Service', () => {
         expiresAt: pastDate,
         usedAt: null,
         stepExecution: {
-          flowRunId: 'run-2',
+          flowId: 'run-2',
           stepId: 'step-2',
           status: 'PENDING',
           assignedToContactId: null,
@@ -180,7 +194,7 @@ describe('Magic Link Service', () => {
 
       mockFindFirst.mockResolvedValueOnce({
         name: 'Expired Run',
-        flow: {
+        template: {
           name: 'Some Flow',
           definition: { steps: [] },
         },
@@ -202,7 +216,7 @@ describe('Magic Link Service', () => {
         expiresAt: futureDate,
         usedAt: new Date(),
         stepExecution: {
-          flowRunId: 'run-3',
+          flowId: 'run-3',
           stepId: 'step-3',
           status: 'COMPLETED',
           assignedToContactId: null,
@@ -211,7 +225,7 @@ describe('Magic Link Service', () => {
 
       mockFindFirst.mockResolvedValueOnce({
         name: 'Completed Run',
-        flow: {
+        template: {
           name: 'Done Flow',
           definition: { steps: [] },
         },
@@ -253,14 +267,14 @@ describe('Magic Link Service', () => {
         expiresAt: futureDate,
         usedAt: null,
         stepExecution: {
-          flowRunId: 'nonexistent-run',
+          flowId: 'nonexistent-run',
           stepId: 'step-x',
           status: 'PENDING',
           assignedToContactId: null,
         },
       } as never);
 
-      // flowRuns.findFirst returns null
+      // flows.findFirst returns null
       mockFindFirst.mockResolvedValueOnce(null as never);
 
       const result = await validateMagicLink('orphan-token');
@@ -277,7 +291,7 @@ describe('Magic Link Service', () => {
         expiresAt: futureDate,
         usedAt: null,
         stepExecution: {
-          flowRunId: 'run-4',
+          flowId: 'run-4',
           stepId: 'step-4',
           status: 'PENDING',
           assignedToContactId: 'missing-contact',
@@ -286,7 +300,7 @@ describe('Magic Link Service', () => {
 
       mockFindFirst.mockResolvedValueOnce({
         name: 'Some Run',
-        flow: {
+        template: {
           name: 'Some Flow',
           definition: { steps: [] },
         },
@@ -298,7 +312,7 @@ describe('Magic Link Service', () => {
       const result = await validateMagicLink('no-contact-token');
 
       expect(result).not.toBeNull();
-      expect(result!.contactName).toBe('Assignee');
+      expect(result!.contactName).toBe('Participant');
       expect(result!.contactEmail).toBe('');
     });
 
@@ -311,7 +325,7 @@ describe('Magic Link Service', () => {
         expiresAt: futureDate,
         usedAt: null,
         stepExecution: {
-          flowRunId: 'run-5',
+          flowId: 'run-5',
           stepId: 'step-not-in-definition',
           status: 'PENDING',
           assignedToContactId: null,
@@ -320,7 +334,7 @@ describe('Magic Link Service', () => {
 
       mockFindFirst.mockResolvedValueOnce({
         name: 'Another Run',
-        flow: {
+        template: {
           name: 'Another Flow',
           definition: {
             steps: [

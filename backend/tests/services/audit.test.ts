@@ -33,7 +33,7 @@ describe('Audit Service', () => {
   describe('logAction', () => {
     it('should insert into auditLogs with correct values', async () => {
       await logAction({
-        flowRunId: 'run-123',
+        flowId: 'run-123',
         action: 'STEP_COMPLETED',
         actorId: 'user-456',
         actorEmail: 'alice@example.com',
@@ -43,7 +43,7 @@ describe('Audit Service', () => {
       expect(mockInsert).toHaveBeenCalledTimes(1);
       expect(mockValues).toHaveBeenCalledTimes(1);
       expect(mockValues).toHaveBeenCalledWith({
-        flowRunId: 'run-123',
+        flowId: 'run-123',
         action: 'STEP_COMPLETED',
         actorId: 'user-456',
         actorEmail: 'alice@example.com',
@@ -53,13 +53,13 @@ describe('Audit Service', () => {
 
     it('should insert with optional fields undefined', async () => {
       await logAction({
-        flowRunId: 'run-789',
+        flowId: 'run-789',
         action: 'FLOW_STARTED',
       });
 
       expect(mockInsert).toHaveBeenCalledTimes(1);
       expect(mockValues).toHaveBeenCalledWith({
-        flowRunId: 'run-789',
+        flowId: 'run-789',
         action: 'FLOW_STARTED',
         actorId: undefined,
         actorEmail: undefined,
@@ -73,7 +73,7 @@ describe('Audit Service', () => {
 
       await expect(
         logAction({
-          flowRunId: 'run-error',
+          flowId: 'run-error',
           action: 'SOME_ACTION',
         })
       ).resolves.toBeUndefined();
@@ -93,7 +93,7 @@ describe('Audit Service', () => {
 
       await expect(
         logAction({
-          flowRunId: 'run-bad',
+          flowId: 'run-bad',
           action: 'CRASH',
         })
       ).resolves.toBeUndefined();

@@ -9,9 +9,9 @@ import chatRouter from './chat.js';
 import sessionsRouter from './sessions.js';
 import uploadRouter from './upload.js';
 import pdfUploadRouter from './pdf-upload.js';
-import flowsRouter from './flows.js';
+import templatesRouter from './templates.js';
 import foldersRouter from './folders.js';
-import runsRouter from './runs.js';
+import flowsRouter from './flows.js';
 import contactsRouter from './contacts.js';
 import notificationsRouter from './notifications.js';
 import attentionRouter from './attention.js';
@@ -62,7 +62,7 @@ router.use('/chat/upload', uploadRouter);
 router.use('/sessions', sessionsRouter);
 
 // Templates API (workflow templates CRUD)
-router.use('/templates', flowsRouter);
+router.use('/templates', templatesRouter);
 
 // Embed config API (generate embed config for a template)
 router.use('/templates', embedRouter);
@@ -122,10 +122,10 @@ router.use('/contact-groups', contactGroupsRouter);
 router.use('/sso', ssoRouter);
 
 // Flows API (workflow execution — active instances)
-// Note: POST /api/templates/:templateId/flows is handled by runsRouter
-// IMPORTANT: The catch-all `router.use('/', runsRouter)` must be LAST
-// because runsRouter has a `/:id` route that would swallow other paths.
-router.use('/flows', runsRouter);
-router.use('/', runsRouter); // For /templates/:templateId/flows endpoint
+// Note: POST /api/templates/:templateId/flows is handled by flowsRouter
+// IMPORTANT: The catch-all `router.use('/', flowsRouter)` must be LAST
+// because flowsRouter has a `/:id` route that would swallow other paths.
+router.use('/flows', flowsRouter);
+router.use('/', flowsRouter); // For /templates/:templateId/flows endpoint
 
 export default router;

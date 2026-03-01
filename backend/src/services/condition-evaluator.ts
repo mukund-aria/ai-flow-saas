@@ -38,7 +38,7 @@ export interface EvaluationContext {
  * into a shape suitable for condition evaluation.
  */
 export function buildEvaluationContext(
-  flowRun: {
+  flow: {
     kickoffData?: Record<string, unknown> | null;
     roleAssignments?: Record<string, unknown> | null;
   },
@@ -59,8 +59,8 @@ export function buildEvaluationContext(
   }
 
   return {
-    kickoffData: flowRun.kickoffData ?? undefined,
-    roleAssignments: flowRun.roleAssignments ?? undefined,
+    kickoffData: flow.kickoffData ?? undefined,
+    roleAssignments: flow.roleAssignments ?? undefined,
     stepOutputs,
     workspace,
   };
