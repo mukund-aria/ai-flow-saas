@@ -168,6 +168,7 @@ These are concrete gaps in the current codebase that need to be addressed regard
 | 6 | Rate limiting on authenticated API endpoints | Small | Production security |
 | 7 | Billing / payment integration (Stripe) | Medium | Revenue |
 | 8 | User-generated template marketplace (gallery exists, no publish flow) | Medium | Network effects |
+| 9 | Cross-org intelligence layer (anonymized benchmarks, bottleneck detection, predictive SLAs) | Large | Moat / defensibility |
 
 ---
 
