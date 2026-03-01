@@ -106,10 +106,15 @@ export function BranchLayout({
                   {path.label || `${isDecision ? 'Outcome' : 'Branch'} ${pathIndex + 1}`}
                 </div>
 
-                {/* Add button at top of branch */}
-                <button className="w-7 h-7 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center hover:border-blue-500 hover:text-blue-500 transition-colors mb-2">
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
+                {/* Add button at top of branch — only in edit mode */}
+                {editMode && (
+                  <button
+                    className="w-7 h-7 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center hover:border-blue-500 hover:text-blue-500 transition-colors mb-2"
+                    title="Add step to this branch"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                )}
 
                 {/* Steps in this branch */}
                 {pathSteps.map((nestedStep, nestedIndex) => {

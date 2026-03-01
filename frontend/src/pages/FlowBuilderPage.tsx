@@ -38,7 +38,6 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { STEP_TYPE_META } from '@/types';
 import { StepIcon } from '@/components/workflow/StepIcon';
 import { HelpWidget } from '@/components/ui/HelpWidget';
-import { FeatureTooltip } from '@/components/ui/FeatureTooltip';
 
 type BuilderMode = 'ai' | 'manual';
 
@@ -548,32 +547,30 @@ export function FlowBuilderPage() {
               left: builderMode === 'ai' ? '2px' : 'calc(50%)',
             }}
           />
-          <FeatureTooltip content="Describe changes in chat and AI builds your flow" side="bottom">
-            <button
-              onClick={() => handleModeChange('ai')}
-              className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                builderMode === 'ai'
-                  ? 'text-violet-700'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              AI
-            </button>
-          </FeatureTooltip>
-          <FeatureTooltip content="Drag-and-drop steps to build your flow" side="bottom">
-            <button
-              onClick={() => handleModeChange('manual')}
-              className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                builderMode === 'manual'
-                  ? 'text-violet-700'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <PenLine className="w-4 h-4" />
-              Manual
-            </button>
-          </FeatureTooltip>
+          <button
+            onClick={() => handleModeChange('ai')}
+            className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              builderMode === 'ai'
+                ? 'text-violet-700'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            title="Describe changes in chat and AI builds your flow"
+          >
+            <Sparkles className="w-4 h-4" />
+            AI
+          </button>
+          <button
+            onClick={() => handleModeChange('manual')}
+            className={`relative z-10 flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              builderMode === 'manual'
+                ? 'text-violet-700'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            title="Drag-and-drop steps to build your flow"
+          >
+            <PenLine className="w-4 h-4" />
+            Manual
+          </button>
         </div>
 
         {/* Right: Actions */}
@@ -581,25 +578,28 @@ export function FlowBuilderPage() {
           {savedFlowId && savedFlowStatus === 'ACTIVE' && (
             <span className="text-xs text-green-600 font-medium">Published</span>
           )}
-          <FeatureTooltip content="Start a test run to verify your flow works before publishing." side="bottom">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleTestRun}
-              disabled={!savedFlowId || !workflow || workflow.steps.length === 0 || isTesting}
-              className="text-xs h-8 gap-1.5"
-              title="Start a test run of this flow"
-            >
-              {isTesting ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <Play className="w-3 h-3" />
-              )}
-              Test
-            </Button>
-          </FeatureTooltip>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleTestRun}
+            disabled={!savedFlowId || !workflow || workflow.steps.length === 0 || isTesting}
+            className="text-xs h-8 gap-1.5"
+            title="Start a test run of this flow"
+          >
+            {isTesting ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Play className="w-3 h-3" />
+            )}
+            Test
+          </Button>
           <button
-            onClick={() => setShowSettings(!showSettings)}
+            onClick={() => {
+              setShowSettings(s => !s);
+              setShowStartConfig(false);
+              setSelectedRoleId(null);
+              setSelectedStepId(null);
+            }}
             className={`p-1.5 rounded-lg transition-colors ${
               showSettings
                 ? 'text-violet-600 bg-violet-50'
@@ -609,23 +609,22 @@ export function FlowBuilderPage() {
           >
             <Settings className="w-4 h-4" />
           </button>
-          <FeatureTooltip content="Publishing makes this template available for real runs. You can still edit after publishing." side="bottom">
-            <Button
-              size="sm"
-              onClick={handlePublish}
-              disabled={!canPublish}
-              className="bg-gray-900 hover:bg-gray-800 text-xs h-8 px-4"
-            >
-              {isPublishing ? (
-                <>
-                  <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
-                  Publishing...
-                </>
-              ) : (
-                'Publish'
-              )}
-            </Button>
-          </FeatureTooltip>
+          <Button
+            size="sm"
+            onClick={handlePublish}
+            disabled={!canPublish}
+            className="bg-gray-900 hover:bg-gray-800 text-xs h-8 px-4"
+            title="Publish this template for real runs"
+          >
+            {isPublishing ? (
+              <>
+                <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              'Publish'
+            )}
+          </Button>
         </div>
       </div>
 

@@ -210,6 +210,24 @@ The AI builder is integrated into the Home page and Flow Builder. It creates wor
 
 ---
 
+## Mandatory Review Process
+
+**After implementing any plan or multi-file change, ALWAYS run the `first-principles-review` skill before declaring work complete.** This catches UX issues, code quality problems, accessibility gaps, and consistency violations proactively — the user should never have to find these issues themselves.
+
+Key principles:
+- **No undersized text:** Minimum `text-xs` (12px). Never use `text-[9px]`, `text-[10px]`, `text-[11px]`.
+- **No persistent tooltip icons on main UI:** Use native `title` for hover hints. FeatureTooltip (info icons) only in config forms.
+- **No dead click handlers:** Every button must work or not render.
+- **Mutual exclusion:** Opening one panel/modal closes others.
+- **No code duplication:** Extract shared components for repeated patterns.
+- **Reusable components:** Patterns used 3+ times get abstracted.
+- **Centralized constants:** z-index values, "coming soon" lists, step groups — not scattered.
+- **Semantic HTML:** Clickable = `<button>`, not `<div onClick>`. Inputs have labels.
+- **Destructive actions need confirmation.**
+- **Type safety:** No `any`. Explicit props interfaces. Union types for state machines.
+
+---
+
 ## Key Decisions
 
 | Decision | Choice | Rationale |

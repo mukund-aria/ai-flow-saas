@@ -16,7 +16,6 @@ import { STEP_TYPE_META } from '@/types';
 import type { StepType } from '@/types';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { useDraggable } from '@dnd-kit/core';
-import { FeatureTooltip } from '@/components/ui/FeatureTooltip';
 
 interface StepPaletteProps {
   onSwitchToAI: () => void;
@@ -136,7 +135,9 @@ const GROUP_TOOLTIPS: Record<string, string> = {
 };
 
 export function StepPalette({ onSwitchToAI }: StepPaletteProps) {
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+    new Set(STEP_GROUPS.filter(g => g.label !== 'Actions').map(g => g.label))
+  );
 
   const toggleGroup = (label: string) => {
     setCollapsedGroups((prev) => {
@@ -181,19 +182,14 @@ export function StepPalette({ onSwitchToAI }: StepPaletteProps) {
               <button
                 onClick={() => toggleGroup(group.label)}
                 className="w-full flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition-colors"
+                title={GROUP_TOOLTIPS[group.label] || undefined}
               >
                 {isCollapsed ? (
                   <ChevronRight className="w-3 h-3 shrink-0" />
                 ) : (
                   <ChevronDown className="w-3 h-3 shrink-0" />
                 )}
-                {GROUP_TOOLTIPS[group.label] ? (
-                  <FeatureTooltip content={GROUP_TOOLTIPS[group.label]} side="right">
-                    <span>{group.label}</span>
-                  </FeatureTooltip>
-                ) : (
-                  group.label
-                )}
+                {group.label}
               </button>
 
               {/* Group items */}

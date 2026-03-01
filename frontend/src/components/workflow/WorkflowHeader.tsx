@@ -103,7 +103,7 @@ export function WorkflowHeader({ workflow, editMode = false }: WorkflowHeaderPro
               className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded-lg border"
             >
               <span
-                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
                 style={{ backgroundColor: getRoleColor(index) }}
               >
                 {getRoleInitials(assignee.name)}

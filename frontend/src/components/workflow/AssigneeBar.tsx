@@ -9,7 +9,6 @@
 import { useState } from 'react';
 import { Plus, X, UserCheck, PlayCircle, FileText, RefreshCw, UserPlus, Variable, GitBranch, Shield, Eye, ScanEye } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
-import { FeatureTooltip } from '@/components/ui/FeatureTooltip';
 import { getRoleColor, getRoleInitials } from '@/types';
 import type { ResolutionType } from '@/types';
 import { RolePreviewDialog } from './RolePreviewDialog';
@@ -87,10 +86,11 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
 
   return (
     <div className="flex items-center gap-2 px-6 py-2.5 bg-gray-50 border-b border-gray-200 min-h-[52px]">
-      <span className="text-sm font-medium text-gray-500 mr-1 shrink-0">
-        <FeatureTooltip content="Roles represent the participants in your workflow. Click a role to configure who fills it." side="bottom">
-          <span>Roles:</span>
-        </FeatureTooltip>
+      <span
+        className="text-sm font-medium text-gray-500 mr-1 shrink-0"
+        title="Roles represent the participants in your workflow. Click a role to configure who fills it."
+      >
+        Roles:
       </span>
 
       {/* Assignee avatars */}
@@ -113,7 +113,7 @@ export function AssigneeBar({ onRoleClick, selectedRoleId }: AssigneeBarProps) {
             }`}
           >
             <span
-              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
               style={{ backgroundColor: getRoleColor(index) }}
             >
               {getRoleInitials(assignee.name)}

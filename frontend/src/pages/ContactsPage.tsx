@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FeatureTooltip } from '@/components/ui/FeatureTooltip';
 import {
   listContacts,
   createContact,
@@ -955,9 +954,7 @@ export function ContactsPage() {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900">
-                <FeatureTooltip content="Contacts are external people (clients, vendors, partners) who complete tasks in your flows via secure email links." side="bottom">
-                  <span>Contacts</span>
-                </FeatureTooltip>
+                Contacts
               </h1>
               <Badge variant="secondary" className="text-sm font-medium">
                 {contacts.length}

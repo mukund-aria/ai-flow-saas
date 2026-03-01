@@ -21,10 +21,10 @@ export function EmptyWorkflow({ editMode = false }: EmptyWorkflowProps) {
         </p>
 
         {!editMode && (
-          <button className="inline-flex items-center gap-2 text-sm text-violet-600 hover:text-violet-700 font-medium transition-colors">
+          <p className="inline-flex items-center gap-2 text-sm text-violet-600 font-medium">
             <MessageSquare className="w-4 h-4" />
             <span>Start chatting to create a workflow</span>
-          </button>
+          </p>
         )}
       </div>
     </div>
