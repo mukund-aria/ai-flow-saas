@@ -468,7 +468,7 @@ export function FlowDetailPage() {
         setRun(data);
 
         // Map step executions to display steps using flow definition
-        const definition = (data as any).flow?.definition as {
+        const definition = (data as any).template?.definition as {
           steps?: Array<{ stepId: string; type: string; config?: { name?: string; description?: string } }>;
           milestones?: Array<{ milestoneId: string; name: string; afterStepIndex: number }>;
           roles?: Array<{ roleId: string; name: string; roleType?: string }>;
@@ -841,6 +841,11 @@ export function FlowDetailPage() {
               </span>
             )}
           </div>
+
+          {/* Step description */}
+          {step.description && (
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{step.description}</p>
+          )}
 
           {/* Assignee - single */}
           {step.assignee && !step.isGroupAssignment && (
