@@ -209,6 +209,7 @@ export function FileRequestStep({
       )}
       <input
         ref={fileInputRef}
+        data-testid="file-input"
         type="file"
         multiple
         className="hidden"
@@ -262,6 +263,7 @@ export function FileRequestStep({
         <p className="text-sm text-red-600 mb-3">{uploadError}</p>
       )}
       <Button
+        data-testid="file-submit"
         onClick={handleSubmit}
         disabled={busy || uploadedFiles.length === 0}
         className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base"

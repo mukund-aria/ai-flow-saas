@@ -21,6 +21,7 @@ export function DecisionStep({ outcomes, onSubmit, isSubmitting }: DecisionStepP
         {outcomes.map((outcome, i) => (
           <Button
             key={outcome.outcomeId}
+            data-testid={`decision-${outcome.outcomeId}`}
             onClick={() => onSubmit({ decision: outcome.label, outcomeId: outcome.outcomeId })}
             disabled={isSubmitting}
             variant={i === 0 ? 'default' : 'outline'}

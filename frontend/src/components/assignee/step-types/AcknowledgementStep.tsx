@@ -19,6 +19,7 @@ export function AcknowledgementStep({ onSubmit, isSubmitting }: AcknowledgementS
         Please confirm you have reviewed this information.
       </p>
       <Button
+        data-testid="acknowledge-btn"
         onClick={() => onSubmit({ acknowledged: true })}
         disabled={isSubmitting}
         className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base"

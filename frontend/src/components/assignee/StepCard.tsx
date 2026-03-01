@@ -80,7 +80,7 @@ export function StepCard({
 
   return (
     <>
-      <div className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden ${
+      <div data-testid="step-card" className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden ${
         mode === 'locked' ? 'opacity-75' : ''
       }`}>
         {/* Step Info Header */}

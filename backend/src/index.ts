@@ -26,6 +26,7 @@ import webhooksRouter from './routes/webhooks.js';
 import publicEmbedRouter from './routes/public-embed.js';
 import publicPortalRouter from './routes/public-portal.js';
 import publicSandboxRouter from './routes/public-sandbox.js';
+import testSeedRouter from './routes/test-seed.js';
 import { initScheduler } from './services/scheduler.js';
 import { initFlowScheduler } from './services/flow-scheduler.js';
 import { ensureSandboxInfrastructure, startSandboxCleanup } from './services/sandbox.js';
@@ -150,6 +151,14 @@ if (isProduction) {
   app.use('/api/admin', requireAuth, requireSysadmin, adminRouter);
 } else {
   app.use('/api/admin', adminRouter);
+}
+
+// ============================================================================
+// Test Seed Endpoint (development only)
+// ============================================================================
+
+if (!isProduction) {
+  app.use('/api/test', testSeedRouter);
 }
 
 // ============================================================================

@@ -19,7 +19,7 @@ interface CompletionDialogProps {
 
 export function CompletionDialog({ contactName, nextTaskToken, portalSlug, onContinue, onDismiss }: CompletionDialogProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div data-testid="completion-dialog" className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Dimmed backdrop - click to dismiss */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
@@ -49,6 +49,7 @@ export function CompletionDialog({ contactName, nextTaskToken, portalSlug, onCon
 
           {nextTaskToken ? (
             <Button
+              data-testid="continue-btn"
               onClick={onContinue}
               className="bg-blue-600 hover:bg-blue-700 h-11 text-base px-8"
             >

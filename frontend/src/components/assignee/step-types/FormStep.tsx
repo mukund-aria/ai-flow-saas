@@ -56,7 +56,7 @@ export function FormStep({ formFields, formData, onChange, onSubmit, isSubmittin
         <AIPrepareNotice result={aiPrepareResult} fieldCount={formFields.length} />
       )}
       {formFields.map(field => (
-        <div key={field.fieldId}>
+        <div key={field.fieldId} data-testid={`field-${field.fieldId}`}>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             {field.label}
             {field.required && <span className="text-red-500 ml-1">*</span>}
@@ -135,6 +135,7 @@ export function FormStep({ formFields, formData, onChange, onSubmit, isSubmittin
       )}
 
       <Button
+        data-testid="form-submit"
         onClick={handleSubmit}
         disabled={isSubmitting}
         className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base"

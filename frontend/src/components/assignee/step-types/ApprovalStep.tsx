@@ -18,6 +18,7 @@ export function ApprovalStep({ onSubmit, isSubmitting }: ApprovalStepProps) {
       <p className="text-sm text-gray-600 text-center mb-4">Please review and provide your decision.</p>
       <div className="flex gap-3">
         <Button
+          data-testid="approve-btn"
           onClick={() => onSubmit({ decision: 'APPROVED' })}
           disabled={isSubmitting}
           className="flex-1 bg-green-600 hover:bg-green-700 h-11 text-base gap-2"
@@ -25,6 +26,7 @@ export function ApprovalStep({ onSubmit, isSubmitting }: ApprovalStepProps) {
           <ThumbsUp className="w-4 h-4" /> Approve
         </Button>
         <Button
+          data-testid="reject-btn"
           onClick={() => onSubmit({ decision: 'REJECTED' })}
           disabled={isSubmitting}
           variant="outline"
