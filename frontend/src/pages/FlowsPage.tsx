@@ -45,6 +45,7 @@ import { AttentionSettingsPopover } from '@/components/flows/AttentionSettingsPo
 import { useAttentionSettings, filterByAttentionSettings } from '@/hooks/useAttentionSettings';
 import { useSavedFilters, type SavedFilter } from '@/hooks/useSavedFilters';
 import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
+import { useOnboardingStore } from '@/stores/onboardingStore';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -360,6 +361,9 @@ export function FlowsPage() {
       }
     }
     fetchData();
+
+    // Onboarding step 5: viewing the flows list page (store guards enforce steps 1-4 first)
+    useOnboardingStore.getState().completeCoordinateFlows();
   }, []);
 
   // Real-time updates via SSE — auto-refresh when events arrive
