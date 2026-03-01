@@ -243,10 +243,10 @@ export function RoleConfigPanel({ roleId, onClose }: RoleConfigPanelProps) {
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => setPreviewOpen(true)}
-            className="p-1 rounded-lg text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+            className="p-1.5 rounded-lg text-violet-500 hover:text-violet-700 hover:bg-violet-50 transition-colors border border-violet-200"
             title={`Preview ${assignee.name}'s experience`}
           >
-            <Eye className="w-5 h-5" />
+            <PlayCircle className="w-4 h-4" />
           </button>
           <button
             onClick={onClose}

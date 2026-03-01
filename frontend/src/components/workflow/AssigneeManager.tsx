@@ -8,7 +8,7 @@
  */
 
 import { useState } from 'react';
-import { Plus, X, UserPlus, Users, ChevronDown, ChevronUp, Shield, Eye } from 'lucide-react';
+import { Plus, X, UserPlus, Users, ChevronDown, ChevronUp, Shield, UsersRound } from 'lucide-react';
 import { useWorkflowStore } from '@/stores/workflowStore';
 import { getRoleColor, getRoleInitials } from '@/types';
 import type { Resolution, RoleOptions } from '@/types';
@@ -87,33 +87,35 @@ export function AssigneeManager() {
       {/* Assignee list */}
       <div className="space-y-2">
         {assignees.map((assignee, index) => (
-          <div key={assignee.roleId} className="border border-gray-100 rounded-lg overflow-hidden">
+          <div key={assignee.roleId} className="border border-gray-200 rounded-lg overflow-hidden">
             <div
-              className="flex items-center gap-2 px-3 py-2 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
               onClick={() => setExpandedRole(expandedRole === assignee.roleId ? null : assignee.roleId)}
             >
               <span
-                className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                 style={{ backgroundColor: getRoleColor(index) }}
               >
                 {getRoleInitials(assignee.name)}
               </span>
-              <span className="text-sm font-medium text-gray-700 flex-1 truncate">
-                {assignee.name}
-              </span>
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-gray-800 truncate block">
+                  {assignee.name}
+                </span>
+                <span className="text-[11px] text-gray-400">
+                  {RESOLUTION_LABELS[assignee.resolution?.type || 'CONTACT_TBD']}
+                </span>
+              </div>
               {(assignee.roleType || 'assignee') === 'coordinator' && (
                 <span className="text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded font-medium flex items-center gap-0.5">
                   <Shield className="w-2.5 h-2.5" />
-                  Coordinator
+                  Coord
                 </span>
               )}
-              <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-                {RESOLUTION_LABELS[assignee.resolution?.type || 'CONTACT_TBD']}
-              </span>
               {expandedRole === assignee.roleId ? (
-                <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
+                <ChevronUp className="w-4 h-4 text-gray-400" />
               ) : (
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                <ChevronDown className="w-4 h-4 text-gray-400" />
               )}
               <button
                 onClick={(e) => {
@@ -260,7 +262,7 @@ function AdvancedRoleOptions({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
-                <Eye className="w-3.5 h-3.5 text-gray-400" />
+                <UsersRound className="w-3.5 h-3.5 text-gray-400" />
                 Allow viewing other assignee's actions
               </div>
               <p className="text-[11px] text-gray-400 mt-0.5 leading-tight">
