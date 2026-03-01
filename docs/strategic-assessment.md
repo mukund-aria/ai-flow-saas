@@ -152,6 +152,36 @@ Enterprise features to build when traction justifies it:
 - SOC 2 Type II compliance
 - Data export / portability
 
+### Long-Term Strategic Option: Headless Human Workflow Platform
+
+**Priority: Future (12-18 months out)**
+**Impact: Category-defining, $5B+ ceiling**
+
+**The insight:** Existing headless workflow platforms (Temporal, Inngest, Workato) orchestrate **code and systems**. Nobody offers headless orchestration for **human-in-the-loop steps with built-in participant UI**. ServiceFlow uniquely owns both the orchestration engine and the human-facing interface layer (magic links, assignee portal, form/approval/e-sign UX). That combination doesn't exist as a developer primitive today.
+
+**What this means:** Developers vibe-coding apps who need "send this person a form, wait for approval from someone else, collect a signature" can't do that with Temporal. They'd have to build all the human-facing UI themselves. ServiceFlow becomes the **Stripe of human workflows** — not just backend logic, but the UI that end-users interact with, packaged for developers.
+
+**Three-tier developer offering:**
+
+| Tier | Control | Example |
+|------|---------|---------|
+| **Hosted** (no code) | ServiceFlow's portal as-is. Magic links send users to our pages. | Works today |
+| **Embeddable** (low code) | Pre-built, themeable components dropped into their app. Like Stripe Elements. | New work — white-labeled form/approval/signature components |
+| **Headless** (full control) | Pure API. They build their own UI, call our API for orchestration, branching, role resolution, state. | Mostly exists — backend API already powers everything |
+
+**Why this is more defensible than pure SaaS:**
+- **Infrastructure lock-in** — once developers build on the API, ripping it out means rewriting their app
+- **TAM expansion** — selling to "every developer building any app that coordinates external parties," not just "companies that need workflows"
+- **Rides the vibe-coding wave** — every AI-built app that needs multi-party human steps becomes a customer
+- **Network effects emerge** — shared contact networks, template marketplaces, cross-app workflow portals
+
+**Why not do it now:**
+- Developer platforms are slow to grow — need docs, SDKs, DX polish, community
+- Revenue per customer starts lower (usage-based API pricing vs. SaaS seats)
+- We need battle-tested primitives first — the SaaS app validates the orchestration engine before we expose it as infrastructure
+
+**The path:** Ship the SaaS app now to learn and generate revenue. Extract the API layer as the engine matures. Open the platform once primitives are proven with real production load. The SaaS app becomes our own first-party app on top of the platform — like Stripe Dashboard on top of Stripe API.
+
 ---
 
 ## 4. Technical Gaps to Close
