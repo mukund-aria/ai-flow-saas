@@ -16,7 +16,9 @@ export type ResolutionType =
   | 'KICKOFF_FORM_FIELD'    // From kickoff form input
   | 'FLOW_VARIABLE'         // From variable passed at kickoff
   | 'RULES'                 // Conditional routing (first match wins)
-  | 'ROUND_ROBIN';          // Rotates among a list
+  | 'ROUND_ROBIN'           // Rotates among a list
+  | 'CONTACT_GROUP'         // All members of a contact group
+  | 'ACCOUNT_CONTACTS';     // All active contacts in an account
 
 // ============================================================================
 // Resolution Configurations
@@ -71,6 +73,16 @@ export interface RoundRobinResolution {
   emails: string[];
 }
 
+export interface ContactGroupResolution {
+  type: 'CONTACT_GROUP';
+  groupId: string;
+}
+
+export interface AccountContactsResolution {
+  type: 'ACCOUNT_CONTACTS';
+  accountId: string;
+}
+
 export type Resolution =
   | ContactTbdResolution
   | FixedContactResolution
@@ -78,7 +90,9 @@ export type Resolution =
   | KickoffFormFieldResolution
   | FlowVariableResolution
   | RulesResolution
-  | RoundRobinResolution;
+  | RoundRobinResolution
+  | ContactGroupResolution
+  | AccountContactsResolution;
 
 // ============================================================================
 // Role Options

@@ -15,9 +15,17 @@ export async function getAssigneeDashboard(contactId: string, orgId: string) {
       flowRun: {
         with: { flow: true },
       },
-      magicLink: true,
     },
   });
+
+  // Fetch magic links for these steps
+  const stepIds = contactSteps.map(s => s.id);
+  const stepMagicLinks = stepIds.length > 0
+    ? await db.query.magicLinks.findMany({
+        where: inArray(magicLinks.stepExecutionId, stepIds),
+      })
+    : [];
+  const magicLinkByStepId = new Map(stepMagicLinks.map(ml => [ml.stepExecutionId, ml]));
 
   // Group by flow run
   const runMap = new Map<string, {
@@ -26,13 +34,13 @@ export async function getAssigneeDashboard(contactId: string, orgId: string) {
   }>();
 
   for (const step of contactSteps) {
-    const run = step.flowRun as any;
+    const run = (step as any).flowRun;
     if (!run || run.organizationId !== orgId) continue;
 
     if (!runMap.has(run.id)) {
       runMap.set(run.id, { run, steps: [] });
     }
-    runMap.get(run.id)!.steps.push(step);
+    runMap.get(run.id)!.steps.push({ ...step, magicLink: magicLinkByStepId.get(step.id) });
   }
 
   // Calculate summary

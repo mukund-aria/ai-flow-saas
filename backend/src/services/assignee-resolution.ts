@@ -3,9 +3,11 @@
  *
  * Resolves assignee placeholders from a flow template to actual contacts/users
  * when a flow run starts. Each resolution type has different resolution logic.
+ *
+ * Supports both single-assignee and multi-assignee (group) resolution.
  */
 
-import { db, contacts, flowRuns, stepExecutions } from '../db/index.js';
+import { db, contacts, contactGroupMembers, flowRuns, stepExecutions } from '../db/index.js';
 import { eq, and, sql } from 'drizzle-orm';
 import type { Resolution, Role } from '../models/assignees.js';
 
@@ -13,6 +15,9 @@ export interface ResolvedAssignee {
   contactId?: string;
   userId?: string;
 }
+
+/** Single assignee or array of assignees (for group assignment) */
+export type ResolvedAssignment = ResolvedAssignee | ResolvedAssignee[];
 
 export interface AssigneeResolutionContext {
   organizationId: string;
@@ -25,13 +30,13 @@ export interface AssigneeResolutionContext {
 
 /**
  * Resolve all assignee placeholders for a flow template.
- * Returns a map of roleName -> { contactId?, userId? }
+ * Returns a map of roleName -> single assignee or array of assignees.
  */
 export async function resolveAssignees(
   roles: Role[],
   ctx: AssigneeResolutionContext
-): Promise<Record<string, ResolvedAssignee>> {
-  const resolved: Record<string, ResolvedAssignee> = {};
+): Promise<Record<string, ResolvedAssignment>> {
+  const resolved: Record<string, ResolvedAssignment> = {};
 
   for (const role of roles) {
     const result = await resolveOne(role, ctx);
@@ -41,10 +46,15 @@ export async function resolveAssignees(
   return resolved;
 }
 
+/** Check if a resolved assignment is a group (array) */
+export function isGroupAssignment(assignment: ResolvedAssignment): assignment is ResolvedAssignee[] {
+  return Array.isArray(assignment);
+}
+
 async function resolveOne(
   role: Role,
   ctx: AssigneeResolutionContext
-): Promise<ResolvedAssignee> {
+): Promise<ResolvedAssignment> {
   const resolution = role.resolution;
   if (!resolution) return {};
 
@@ -69,6 +79,12 @@ async function resolveOne(
 
     case 'RULES':
       return resolveRules(resolution.config, ctx);
+
+    case 'CONTACT_GROUP':
+      return resolveContactGroup(resolution.groupId);
+
+    case 'ACCOUNT_CONTACTS':
+      return resolveAccountContacts(resolution.accountId, ctx.organizationId);
 
     default:
       return {};
@@ -261,6 +277,54 @@ async function resolveRules(
   }
 
   return {};
+}
+
+/**
+ * CONTACT_GROUP: Resolve to all members of a contact group.
+ * Returns an array of assignees.
+ */
+async function resolveContactGroup(groupId: string): Promise<ResolvedAssignment> {
+  if (!groupId) return {};
+
+  const members = await db.query.contactGroupMembers.findMany({
+    where: eq(contactGroupMembers.groupId, groupId),
+  });
+
+  if (members.length === 0) return {};
+  if (members.length === 1) {
+    const m = members[0];
+    return m.contactId ? { contactId: m.contactId } : m.userId ? { userId: m.userId } : {};
+  }
+
+  const assignees: ResolvedAssignee[] = [];
+  for (const m of members) {
+    if (m.contactId) assignees.push({ contactId: m.contactId });
+    else if (m.userId) assignees.push({ userId: m.userId });
+  }
+  return assignees;
+}
+
+/**
+ * ACCOUNT_CONTACTS: Resolve to all active contacts in an account.
+ * Returns an array of assignees.
+ */
+async function resolveAccountContacts(accountId: string, organizationId: string): Promise<ResolvedAssignment> {
+  if (!accountId) return {};
+
+  const accountContacts = await db.query.contacts.findMany({
+    where: and(
+      eq(contacts.accountId, accountId),
+      eq(contacts.organizationId, organizationId),
+      eq(contacts.status, 'ACTIVE')
+    ),
+  });
+
+  if (accountContacts.length === 0) return {};
+  if (accountContacts.length === 1) {
+    return { contactId: accountContacts[0].id };
+  }
+
+  return accountContacts.map((c) => ({ contactId: c.id }));
 }
 
 /**

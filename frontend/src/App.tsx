@@ -51,6 +51,8 @@ import {
   TeamPage,
   AssigneeTaskPage,
   FormBuilderPage,
+  AccountsPage,
+  AccountDetailPage,
 } from '@/pages';
 import { TemplateDetailPage } from '@/pages/TemplateDetailPage';
 import { EmbedStartPage } from '@/pages/EmbedStartPage';
@@ -218,6 +220,8 @@ function AppRoutes() {
         <Route path="flows/:id" element={<FlowRunDetailPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="contacts" element={<ContactsPage />} />
+        <Route path="accounts" element={<AccountsPage />} />
+        <Route path="accounts/:id" element={<AccountDetailPage />} />
         <Route path="schedules" element={<SchedulesPage />} />
         <Route path="integrations" element={<IntegrationsPage />} />
         <Route path="settings" element={<SettingsPage />} />

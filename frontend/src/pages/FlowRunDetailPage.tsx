@@ -47,6 +47,16 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 type StepStatus = 'COMPLETED' | 'IN_PROGRESS' | 'PENDING' | 'SKIPPED' | 'WAITING_FOR_ASSIGNEE';
 
+interface GroupAssigneeInfo {
+  id: string;
+  contactId?: string | null;
+  userId?: string | null;
+  name: string;
+  email?: string;
+  status: 'PENDING' | 'COMPLETED';
+  completedAt?: string | null;
+}
+
 interface FlowRunStep {
   id: string;
   stepId: string;
@@ -59,6 +69,9 @@ interface FlowRunStep {
     name: string;
     type: 'user' | 'contact';
   };
+  isGroupAssignment?: boolean;
+  completionMode?: string;
+  groupAssignees?: GroupAssigneeInfo[];
   resultData?: Record<string, unknown>;
   completedAt?: string;
   startedAt?: string;
@@ -386,6 +399,17 @@ export function FlowRunDetailPage() {
             ? { id: se.assignedToContact.id, name: se.assignedToContact.name, type: 'contact' as const }
             : undefined;
 
+          // Map group assignees if present
+          const groupAssignees: GroupAssigneeInfo[] | undefined = (se as any).assignees?.map((a: any) => ({
+            id: a.id,
+            contactId: a.contactId,
+            userId: a.userId,
+            name: a.contact?.name || a.user?.name || 'Unknown',
+            email: a.contact?.email || a.user?.email,
+            status: a.status,
+            completedAt: a.completedAt,
+          }));
+
           return {
             id: se.id,
             stepId: se.stepId,
@@ -394,6 +418,9 @@ export function FlowRunDetailPage() {
             type: (defStep?.type || 'TODO') as StepType,
             status: se.status as StepStatus,
             assignee,
+            isGroupAssignment: (se as any).isGroupAssignment || false,
+            completionMode: (se as any).completionMode,
+            groupAssignees: groupAssignees?.length ? groupAssignees : undefined,
             resultData: se.resultData,
             completedAt: se.completedAt,
             startedAt: se.startedAt,
@@ -702,8 +729,8 @@ export function FlowRunDetailPage() {
             )}
           </div>
 
-          {/* Assignee */}
-          {step.assignee && (
+          {/* Assignee - single */}
+          {step.assignee && !step.isGroupAssignment && (
             <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-500">
               <div className="w-5 h-5 rounded-full bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center text-[10px] font-bold text-violet-700">
                 {step.assignee.name.charAt(0).toUpperCase()}
@@ -712,6 +739,40 @@ export function FlowRunDetailPage() {
               {step.assignee.type === 'contact' && (
                 <span className="text-xs text-gray-400">(external)</span>
               )}
+            </div>
+          )}
+
+          {/* Group assignees */}
+          {step.isGroupAssignment && step.groupAssignees && step.groupAssignees.length > 0 && (
+            <div className="mt-1.5 space-y-1">
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <span className="font-medium">
+                  {step.groupAssignees.filter(a => a.status === 'COMPLETED').length} of {step.groupAssignees.length} completed
+                </span>
+                <span className="text-gray-400">
+                  ({step.completionMode === 'ALL' ? 'needs all' : step.completionMode === 'MAJORITY' ? 'needs majority' : 'needs any one'})
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {step.groupAssignees.map((ga) => (
+                  <div
+                    key={ga.id}
+                    className={cn(
+                      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs',
+                      ga.status === 'COMPLETED'
+                        ? 'bg-green-50 text-green-700'
+                        : 'bg-gray-100 text-gray-600'
+                    )}
+                    title={ga.email}
+                  >
+                    <div className="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center text-[8px] font-bold text-violet-700">
+                      {ga.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span>{ga.name}</span>
+                    {ga.status === 'COMPLETED' && <span className="text-green-500">✓</span>}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

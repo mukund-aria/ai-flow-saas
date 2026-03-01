@@ -280,7 +280,11 @@ export type ResolutionType =
   | 'KICKOFF_FORM_FIELD'
   | 'FLOW_VARIABLE'
   | 'RULES'
-  | 'ROUND_ROBIN';
+  | 'ROUND_ROBIN'
+  | 'CONTACT_GROUP'
+  | 'ACCOUNT_CONTACTS';
+
+export type CompletionMode = 'ANY_ONE' | 'ALL' | 'MAJORITY';
 
 export interface Resolution {
   type: ResolutionType;
@@ -288,6 +292,9 @@ export interface Resolution {
   fieldKey?: string;
   variableKey?: string;
   emails?: string[];
+  groupId?: string;
+  accountId?: string;
+  completionMode?: CompletionMode;
   config?: {
     source: 'FLOW_VARIABLE' | 'KICKOFF_FORM_FIELD' | 'STEP_OUTPUT';
     variableKey?: string;

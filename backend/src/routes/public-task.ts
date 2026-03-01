@@ -12,7 +12,7 @@ import { eq, and, isNull } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { validateMagicLink } from '../services/magic-link.js';
 import { logAction } from '../services/audit.js';
-import { completeStepAndAdvance } from '../services/step-completion.js';
+import { completeStepAndAdvance, evaluateGroupCompletion } from '../services/step-completion.js';
 import { fileStorage } from '../services/file-storage.js';
 
 const router = Router();
@@ -177,20 +177,34 @@ router.post(
 
     // Track the next step ID for the "next task token" logic below
     let resolvedNextStep: { id: string; assignedToContactId: string | null; stepIndex: number } | undefined;
+    let groupResult: { advanced: boolean; completedCount: number; totalCount: number } | undefined;
 
     if (run) {
       const definition = run.flow?.definition as { steps?: Array<Record<string, unknown>> } | null;
       const stepDefs = (definition?.steps || []) as any[];
 
-      const result = await completeStepAndAdvance({
-        stepExecutionId: stepExec.id,
-        resultData: resultData || {},
-        run: run as any,
-        stepDefs,
-      });
+      // Check if this is a group assignment
+      if (stepExec.isGroupAssignment && link.stepExecutionAssigneeId) {
+        // Route through group completion evaluation
+        groupResult = await evaluateGroupCompletion(
+          stepExec.id,
+          link.stepExecutionAssigneeId,
+          resultData || {},
+          run as any,
+          stepDefs
+        );
+      } else {
+        // Standard single-assignee completion
+        const result = await completeStepAndAdvance({
+          stepExecutionId: stepExec.id,
+          resultData: resultData || {},
+          run: run as any,
+          stepDefs,
+        });
 
-      if (result.nextStepId) {
-        resolvedNextStep = run.stepExecutions.find(se => se.id === result.nextStepId) as any;
+        if (result.nextStepId) {
+          resolvedNextStep = run.stepExecutions.find(se => se.id === result.nextStepId) as any;
+        }
       }
     }
 
@@ -219,6 +233,13 @@ router.post(
         message: 'Task completed successfully',
         nextTaskToken,
         aiReviewPending,
+        ...(groupResult && {
+          groupCompletion: {
+            advanced: groupResult.advanced,
+            completedCount: groupResult.completedCount,
+            totalCount: groupResult.totalCount,
+          },
+        }),
       },
     });
   })

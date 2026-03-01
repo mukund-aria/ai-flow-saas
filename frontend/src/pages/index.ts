@@ -22,6 +22,8 @@ export { TeamPage } from './TeamPage';
 export { AssigneeTaskPage } from './AssigneeTaskPage';
 export { FormBuilderPage } from './FormBuilderPage';
 export { EmbedStartPage } from './EmbedStartPage';
+export { AccountsPage } from './AccountsPage';
+export { AccountDetailPage } from './AccountDetailPage';
 
 // Portal pages
 export { PortalLoginPage } from './portal/PortalLoginPage';

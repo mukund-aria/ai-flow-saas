@@ -6,8 +6,9 @@
  * sub-flow propagation (execution.ts), and the automation executor.
  */
 
-import { db, flowRuns, stepExecutions, contacts } from '../db/index.js';
+import { db, flowRuns, stepExecutions, stepExecutionAssignees, contacts } from '../db/index.js';
 import { eq } from 'drizzle-orm';
+import type { CompletionMode } from '../db/schema.js';
 import {
   onStepActivated,
   onStepCompleted,
@@ -164,8 +165,36 @@ export async function completeStepAndAdvance(
       );
     }
 
-    // If next step has a contact assignee, create magic link and send email
-    if (nextStep.assignedToContactId) {
+    // If next step is a group assignment, create magic links for all assignees
+    if ((nextStep as any).isGroupAssignment) {
+      try {
+        const { createMagicLink } = await import('./magic-link.js');
+        const { sendMagicLink } = await import('./email.js');
+        const assignees = await db.query.stepExecutionAssignees.findMany({
+          where: eq(stepExecutionAssignees.stepExecutionId, nextStep.id),
+        });
+        for (const assignee of assignees) {
+          if (assignee.contactId) {
+            const token = await createMagicLink(nextStep.id, 168, assignee.id);
+            const contact = await db.query.contacts.findFirst({
+              where: eq(contacts.id, assignee.contactId),
+            });
+            if (contact) {
+              await sendMagicLink({
+                to: contact.email,
+                contactName: contact.name,
+                stepName: `Step ${nextStep.stepIndex + 1}`,
+                flowName: run.flow?.name || 'Flow',
+                token,
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[StepCompletion] Failed to send group magic links:', err);
+      }
+    } else if (nextStep.assignedToContactId) {
+      // Single assignee - create one magic link
       try {
         const { createMagicLink } = await import('./magic-link.js');
         const { sendMagicLink } = await import('./email.js');
@@ -220,4 +249,109 @@ export async function completeStepAndAdvance(
 
     return { completed: true, flowCompleted: true };
   }
+}
+
+// ============================================================================
+// Group Assignment Completion
+// ============================================================================
+
+export interface GroupCompletionResult {
+  advanced: boolean;
+  completedCount: number;
+  totalCount: number;
+}
+
+/**
+ * Evaluate whether a group-assigned step should advance based on completion mode.
+ *
+ * This is called when an individual assignee completes their portion of a
+ * group-assigned step. It:
+ * 1. Marks the individual assignee row as COMPLETED
+ * 2. Queries all assignees for this step execution
+ * 3. Applies the completion mode (ANY_ONE / ALL / MAJORITY)
+ * 4. If the step should complete, calls completeStepAndAdvance()
+ */
+export async function evaluateGroupCompletion(
+  stepExecutionId: string,
+  assigneeId: string,
+  resultData: Record<string, unknown>,
+  run: CompleteStepOpts['run'],
+  stepDefs: CompleteStepOpts['stepDefs']
+): Promise<GroupCompletionResult> {
+  // 1. Mark the individual assignee as COMPLETED
+  await db
+    .update(stepExecutionAssignees)
+    .set({
+      status: 'COMPLETED',
+      resultData,
+      completedAt: new Date(),
+    })
+    .where(eq(stepExecutionAssignees.id, assigneeId));
+
+  // 2. Get the step execution to read completionMode
+  const stepExec = await db.query.stepExecutions.findFirst({
+    where: eq(stepExecutions.id, stepExecutionId),
+  });
+
+  if (!stepExec) {
+    return { advanced: false, completedCount: 0, totalCount: 0 };
+  }
+
+  // 3. Query all assignees for this step
+  const allAssignees = await db.query.stepExecutionAssignees.findMany({
+    where: eq(stepExecutionAssignees.stepExecutionId, stepExecutionId),
+  });
+
+  const totalCount = allAssignees.length;
+  const completedCount = allAssignees.filter((a) => a.status === 'COMPLETED').length;
+  const completionMode = (stepExec.completionMode || 'ANY_ONE') as CompletionMode;
+
+  // 4. Evaluate completion mode
+  let shouldAdvance = false;
+
+  switch (completionMode) {
+    case 'ANY_ONE':
+      shouldAdvance = completedCount >= 1;
+      break;
+    case 'ALL':
+      shouldAdvance = completedCount >= totalCount;
+      break;
+    case 'MAJORITY':
+      shouldAdvance = completedCount > totalCount / 2;
+      break;
+  }
+
+  // 5. If step should complete, call the main completion flow
+  if (shouldAdvance && stepExec.status !== 'COMPLETED') {
+    // Aggregate result data from all completed assignees
+    const aggregatedResult: Record<string, unknown> = {
+      _groupCompletion: {
+        mode: completionMode,
+        totalAssignees: totalCount,
+        completedAssignees: completedCount,
+        submissions: allAssignees
+          .filter((a) => a.status === 'COMPLETED')
+          .map((a) => ({
+            assigneeId: a.id,
+            contactId: a.contactId,
+            userId: a.userId,
+            resultData: a.resultData,
+            completedAt: a.completedAt,
+          })),
+      },
+      // Use the triggering assignee's data as the primary result
+      ...resultData,
+    };
+
+    await completeStepAndAdvance({
+      stepExecutionId,
+      resultData: aggregatedResult,
+      run,
+      stepDefs,
+    });
+
+    return { advanced: true, completedCount, totalCount };
+  }
+
+  return { advanced: false, completedCount, totalCount };
 }

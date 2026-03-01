@@ -16,6 +16,7 @@ import {
   Plus,
   Settings,
   Users,
+  Building2,
   LogOut,
   RotateCcw,
   Play,
@@ -226,6 +227,7 @@ export function Sidebar() {
         <NavItem to="/flows" icon={<PlayCircle className="w-5 h-5" />} label="Flows" isCollapsed={isCollapsed} tooltip="Active workflow instances. Each flow is a running copy of a template." />
         <NavItem to="/templates" icon={<FileText className="w-5 h-5" />} label="Templates" isCollapsed={isCollapsed} tooltip="Reusable workflow blueprints. Build once, run many times." />
         <NavItem to="/contacts" icon={<Users className="w-5 h-5" />} label="Contacts" isCollapsed={isCollapsed} />
+        <NavItem to="/accounts" icon={<Building2 className="w-5 h-5" />} label="Accounts" isCollapsed={isCollapsed} />
         <NavItem to="/reports" icon={<BarChart3 className="w-5 h-5" />} label="Reports" isCollapsed={isCollapsed} />
         <NavItem to="/schedules" icon={<Calendar className="w-5 h-5" />} label="Schedules" isCollapsed={isCollapsed} />
         <NavItem to="/integrations" icon={<Plug className="w-5 h-5" />} label="Integrations" isCollapsed={isCollapsed} />

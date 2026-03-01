@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { db, contacts, organizations, stepExecutions, flowRuns } from '../db/index.js';
+import { db, contacts, organizations, accounts, stepExecutions, flowRuns } from '../db/index.js';
 import { eq, desc, and, isNotNull } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 
@@ -69,10 +69,29 @@ router.get(
   '/',
   asyncHandler(async (req, res) => {
     const orgId = req.organizationId;
+    const { accountId } = req.query;
+
+    const conditions = [];
+    if (orgId) conditions.push(eq(contacts.organizationId, orgId));
+    if (accountId) conditions.push(eq(contacts.accountId, accountId as string));
+
     const allContacts = await db.query.contacts.findMany({
-      ...(orgId ? { where: eq(contacts.organizationId, orgId) } : {}),
+      ...(conditions.length > 0 ? { where: and(...conditions) } : {}),
       orderBy: [desc(contacts.updatedAt)],
     });
+
+    // Collect unique accountIds to look up account names
+    const accountIds = [...new Set(allContacts.map(c => c.accountId).filter(Boolean))] as string[];
+    const accountMap: Record<string, { id: string; name: string }> = {};
+    if (accountIds.length > 0) {
+      for (const accId of accountIds) {
+        const acc = await db.query.accounts.findFirst({
+          where: eq(accounts.id, accId),
+          columns: { id: true, name: true },
+        });
+        if (acc) accountMap[accId] = acc;
+      }
+    }
 
     // Transform to API response format
     const response = allContacts.map((contact) => ({
@@ -81,6 +100,10 @@ router.get(
       email: contact.email,
       type: contact.type,
       status: contact.status,
+      accountId: contact.accountId,
+      account: contact.accountId && accountMap[contact.accountId]
+        ? { id: accountMap[contact.accountId].id, name: accountMap[contact.accountId].name }
+        : null,
       createdAt: contact.createdAt,
       updatedAt: contact.updatedAt,
     }));
@@ -236,7 +259,7 @@ router.put(
   '/:id',
   asyncHandler(async (req, res) => {
     const id = req.params.id as string;
-    const { name, email, type, status } = req.body;
+    const { name, email, type, status, accountId } = req.body;
 
     // Check if contact exists (scoped to org)
     const orgId = req.organizationId;
@@ -308,6 +331,7 @@ router.put(
     if (email !== undefined) updates.email = email;
     if (type !== undefined) updates.type = type;
     if (status !== undefined) updates.status = status;
+    if (accountId !== undefined) updates.accountId = accountId;
 
     // Update the contact
     const [updatedContact] = await db

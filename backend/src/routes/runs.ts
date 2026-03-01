@@ -6,13 +6,14 @@
  */
 
 import { Router } from 'express';
-import { db, flows, flowRuns, stepExecutions, users, organizations, contacts, magicLinks, auditLogs, userOrganizations, FlowRunStatus } from '../db/index.js';
+import { db, flows, flowRuns, stepExecutions, stepExecutionAssignees, users, organizations, contacts, magicLinks, auditLogs, userOrganizations, flowRunAccounts, accounts, FlowRunStatus, type CompletionMode } from '../db/index.js';
 import { eq, desc, and } from 'drizzle-orm';
 import { asyncHandler } from '../middleware/async-handler.js';
 import { logAction } from '../services/audit.js';
 import { onStepActivated, onStepCompleted, onFlowCompleted, onFlowCancelled, onFlowStarted, updateFlowActivity, computeFlowDueAt, handleSubFlowStep } from '../services/execution.js';
 import { getNextStepExecutions } from '../services/step-advancement.js';
 import { completeStepAndAdvance } from '../services/step-completion.js';
+import { isGroupAssignment as isGroupAssignmentCheck } from '../services/assignee-resolution.js';
 
 const router = Router();
 
@@ -324,6 +325,12 @@ router.get(
                 email: true,
               },
             },
+            assignees: {
+              with: {
+                contact: { columns: { id: true, name: true, email: true } },
+                user: { columns: { id: true, name: true, email: true } },
+              },
+            },
           },
         },
       },
@@ -337,9 +344,24 @@ router.get(
       return;
     }
 
+    // Fetch associated accounts via flowRunAccounts junction table
+    const runAccountRows = await db
+      .select({
+        id: accounts.id,
+        name: accounts.name,
+        domain: accounts.domain,
+        source: flowRunAccounts.source,
+      })
+      .from(flowRunAccounts)
+      .innerJoin(accounts, eq(flowRunAccounts.accountId, accounts.id))
+      .where(eq(flowRunAccounts.flowRunId, id));
+
     res.json({
       success: true,
-      data: run,
+      data: {
+        ...run,
+        accounts: runAccountRows,
+      },
     });
   })
 );
@@ -506,6 +528,13 @@ router.post(
     }
 
     // Create step executions for each step in the flow
+    // Track which steps are group assignments for post-insert processing
+    const groupAssignmentSteps: Array<{
+      stepIndex: number;
+      assignees: Array<{ contactId?: string; userId?: string }>;
+      completionMode: string;
+    }> = [];
+
     const stepExecutionValues = steps.map((step, index) => {
       const stepDef = step as any;
       const assigneeRole = stepDef.config?.assignee || stepDef.assignee;
@@ -513,16 +542,30 @@ router.post(
 
       let assignedToContactId: string | null = null;
       let assignedToUserId: string | null = null;
+      let isGroupAssignmentFlag = false;
+      let completionMode: CompletionMode | null = null;
 
       if (assigneeRole) {
-        // Try the new resolution service first
         const resolved = resolvedAssignees[assigneeRole];
-        if (resolved?.contactId) {
-          assignedToContactId = resolved.contactId;
-        } else if (resolved?.userId) {
-          assignedToUserId = resolved.userId;
+        if (resolved && isGroupAssignmentCheck(resolved)) {
+          // Group assignment — don't assign to a single person
+          isGroupAssignmentFlag = true;
+          // Get completion mode from role resolution config or default
+          const roleDef = (definition as any)?.roles?.find((r: any) => r.name === assigneeRole);
+          const roleResolution = roleDef?.resolution;
+          completionMode = (roleResolution?.completionMode || stepDef.config?.completionMode || 'ANY_ONE') as CompletionMode;
+          groupAssignmentSteps.push({
+            stepIndex: index,
+            assignees: resolved,
+            completionMode: completionMode!,
+          });
+        } else if (resolved && !isGroupAssignmentCheck(resolved)) {
+          if (resolved.contactId) {
+            assignedToContactId = resolved.contactId;
+          } else if (resolved.userId) {
+            assignedToUserId = resolved.userId;
+          }
         } else if (legacyRoles[assigneeRole]) {
-          // Fall back to legacy direct assignment
           assignedToContactId = legacyRoles[assigneeRole];
         } else if (assigneeRole === '__coordinator__') {
           assignedToUserId = userId;
@@ -537,15 +580,55 @@ router.post(
         startedAt: index === 0 ? new Date() : null,
         assignedToContactId,
         assignedToUserId,
+        isGroupAssignment: isGroupAssignmentFlag,
+        completionMode,
       };
     });
 
     await db.insert(stepExecutions).values(stepExecutionValues);
 
-    // Create magic links for contact-assigned steps
+    // For group assignment steps, create step_execution_assignees rows and magic links
+    for (const groupStep of groupAssignmentSteps) {
+      const stepExec = await db.query.stepExecutions.findFirst({
+        where: and(
+          eq(stepExecutions.flowRunId, newRun.id),
+          eq(stepExecutions.stepIndex, groupStep.stepIndex)
+        ),
+      });
+      if (!stepExec) continue;
+
+      for (const assignee of groupStep.assignees) {
+        const [assigneeRow] = await db.insert(stepExecutionAssignees).values({
+          stepExecutionId: stepExec.id,
+          contactId: assignee.contactId || null,
+          userId: assignee.userId || null,
+        }).returning();
+
+        // For first step, send magic links to all group members
+        if (groupStep.stepIndex === 0 && assignee.contactId) {
+          const { createMagicLink } = await import('../services/magic-link.js');
+          const { sendMagicLink } = await import('../services/email.js');
+          const token = await createMagicLink(stepExec.id, 168, assigneeRow.id);
+          const contact = await db.query.contacts.findFirst({
+            where: eq(contacts.id, assignee.contactId),
+          });
+          if (contact) {
+            await sendMagicLink({
+              to: contact.email,
+              contactName: contact.name,
+              stepName: (steps[0] as any).config?.name || (steps[0] as any).name || 'Task',
+              flowName: flow.name,
+              token,
+            });
+          }
+        }
+      }
+    }
+
+    // Create magic links for single-assignee contact-assigned steps
     for (let i = 0; i < stepExecutionValues.length; i++) {
       const stepVal = stepExecutionValues[i];
-      if (stepVal.assignedToContactId && i === 0) {
+      if (stepVal.assignedToContactId && i === 0 && !stepVal.isGroupAssignment) {
         const stepExec = await db.query.stepExecutions.findFirst({
           where: and(
             eq(stepExecutions.flowRunId, newRun.id),
@@ -569,6 +652,34 @@ router.post(
             });
           }
         }
+      }
+    }
+
+    // Auto-associate accounts: collect unique accountIds from resolved contacts
+    const contactIds = stepExecutionValues
+      .map(sv => sv.assignedToContactId)
+      .filter(Boolean) as string[];
+    if (contactIds.length > 0) {
+      const uniqueContactIds = [...new Set(contactIds)];
+      const assignedContacts = await Promise.all(
+        uniqueContactIds.map(cId =>
+          db.query.contacts.findFirst({
+            where: eq(contacts.id, cId),
+            columns: { accountId: true },
+          })
+        )
+      );
+      const uniqueAccountIds = [...new Set(
+        assignedContacts.map(c => c?.accountId).filter(Boolean) as string[]
+      )];
+      if (uniqueAccountIds.length > 0) {
+        await db.insert(flowRunAccounts).values(
+          uniqueAccountIds.map(accountId => ({
+            flowRunId: newRun.id,
+            accountId,
+            source: 'AUTO' as const,
+          }))
+        );
       }
     }
 

@@ -629,6 +629,8 @@ export interface Contact {
   email: string;
   type: 'ADMIN' | 'MEMBER' | 'ASSIGNEE';
   status: 'ACTIVE' | 'INACTIVE';
+  accountId?: string | null;
+  account?: { id: string; name: string } | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -1395,6 +1397,183 @@ export async function testSandboxFlow(
   const result = await res.json();
   if (!result.success) throw new Error(result.error?.message || 'Failed to start test');
   return result.data;
+}
+
+// ============================================================================
+// Accounts API
+// ============================================================================
+
+export interface Account {
+  id: string;
+  name: string;
+  domain?: string | null;
+  contactCount?: number;
+  activeFlowCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AccountDetail extends Account {
+  contacts?: Contact[];
+  flows?: Flow[];
+}
+
+export async function listAccounts(): Promise<Account[]> {
+  const res = await fetch(`${API_BASE}/accounts`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch accounts');
+  return data.data;
+}
+
+export async function createAccount(body: { name: string; domain?: string }): Promise<Account> {
+  const res = await fetch(`${API_BASE}/accounts`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const result = await res.json();
+  if (!result.success) throw new Error(result.error?.message || 'Failed to create account');
+  return result.data;
+}
+
+export async function getAccount(id: string): Promise<Account> {
+  const res = await fetch(`${API_BASE}/accounts/${id}`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch account');
+  return data.data;
+}
+
+export async function updateAccount(id: string, body: { name?: string; domain?: string }): Promise<Account> {
+  const res = await fetch(`${API_BASE}/accounts/${id}`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const result = await res.json();
+  if (!result.success) throw new Error(result.error?.message || 'Failed to update account');
+  return result.data;
+}
+
+export async function deleteAccount(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/accounts/${id}`, { ...fetchOpts, method: 'DELETE' });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to delete account');
+}
+
+export async function getAccountContacts(id: string): Promise<Contact[]> {
+  const res = await fetch(`${API_BASE}/accounts/${id}/contacts`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch account contacts');
+  return data.data;
+}
+
+export interface AccountFlowRun {
+  flowRunId: string;
+  source: string;
+  associatedAt: string;
+  runName: string;
+  runStatus: string;
+  runStartedAt: string;
+  flowId: string;
+  flowName: string;
+}
+
+export async function getAccountFlows(id: string): Promise<AccountFlowRun[]> {
+  const res = await fetch(`${API_BASE}/accounts/${id}/flows`, fetchOpts);
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error?.message || 'Failed to fetch account flows');
+  return data.data;
+}
+
+// ============================================================================
+// Contact Groups API
+// ============================================================================
+
+export type CompletionMode = 'ANY_ONE' | 'ALL' | 'MAJORITY';
+
+export interface ContactGroup {
+  id: string;
+  name: string;
+  description?: string | null;
+  defaultCompletionMode: CompletionMode;
+  memberCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContactGroupMember {
+  id: string;
+  contactId?: string | null;
+  userId?: string | null;
+  contact?: { id: string; name: string; email: string } | null;
+  user?: { id: string; name: string; email: string } | null;
+  createdAt: string;
+}
+
+export interface ContactGroupDetail extends ContactGroup {
+  members: ContactGroupMember[];
+}
+
+export async function listContactGroups(): Promise<ContactGroup[]> {
+  const res = await fetch(`${API_BASE}/contact-groups`, fetchOpts);
+  if (!res.ok) throw new Error('Failed to fetch contact groups');
+  const data = await res.json();
+  return data.groups || data;
+}
+
+export async function createContactGroup(data: { name: string; description?: string; defaultCompletionMode?: CompletionMode }): Promise<ContactGroup> {
+  const res = await fetch(`${API_BASE}/contact-groups`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to create contact group');
+  const result = await res.json();
+  return result.group || result;
+}
+
+export async function getContactGroup(id: string): Promise<ContactGroupDetail> {
+  const res = await fetch(`${API_BASE}/contact-groups/${id}`, fetchOpts);
+  if (!res.ok) throw new Error('Failed to fetch contact group');
+  const data = await res.json();
+  return data.group || data;
+}
+
+export async function updateContactGroup(id: string, data: { name?: string; description?: string; defaultCompletionMode?: CompletionMode }): Promise<ContactGroup> {
+  const res = await fetch(`${API_BASE}/contact-groups/${id}`, {
+    ...fetchOpts,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update contact group');
+  const result = await res.json();
+  return result.group || result;
+}
+
+export async function deleteContactGroup(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/contact-groups/${id}`, { ...fetchOpts, method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete contact group');
+}
+
+export async function addContactGroupMember(groupId: string, data: { contactId?: string; userId?: string }): Promise<ContactGroupMember> {
+  const res = await fetch(`${API_BASE}/contact-groups/${groupId}/members`, {
+    ...fetchOpts,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to add group member');
+  const result = await res.json();
+  return result.member || result;
+}
+
+export async function removeContactGroupMember(groupId: string, memberId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/contact-groups/${groupId}/members/${memberId}`, { ...fetchOpts, method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to remove group member');
 }
 
 // ============================================================================

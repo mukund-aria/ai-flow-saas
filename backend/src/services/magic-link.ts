@@ -5,16 +5,21 @@
  */
 
 import { db } from '../db/client.js';
-import { magicLinks, stepExecutions, flowRuns, flows, contacts, users, organizations, portals } from '../db/schema.js';
+import { magicLinks, stepExecutions, stepExecutionAssignees, flowRuns, flows, contacts, users, organizations, portals } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { resolveDDR, type DDRContext } from './ddr-resolver.js';
 
-export async function createMagicLink(stepExecutionId: string, expiresInHours = 168): Promise<string> {
+export async function createMagicLink(
+  stepExecutionId: string,
+  expiresInHours = 168,
+  stepExecutionAssigneeId?: string
+): Promise<string> {
   const expiresAt = new Date();
   expiresAt.setHours(expiresAt.getHours() + expiresInHours);
 
   const [link] = await db.insert(magicLinks).values({
     stepExecutionId,
+    stepExecutionAssigneeId: stepExecutionAssigneeId || null,
     expiresAt,
   }).returning();
 
@@ -66,6 +71,8 @@ export interface TaskContext {
   branding?: BrandingConfig;
   portalSlug?: string;
   isSandbox?: boolean;
+  isGroupAssignment?: boolean;
+  assigneeRecordId?: string | null;
 }
 
 export async function validateMagicLink(token: string): Promise<TaskContext | null> {
@@ -90,9 +97,31 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
   if (!run) return null;
 
   // Get assignee info (contact or user)
+  // For group assignments, look up via stepExecutionAssigneeId on the magic link
   let contactName = 'Participant';
   let contactEmail = '';
-  if (stepExec.assignedToContactId) {
+  let assigneeRecordId: string | null = null;
+
+  if (link.stepExecutionAssigneeId) {
+    // Group assignment — find the specific assignee
+    const assigneeRecord = await db.query.stepExecutionAssignees.findFirst({
+      where: eq(stepExecutionAssignees.id, link.stepExecutionAssigneeId),
+    });
+    if (assigneeRecord) {
+      assigneeRecordId = assigneeRecord.id;
+      if (assigneeRecord.contactId) {
+        const contact = await db.query.contacts.findFirst({
+          where: eq(contacts.id, assigneeRecord.contactId),
+        });
+        if (contact) { contactName = contact.name; contactEmail = contact.email; }
+      } else if (assigneeRecord.userId) {
+        const user = await db.query.users.findFirst({
+          where: eq(users.id, assigneeRecord.userId),
+        });
+        if (user) { contactName = user.name; contactEmail = user.email; }
+      }
+    }
+  } else if (stepExec.assignedToContactId) {
     const contact = await db.query.contacts.findFirst({
       where: eq(contacts.id, stepExec.assignedToContactId),
     });
@@ -315,5 +344,7 @@ export async function validateMagicLink(token: string): Promise<TaskContext | nu
     branding: orgBranding,
     portalSlug,
     isSandbox,
+    isGroupAssignment: stepExec.isGroupAssignment || false,
+    assigneeRecordId,
   };
 }

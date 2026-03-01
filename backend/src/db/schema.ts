@@ -24,6 +24,10 @@ export type DigestFrequency = 'NONE' | 'DAILY' | 'WEEKLY';
 export type WebhookEndpointType = 'INCOMING' | 'OUTGOING';
 export type IntegrationType = 'SLACK_WEBHOOK' | 'TEAMS_WEBHOOK' | 'CUSTOM_WEBHOOK';
 export type EmailTemplateType = 'TASK_ASSIGNED' | 'TASK_REMINDER' | 'FLOW_COMPLETED';
+export type FlowRunAccountSource = 'AUTO' | 'MANUAL';
+export type CompletionMode = 'ANY_ONE' | 'ALL' | 'MAJORITY';
+export type RoleCompletionMode = 'ALL_ROLES' | 'SEQUENTIAL';
+export type StepExecutionAssigneeStatus = 'PENDING' | 'COMPLETED';
 
 // ============================================================================
 // Organizations
@@ -44,6 +48,20 @@ export const organizations = pgTable('organizations', {
   isActive: boolean('is_active').default(true).notNull(),
   deletedAt: timestamp('deleted_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Accounts (Companies, Clients, Vendors)
+// ============================================================================
+
+export const accounts = pgTable('accounts', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  domain: text('domain'),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  deletedAt: timestamp('deleted_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 // ============================================================================
@@ -237,6 +255,7 @@ export const contacts = pgTable('contacts', {
   name: text('name').notNull(),
   organizationId: text('organization_id').notNull().references(() => organizations.id),
   portalId: text('portal_id').references(() => portals.id),
+  accountId: text('account_id').references(() => accounts.id),
   type: text('type').$type<ContactType>().default('ASSIGNEE').notNull(),
   status: text('status').$type<ContactStatus>().default('ACTIVE').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -255,6 +274,9 @@ export const stepExecutions = pgTable('step_executions', {
   status: text('status').$type<StepExecutionStatus>().default('PENDING').notNull(),
   assignedToUserId: text('assigned_to_user_id').references(() => users.id),
   assignedToContactId: text('assigned_to_contact_id').references(() => contacts.id),
+  isGroupAssignment: boolean('is_group_assignment').default(false).notNull(),
+  completionMode: text('completion_mode').$type<CompletionMode>().default('ANY_ONE'),
+  roleCompletionMode: text('role_completion_mode').$type<RoleCompletionMode>().default('ALL_ROLES'),
   resultData: jsonb('result_data').$type<Record<string, unknown>>(),
   startedAt: timestamp('started_at'),
   completedAt: timestamp('completed_at'),
@@ -277,9 +299,64 @@ export const stepExecutions = pgTable('step_executions', {
 export const magicLinks = pgTable('magic_links', {
   id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   token: text('token').notNull().unique().$defaultFn(() => crypto.randomUUID()),
-  stepExecutionId: text('step_execution_id').notNull().unique().references(() => stepExecutions.id),
+  stepExecutionId: text('step_execution_id').notNull().references(() => stepExecutions.id),
+  stepExecutionAssigneeId: text('step_execution_assignee_id'),
   expiresAt: timestamp('expires_at').notNull(),
   usedAt: timestamp('used_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Flow Run Accounts (Many-to-many: Flow Runs ↔ Accounts)
+// ============================================================================
+
+export const flowRunAccounts = pgTable('flow_run_accounts', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  flowRunId: text('flow_run_id').notNull().references(() => flowRuns.id),
+  accountId: text('account_id').notNull().references(() => accounts.id),
+  source: text('source').$type<FlowRunAccountSource>().default('MANUAL').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Contact Groups (Reusable assignment lists)
+// ============================================================================
+
+export const contactGroups = pgTable('contact_groups', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  description: text('description'),
+  defaultCompletionMode: text('default_completion_mode').$type<CompletionMode>().default('ANY_ONE').notNull(),
+  organizationId: text('organization_id').notNull().references(() => organizations.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Contact Group Members (Junction: contacts/users in a group)
+// ============================================================================
+
+export const contactGroupMembers = pgTable('contact_group_members', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  groupId: text('group_id').notNull().references(() => contactGroups.id),
+  contactId: text('contact_id').references(() => contacts.id),
+  userId: text('user_id').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ============================================================================
+// Step Execution Assignees (Individual assignees for group-assigned steps)
+// ============================================================================
+
+export const stepExecutionAssignees = pgTable('step_execution_assignees', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  stepExecutionId: text('step_execution_id').notNull().references(() => stepExecutions.id),
+  contactId: text('contact_id').references(() => contacts.id),
+  userId: text('user_id').references(() => users.id),
+  status: text('status').$type<StepExecutionAssigneeStatus>().default('PENDING').notNull(),
+  resultData: jsonb('result_data').$type<Record<string, unknown>>(),
+  completedAt: timestamp('completed_at'),
+  notifiedAt: timestamp('notified_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -531,6 +608,8 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   portals: many(portals),
   emailTemplates: many(emailTemplates),
   assigneeSessions: many(assigneeSessions),
+  accounts: many(accounts),
+  contactGroups: many(contactGroups),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -615,6 +694,7 @@ export const flowRunsRelations = relations(flowRuns, ({ one, many }) => ({
   }),
   stepExecutions: many(stepExecutions),
   auditLogs: many(auditLogs),
+  flowRunAccounts: many(flowRunAccounts),
 }));
 
 export const contactsRelations = relations(contacts, ({ one, many }) => ({
@@ -626,11 +706,15 @@ export const contactsRelations = relations(contacts, ({ one, many }) => ({
     fields: [contacts.portalId],
     references: [portals.id],
   }),
+  account: one(accounts, {
+    fields: [contacts.accountId],
+    references: [accounts.id],
+  }),
   stepExecutions: many(stepExecutions),
   assigneeSessions: many(assigneeSessions),
 }));
 
-export const stepExecutionsRelations = relations(stepExecutions, ({ one }) => ({
+export const stepExecutionsRelations = relations(stepExecutions, ({ one, many }) => ({
   flowRun: one(flowRuns, {
     fields: [stepExecutions.flowRunId],
     references: [flowRuns.id],
@@ -643,17 +727,7 @@ export const stepExecutionsRelations = relations(stepExecutions, ({ one }) => ({
     fields: [stepExecutions.assignedToContactId],
     references: [contacts.id],
   }),
-  magicLink: one(magicLinks, {
-    fields: [stepExecutions.id],
-    references: [magicLinks.stepExecutionId],
-  }),
-}));
-
-export const magicLinksRelations = relations(magicLinks, ({ one }) => ({
-  stepExecution: one(stepExecutions, {
-    fields: [magicLinks.stepExecutionId],
-    references: [stepExecutions.id],
-  }),
+  assignees: many(stepExecutionAssignees),
 }));
 
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
@@ -868,5 +942,86 @@ export const assigneeSessionsRelations = relations(assigneeSessions, ({ one }) =
   portal: one(portals, {
     fields: [assigneeSessions.portalId],
     references: [portals.id],
+  }),
+}));
+
+// ============================================================================
+// Account Relations
+// ============================================================================
+
+export const accountsRelations = relations(accounts, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [accounts.organizationId],
+    references: [organizations.id],
+  }),
+  contacts: many(contacts),
+  flowRunAccounts: many(flowRunAccounts),
+}));
+
+export const flowRunAccountsRelations = relations(flowRunAccounts, ({ one }) => ({
+  flowRun: one(flowRuns, {
+    fields: [flowRunAccounts.flowRunId],
+    references: [flowRuns.id],
+  }),
+  account: one(accounts, {
+    fields: [flowRunAccounts.accountId],
+    references: [accounts.id],
+  }),
+}));
+
+// ============================================================================
+// Contact Group Relations
+// ============================================================================
+
+export const contactGroupsRelations = relations(contactGroups, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [contactGroups.organizationId],
+    references: [organizations.id],
+  }),
+  members: many(contactGroupMembers),
+}));
+
+export const contactGroupMembersRelations = relations(contactGroupMembers, ({ one }) => ({
+  group: one(contactGroups, {
+    fields: [contactGroupMembers.groupId],
+    references: [contactGroups.id],
+  }),
+  contact: one(contacts, {
+    fields: [contactGroupMembers.contactId],
+    references: [contacts.id],
+  }),
+  user: one(users, {
+    fields: [contactGroupMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+// ============================================================================
+// Step Execution Assignee Relations
+// ============================================================================
+
+export const stepExecutionAssigneesRelations = relations(stepExecutionAssignees, ({ one }) => ({
+  stepExecution: one(stepExecutions, {
+    fields: [stepExecutionAssignees.stepExecutionId],
+    references: [stepExecutions.id],
+  }),
+  contact: one(contacts, {
+    fields: [stepExecutionAssignees.contactId],
+    references: [contacts.id],
+  }),
+  user: one(users, {
+    fields: [stepExecutionAssignees.userId],
+    references: [users.id],
+  }),
+}));
+
+export const magicLinksRelations = relations(magicLinks, ({ one }) => ({
+  stepExecution: one(stepExecutions, {
+    fields: [magicLinks.stepExecutionId],
+    references: [stepExecutions.id],
+  }),
+  stepExecutionAssignee: one(stepExecutionAssignees, {
+    fields: [magicLinks.stepExecutionAssigneeId],
+    references: [stepExecutionAssignees.id],
   }),
 }));

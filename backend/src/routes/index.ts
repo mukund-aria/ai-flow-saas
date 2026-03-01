@@ -29,6 +29,8 @@ import galleryRouter from './gallery.js';
 import analyzeRouter from './analyze.js';
 import portalsRouter from './portals.js';
 import emailTemplatesRouter from './email-templates.js';
+import accountsRouter from './accounts.js';
+import contactGroupsRouter from './contact-groups.js';
 import aiTestRouter from './ai-test.js';
 import { orgScope } from '../middleware/org-scope.js';
 
@@ -108,6 +110,12 @@ router.use('/portals', portalsRouter);
 
 // Email Templates API (email template customization)
 router.use('/email-templates', emailTemplatesRouter);
+
+// Accounts API (companies, clients, vendors)
+router.use('/accounts', accountsRouter);
+
+// Contact Groups API (reusable assignment lists)
+router.use('/contact-groups', contactGroupsRouter);
 
 // Flows API (workflow execution — active instances)
 // Note: POST /api/templates/:templateId/flows is handled by runsRouter
