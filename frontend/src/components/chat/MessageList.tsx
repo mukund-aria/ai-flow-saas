@@ -4,13 +4,12 @@ import { MessageItem } from './MessageItem';
 import { ThinkingIndicator } from './ThinkingIndicator';
 import { StreamingMessage } from './StreamingMessage';
 import { WelcomeMessage } from './WelcomeMessage';
-import type { Message, Clarification, SuggestedAction, AnalysisResult } from '@/types';
-import type { ThinkingStatus } from '@/stores/chatStore';
+import type { Message, Clarification, SuggestedAction, AnalysisResult, ThinkingStepInfo } from '@/types';
 
 interface MessageListProps {
   messages: Message[];
   isThinking: boolean;
-  thinkingStatus: ThinkingStatus;
+  thinkingSteps: ThinkingStepInfo[];
   isStreaming: boolean;
   streamingContent: string;
   onApprovePlan: (planId: string) => void;
@@ -28,7 +27,7 @@ interface MessageListProps {
 export function MessageList({
   messages,
   isThinking,
-  thinkingStatus,
+  thinkingSteps,
   isStreaming,
   streamingContent,
   onApprovePlan,
@@ -94,7 +93,7 @@ export function MessageList({
         )}
 
         {/* Thinking indicator */}
-        {isThinking && <ThinkingIndicator status={thinkingStatus} />}
+        {isThinking && <ThinkingIndicator steps={thinkingSteps} />}
 
         {/* Scroll anchor */}
         <div ref={bottomRef} />

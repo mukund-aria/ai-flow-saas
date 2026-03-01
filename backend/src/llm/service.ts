@@ -701,8 +701,8 @@ ${currentWorkflow
         options.publicPreview
       );
 
-      // Yield thinking event
-      yield { type: 'thinking', status: 'Analyzing request...' };
+      // Yield initial thinking step
+      yield { type: 'thinking', status: 'Understanding your request...', step: 1 };
 
       // Create streaming request with tools
       const stream = this.client.messages.stream({
@@ -717,17 +717,31 @@ ${currentWorkflow
 
       // Track tool use data
       let toolInputJson = '';
+      let emittedStep3 = false;
+      let emittedStep4 = false;
+
+      // Emit step 2 once the API call is underway
+      yield { type: 'thinking', status: 'Analyzing workflow requirements...', step: 2 };
 
       // Process stream events
       for await (const event of stream) {
         if (event.type === 'content_block_start' && event.content_block.type === 'tool_use') {
-          yield { type: 'thinking', status: 'Designing workflow...' };
+          // Tool use started — designing the workflow structure
+          if (!emittedStep3) {
+            yield { type: 'thinking', status: 'Designing workflow structure...', step: 3 };
+            emittedStep3 = true;
+          }
         } else if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
           // Stream the AI's conversational preamble text in real-time
           yield { type: 'content', chunk: event.delta.text };
         } else if (event.type === 'content_block_delta' && event.delta.type === 'input_json_delta') {
           // Accumulate the tool input JSON
           toolInputJson += event.delta.partial_json;
+          // Emit step 4 on first JSON chunk
+          if (!emittedStep4 && emittedStep3) {
+            yield { type: 'thinking', status: 'Configuring steps and assignments...', step: 4 };
+            emittedStep4 = true;
+          }
           // Yield empty chunk to keep connection alive (no raw JSON shown to user)
           yield { type: 'content', chunk: '' };
         }
@@ -753,7 +767,7 @@ ${currentWorkflow
 
       // ── Agentic Tool Loop: handle lookup_template in streaming ──
       if (toolUseBlock.name === 'lookup_template') {
-        yield { type: 'thinking', status: 'Loading template details...' };
+        yield { type: 'thinking', status: 'Loading template details...', step: 5 };
 
         const lookupInput = toolUseBlock.input as { templateName: string; category?: string };
         const template = lookupGalleryTemplate(lookupInput.templateName, lookupInput.category);
@@ -775,7 +789,7 @@ ${currentWorkflow
           },
         ];
 
-        yield { type: 'thinking', status: 'Adapting template to your needs...' };
+        yield { type: 'thinking', status: 'Adapting template to your needs...', step: 6 };
 
         // Second streaming API call — the AI now has the template details
         const followUpStream = this.client.messages.stream({
@@ -790,9 +804,13 @@ ${currentWorkflow
 
         // Process follow-up stream events
         let followUpToolInputJson = '';
+        let emittedFollowUpDesign = false;
         for await (const event of followUpStream) {
           if (event.type === 'content_block_start' && event.content_block.type === 'tool_use') {
-            yield { type: 'thinking', status: 'Designing workflow...' };
+            if (!emittedFollowUpDesign) {
+              yield { type: 'thinking', status: 'Designing workflow structure...', step: 7 };
+              emittedFollowUpDesign = true;
+            }
           } else if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
             yield { type: 'content', chunk: event.delta.text };
           } else if (event.type === 'content_block_delta' && event.delta.type === 'input_json_delta') {

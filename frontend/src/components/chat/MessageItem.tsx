@@ -6,6 +6,7 @@ import { ClarificationCard } from './ClarificationCard';
 import { RejectCard } from './RejectCard';
 import { EnhancementCard } from './EnhancementCard';
 import { SuggestedActions } from './SuggestedActions';
+import { ThinkingIndicator } from './ThinkingIndicator';
 
 // Simple markdown rendering for common elements
 // Handles: bold (**text**), headers (##), lists (- item)
@@ -143,6 +144,15 @@ export function MessageItem({
 
       {/* Content */}
       <div className={cn('flex-1 max-w-[85%]', isUser && 'text-right')}>
+        {/* Collapsed thinking steps (shown on completed assistant messages) */}
+        {!isUser && message.thinkingSteps && message.thinkingSteps.length > 0 && (
+          <ThinkingIndicator
+            steps={message.thinkingSteps}
+            collapsed
+            duration={message.thinkingDuration}
+          />
+        )}
+
         {/* Attachment Preview */}
         {message.attachment && (
           <div className={cn('mb-2', isUser && 'flex justify-end')}>

@@ -147,7 +147,7 @@ router.post(
           // iterResult.value is a StreamEvent
           const event = iterResult.value;
           if (event.type === 'thinking') {
-            sendSSE(res, 'thinking', { status: event.status });
+            sendSSE(res, 'thinking', { status: event.status, step: event.step });
           } else if (event.type === 'content') {
             sendSSE(res, 'content', { chunk: event.chunk });
           }

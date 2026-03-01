@@ -278,5 +278,6 @@ export type StreamEventType = 'thinking' | 'content';
 export interface StreamEvent {
   type: StreamEventType;
   status?: string;  // For 'thinking' events
+  step?: number;    // For 'thinking' events — sequential step number
   chunk?: string;   // For 'content' events
 }

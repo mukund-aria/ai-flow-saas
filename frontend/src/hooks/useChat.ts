@@ -31,6 +31,10 @@ export function useChat() {
     setPrefillMessage,
     clearMessages,
     loadMessages,
+    addThinkingStep,
+    clearThinkingSteps,
+    thinkingSteps,
+    thinkingStartTime,
   } = useChatStore();
 
   const { currentSessionId, setCurrentSession } = useSessionStore();
@@ -158,6 +162,16 @@ export function useChat() {
       let assistantMessageId: string | null = null;
       let currentMode: string | null = null;
 
+      // Helper: snapshot thinking steps and compute duration for attachment to message
+      const captureThinkingData = () => {
+        const store = useChatStore.getState();
+        const steps = store.thinkingSteps.map((s) => ({ ...s, done: true }));
+        const duration = store.thinkingStartTime
+          ? Math.round((Date.now() - store.thinkingStartTime) / 1000)
+          : 0;
+        return { steps, duration };
+      };
+
       try {
         console.log('[Chat] Sending message:', { content: content.substring(0, 100), sessionId: currentSessionId });
 
@@ -183,7 +197,9 @@ export function useChat() {
             }
 
             case 'thinking': {
+              const data = event.data as { status: string; step?: number };
               setThinking(true);
+              addThinkingStep(data.step ?? 0, data.status);
               break;
             }
 
@@ -212,10 +228,15 @@ export function useChat() {
               // For create/edit, we'll add the message when we get the workflow event
               // For clarify/reject/respond, create the message now and stream text
               if (data.mode !== 'create' && data.mode !== 'edit') {
+                const { steps: thinkingStepsSnapshot, duration: thinkingDuration } = captureThinkingData();
                 assistantMessageId = addAssistantMessage(
                   data.friendlyMessage || '',
                   data.mode as 'clarify' | 'reject' | 'respond'
                 );
+                if (thinkingStepsSnapshot.length > 0) {
+                  updateMessage(assistantMessageId, { thinkingSteps: thinkingStepsSnapshot, thinkingDuration });
+                }
+                clearThinkingSteps();
               }
               break;
             }
@@ -232,8 +253,10 @@ export function useChat() {
 
               // For workflow events, create the message now with pendingPlan
               // This replaces the thinking indicator with the plan preview card
+              const { steps: wfThinkingSteps, duration: wfThinkingDuration } = captureThinkingData();
               setThinking(false);
               clearStreamingContent();
+              clearThinkingSteps();
 
               // Determine the mode - use currentMode or default to 'create'
               const workflowMode = (currentMode === 'edit' ? 'edit' : 'create') as 'create' | 'edit';
@@ -257,6 +280,9 @@ export function useChat() {
                 };
                 // Create message with pendingPlan in one go - use actual mode
                 assistantMessageId = addAssistantMessage('', workflowMode);
+                if (wfThinkingSteps.length > 0) {
+                  updateMessage(assistantMessageId, { thinkingSteps: wfThinkingSteps, thinkingDuration: wfThinkingDuration });
+                }
                 setMessagePendingPlan(assistantMessageId, plan);
 
                 // Push to right-panel proposal for large edits / creates
@@ -272,6 +298,9 @@ export function useChat() {
               } else if (!data.isPreview) {
                 // Directly published (preview=false)
                 assistantMessageId = addAssistantMessage(data.message, workflowMode);
+                if (wfThinkingSteps.length > 0) {
+                  updateMessage(assistantMessageId, { thinkingSteps: wfThinkingSteps, thinkingDuration: wfThinkingDuration });
+                }
                 setWorkflow(data.workflow);
               }
               break;
@@ -361,6 +390,7 @@ export function useChat() {
         setStreaming(false);
         setThinking(false);
         clearStreamingContent();
+        clearThinkingSteps();
         useChatStore.getState().setAbortController(null);
       }
     },
@@ -379,6 +409,8 @@ export function useChat() {
       setMessageClarifications,
       setMessageRejection,
       streamingContent,
+      addThinkingStep,
+      clearThinkingSteps,
     ]
   );
 
@@ -727,6 +759,8 @@ export function useChat() {
     thinkingStatus,
     streamingContent,
     pendingPlan,
+    thinkingSteps,
+    thinkingStartTime,
     sendMessage,
     handleFileUpload,
     handleApprovePlan,

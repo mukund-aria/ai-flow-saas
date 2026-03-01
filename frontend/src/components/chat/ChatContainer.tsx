@@ -14,7 +14,7 @@ export function ChatContainer({ hasWorkflow, workflowName, analysis }: ChatConta
     messages,
     isStreaming,
     isThinking,
-    thinkingStatus,
+    thinkingSteps,
     streamingContent,
     sendMessage,
     handleFileUpload,
@@ -33,7 +33,7 @@ export function ChatContainer({ hasWorkflow, workflowName, analysis }: ChatConta
       <MessageList
         messages={messages}
         isThinking={isThinking}
-        thinkingStatus={thinkingStatus}
+        thinkingSteps={thinkingSteps}
         isStreaming={isStreaming}
         streamingContent={streamingContent}
         onApprovePlan={handleApprovePlan}

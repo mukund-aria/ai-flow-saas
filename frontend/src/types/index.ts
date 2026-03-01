@@ -726,6 +726,12 @@ export interface SuggestedAction {
   actionType?: 'approve_plan' | 'discard_plan' | 'edit_plan' | 'prompt';
 }
 
+export interface ThinkingStepInfo {
+  step: number;
+  label: string;
+  done: boolean;
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -745,6 +751,9 @@ export interface Message {
   attachment?: MessageAttachment;
   // Enhancement data (post-creation)
   enhancement?: EnhancementData;
+  // Thinking chain (collapsed after response arrives)
+  thinkingSteps?: ThinkingStepInfo[];
+  thinkingDuration?: number;  // seconds
 }
 
 export interface EnhancementData {

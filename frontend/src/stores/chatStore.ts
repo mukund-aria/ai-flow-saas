@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
-import type { Message, PendingPlan, Clarification, Rejection, ResponseMode, MessageAttachment, EnhancementData } from '@/types';
+import type { Message, PendingPlan, Clarification, Rejection, ResponseMode, MessageAttachment, EnhancementData, ThinkingStepInfo } from '@/types';
 
 export type ThinkingStatus = 'thinking' | 'analyzing' | 'creating' | 'editing' | 'refining';
 
@@ -15,6 +15,8 @@ interface ChatStore {
   prefillMessage: string | null;  // Message to prefill into the input (user can edit before sending)
   enhancementsDismissed: boolean;  // Session-level flag to hide enhancement options after user dismisses them
   abortController: AbortController | null;  // For cancelling in-flight stream requests
+  thinkingSteps: ThinkingStepInfo[];
+  thinkingStartTime: number | null;
 
   // Actions
   addUserMessage: (content: string, attachment?: MessageAttachment) => string;
@@ -36,6 +38,8 @@ interface ChatStore {
   cancelStream: () => void;
   clearMessages: () => void;
   loadMessages: (messages: Message[]) => void;
+  addThinkingStep: (step: number, label: string) => void;
+  clearThinkingSteps: () => void;
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
@@ -49,6 +53,8 @@ export const useChatStore = create<ChatStore>((set) => ({
   prefillMessage: null,
   enhancementsDismissed: false,
   abortController: null,
+  thinkingSteps: [],
+  thinkingStartTime: null,
 
   addUserMessage: (content, attachment) => {
     const id = nanoid();
@@ -155,4 +161,19 @@ export const useChatStore = create<ChatStore>((set) => ({
     }),
 
   loadMessages: (messages) => set({ messages }),
+
+  addThinkingStep: (step, label) => {
+    set((state) => {
+      // Mark all previous steps as done
+      const updatedSteps = state.thinkingSteps.map((s) => ({ ...s, done: true }));
+      // Add new active step
+      updatedSteps.push({ step, label, done: false });
+      return {
+        thinkingSteps: updatedSteps,
+        thinkingStartTime: state.thinkingStartTime ?? Date.now(),
+      };
+    });
+  },
+
+  clearThinkingSteps: () => set({ thinkingSteps: [], thinkingStartTime: null }),
 }));
